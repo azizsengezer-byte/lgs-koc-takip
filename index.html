@@ -1119,11 +1119,36 @@ function renderSidebar() {
 
 function showPage(id) {
   currentPage = id;
+  // Mesajlar sayfası açılınca TÜM mesaj bildirimlerini okundu yap
+  if (id === 'messages') {
+    clearAllMessageNotifs();
+  }
   renderSidebar();
   const content = document.getElementById('mainContent');
   if(currentRole==='teacher') renderTeacherPage(id, content);
   else renderStudentPage(id, content);
   window.scrollTo(0,0);
+}
+
+// Mesajlar sayfası açıldığında Firestore'daki tüm message bildirimlerini temizle
+async function clearAllMessageNotifs() {
+  const myUid = (window.currentUserData||{}).uid || '';
+  if (!myUid) return;
+  try {
+    const snap = await db.collection('notifications')
+      .where('toUid','==',myUid)
+      .where('type','==','message')
+      .where('read','==',false)
+      .get();
+    if (snap.empty) return;
+    const batch = db.batch();
+    snap.forEach(d => batch.update(d.ref, {read:true}));
+    await batch.commit();
+    // Local güncelle
+    const notifs = currentRole==='teacher' ? teacherNotifs : studentNotifs;
+    notifs.forEach(n => { if(n.type==='message') n.read = true; });
+    updateNotifBadge();
+  } catch(e) {}
 }
 
 /* =================== TEACHER PAGES =================== */
@@ -1295,8 +1320,24 @@ function teacherStudents() {
       }).join('')}
     </div>
     <div style="margin-top:20px" class="card">
-      <div class="card-title">📊 Öğrenci Karşılaştırma (Bu Hafta Soru)</div>
-      <canvas id="compareChart" height="160"></canvas>
+      <div class="card-title">📋 Haftalık Öğrenci Özeti</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:0.78rem">
+          <thead>
+            <tr style="background:var(--accent)22">
+              <th style="padding:8px 6px;text-align:left;color:var(--text2);font-weight:700;border-bottom:2px solid var(--accent)44">Öğrenci</th>
+              <th style="padding:8px 6px;text-align:center;color:var(--text2);font-weight:700;border-bottom:2px solid var(--accent)44">Gün</th>
+              <th style="padding:8px 6px;text-align:center;color:var(--text2);font-weight:700;border-bottom:2px solid var(--accent)44">Soru</th>
+              <th style="padding:8px 6px;text-align:center;color:var(--text2);font-weight:700;border-bottom:2px solid var(--accent)44">Süre</th>
+              <th style="padding:8px 6px;text-align:center;color:var(--text2);font-weight:700;border-bottom:2px solid var(--accent)44">Net Ort.</th>
+              <th style="padding:8px 6px;text-align:center;color:var(--text2);font-weight:700;border-bottom:2px solid var(--accent)44">Durum</th>
+            </tr>
+          </thead>
+          <tbody id="weeklyStudentTable">
+            ${students.length === 0 ? `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text2)">Henüz öğrenci yok</td></tr>` : ''}
+          </tbody>
+        </table>
+      </div>
     </div>
   `;
 }
@@ -1516,55 +1557,52 @@ function studentDetailAnalysis() {
       ${!hasDenemeler
         ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.85rem">Bu dönemde deneme sınavı girilmemiş</div>`
         : `
-        <!-- Ortalama LGS Puanı -->
-        ${avgLgsRes ? `
-        <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:14px;padding:16px;margin-bottom:14px;text-align:center;border:1px solid var(--accent)33">
-          <div style="font-size:0.75rem;color:rgba(255,255,255,0.6);margin-bottom:4px;letter-spacing:1px;text-transform:uppercase">Ortalama Tahmini LGS Puanı</div>
-          <div style="font-size:2.8rem;font-weight:900;color:#fff;line-height:1">${avgLgsRes.puan}</div>
-          <div style="font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:4px">${denemeSinavlari.length} deneme ortalaması · 500 üzerinden</div>
-          <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center">
-            ${avgLgsRes.detail.map(d=>`<span style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8);font-size:0.65rem;padding:2px 8px;border-radius:99px">${toSafe(d.name)}: ${d.net} net → SP:${d.stdPuan} × ${d.kat}</span>`).join('')}
-          </div>
-          <div style="margin-top:8px;font-size:0.7rem;color:rgba(255,255,255,0.4)">Toplam Ağırlıklı: ${avgLgsRes.toplamAgirlikli}</div>
-        </div>` : ''}
-
-        <!-- Kaydırmalı deneme kartları -->
-        <div style="font-size:0.8rem;color:var(--text2);margin-bottom:8px">${denemeSinavlari.length} deneme sınavı — kaydırarak inceleyin</div>
-        <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch">
+        <div style="font-size:0.78rem;color:var(--text2);margin-bottom:10px">${denemeSinavlari.length} deneme → soldan sağa kaydırın</div>
+        <div style="display:flex;gap:12px;overflow-x:auto;overflow-y:visible;padding-bottom:12px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;touch-action:pan-x;cursor:grab"
+          onmousedown="this.style.cursor='grabbing'" onmouseup="this.style.cursor='grab'"
+        >
           ${denemeSinavlari.map((d,i)=>{
-            const dateLabel = new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
-            return `<div style="min-width:260px;background:var(--surface2);border-radius:14px;padding:14px;border:1px solid var(--border);flex-shrink:0">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                <div style="font-weight:800;font-size:0.9rem">Deneme ${denemeSinavlari.length-i}</div>
-                <div style="font-size:0.75rem;color:var(--text2)">${dateLabel}</div>
-              </div>
-              <!-- LGS puanı bu deneme için -->
-              <div style="background:var(--accent)15;border-radius:10px;padding:8px;text-align:center;margin-bottom:10px">
-                <div style="font-size:0.65rem;color:var(--text2)">LGS Tahmini</div>
-                <div style="font-size:1.6rem;font-weight:900;color:var(--accent)">${d.lgsRes.puan}</div>
+            const dateLabel = new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'});
+            const lgsDetay = d.lgsRes.detail || [];
+            return `<div style="min-width:280px;max-width:280px;background:var(--surface2);border-radius:14px;padding:14px;border:1px solid var(--border);flex-shrink:0;scroll-snap-align:start">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div style="font-weight:800;font-size:0.92rem">Deneme ${denemeSinavlari.length-i}</div>
+                <div style="font-size:0.72rem;color:var(--text2);background:var(--surface);padding:3px 8px;border-radius:99px">${dateLabel}</div>
               </div>
               <!-- Dersler -->
               ${d.subResults.map(s=>`
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)">
-                  <span style="font-size:0.75rem;color:var(--${s.cls})">${s.icon} ${s.name}</span>
-                  <span style="font-size:0.75rem;color:var(--text2)">D:${s.d} Y:${s.y} <b style="color:var(--accent3)">Net:${s.net.toFixed(1)}</b></span>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+                  <span style="font-size:0.78rem;color:var(--${s.cls})">${s.icon} ${s.name}</span>
+                  <span style="font-size:0.78rem">D:<b>${s.d}</b> Y:<b>${s.y}</b> <span style="color:var(--accent3);font-weight:800">Net:${s.net.toFixed(1)}</span></span>
                 </div>`).join('')}
+              <!-- LGS Puan Detayı -->
+              <div style="margin-top:12px;background:var(--surface);border-radius:10px;padding:10px">
+                <div style="font-size:0.68rem;color:var(--text2);margin-bottom:6px;text-align:center">Tahmini LGS Puanı</div>
+                <div style="font-size:2rem;font-weight:900;color:var(--accent);text-align:center;line-height:1">${d.lgsRes.puan}</div>
+                <div style="font-size:0.62rem;color:var(--text2);text-align:center;margin-bottom:8px">/ 500</div>
+                ${lgsDetay.map(ld=>`
+                  <div style="font-size:0.65rem;color:var(--text2);display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border)">
+                    <span>${toSafe(ld.name)}</span>
+                    <span>Net:${ld.net} → SP:${ld.sp} × ${ld.kat} = <b style="color:var(--accent3)">${ld.agirlikli}</b></span>
+                  </div>`).join('')}
+                <div style="font-size:0.65rem;font-weight:800;color:var(--accent3);text-align:right;margin-top:4px">Toplam: ${d.lgsRes.toplamAgirlikli}</div>
+              </div>
             </div>`;
           }).join('')}
         </div>
         
         <!-- Deneme puanları trendi -->
         ${denemeSinavlari.length>1?`
-        <div style="margin-top:12px">
-          <div style="font-size:0.78rem;color:var(--text2);margin-bottom:6px">📈 Deneme Puanı Trendi</div>
-          <div style="display:flex;align-items:flex-end;gap:6px;height:60px">
+        <div style="margin-top:14px">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--text);margin-bottom:8px">📈 Deneme Puanı Trendi</div>
+          <div style="display:flex;align-items:flex-end;gap:6px;height:64px">
             ${[...denemeSinavlari].reverse().map((d,i)=>{
-              const maxP = Math.max(...denemeSinavlari.map(x=>x.lgsRes.puan),1);
-              const h = Math.max(Math.round((d.lgsRes.puan/500)*54),3);
+              const h = Math.max(Math.round((d.lgsRes.puan/500)*54),4);
+              const isLast = i===denemeSinavlari.length-1;
               return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
-                <div style="font-size:0.55rem;color:var(--accent)">${d.lgsRes.puan}</div>
-                <div style="width:100%;height:${h}px;background:var(--accent)88;border-radius:3px 3px 0 0"></div>
-                <div style="font-size:0.55rem;color:var(--text2)">D${i+1}</div>
+                <div style="font-size:0.58rem;color:var(--accent);font-weight:700">${d.lgsRes.puan}</div>
+                <div style="width:100%;height:${h}px;background:${isLast?'var(--accent)':'var(--accent)66'};border-radius:4px 4px 0 0"></div>
+                <div style="font-size:0.58rem;color:var(--text2)">D${i+1}</div>
               </div>`;
             }).join('')}
           </div>
@@ -1660,42 +1698,43 @@ function toSafe(str) {
     .replace(/ç/g,'c').replace(/Ç/g,'C');
 }
 
-// LGS puan hesaplama (deneme netlerinden tahmini)
-// LGS 2024 resmi puan hesaplama formülü
-// Standart Puan = 50 + (Net - OrtNet) / StdSapma * 10
-// Ağırlıklı Puan = StdPuan * Katsayı
-// LGS Puanı = (Σ Ağırlıklı) / (Σ Katsayı) * 10
+// LGS Puan Hesaplama — Resmi Formül
+// Standart Puan (SP) = 50 + ((Net - OrtNet) / StdSapma) * 10
+// Ağırlıklı Puan = SP * Katsayı
+// Toplam Ağırlıklı Puan = Σ(Ağırlıklı)
+// LGS Puanı = (Toplam Ağırlıklı / Toplam Katsayı) * 10 → maksimum 500
 const LGS_PARAMS = {
-  'Türkçe':       { soru: 20, ortNet: 11.5, std: 4.2,  kat: 4 },
-  'Matematik':    { soru: 20, ortNet: 8.8,  std: 4.8,  kat: 4 },
-  'Fen Bilimleri':{ soru: 20, ortNet: 10.2, std: 4.5,  kat: 4 },
-  'İnkılap Tarihi':{ soru: 10, ortNet: 6.1, std: 2.1,  kat: 1 },
-  'Din Kültürü':  { soru: 10, ortNet: 7.2,  std: 1.8,  kat: 1 },
-  'İngilizce':    { soru: 10, ortNet: 5.4,  std: 2.8,  kat: 1 },
+  'Türkçe':        { ortNet: 11.5, std: 4.2, kat: 4 },
+  'Matematik':     { ortNet: 8.8,  std: 4.8, kat: 4 },
+  'Fen Bilimleri': { ortNet: 10.2, std: 4.5, kat: 4 },
+  'İnkılap Tarihi':{ ortNet: 6.1,  std: 2.1, kat: 1 },
+  'Din Kültürü':   { ortNet: 7.2,  std: 1.8, kat: 1 },
+  'İngilizce':     { ortNet: 5.4,  std: 2.8, kat: 1 },
 };
 
 function calcLGSScore(subStats) {
-  // subStats: [{name, avgNet}, ...]
-  let totalAgirlikli = 0;
-  let totalKat = 0;
+  // subStats: [{name, avgNet, count}, ...]
+  let toplamAgirlikli = 0;
+  let toplamKat = 0;
   const detail = [];
   subStats.forEach(s => {
     const p = LGS_PARAMS[s.name];
-    if (!p || (s.avgNet === 0 && s.count === 0)) return;
+    if (!p) return;
     const net = Number(s.avgNet) || 0;
-    const stdPuan = 50 + ((net - p.ortNet) / p.std) * 10;
-    const agirlikli = stdPuan * p.kat;
-    totalAgirlikli += agirlikli;
-    totalKat += p.kat;
-    detail.push({ name: s.name, net: net.toFixed(2), stdPuan: stdPuan.toFixed(2), agirlikli: agirlikli.toFixed(2), kat: p.kat });
+    const sp = 50 + ((net - p.ortNet) / p.std) * 10;
+    const agirlikli = sp * p.kat;
+    toplamAgirlikli += agirlikli;
+    toplamKat += p.kat;
+    detail.push({
+      name: s.name, net: net.toFixed(2),
+      sp: sp.toFixed(2), agirlikli: agirlikli.toFixed(2), kat: p.kat
+    });
   });
-  if (totalKat === 0) return { puan: 0, detail: [], toplamAgirlikli: 0 };
-  // LGS = Toplam Ağırlıklı / Toplam Katsayı * 10 / max_olası * 500
-  // Basitleştirilmiş: puan = toplamAgirlikli / toplamKat * (500/500) → max ~500
-  const rawPuan = totalAgirlikli / totalKat;
-  // Normalize: ortalama std puan 50 → puan ~250, maks std puan ~80 → ~500
-  const lgsPuan = Math.min(Math.max(Math.round(rawPuan * 5), 100), 500);
-  return { puan: lgsPuan, detail, toplamAgirlikli: totalAgirlikli.toFixed(2) };
+  if (toplamKat === 0) return { puan: 0, detail: [], toplamAgirlikli: '0' };
+  // LGS = (Toplam Ağırlıklı / Toplam Katsayı) * 10
+  const rawLgs = (toplamAgirlikli / toplamKat) * 10;
+  const lgsPuan = Math.min(Math.max(Math.round(rawLgs * 10) / 10, 100), 500);
+  return { puan: lgsPuan, detail, toplamAgirlikli: toplamAgirlikli.toFixed(2) };
 }
 
 async function exportStudentDetailPDF(sName) {
@@ -2062,8 +2101,8 @@ function teacherAnalysis() {
       </div>
 
       <div class="card" style="margin-top:16px">
-        <div class="card-title">📚 Ders Bazlı Soru Dağılımı</div>
-        <canvas id="compareChart" height="160"></canvas>
+        <div class="card-title">📚 Bu Hafta Ders Bazlı Soru Dağılımı</div>
+        <div id="subjectDistBars" style="padding:4px 0"></div>
       </div>
     `}
   `;
@@ -2764,14 +2803,28 @@ async function switchChatTo(uid, role) {
     chatMessages[cId] = [];
     snap.forEach(d => chatMessages[cId].push(d.data()));
   } catch(e) { chatMessages[cId] = chatMessages[cId] || []; }
-  // Mesaj bildirimlerini okundu yap
-  markMessagesAsSeen(uid);
-  // Mesaj bildirimlerini notifications'ta okundu yap
+
+  // Firestore'daki TÜM okunmamış mesaj bildirimlerini (bu kişiden) okundu yap
+  try {
+    const nSnap = await db.collection('notifications')
+      .where('toUid','==',myUid)
+      .where('fromUid','==',uid)
+      .where('type','==','message')
+      .where('read','==',false)
+      .get();
+    const batch = db.batch();
+    nSnap.forEach(d => batch.update(d.ref, {read:true}));
+    await batch.commit();
+  } catch(e) {}
+
+  // Local array güncelle
   const allNotifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
-  allNotifs.filter(n=>n.type==='message'&&n.fromUid===uid&&!n.read).forEach(n=>{
-    n.read = true;
-    if(n.id) db.collection('notifications').doc(n.id).update({read:true}).catch(()=>{});
+  allNotifs.forEach(n => {
+    if(n.type==='message' && n.fromUid===uid) n.read = true;
   });
+
+  // messages koleksiyonundaki seen flag'lerini güncelle
+  markMessagesAsSeen(uid);
   updateNotifBadge();
   showPage('messages');
   setTimeout(()=>{ const cm=document.getElementById('chatMessages'); if(cm) cm.scrollTop=cm.scrollHeight; },80);
@@ -2999,12 +3052,11 @@ function notificationsPage() {
     </div>`;
 }
 
-let notifUnsubscribe = null; // Firestore realtime listener
+let notifUnsubscribe = null;
 
 function startNotifListener() {
   const myUid = (window.currentUserData||{}).uid || '';
   if (!myUid) return;
-  // Önceki listener varsa kapat
   if (notifUnsubscribe) { notifUnsubscribe(); notifUnsubscribe = null; }
   try {
     notifUnsubscribe = db.collection('notifications')
@@ -3013,13 +3065,15 @@ function startNotifListener() {
         const notifs = [];
         snap.forEach(d => notifs.push({ ...d.data(), id: d.id }));
         notifs.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+        // Eğer local'de okundu işaretlediysek Firestore gecikmeli güncelleme gelebilir
+        // Bu yüzden local read:true olanları koru
+        const prevNotifs = currentRole==='teacher' ? teacherNotifs : studentNotifs;
+        const localReadIds = new Set(prevNotifs.filter(n=>n.read).map(n=>n.id));
+        notifs.forEach(n => { if(localReadIds.has(n.id)) n.read = true; });
         if (currentRole === 'teacher') teacherNotifs = notifs;
         else studentNotifs = notifs;
         updateNotifBadge();
-      }, err => {
-        // onSnapshot başarısız olursa tek seferlik fetch dene
-        loadNotificationsOnce();
-      });
+      }, () => loadNotificationsOnce());
   } catch(e) { loadNotificationsOnce(); }
 }
 
@@ -3679,22 +3733,58 @@ function drawCharts() {
     drawLineChart(ctx, wc.width, 100, last7.length ? last7 : [0,0,0,0,0,0,0], '#6c63ff');
   }
 
-  // Compare chart - öğrenci bazlı bu hafta soru
-  const cc = document.getElementById('compareChart');
-  if(cc) {
-    cc._drawn = true;
-    const ctx = cc.getContext('2d');
+  // Haftalık öğrenci özet tablosu
+  const wTable = document.getElementById('weeklyStudentTable');
+  if(wTable && students.length > 0) {
     const weekAgo = new Date(now); weekAgo.setDate(now.getDate()-7);
     const weekKey = weekAgo.toISOString().split('T')[0];
-    if (students.length > 0) {
-      const names = students.map(s=>s.name.split(' ')[0]);
-      const vals = students.map(s=>
-        studyEntries.filter(e=>e.studentName===s.name && e.dateKey>=weekKey)
-          .reduce((a,e)=>a+(e.questions||0),0)
-      );
-      drawBarChart(ctx, cc.width, 160, names, vals);
+    const todayK = now.toISOString().split('T')[0];
+    wTable.innerHTML = students.map((s,i) => {
+      const se = studyEntries.filter(e=>e.studentName===s.name && e.dateKey>=weekKey);
+      const soru = se.reduce((a,e)=>a+(e.questions||0),0);
+      const sure = se.reduce((a,e)=>a+(e.duration||0),0);
+      const netT = se.reduce((a,e)=>a+(e.net||0),0);
+      const gun  = new Set(se.map(e=>e.dateKey)).size;
+      const netOrt = soru>0 ? (netT/gun).toFixed(1) : '—';
+      const isToday = se.some(e=>e.dateKey===todayK);
+      const bgRow = i%2===0?'background:var(--surface2)':'';
+      return `<tr style="${bgRow};cursor:pointer" onclick="openStudentAnalysis('${s.name}')">
+        <td style="padding:9px 6px;font-weight:700">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:26px;height:26px;border-radius:50%;background:${s.color}22;color:${s.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem">${s.name[0]}</div>
+            <span style="font-size:0.82rem">${s.name.split(' ')[0]}</span>
+          </div>
+        </td>
+        <td style="text-align:center;padding:9px 6px;font-weight:700;color:var(--accent4)">${gun}</td>
+        <td style="text-align:center;padding:9px 6px;font-weight:700;color:var(--accent)">${soru}</td>
+        <td style="text-align:center;padding:9px 6px;color:var(--text2)">${sure}dk</td>
+        <td style="text-align:center;padding:9px 6px;font-weight:800;color:var(--accent3)">${netOrt}</td>
+        <td style="text-align:center;padding:9px 6px">${isToday?'<span style="font-size:1rem">✅</span>':'<span style="font-size:1rem">⬜</span>'}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Ders bazlı soru dağılım barları (analiz sayfası)
+  const subDistEl = document.getElementById('subjectDistBars');
+  if(subDistEl) {
+    const weekAgo2 = new Date(now); weekAgo2.setDate(now.getDate()-7);
+    const weekKey2 = weekAgo2.toISOString().split('T')[0];
+    const subTotals = subjects.map(s=>{
+      const q = studyEntries.filter(e=>e.dateKey>=weekKey2&&e.subject===s.name).reduce((a,e)=>a+(e.questions||0),0);
+      return {...s, q};
+    }).filter(s=>s.q>0);
+    const maxQ = Math.max(...subTotals.map(s=>s.q),1);
+    if(subTotals.length>0) {
+      subDistEl.innerHTML = subTotals.map(s=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="font-size:0.78rem;min-width:90px;color:var(--${s.cls})">${s.icon} ${s.name}</div>
+          <div style="flex:1;height:10px;background:var(--border);border-radius:5px;overflow:hidden">
+            <div style="height:100%;width:${Math.round(s.q/maxQ*100)}%;background:var(--${s.cls});border-radius:5px;transition:.4s"></div>
+          </div>
+          <div style="font-size:0.78rem;font-weight:800;min-width:28px;text-align:right;color:var(--${s.cls})">${s.q}</div>
+        </div>`).join('');
     } else {
-      drawBarChart(ctx, cc.width, 160, ['Öğrenci Yok'], [0]);
+      subDistEl.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;text-align:center;padding:12px">Bu hafta çalışma verisi yok</div>';
     }
   }
 
