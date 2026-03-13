@@ -2110,7 +2110,7 @@ async function exportStudentDetailPDF(sName) {
       subStats.map(s=>parseFloat(s.net.toFixed(1))),
       subStats.map(s=>ts(s.name.split(' ')[0].substring(0,5))),
       Y, 42,
-      subStats.map(s=>[_,_,_]=> s.net>0 ? [38,166,154] : [239,83,80]).map((_,i)=> subStats[i].net>=0?[38,166,154]:[239,83,80]),
+      subStats.map(s=> s.net>=0 ? [38,166,154] : [239,83,80]),
       'Ders Bazli Net Toplami'
     );
   }
