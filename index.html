@@ -475,6 +475,17 @@
         <input class="form-input" type="text" id="regSchool" placeholder="örn. Hasankeyf Ortaokulu">
       </div>
     </div>
+    <div id="studentFields" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Sınıf</label>
+        <select class="form-select" id="regClass">
+          <option>5-A</option><option>5-B</option><option>5-C</option>
+          <option>6-A</option><option>6-B</option><option>6-C</option>
+          <option>7-A</option><option>7-B</option><option>7-C</option>
+          <option>8-A</option><option>8-B</option><option>8-C</option>
+        </select>
+      </div>
+    </div>
     <div id="regError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('registerModal')">İptal</button>
@@ -861,10 +872,11 @@ async function doRegister() {
   if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
   const branch = role==='teacher' ? (document.getElementById('regBranch').value || '') : '';
   const school = role==='teacher' ? (document.getElementById('regSchool').value.trim() || '') : '';
+  const classroom = role==='student' ? (document.getElementById('regClass').value || '') : '';
   if (role==='teacher' && !school) { errEl.textContent = 'Okul adı giriniz.'; errEl.style.display='block'; return; }
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
-    await db.collection('users').doc(cred.user.uid).set({ name, email, role, branch, school, photo:'', createdAt: new Date() });
+    await db.collection('users').doc(cred.user.uid).set({ name, email, role, branch, school, classroom, photo:'', createdAt: new Date() });
     closeModal('registerModal');
     showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
   } catch(e) {
@@ -881,6 +893,7 @@ async function doRegister() {
 function toggleRegFields() {
   const role = document.getElementById('regRole').value;
   document.getElementById('teacherFields').style.display = role==='teacher' ? 'block' : 'none';
+  document.getElementById('studentFields').style.display = role==='student' ? 'block' : 'none';
 }
 
 async function saveClassSetup() {
@@ -1794,25 +1807,62 @@ async function saveNewStudent() {
   if (!name || !email || !pass) { errEl.textContent = 'Tüm alanları doldurunuz.'; errEl.style.display='block'; return; }
   if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
   if (students.length >= 6) { errEl.textContent = 'En fazla 6 öğrenci eklenebilir.'; errEl.style.display='block'; return; }
+
+  const errBtn = document.querySelector('#addStudentModal .btn-primary');
+  if (errBtn) { errBtn.textContent = 'Ekleniyor...'; errBtn.disabled = true; }
+
   try {
-    // Mevcut kullanıcıyı sakla
-    const currentUser = auth.currentUser;
-    // İkinci bir auth instance oluşturmadan Firebase Admin yapamayız
-    // Bu yüzden Firestore'a "bekleyen öğrenci" olarak kaydediyoruz
+    const teacherUser = auth.currentUser;
+    const teacherData = window.currentUserData || {};
+
+    // İkinci bir Firebase App instance'ı oluşturarak öğrenci hesabı açıyoruz
+    // Bu sayede öğretmenin oturumu kapanmıyor
+    let secondaryApp;
+    try {
+      secondaryApp = firebase.app('secondary');
+    } catch(e) {
+      secondaryApp = firebase.initializeApp(firebase.app().options, 'secondary');
+    }
+    const secondaryAuth = secondaryApp.auth();
+
+    // Öğrenci Firebase Auth hesabı oluştur
+    const cred = await secondaryAuth.createUserWithEmailAndPassword(email, pass);
+    const studentUid = cred.user.uid;
+
+    // Öğrenci Firestore profilini kaydet
     const colors = ['#6c63ff','#ff6584','#43e97b','#f9ca24','#00b4d8','#ff9f43'];
     const color = colors[students.length % colors.length];
-    const studentData = { name, email, password: pass, role: 'student', teacherId: currentUser.uid, school: (window.currentUserData||{}).school||'', color, avg: 0, createdAt: new Date() };
-    await db.collection('pendingStudents').add(studentData);
-    students.push({ name, avg: 0, trend: 'up', lastActive: 'Yeni', color, tasks: 0 });
+    await db.collection('users').doc(studentUid).set({
+      name, email, role: 'student',
+      teacherId: teacherUser.uid,
+      school: teacherData.school || '',
+      photo: '', color, avg: 0,
+      createdAt: new Date()
+    });
+
+    // İkinci oturumu kapat (öğretmen oturumu etkilenmez)
+    await secondaryAuth.signOut();
+
+    // Öğretmenin listesine ekle
+    students.push({ name, uid: studentUid, avg: 0, trend: 'up', lastActive: 'Yeni', color, tasks: 0 });
+
     closeModal('addStudentModal');
     document.getElementById('newStudentName').value = '';
     document.getElementById('newStudentEmail').value = '';
     document.getElementById('newStudentPass').value = '';
-    showToast('✅', `${name} eklendi! Giriş bilgileri: ${email} / ${pass}`);
+    showToast('✅', `${name} eklendi! Giriş: ${email} / ${pass}`);
     showPage('students');
+
   } catch(e) {
-    errEl.textContent = 'Hata: ' + e.message;
+    const msgs = {
+      'auth/email-already-in-use': 'Bu e-posta zaten kayıtlı.',
+      'auth/invalid-email': 'Geçersiz e-posta adresi.',
+      'auth/weak-password': 'Şifre çok zayıf, en az 6 karakter olmalı.',
+    };
+    errEl.textContent = msgs[e.code] || 'Hata: ' + e.message;
     errEl.style.display = 'block';
+  } finally {
+    if (errBtn) { errBtn.textContent = 'Ekle ✓'; errBtn.disabled = false; }
   }
 }
 
