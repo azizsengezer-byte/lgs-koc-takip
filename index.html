@@ -549,50 +549,75 @@
   <div class="modal">
     <div class="modal-title">📚 Günlük Çalışma Ekle</div>
     <div class="form-group">
-      <label class="form-label">Ders</label>
-      <select class="form-select" id="entrySubject" onchange="updateEntryTopics()">
-        <option value="Türkçe">📖 Türkçe</option>
-        <option value="Matematik">📐 Matematik</option>
-        <option value="Fen Bilimleri">🔬 Fen Bilimleri</option>
-        <option value="İnkılap Tarihi">🏛️ İnkılap Tarihi</option>
-        <option value="Din Kültürü">☪️ Din Kültürü</option>
-        <option value="İngilizce">🌍 İngilizce</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Konu</label>
-      <select class="form-select" id="entryTopic"></select>
-    </div>
-    <div class="form-group">
       <label class="form-label">Çalışma Türü</label>
-      <select class="form-select" id="entryType">
+      <select class="form-select" id="entryType" onchange="toggleEntryFields()">
         <option value="soru">📝 Soru Çözümü</option>
         <option value="konu">📖 Konu Çalışma</option>
-        <option value="test">📊 Test</option>
         <option value="tekrar">🔁 Tekrar</option>
+        <option value="deneme">📊 Deneme Sınavı</option>
       </select>
     </div>
-    <div class="grid-2">
+
+    <!-- Soru Çözümü & Konu & Tekrar için ders/konu -->
+    <div id="normalFields">
       <div class="form-group">
-        <label class="form-label">⏱ Süre (dk)</label>
-        <input class="form-input" type="number" id="entryDuration" placeholder="45" min="1" max="300">
+        <label class="form-label">Ders</label>
+        <select class="form-select" id="entrySubject" onchange="updateEntryTopics()">
+          <option value="Türkçe">📖 Türkçe</option>
+          <option value="Matematik">📐 Matematik</option>
+          <option value="Fen Bilimleri">🔬 Fen Bilimleri</option>
+          <option value="İnkılap Tarihi">🏛️ İnkılap Tarihi</option>
+          <option value="Din Kültürü">☪️ Din Kültürü</option>
+          <option value="İngilizce">🌍 İngilizce</option>
+        </select>
       </div>
       <div class="form-group">
-        <label class="form-label">📝 Toplam Soru</label>
-        <input class="form-input" type="number" id="entryQuestions" placeholder="20" min="0">
+        <label class="form-label">Konu</label>
+        <select class="form-select" id="entryTopic"></select>
       </div>
     </div>
-    <div class="grid-2">
-      <div class="form-group">
-        <label class="form-label">✅ Doğru</label>
-        <input class="form-input" type="number" id="entryCorrect" placeholder="0" min="0">
-      </div>
-      <div class="form-group">
-        <label class="form-label">❌ Yanlış</label>
-        <input class="form-input" type="number" id="entryWrong" placeholder="0" min="0">
-      </div>
-    </div>
+
+    <!-- Süre — hep göster -->
     <div class="form-group">
+      <label class="form-label">⏱ Süre (dakika)</label>
+      <input class="form-input" type="number" id="entryDuration" placeholder="45" min="1" max="300">
+    </div>
+
+    <!-- Soru Çözümü için doğru/yanlış -->
+    <div id="soruFields">
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">📝 Toplam Soru</label>
+          <input class="form-input" type="number" id="entryQuestions" placeholder="20" min="0">
+        </div>
+        <div class="form-group" style="visibility:hidden" id="placeholder"></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">✅ Doğru</label>
+          <input class="form-input" type="number" id="entryCorrect" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">❌ Yanlış</label>
+          <input class="form-input" type="number" id="entryWrong" placeholder="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- Deneme Sınavı için tüm dersler -->
+    <div id="denemeFields" style="display:none">
+      <div style="font-size:0.82rem;color:var(--text2);margin-bottom:12px">Her dersin doğru ve yanlış sayısını gir:</div>
+      ${subjects.map(s=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="width:80px;font-size:0.82rem;font-weight:700;color:var(--${s.cls})">${s.icon} ${s.name.split(' ')[0]}</div>
+          <input class="form-input" type="number" placeholder="D" min="0" id="deneme_d_${s.name}" style="flex:1;padding:8px">
+          <input class="form-input" type="number" placeholder="Y" min="0" id="deneme_y_${s.name}" style="flex:1;padding:8px">
+        </div>
+      `).join('')}
+      <div style="font-size:0.75rem;color:var(--text2)">D = Doğru, Y = Yanlış</div>
+    </div>
+
+    <div class="form-group" style="margin-top:8px">
       <label class="form-label">Not (opsiyonel)</label>
       <input class="form-input" type="text" id="entryNote" placeholder="örn. Zor sorularda takıldım...">
     </div>
@@ -793,32 +818,78 @@ const db = firebase.firestore();
 // Auth state listener
 auth.onAuthStateChanged(async (user) => {
   if (user) {
-    // Get user profile from Firestore
     const doc = await db.collection('users').doc(user.uid).get();
     if (doc.exists) {
       const data = doc.data();
       currentRole = data.role || 'student';
-      window.currentUserData = data;
+      window.currentUserData = { ...data, uid: user.uid };
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       document.getElementById('headerName').textContent = data.name || user.email;
-      const roleLabel = currentRole==='teacher' ? `Koç Öğretmen${data.branch?' • '+data.branch:''}` : `${data.classroom||'8. Sınıf'} • ${data.school||'Öğrenci'}`;
+      const roleLabel = currentRole==='teacher'
+        ? `Koç Öğretmen${data.branch?' • '+data.branch:''}`
+        : `${data.classroom||''} • ${data.school||'Öğrenci'}`;
       document.getElementById('headerRole').textContent = roleLabel;
       if (data.photo) {
         document.getElementById('headerAvatar').style.backgroundImage = `url(${data.photo})`;
         document.getElementById('headerAvatar').style.backgroundSize = 'cover';
         document.getElementById('headerAvatar').textContent = '';
       } else {
-        document.getElementById('headerAvatar').textContent = (data.name || user.email)[0].toUpperCase();
+        document.getElementById('headerAvatar').textContent = (data.name||user.email)[0].toUpperCase();
       }
+
+      // Öğretmense → öğrencileri Firestore'dan çek
+      if (currentRole === 'teacher') {
+        const snap = await db.collection('users')
+          .where('role','==','student')
+          .where('teacherId','==',user.uid).get();
+        students = [];
+        const colors = ['#6c63ff','#ff6584','#43e97b','#f9ca24','#00b4d8','#ff9f43'];
+        snap.forEach((d,i) => {
+          const s = d.data();
+          students.push({
+            uid: d.id, name: s.name, email: s.email,
+            avg: s.avg||0, lastActive: s.lastActive||'Yeni',
+            color: s.color || colors[students.length % colors.length],
+            tasks: 0, classroom: s.classroom||'', school: s.school||''
+          });
+        });
+        // Tüm öğrencilerin çalışma girişlerini çek
+        if (students.length > 0) {
+          const eSnap = await db.collection('studyEntries')
+            .where('teacherId','==',user.uid)
+            .orderBy('createdAt','desc').limit(200).get();
+          studyEntries = [];
+          const todayKey = new Date().toISOString().split('T')[0];
+          eSnap.forEach(d => {
+            const e = d.data();
+            studyEntries.push({ ...e, isToday: e.dateKey === todayKey });
+          });
+        }
+      }
+
+      // Öğrenciyse → kendi çalışma girişlerini çek
+      if (currentRole === 'student') {
+        const eSnap = await db.collection('studyEntries')
+          .where('userId','==',user.uid)
+          .orderBy('createdAt','desc').limit(200).get();
+        studyEntries = [];
+        const todayKey = new Date().toISOString().split('T')[0];
+        eSnap.forEach(d => {
+          const e = d.data();
+          studyEntries.push({ ...e, isToday: e.dateKey === todayKey });
+        });
+      }
+
       renderSidebar();
       showPage('dashboard');
+
       // Öğrenci sınıf seçmemişse sor
       if (currentRole==='student' && !data.classroom) {
         setTimeout(()=>{
           document.getElementById('setupSchool').value = data.school || '';
           openModal('classSetupModal');
-        }, 500);
+        }, 600);
       }
     }
   } else {
@@ -1201,71 +1272,89 @@ function renderStudentPage(id, el) {
 }
 
 function studentDashboard() {
+  const userName = document.getElementById('headerName').textContent || 'Öğrenci';
+  const firstName = userName.split(' ')[0];
+  const todayKey = new Date().toISOString().split('T')[0];
+
+  // Gerçek verilerden hesapla
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+  const weekEntries = studyEntries.filter(e => e.dateKey >= weekAgo.toISOString().split('T')[0]);
+  const weekQ = weekEntries.reduce((a,e)=>a+(e.questions||0),0);
+  const weekDurMin = weekEntries.reduce((a,e)=>a+(e.duration||0),0);
+  const weekDurH = (weekDurMin/60).toFixed(1);
+  const pendingTasks = tasks.filter(t=>!t.done).length;
+
+  // Bugünkü girişler
+  const todayEntries = studyEntries.filter(e=>e.dateKey===todayKey);
+
+  // Haftalık takvim
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (dayOfWeek===0?6:dayOfWeek-1));
+  const weekCalendar = weekDays.map((d,i)=>{
+    const day = new Date(monday);
+    day.setDate(monday.getDate()+i);
+    const dk = day.toISOString().split('T')[0];
+    const isToday = dk === todayKey;
+    const hasEntry = studyEntries.some(e=>e.dateKey===dk);
+    return `<div class="day-cell ${hasEntry?'has-data':''} ${isToday?'today':''}">
+      <div class="day-name">${d}</div>
+      <div class="day-num">${day.getDate()}</div>
+      ${hasEntry?'<div class="day-dot"></div>':''}
+    </div>`;
+  }).join('');
+
   return `
     <div class="page-title">🏠 Ana Sayfa</div>
-    <div class="page-sub">Merhaba Zeynep! Bugün ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
+    <div class="page-sub">Merhaba ${firstName}! Bugün ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
 
     <div class="grid-3">
       <div class="stat-card">
         <div class="stat-label">Bu Hafta Soru</div>
-        <div class="stat-value" style="color:var(--accent)">347</div>
-        <div class="stat-change up">↑ Hedef: 400</div>
+        <div class="stat-value" style="color:var(--accent)">${weekQ}</div>
+        <div class="stat-change">${weekQ>0?'💪 Devam et!':'➕ Giriş yap'}</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Çalışma Süresi</div>
-        <div class="stat-value" style="color:var(--accent3)">18.5<span style="font-size:1rem">sa</span></div>
-        <div class="stat-change up">↑ Geçen hafta 16sa</div>
+        <div class="stat-value" style="color:var(--accent3)">${weekDurH}<span style="font-size:1rem">sa</span></div>
+        <div class="stat-change">${weekDurMin>0?'📅 Bu hafta':'➕ Başla!'}</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Bekleyen Ödev</div>
-        <div class="stat-value" style="color:var(--accent4)">2</div>
-        <div class="stat-change">📅 Son: 15 Mar</div>
+        <div class="stat-value" style="color:var(--accent4)">${pendingTasks}</div>
+        <div class="stat-change">${pendingTasks>0?'📋 Tamamlanacak':'✅ Temiz!'}</div>
       </div>
     </div>
 
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title">📚 Ders İlerlemem</div>
-        ${subjects.map((s,i)=>`
-          <div class="subject-row">
-            <div class="subject-name c-${s.cls}">${s.icon} ${s.name}</div>
-            <div class="bar-bg"><div class="bar-fill bg-${s.cls}" style="width:${subjectProgressT[i]}%"></div></div>
-            <div class="subject-pct">${subjectProgressT[i]}%</div>
-          </div>
-        `).join('')}
-      </div>
-      <div class="card">
-        <div class="card-title">📅 Bu Hafta</div>
-        <div class="week-grid">
-          ${weekDays.map((d,i)=>`
-            <div class="day-cell ${i<3?'has-data':''} ${i===2?'today':''}">
-              <div class="day-name">${d}</div>
-              <div class="day-num">${10+i}</div>
-              ${i<3?'<div class="day-dot"></div>':''}
-            </div>
-          `).join('')}
-        </div>
-        <div style="margin-top:16px">
-          <button class="btn btn-primary" style="width:100%" onclick="showPage('daily-entry')">+ Bugün Giriş Yap</button>
-        </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">📅 Bu Hafta</div>
+      <div class="week-grid">${weekCalendar}</div>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" style="width:100%" onclick="showPage('daily-entry')">+ Bugün Giriş Yap</button>
       </div>
     </div>
 
     <div class="card">
       <div class="card-title">📊 Son Girişlerim</div>
-      ${studyEntries.map(e=>`
-        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
-          <div style="font-size:1.2rem">${subjects.find(s=>s.name===e.subject)?.icon||'📚'}</div>
-          <div style="flex:1">
-            <div style="font-weight:700;font-size:0.9rem">${e.subject} — ${e.topic}</div>
-            <div style="font-size:0.78rem;color:var(--text2)">${e.date}</div>
+      ${studyEntries.length === 0
+        ? `<div style="text-align:center;padding:24px;color:var(--text2)">Henüz giriş yok. Çalışmaya başla! 💪</div>`
+        : studyEntries.slice(0,5).map(e=>`
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+            <div style="font-size:1.2rem">${subjects.find(s=>s.name===e.subject)?.icon||'📚'}</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:0.9rem">${e.subject}</div>
+              <div style="font-size:0.82rem;color:var(--accent)">${e.topic}</div>
+              <div style="font-size:0.75rem;color:var(--text2)">${e.dateKey||''} ${e.time||''}</div>
+            </div>
+            <div style="text-align:right;font-size:0.8rem;color:var(--text2)">
+              ${e.duration?`<div>⏱ ${e.duration}dk</div>`:''}
+              ${e.questions?`<div>📝 ${e.questions} soru</div>`:''}
+              ${e.net!=null&&e.questions?`<div style="color:var(--accent3)">Net: ${e.net.toFixed(1)}</div>`:''}
+            </div>
           </div>
-          <div style="text-align:right;font-size:0.82rem;color:var(--text2)">
-            <div>⏱ ${e.duration}dk</div>
-            <div>📝 ${e.questions} soru</div>
-          </div>
-        </div>
-      `).join('')}
+        `).join('')
+      }
     </div>
   `;
 }
@@ -1720,6 +1809,15 @@ function selectSubjectCard(el, name) {
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
+function toggleEntryFields() {
+  const type = document.getElementById('entryType').value;
+  const isDeneme = type === 'deneme';
+  const isSoru = type === 'soru';
+  document.getElementById('normalFields').style.display = isDeneme ? 'none' : 'block';
+  document.getElementById('soruFields').style.display = isSoru ? 'block' : 'none';
+  document.getElementById('denemeFields').style.display = isDeneme ? 'block' : 'none';
+}
+
 function updateEntryTopics() {
   const sub = document.getElementById('entrySubject').value;
   const topics = kazanimlar[sub] || [];
@@ -1733,51 +1831,89 @@ function openEntryFor(subjectName) {
     document.getElementById('entrySubject').value = subjectName;
     updateEntryTopics();
   }
-  // Reset fields
+  document.getElementById('entryType').value = 'soru';
+  toggleEntryFields();
   document.getElementById('entryDuration').value = '';
   document.getElementById('entryQuestions').value = '';
   document.getElementById('entryCorrect').value = '';
   document.getElementById('entryWrong').value = '';
   document.getElementById('entryNote').value = '';
+  subjects.forEach(s => {
+    const d = document.getElementById('deneme_d_'+s.name);
+    const y = document.getElementById('deneme_y_'+s.name);
+    if(d) d.value='';
+    if(y) y.value='';
+  });
   openModal('addEntryModal');
 }
 
 function saveEntry() {
-  const sub = document.getElementById('entrySubject').value;
-  const topic = document.getElementById('entryTopic').value || 'Genel Çalışma';
   const type = document.getElementById('entryType').value;
   const dur = parseInt(document.getElementById('entryDuration').value) || 0;
-  const q = parseInt(document.getElementById('entryQuestions').value) || 0;
-  const correct = parseInt(document.getElementById('entryCorrect').value) || 0;
-  const wrong = parseInt(document.getElementById('entryWrong').value) || 0;
   const note = document.getElementById('entryNote').value;
-  if (!dur && !q) { showToast('⚠️', 'Süre veya soru sayısı giriniz!'); return; }
+  if (!dur) { showToast('⚠️', 'Süre giriniz!'); return; }
 
   const now = new Date();
   const time = now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
   const dateKey = now.toISOString().split('T')[0];
+  const user = auth.currentUser;
+  const studentName = document.getElementById('headerName').textContent;
+  const teacherId = (window.currentUserData||{}).teacherId || '';
+
+  if (type === 'deneme') {
+    // Deneme sınavı — tüm dersler ayrı ayrı kaydet
+    let saved = 0;
+    subjects.forEach(s => {
+      const d = parseInt(document.getElementById('deneme_d_'+s.name)?.value)||0;
+      const y = parseInt(document.getElementById('deneme_y_'+s.name)?.value)||0;
+      if (d===0 && y===0) return;
+      const net = d - y/4;
+      const q = d + y;
+      const entry = {
+        subject: s.name, topic: 'Deneme Sınavı', type: 'deneme',
+        duration: Math.round(dur/subjects.length), questions: q,
+        correct: d, wrong: y, net, note, time, dateKey, isToday: true,
+        date: 'Bugün '+time
+      };
+      studyEntries.unshift(entry);
+      if (user) {
+        db.collection('studyEntries').add({
+          ...entry, userId: user.uid, teacherId, studentName,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(()=>{});
+      }
+      saved++;
+    });
+    closeModal('addEntryModal');
+    showToast('✅', `Deneme sınavı kaydedildi! (${saved} ders)`);
+    showPage('daily-entry');
+    return;
+  }
+
+  // Normal giriş
+  const sub = document.getElementById('entrySubject').value;
+  const topic = document.getElementById('entryTopic').value || 'Genel Çalışma';
+  const q = type==='soru' ? (parseInt(document.getElementById('entryQuestions').value)||0) : 0;
+  const correct = type==='soru' ? (parseInt(document.getElementById('entryCorrect').value)||0) : 0;
+  const wrong = type==='soru' ? (parseInt(document.getElementById('entryWrong').value)||0) : 0;
+  const net = q > 0 ? correct - wrong/4 : 0;
 
   const entry = {
     subject: sub, topic, type, duration: dur, questions: q,
-    correct, wrong, note, time, dateKey,
-    isToday: true,
-    date: 'Bugün ' + time,
-    net: correct - (wrong/4),
+    correct, wrong, net, note, time, dateKey, isToday: true,
+    date: 'Bugün '+time
   };
   studyEntries.unshift(entry);
 
-  const user = auth.currentUser;
   if (user) {
     db.collection('studyEntries').add({
-      ...entry, userId: user.uid,
-      teacherId: (window.currentUserData||{}).teacherId || '',
-      studentName: document.getElementById('headerName').textContent,
+      ...entry, userId: user.uid, teacherId, studentName,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(e => console.log('Firestore error:', e));
+    }).catch(()=>{});
   }
 
   closeModal('addEntryModal');
-  const netStr = q > 0 ? ` | Net: ${entry.net.toFixed(1)}` : '';
+  const netStr = q>0 ? ` | Net: ${net.toFixed(1)}` : '';
   showToast('✅', `${sub} — ${topic} kaydedildi!${netStr}`);
   showPage('daily-entry');
 }
@@ -2002,7 +2138,7 @@ function exportPDF(role) {
       // ── STUDENT INFO / SUMMARY ──
       const title = role==='teacher'
         ? (studentFilter==='all' ? 'Tum Ogrenciler — Sinif Ozeti' : studentFilter + ' — Ogrenci Raporu')
-        : 'Zeynep Kaya — Kisisel Analiz Raporu';
+        : document.getElementById('headerName').textContent + ' — Kisisel Analiz Raporu';
 
       doc.setTextColor(232,234,246); doc.setFontSize(15); doc.setFont('helvetica','bold');
       doc.text(title, 14, y); y+=8;
