@@ -451,15 +451,58 @@
     </div>
     <div class="form-group">
       <label class="form-label">Rol</label>
-      <select class="form-select" id="regRole">
-        <option value="student">🎒 Öğrenci</option>
+      <select class="form-select" id="regRole" onchange="toggleRegFields()">
         <option value="teacher">👨‍🏫 Öğretmen</option>
+        <option value="student">🎒 Öğrenci</option>
       </select>
+    </div>
+    <div id="teacherFields">
+      <div class="form-group">
+        <label class="form-label">Branş</label>
+        <select class="form-select" id="regBranch">
+          <option>Matematik</option>
+          <option>Türkçe</option>
+          <option>Fen Bilimleri</option>
+          <option>İnkılap Tarihi</option>
+          <option>Din Kültürü</option>
+          <option>İngilizce</option>
+          <option>Sınıf Öğretmeni</option>
+          <option>Diğer</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Okul Adı</label>
+        <input class="form-input" type="text" id="regSchool" placeholder="örn. Hasankeyf Ortaokulu">
+      </div>
     </div>
     <div id="regError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('registerModal')">İptal</button>
       <button class="btn btn-primary" onclick="doRegister()">Kayıt Ol ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLASS SETUP MODAL (öğrenci ilk girişte) -->
+<div class="modal-overlay" id="classSetupModal">
+  <div class="modal">
+    <div class="modal-title">🎒 Sınıf Bilgisi</div>
+    <div style="color:var(--text2);font-size:0.88rem;margin-bottom:16px">Koçun sana bu okulu atadı. Sınıfını seç:</div>
+    <div class="form-group">
+      <label class="form-label">Okul</label>
+      <input class="form-input" type="text" id="setupSchool" readonly style="opacity:0.6">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Sınıf</label>
+      <select class="form-select" id="setupClass">
+        <option>5-A</option><option>5-B</option><option>5-C</option>
+        <option>6-A</option><option>6-B</option><option>6-C</option>
+        <option>7-A</option><option>7-B</option><option>7-C</option>
+        <option>8-A</option><option>8-B</option><option>8-C</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="width:100%" onclick="saveClassSetup()">Kaydet ✓</button>
     </div>
   </div>
 </div>
@@ -471,7 +514,7 @@
     <div style="display:flex;align-items:center;gap:14px;">
       <div style="position:relative;cursor:pointer" onclick="showPage('notifs')">
         <span style="font-size:1.3rem;">🔔</span>
-        <span id="notifBadge" style="position:absolute;top:-4px;right:-4px;background:var(--accent2);color:#fff;font-size:0.6rem;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;">3</span>
+        <span id="notifBadge" style="position:absolute;top:-4px;right:-4px;background:var(--accent2);color:#fff;font-size:0.6rem;font-weight:800;width:16px;height:16px;border-radius:50%;display:none;align-items:center;justify-content:center;">0</span>
       </div>
       <div class="header-user" onclick="showPage('profile')" style="cursor:pointer">
         <div class="avatar" id="headerAvatar">A</div>
@@ -677,13 +720,28 @@ auth.onAuthStateChanged(async (user) => {
     if (doc.exists) {
       const data = doc.data();
       currentRole = data.role || 'student';
+      window.currentUserData = data;
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       document.getElementById('headerName').textContent = data.name || user.email;
-      document.getElementById('headerRole').textContent = currentRole==='teacher' ? 'Koç Öğretmen' : '8. Sınıf Öğrencisi';
-      document.getElementById('headerAvatar').textContent = (data.name || user.email)[0].toUpperCase();
+      const roleLabel = currentRole==='teacher' ? `Koç Öğretmen${data.branch?' • '+data.branch:''}` : `${data.classroom||'8. Sınıf'} • ${data.school||'Öğrenci'}`;
+      document.getElementById('headerRole').textContent = roleLabel;
+      if (data.photo) {
+        document.getElementById('headerAvatar').style.backgroundImage = `url(${data.photo})`;
+        document.getElementById('headerAvatar').style.backgroundSize = 'cover';
+        document.getElementById('headerAvatar').textContent = '';
+      } else {
+        document.getElementById('headerAvatar').textContent = (data.name || user.email)[0].toUpperCase();
+      }
       renderSidebar();
       showPage('dashboard');
+      // Öğrenci sınıf seçmemişse sor
+      if (currentRole==='student' && !data.classroom) {
+        setTimeout(()=>{
+          document.getElementById('setupSchool').value = data.school || '';
+          openModal('classSetupModal');
+        }, 500);
+      }
     }
   } else {
     document.getElementById('app').style.display = 'none';
@@ -734,9 +792,12 @@ async function doRegister() {
   errEl.style.display = 'none';
   if (!name || !email || !pass) { errEl.textContent = 'Tüm alanları doldurunuz.'; errEl.style.display='block'; return; }
   if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
+  const branch = role==='teacher' ? (document.getElementById('regBranch').value || '') : '';
+  const school = role==='teacher' ? (document.getElementById('regSchool').value.trim() || '') : '';
+  if (role==='teacher' && !school) { errEl.textContent = 'Okul adı giriniz.'; errEl.style.display='block'; return; }
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
-    await db.collection('users').doc(cred.user.uid).set({ name, email, role, createdAt: new Date() });
+    await db.collection('users').doc(cred.user.uid).set({ name, email, role, branch, school, photo:'', createdAt: new Date() });
     closeModal('registerModal');
     showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
   } catch(e) {
@@ -747,6 +808,24 @@ async function doRegister() {
     };
     errEl.textContent = msgs[e.code] || 'Kayıt başarısız: ' + e.message;
     errEl.style.display = 'block';
+  }
+}
+
+function toggleRegFields() {
+  const role = document.getElementById('regRole').value;
+  document.getElementById('teacherFields').style.display = role==='teacher' ? 'block' : 'none';
+}
+
+async function saveClassSetup() {
+  const cls = document.getElementById('setupClass').value;
+  const user = auth.currentUser;
+  if (user) {
+    await db.collection('users').doc(user.uid).update({ classroom: cls });
+    window.currentUserData = {...(window.currentUserData||{}), classroom: cls};
+    closeModal('classSetupModal');
+    const school = window.currentUserData.school || '';
+    document.getElementById('headerRole').textContent = `${cls} • ${school}`;
+    showToast('✅', `Sınıfın ${cls} olarak kaydedildi!`);
   }
 }
 
@@ -1356,22 +1435,54 @@ function sendMessage(role) {
 function profilePage() {
   const user = auth.currentUser;
   const name = document.getElementById('headerName').textContent;
-  const role = currentRole === 'teacher' ? 'Koç Öğretmen' : '8. Sınıf Öğrencisi';
+  const data = window.currentUserData || {};
+  const isTeacher = currentRole === 'teacher';
+  const roleLabel = isTeacher ? 'Koç Öğretmen' : '8. Sınıf Öğrencisi';
+  const photoHTML = data.photo
+    ? `<img src="${data.photo}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto 12px;display:block">`
+    : `<div class="avatar" style="width:72px;height:72px;font-size:1.8rem;margin:0 auto 12px">${name[0].toUpperCase()}</div>`;
   return `
     <div class="page-title">👤 Profilim</div>
     <div class="page-sub">Hesap bilgileri ve ayarlar</div>
     <div class="card" style="text-align:center;padding:32px 20px">
-      <div class="avatar" style="width:72px;height:72px;font-size:1.8rem;margin:0 auto 16px">${name[0].toUpperCase()}</div>
+      ${photoHTML}
       <div style="font-size:1.2rem;font-weight:800;margin-bottom:4px">${name}</div>
-      <div style="color:var(--accent);font-size:0.88rem;font-weight:600">${role}</div>
+      <div style="color:var(--accent);font-size:0.88rem;font-weight:600">${roleLabel}</div>
       <div style="color:var(--text2);font-size:0.82rem;margin-top:4px">${user ? user.email : ''}</div>
+      <label style="margin-top:14px;display:inline-block;cursor:pointer">
+        <span class="btn btn-outline" style="font-size:0.82rem;padding:8px 16px">📷 Fotoğraf Değiştir</span>
+        <input type="file" accept="image/*" style="display:none" onchange="uploadPhoto(this)">
+      </label>
     </div>
     <div class="card" style="margin-top:16px">
-      <div class="card-title">⚙️ Ayarlar</div>
+      <div class="card-title">✏️ Bilgilerimi Düzenle</div>
       <div class="form-group">
         <label class="form-label">Ad Soyad</label>
         <input class="form-input" type="text" id="profileName" value="${name}">
       </div>
+      ${isTeacher ? `
+      <div class="form-group">
+        <label class="form-label">Branş</label>
+        <select class="form-select" id="profileBranch">
+          ${['Matematik','Türkçe','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce','Sınıf Öğretmeni','Diğer'].map(b=>`<option ${data.branch===b?'selected':''}>${b}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Okul Adı</label>
+        <input class="form-input" type="text" id="profileSchool" value="${data.school||''}">
+      </div>
+      ` : `
+      <div class="form-group">
+        <label class="form-label">Okul</label>
+        <input class="form-input" type="text" id="profileSchool" value="${data.school||''}" readonly style="opacity:0.6">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sınıf</label>
+        <select class="form-select" id="profileClass">
+          ${['5-A','5-B','5-C','6-A','6-B','6-C','7-A','7-B','7-C','8-A','8-B','8-C'].map(c=>`<option ${data.classroom===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
+      `}
       <div id="profileError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
       <button class="btn btn-primary" style="width:100%" onclick="saveProfile()">Kaydet ✓</button>
     </div>
@@ -1387,6 +1498,27 @@ function profilePage() {
   `;
 }
 
+async function uploadPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 500000) { showToast('⚠️', 'Fotoğraf 500KB\'dan küçük olmalı!'); return; }
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const photoData = e.target.result;
+    const user = auth.currentUser;
+    if (user) {
+      await db.collection('users').doc(user.uid).update({ photo: photoData });
+      window.currentUserData = {...(window.currentUserData||{}), photo: photoData};
+      document.getElementById('headerAvatar').style.backgroundImage = `url(${photoData})`;
+      document.getElementById('headerAvatar').style.backgroundSize = 'cover';
+      document.getElementById('headerAvatar').textContent = '';
+      showToast('✅', 'Profil fotoğrafı güncellendi!');
+      showPage('profile');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
 async function saveProfile() {
   const name = document.getElementById('profileName').value.trim();
   const errEl = document.getElementById('profileError');
@@ -1394,9 +1526,21 @@ async function saveProfile() {
   if (!name) { errEl.textContent = 'İsim boş olamaz.'; errEl.style.display='block'; return; }
   const user = auth.currentUser;
   if (user) {
-    await db.collection('users').doc(user.uid).update({ name });
+    const updates = { name };
+    if (currentRole === 'teacher') {
+      updates.branch = document.getElementById('profileBranch').value;
+      updates.school = document.getElementById('profileSchool').value.trim();
+    } else {
+      updates.classroom = document.getElementById('profileClass').value;
+    }
+    await db.collection('users').doc(user.uid).update(updates);
+    window.currentUserData = {...(window.currentUserData||{}), ...updates};
     document.getElementById('headerName').textContent = name;
-    document.getElementById('headerAvatar').textContent = name[0].toUpperCase();
+    document.getElementById('headerAvatar').textContent = (window.currentUserData.photo) ? '' : name[0].toUpperCase();
+    const roleLabel = currentRole==='teacher'
+      ? `Koç Öğretmen${updates.branch?' • '+updates.branch:''}`
+      : `${updates.classroom||''} • ${window.currentUserData.school||''}`;
+    document.getElementById('headerRole').textContent = roleLabel;
     showToast('✅', 'Profil güncellendi!');
     showPage('profile');
   }
@@ -1501,7 +1645,7 @@ async function saveNewStudent() {
     // Bu yüzden Firestore'a "bekleyen öğrenci" olarak kaydediyoruz
     const colors = ['#6c63ff','#ff6584','#43e97b','#f9ca24','#00b4d8','#ff9f43'];
     const color = colors[students.length % colors.length];
-    const studentData = { name, email, password: pass, role: 'student', teacherId: currentUser.uid, color, avg: 0, createdAt: new Date() };
+    const studentData = { name, email, password: pass, role: 'student', teacherId: currentUser.uid, school: (window.currentUserData||{}).school||'', color, avg: 0, createdAt: new Date() };
     await db.collection('pendingStudents').add(studentData);
     students.push({ name, avg: 0, trend: 'up', lastActive: 'Yeni', color, tasks: 0 });
     closeModal('addStudentModal');
