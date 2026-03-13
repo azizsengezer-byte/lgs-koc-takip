@@ -525,7 +525,7 @@
     <div style="display:flex;align-items:center;gap:14px;">
       <div style="position:relative;cursor:pointer" onclick="showPage('notifs')">
         <span style="font-size:1.3rem;">🔔</span>
-        <span id="notifBadge" style="position:absolute;top:-4px;right:-4px;background:var(--accent2);color:#fff;font-size:0.6rem;font-weight:800;width:16px;height:16px;border-radius:50%;display:none;align-items:center;justify-content:center;">0</span>
+        <span id="notifBadge" style="position:absolute;top:-4px;right:-4px;background:var(--accent2);color:#fff;font-size:0.6rem;font-weight:800;min-width:16px;height:16px;border-radius:99px;padding:0 4px;display:none;align-items:center;justify-content:center;line-height:16px;">0</span>
       </div>
       <div class="header-user" onclick="showPage('profile')" style="cursor:pointer">
         <div class="avatar" id="headerAvatar">A</div>
@@ -933,7 +933,7 @@ auth.onAuthStateChanged(async (user) => {
 
       renderSidebar();
       showPage('dashboard');
-      loadNotifications();
+      startNotifListener();
 
       // Öğrenci sınıf seçmemişse sor
       if (currentRole==='student' && !data.classroom) {
@@ -946,7 +946,7 @@ auth.onAuthStateChanged(async (user) => {
       console.log('Auth hata:', err.message);
       renderSidebar();
       showPage('dashboard');
-      loadNotifications();
+      startNotifListener();
     }
   } else {
     document.getElementById('app').style.display = 'none';
@@ -1116,6 +1116,7 @@ function showPage(id) {
 function renderTeacherPage(id, el) {
   if(id==='dashboard') el.innerHTML = teacherDashboard();
   else if(id==='students') el.innerHTML = teacherStudents();
+  else if(id==='student-detail') el.innerHTML = studentDetailAnalysis();
   else if(id==='analysis') el.innerHTML = teacherAnalysis();
   else if(id==='tasks-teacher') el.innerHTML = teacherTasks();
   else if(id==='messages') {
@@ -1285,7 +1286,7 @@ function teacherStudents() {
           ? `<span class="badge badge-yellow">📊 Normal</span>`
           : `<span class="badge badge-red">⚠️ Dikkat!</span>`;
         return `
-        <div class="student-row">
+        <div class="student-row" onclick="openStudentAnalysis('${s.name}')" style="cursor:pointer">
           <div class="student-avatar" style="background:${s.color}20;color:${s.color};font-size:1.1rem">${s.name[0]}</div>
           <div class="student-info" style="flex:1">
             <div class="student-name">${s.name}</div>
@@ -1294,7 +1295,10 @@ function teacherStudents() {
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
             ${statusBadge}
-            <button class="btn btn-outline" style="padding:4px 10px;font-size:0.75rem;color:#ff6584;border-color:#ff6584" onclick="deleteStudent(${i})">🗑️</button>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-outline" style="padding:4px 10px;font-size:0.75rem" onclick="event.stopPropagation();openStudentAnalysis('${s.name}')">📊</button>
+              <button class="btn btn-outline" style="padding:4px 10px;font-size:0.75rem;color:#ff6584;border-color:#ff6584" onclick="event.stopPropagation();deleteStudent(${i})">🗑️</button>
+            </div>
           </div>
         </div>`;
       }).join('')}
@@ -1304,6 +1308,392 @@ function teacherStudents() {
       <canvas id="compareChart" height="160"></canvas>
     </div>
   `;
+}
+
+/* ========== ÖĞRENCI DETAY ANALİZİ ========== */
+let selectedStudentName = '';
+let studentAnalysisPeriod = 'weekly';
+
+function openStudentAnalysis(name) {
+  selectedStudentName = name;
+  studentAnalysisPeriod = 'weekly';
+  showPage('student-detail');
+}
+
+function studentDetailAnalysis() {
+  const sName = selectedStudentName;
+  const sObj = students.find(s=>s.name===sName) || { color:'#6c63ff' };
+  const now = new Date();
+  const todayKey = now.toISOString().split('T')[0];
+
+  // Dönem filtre
+  let filtered = [];
+  let periodLabel = '';
+  const monday = new Date(now);
+  monday.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
+  const mondayKey = monday.toISOString().split('T')[0];
+  const monthStart = todayKey.substring(0,7)+'-01';
+
+  if (studentAnalysisPeriod==='daily') {
+    filtered = studyEntries.filter(e=>e.studentName===sName && e.dateKey===todayKey);
+    periodLabel = 'Bugün';
+  } else if (studentAnalysisPeriod==='weekly') {
+    filtered = studyEntries.filter(e=>e.studentName===sName && e.dateKey>=mondayKey);
+    periodLabel = 'Bu Hafta';
+  } else {
+    filtered = studyEntries.filter(e=>e.studentName===sName && e.dateKey>=monthStart);
+    periodLabel = 'Bu Ay';
+  }
+
+  const allEntries = studyEntries.filter(e=>e.studentName===sName);
+
+  // Özet istatistikler
+  const totalDur = filtered.reduce((a,e)=>a+(e.duration||0),0);
+  const totalQ   = filtered.reduce((a,e)=>a+(e.questions||0),0);
+  const totalD   = filtered.reduce((a,e)=>a+(e.correct||0),0);
+  const totalY   = filtered.reduce((a,e)=>a+(e.wrong||0),0);
+  const totalNet = filtered.reduce((a,e)=>a+(e.net||0),0);
+  const activeDays = new Set(filtered.map(e=>e.dateKey)).size;
+
+  // Ders bazlı analiz
+  const subStats = subjects.map(s => {
+    const se = filtered.filter(e=>e.subject===s.name);
+    const q = se.reduce((a,e)=>a+(e.questions||0),0);
+    const d = se.reduce((a,e)=>a+(e.correct||0),0);
+    const y = se.reduce((a,e)=>a+(e.wrong||0),0);
+    const net = se.reduce((a,e)=>a+(e.net||0),0);
+    const dur = se.reduce((a,e)=>a+(e.duration||0),0);
+    const pct = q>0 ? Math.round(d/q*100) : 0;
+    return { ...s, q, d, y, net, dur, pct, count: se.length };
+  });
+  const maxQ = Math.max(...subStats.map(s=>s.q), 1);
+
+  // Güçlü / zayıf
+  const withQ = subStats.filter(s=>s.q>0).sort((a,b)=>b.pct-a.pct);
+  const strong = withQ.slice(0,2);
+  const weak   = [...withQ].reverse().slice(0,2);
+
+  // Son 7 günlük trend bar chart verisi
+  const trendDays = [];
+  for(let i=6;i>=0;i--) {
+    const d = new Date(now); d.setDate(now.getDate()-i);
+    const dk = d.toISOString().split('T')[0];
+    const dayEntries = allEntries.filter(e=>e.dateKey===dk);
+    trendDays.push({
+      label: d.toLocaleDateString('tr-TR',{weekday:'short'}),
+      dk, q: dayEntries.reduce((a,e)=>a+(e.questions||0),0),
+      dur: dayEntries.reduce((a,e)=>a+(e.duration||0),0),
+      net: dayEntries.reduce((a,e)=>a+(e.net||0),0)
+    });
+  }
+  const maxTQ = Math.max(...trendDays.map(t=>t.q),1);
+
+  // Aylık trend (son 4 hafta)
+  const monthTrend = [];
+  for(let w=3;w>=0;w--) {
+    const wStart = new Date(now); wStart.setDate(now.getDate()-w*7-6);
+    const wEnd   = new Date(now); wEnd.setDate(now.getDate()-w*7);
+    const wk = wStart.toISOString().split('T')[0];
+    const wkEnd = wEnd.toISOString().split('T')[0];
+    const we = allEntries.filter(e=>e.dateKey>=wk && e.dateKey<=wkEnd);
+    monthTrend.push({
+      label: `H${4-w}`,
+      q: we.reduce((a,e)=>a+(e.questions||0),0),
+      dur: we.reduce((a,e)=>a+(e.duration||0),0),
+      net: we.reduce((a,e)=>a+(e.net||0),0)
+    });
+  }
+  const maxMQ = Math.max(...monthTrend.map(t=>t.q),1);
+
+  // Yorum üret
+  const comment = generateStudentComment(sName, filtered, subStats, totalDur, totalQ, totalNet, activeDays, studentAnalysisPeriod);
+
+  return `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+      <button onclick="showPage('students')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
+      <div class="page-title" style="margin:0">📊 ${sName}</div>
+    </div>
+    <div class="page-sub">Bireysel Analiz Raporu</div>
+
+    <!-- Dönem seçici -->
+    <div style="display:flex;gap:6px;margin-bottom:18px;background:var(--surface2);border-radius:12px;padding:4px">
+      ${['daily','weekly','monthly'].map((p,i)=>{
+        const lbl=['Günlük','Haftalık','Aylık'][i];
+        return `<button onclick="studentAnalysisPeriod='${p}';showPage('student-detail')"
+          style="flex:1;padding:8px 4px;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:0.82rem;
+          background:${studentAnalysisPeriod===p?'var(--accent)':'transparent'};
+          color:${studentAnalysisPeriod===p?'#fff':'var(--text2)'};transition:.2s">${lbl}</button>`;
+      }).join('')}
+    </div>
+
+    <!-- Özet kartlar -->
+    <div class="grid-3" style="margin-bottom:16px">
+      <div class="stat-card">
+        <div class="stat-label">Süre</div>
+        <div class="stat-value" style="color:var(--accent)">${totalDur}<span style="font-size:0.75rem">dk</span></div>
+        <div class="stat-change">${activeDays} gün aktif</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Toplam Soru</div>
+        <div class="stat-value" style="color:var(--accent4)">${totalQ}</div>
+        <div class="stat-change">✅${totalD} ❌${totalY}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Net</div>
+        <div class="stat-value" style="color:var(--accent3)">${totalNet.toFixed(1)}</div>
+        <div class="stat-change">${totalQ>0?(totalNet/totalQ*100).toFixed(0)+'% isabet':'-'}</div>
+      </div>
+    </div>
+
+    <!-- Haftalık/Aylık trend -->
+    ${studentAnalysisPeriod !== 'daily' ? `
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">${studentAnalysisPeriod==='weekly'?'📅 Son 7 Gün Soru Trendi':'📆 Haftalık Soru Trendi (Son 4 Hafta)'}</div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:90px;padding:4px">
+        ${(studentAnalysisPeriod==='weekly'?trendDays:monthTrend).map(t=>{
+          const maxV = studentAnalysisPeriod==='weekly'?maxTQ:maxMQ;
+          const h = Math.max(Math.round((t.q/maxV)*75),2);
+          const isToday = t.dk===todayKey;
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <div style="font-size:0.65rem;color:var(--text2)">${t.q||''}</div>
+            <div style="width:100%;height:${h}px;background:${isToday?'var(--accent)':'var(--accent)55'};border-radius:4px 4px 0 0;min-height:3px"></div>
+            <div style="font-size:0.65rem;color:${isToday?'var(--accent)':'var(--text2)'};">${t.label}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      ${studentAnalysisPeriod==='monthly'?`
+      <div style="display:flex;gap:4px;margin-top:8px;padding:0 4px">
+        ${monthTrend.map(t=>`
+          <div style="flex:1;text-align:center;font-size:0.7rem;color:var(--text2)">
+            <span style="color:var(--accent3)">${t.net.toFixed(1)}</span> net
+          </div>`).join('')}
+      </div>`:''}
+    </div>` : ''}
+
+    <!-- Ders bazlı tablo -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">📚 Ders Bazlı Detay — ${periodLabel}</div>
+      ${filtered.length===0
+        ? `<div style="text-align:center;padding:24px;color:var(--text2)">Bu dönemde veri yok</div>`
+        : subStats.map(s=>`
+        <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <span style="font-weight:700;font-size:0.85rem;color:var(--${s.cls})">${s.icon} ${s.name}</span>
+            <span style="font-size:0.75rem;color:var(--text2)">${s.dur}dk • ${s.q} soru • Net <b style="color:var(--accent3)">${s.net.toFixed(1)}</b></span>
+          </div>
+          <div class="bar-bg" style="height:6px">
+            <div class="bar-fill bg-${s.cls}" style="width:${Math.round(s.q/maxQ*100)}%"></div>
+          </div>
+          ${s.q>0?`<div style="font-size:0.7rem;color:var(--text2);margin-top:3px">✅${s.d} doğru &nbsp;❌${s.y} yanlış &nbsp;🎯%${s.pct} isabet</div>`:''}
+        </div>`).join('')}
+    </div>
+
+    <!-- Güçlü / Zayıf -->
+    ${filtered.length>0?`
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">⚡ Güçlü & Geliştirilmesi Gereken</div>
+      <div class="grid-2">
+        <div>
+          <div style="color:var(--accent3);font-weight:800;margin-bottom:8px;font-size:0.85rem">💪 En Başarılı</div>
+          ${strong.length?strong.map(s=>`
+            <div style="padding:7px 10px;background:rgba(67,233,123,.08);border-radius:8px;font-size:0.8rem;margin-bottom:5px;border:1px solid rgba(67,233,123,.2)">
+              ${s.icon} ${s.name} <span style="color:var(--accent3);float:right">%${s.pct}</span>
+            </div>`).join(''):'<div style="color:var(--text2);font-size:0.8rem">Veri yok</div>'}
+        </div>
+        <div>
+          <div style="color:var(--accent2);font-weight:800;margin-bottom:8px;font-size:0.85rem">⚠️ Çalışılmalı</div>
+          ${weak.length?weak.map(s=>`
+            <div style="padding:7px 10px;background:rgba(255,101,132,.08);border-radius:8px;font-size:0.8rem;margin-bottom:5px;border:1px solid rgba(255,101,132,.2)">
+              ${s.icon} ${s.name} <span style="color:var(--accent2);float:right">%${s.pct}</span>
+            </div>`).join(''):'<div style="color:var(--text2);font-size:0.8rem">Veri yok</div>'}
+        </div>
+      </div>
+    </div>`:''}
+
+    <!-- Koç Yorumu -->
+    <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,var(--accent)10,var(--accent)04);border:1px solid var(--accent)33">
+      <div class="card-title">🧑‍🏫 Koç Değerlendirmesi</div>
+      <div style="font-size:0.86rem;line-height:1.75;color:var(--text)">${comment}</div>
+    </div>
+
+    <!-- PDF -->
+    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:0.95rem;margin-bottom:24px"
+      onclick="exportStudentDetailPDF('${sName}')">
+      📄 PDF Raporu İndir
+    </button>
+  `;
+}
+
+function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, totalNet, activeDays, period) {
+  if (filtered.length===0) {
+    return `<b>${sName}</b> bu dönem için henüz çalışma girişi bulunmuyor. Öğrenciye hatırlatma yapmayı ve düzenli giriş yapmasını teşvik etmeyi deneyebilirsiniz. 📌`;
+  }
+  const firstName = sName.split(' ')[0];
+  const netRate = totalQ>0 ? (totalNet/totalQ*100).toFixed(0) : 0;
+  const withQ = subStats.filter(s=>s.q>0).sort((a,b)=>b.pct-a.pct);
+  const best = withQ[0], worst = [...withQ].reverse()[0];
+  const lgs = new Date('2026-06-14T09:30:00+03:00');
+  const daysLeft = Math.floor((lgs-new Date())/(1000*60*60*24));
+  let parts = [];
+
+  if (period==='daily') {
+    if (totalDur>=120) parts.push(`<b>${firstName}</b> bugün <b>${totalDur} dakika</b> çalışmış — harika bir gün! 🏆`);
+    else if (totalDur>=60) parts.push(`<b>${firstName}</b> bugün <b>${totalDur} dakika</b> çalışmış. Biraz daha süreyi artırmayı hedefleyebilir.`);
+    else parts.push(`<b>${firstName}</b> bugün yalnızca <b>${totalDur} dakika</b> çalışmış. Günlük en az 90 dakika hedeflenmeli. ⏰`);
+  } else if (period==='weekly') {
+    if (activeDays>=5) parts.push(`<b>${firstName}</b> bu hafta <b>${activeDays} gün</b> çalışmış — harika bir süreklilik! 🌟`);
+    else if (activeDays>=3) parts.push(`<b>${firstName}</b> bu hafta <b>${activeDays} gün</b> aktif olmuş. Haftada en az 5 güne çıkabilir.`);
+    else parts.push(`<b>${firstName}</b> bu hafta yalnızca <b>${activeDays} gün</b> çalışmış. Düzenlilik konusunda acil önlem alınmalı! ⚠️`);
+    const avgDurDay = activeDays>0?Math.round(totalDur/activeDays):0;
+    parts.push(`Günlük ortalama <b>${avgDurDay} dakika</b> ve toplam <b>${totalQ} soru</b> çözmüş.`);
+  } else {
+    parts.push(`Bu ay toplam <b>${activeDays} gün</b> aktif olmuş ve <b>${totalQ} soru</b> çözmüş. Toplam çalışma süresi: <b>${totalDur} dakika</b>.`);
+    if (activeDays<15) parts.push(`Aylık en az 20 gün aktif olması hedeflenmeli.`);
+    else parts.push(`Aylık devam oranı oldukça iyi görünüyor.`);
+  }
+
+  if (totalQ>0) {
+    if (netRate>=70) parts.push(`<b>%${netRate}</b> isabet oranıyla sorulara isabetli yaklaşıyor — bu güçlü bir göstergedir. ✨`);
+    else if (netRate>=50) parts.push(`İsabet oranı <b>%${netRate}</b>. Yanlışları tekrar gözden geçirirse bu oran artacaktır.`);
+    else parts.push(`İsabet oranı <b>%${netRate}</b> — hız yerine anlayarak çözmeye odaklanması gerekiyor. 🔍`);
+  }
+
+  if (best) parts.push(`<b>${best.name}</b> dersinde en güçlü (%${best.pct} isabet). Bu başarı sürdürülmeli.`);
+  if (worst && worst.name!==best?.name) parts.push(`<b>${worst.name}</b> dersine ek çalışma ayrılmalı (%${worst.pct} isabet).`);
+
+  parts.push(`LGS'ye <b>${daysLeft} gün</b> kaldı — ${firstName}'in düzenli ve kaliteli çalışması bu süreçte kritik öneme sahip. 🚀`);
+  return parts.join('<br><br>');
+}
+
+async function exportStudentDetailPDF(sName) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'p', unit:'mm', format:'a4' });
+  const now = new Date();
+  const todayKey = now.toISOString().split('T')[0];
+  const pLabels = {daily:'Günlük',weekly:'Haftalık',monthly:'Aylık'};
+  const pLabel = pLabels[studentAnalysisPeriod]||'Haftalık';
+
+  // Dönem filtre
+  const monday = new Date(now); monday.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
+  let filtered = [];
+  if (studentAnalysisPeriod==='daily') filtered=studyEntries.filter(e=>e.studentName===sName&&e.dateKey===todayKey);
+  else if (studentAnalysisPeriod==='weekly') filtered=studyEntries.filter(e=>e.studentName===sName&&e.dateKey>=monday.toISOString().split('T')[0]);
+  else filtered=studyEntries.filter(e=>e.studentName===sName&&e.dateKey>=todayKey.substring(0,7)+'-01');
+
+  const totalDur=filtered.reduce((a,e)=>a+(e.duration||0),0);
+  const totalQ=filtered.reduce((a,e)=>a+(e.questions||0),0);
+  const totalD=filtered.reduce((a,e)=>a+(e.correct||0),0);
+  const totalY=filtered.reduce((a,e)=>a+(e.wrong||0),0);
+  const totalNet=filtered.reduce((a,e)=>a+(e.net||0),0);
+  const activeDays=new Set(filtered.map(e=>e.dateKey)).size;
+
+  const subStats=subjects.map(s=>{
+    const se=filtered.filter(e=>e.subject===s.name);
+    const q=se.reduce((a,e)=>a+(e.questions||0),0);
+    const d=se.reduce((a,e)=>a+(e.correct||0),0);
+    const y=se.reduce((a,e)=>a+(e.wrong||0),0);
+    const net=se.reduce((a,e)=>a+(e.net||0),0);
+    const dur=se.reduce((a,e)=>a+(e.duration||0),0);
+    const pct=q>0?Math.round(d/q*100):0;
+    return {...s,q,d,y,net,dur,pct};
+  });
+
+  // Header
+  doc.setFillColor(108,99,255); doc.rect(0,0,210,38,'F');
+  doc.setFillColor(67,233,123); doc.rect(0,36,210,3,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(255,255,255);
+  doc.text('LGSKoc - Ogrenci Bireysel Analiz', 105,14,{align:'center'});
+  doc.setFontSize(11); doc.setFont('helvetica','normal');
+  doc.text(`${sName} | ${pLabel} Rapor | ${now.toLocaleDateString('tr-TR')}`,105,26,{align:'center'});
+
+  let y=48;
+
+  // Özet kutular
+  const stats=[['Sure(dk)',totalDur],['Soru',totalQ],['Dogru',totalD],['Yanlis',totalY],['Net',totalNet.toFixed(1)],['Aktif Gun',activeDays]];
+  const bw=28,bh=16,bx=14,gap=4;
+  stats.forEach((s,i)=>{
+    const x=bx+i*(bw+gap);
+    doc.setFillColor(245,245,255); doc.roundedRect(x,y,bw,bh,2,2,'F');
+    doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(108,99,255);
+    doc.text(String(s[1]),x+bw/2,y+10,{align:'center'});
+    doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(100,100,120);
+    doc.text(s[0],x+bw/2,y+15,{align:'center'});
+  });
+  y+=24;
+
+  // Ders tablosu
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(30,30,50);
+  doc.text('Ders Bazli Analiz',14,y); y+=7;
+  const headers=['Ders','Sure(dk)','Soru','Dogru','Yanlis','Net','%Isabet'];
+  const colW=[40,22,18,18,18,16,22];
+  let cx=14;
+  doc.setFillColor(108,99,255);
+  headers.forEach((h,i)=>{doc.rect(cx,y,colW[i],7,'F');cx+=colW[i];});
+  doc.setTextColor(255,255,255); doc.setFontSize(8);
+  cx=14; headers.forEach((h,i)=>{doc.text(h,cx+colW[i]/2,y+5,{align:'center'});cx+=colW[i];});
+  y+=7;
+  subStats.forEach((s,idx)=>{
+    const row=[s.name,s.dur,s.q,s.d,s.y,s.net.toFixed(1),'%'+s.pct];
+    doc.setFillColor(idx%2===0?248:255,idx%2===0?248:255,idx%2===0?252:255);
+    cx=14; colW.forEach(w=>{doc.rect(cx,y,w,6,'F');cx+=w;});
+    doc.setTextColor(30,30,50); doc.setFontSize(8);
+    cx=14; row.forEach((v,i)=>{doc.text(String(v),cx+colW[i]/2,y+4.5,{align:'center'});cx+=colW[i];});
+    y+=6;
+  });
+  y+=8;
+
+  // Trend bar chart (son 7 gün) — metin tablo olarak
+  if (studentAnalysisPeriod!=='daily') {
+    if(y>240){doc.addPage();y=20;}
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(30,30,50);
+    doc.text('Son 7 Gunluk Aktivite',14,y);y+=7;
+    const allE=studyEntries.filter(e=>e.studentName===sName);
+    const days7=[];
+    for(let i=6;i>=0;i--){
+      const d=new Date(now);d.setDate(now.getDate()-i);
+      const dk=d.toISOString().split('T')[0];
+      const de=allE.filter(e=>e.dateKey===dk);
+      days7.push({label:d.toLocaleDateString('tr-TR',{weekday:'short',day:'numeric'}),
+        q:de.reduce((a,e)=>a+(e.questions||0),0),
+        dur:de.reduce((a,e)=>a+(e.duration||0),0),
+        net:de.reduce((a,e)=>a+(e.net||0),0)});
+    }
+    const dW=24,dH=8,dX=14,dGap=2;
+    ['Gun','Soru','Sure(dk)','Net'].forEach((h,i)=>{
+      doc.setFillColor(108,99,255);doc.rect(dX+i*(dW+dGap),y,dW,dH,'F');
+      doc.setTextColor(255,255,255);doc.setFontSize(8);
+      doc.text(h,dX+i*(dW+dGap)+dW/2,y+5.5,{align:'center'});
+    });
+    y+=dH;
+    days7.forEach((d,idx)=>{
+      const row=[d.label,d.q,d.dur,d.net.toFixed(1)];
+      doc.setFillColor(idx%2===0?248:255,idx%2===0?248:255,idx%2===0?252:255);
+      row.forEach((v,i)=>{doc.rect(dX+i*(dW+dGap),y,dW,6,'F');});
+      doc.setTextColor(30,30,50);doc.setFontSize(8);
+      row.forEach((v,i)=>{doc.text(String(v),dX+i*(dW+dGap)+dW/2,y+4.5,{align:'center'});});
+      y+=6;
+    });
+    y+=8;
+  }
+
+  // Yorum
+  if(y>240){doc.addPage();y=20;}
+  doc.setFillColor(245,245,255);doc.roundedRect(14,y,182,7,2,2,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(108,99,255);
+  doc.text('Koc Degerlendirmesi',105,y+5,{align:'center'});y+=11;
+  const rawComment=generateStudentComment(sName,filtered,subStats,totalDur,totalQ,totalNet,activeDays,studentAnalysisPeriod)
+    .replace(/<b>/g,'').replace(/<\/b>/g,'').replace(/<br><br>/g,'\n').replace(/<[^>]+>/g,'');
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(40,40,60);
+  const lines=doc.splitTextToSize(rawComment,182);
+  lines.forEach(l=>{if(y>280){doc.addPage();y=20;}doc.text(l,14,y);y+=5;});
+
+  // Footer
+  doc.setFillColor(108,99,255);doc.rect(0,287,210,10,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(8);
+  doc.text('LGSKoc Ogretmen Paneli | '+now.toLocaleDateString('tr-TR'),105,293,{align:'center'});
+
+  doc.save(`${sName.replace(/ /g,'_')}_${pLabel}_${todayKey}.pdf`);
+  showToast('📄','PDF hazırlandı!');
 }
 
 function teacherAnalysis() {
@@ -2290,39 +2680,72 @@ function notificationsPage() {
     </div>`;
 }
 
-async function loadNotifications() {
+let notifUnsubscribe = null; // Firestore realtime listener
+
+function startNotifListener() {
+  const myUid = (window.currentUserData||{}).uid || '';
+  if (!myUid) return;
+  // Önceki listener varsa kapat
+  if (notifUnsubscribe) { notifUnsubscribe(); notifUnsubscribe = null; }
+  try {
+    notifUnsubscribe = db.collection('notifications')
+      .where('toUid','==',myUid)
+      .onSnapshot(snap => {
+        const notifs = [];
+        snap.forEach(d => notifs.push({ ...d.data(), id: d.id }));
+        notifs.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+        if (currentRole === 'teacher') teacherNotifs = notifs;
+        else studentNotifs = notifs;
+        updateNotifBadge();
+      }, err => {
+        // onSnapshot başarısız olursa tek seferlik fetch dene
+        loadNotificationsOnce();
+      });
+  } catch(e) { loadNotificationsOnce(); }
+}
+
+async function loadNotificationsOnce() {
   const myUid = (window.currentUserData||{}).uid || '';
   if (!myUid) return;
   try {
-    const snap = await db.collection('notifications')
-      .where('toUid','==',myUid).get();
+    const snap = await db.collection('notifications').where('toUid','==',myUid).get();
     const notifs = [];
     snap.forEach(d => notifs.push({ ...d.data(), id: d.id }));
     notifs.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
     if (currentRole === 'teacher') teacherNotifs = notifs;
     else studentNotifs = notifs;
-    // Badge güncelle
     updateNotifBadge();
-  } catch(e) { console.log('Bildirim yükleme hatası:', e.message); }
+  } catch(e) { console.log('Bildirim hatası:', e.message); }
 }
+
+// Geriye dönük uyumluluk için alias
+async function loadNotifications() { loadNotificationsOnce(); }
 
 function updateNotifBadge() {
   const notifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
   const unread = notifs.filter(n => !n.read).length;
   const badge = document.getElementById('notifBadge');
-  if (badge) {
-    if (unread > 0) {
-      badge.textContent = unread > 9 ? '9+' : unread;
-      badge.style.display = 'flex';
-    } else {
-      badge.style.display = 'none';
-    }
+  if (!badge) return;
+  if (unread > 0) {
+    badge.textContent = unread > 9 ? '9+' : String(unread);
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
   }
-  // Mobile nav bildirim badge
-  const mobileNotifBtns = document.querySelectorAll('.mobile-nav-item');
-  mobileNotifBtns.forEach(btn => {
-    if (btn.onclick && btn.onclick.toString().includes('notifs')) {
-      // handled via renderMobileNav
+  // Mobile nav'daki bildirim butonuna da badge ekle
+  const navBtns = document.querySelectorAll('.mobile-nav-item');
+  navBtns.forEach(btn => {
+    if (btn.textContent.includes('Bildirim') || btn.textContent.includes('🔔')) {
+      let dot = btn.querySelector('.nav-notif-dot');
+      if (unread > 0) {
+        if (!dot) {
+          dot = document.createElement('span');
+          dot.className = 'nav-notif-dot';
+          dot.style.cssText = 'position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--accent2);border-radius:50%;';
+          btn.style.position = 'relative';
+          btn.appendChild(dot);
+        }
+      } else if (dot) { dot.remove(); }
     }
   });
 }
