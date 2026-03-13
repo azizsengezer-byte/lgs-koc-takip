@@ -607,14 +607,37 @@
     <!-- Deneme Sınavı için tüm dersler -->
     <div id="denemeFields" style="display:none">
       <div style="font-size:0.82rem;color:var(--text2);margin-bottom:12px">Her dersin doğru ve yanlış sayısını gir:</div>
-      ${subjects.map(s=>`
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="width:80px;font-size:0.82rem;font-weight:700;color:var(--${s.cls})">${s.icon} ${s.name.split(' ')[0]}</div>
-          <input class="form-input" type="number" placeholder="D" min="0" id="deneme_d_${s.name}" style="flex:1;padding:8px">
-          <input class="form-input" type="number" placeholder="Y" min="0" id="deneme_y_${s.name}" style="flex:1;padding:8px">
-        </div>
-      `).join('')}
-      <div style="font-size:0.75rem;color:var(--text2)">D = Doğru, Y = Yanlış</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:90px;font-size:0.82rem;font-weight:700;color:var(--turkish)">📖 Türkçe</div>
+        <input class="form-input" type="number" placeholder="Doğru" min="0" id="deneme_d_Türkçe" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Yanlış" min="0" id="deneme_y_Türkçe" style="flex:1;padding:8px">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:90px;font-size:0.82rem;font-weight:700;color:var(--math)">📐 Matematik</div>
+        <input class="form-input" type="number" placeholder="Doğru" min="0" id="deneme_d_Matematik" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Yanlış" min="0" id="deneme_y_Matematik" style="flex:1;padding:8px">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:90px;font-size:0.82rem;font-weight:700;color:var(--science)">🔬 Fen</div>
+        <input class="form-input" type="number" placeholder="Doğru" min="0" id="deneme_d_Fen Bilimleri" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Yanlış" min="0" id="deneme_y_Fen Bilimleri" style="flex:1;padding:8px">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:90px;font-size:0.82rem;font-weight:700;color:var(--history)">🏛️ İnkılap</div>
+        <input class="form-input" type="number" placeholder="Doğru" min="0" id="deneme_d_İnkılap Tarihi" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Yanlış" min="0" id="deneme_y_İnkılap Tarihi" style="flex:1;padding:8px">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:90px;font-size:0.82rem;font-weight:700;color:var(--religion)">☪️ Din</div>
+        <input class="form-input" type="number" placeholder="Doğru" min="0" id="deneme_d_Din Kültürü" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Yanlış" min="0" id="deneme_y_Din Kültürü" style="flex:1;padding:8px">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="width:90px;font-size:0.82rem;font-weight:700;color:var(--english)">🌍 İngilizce</div>
+        <input class="form-input" type="number" placeholder="Doğru" min="0" id="deneme_d_İngilizce" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Yanlış" min="0" id="deneme_y_İngilizce" style="flex:1;padding:8px">
+      </div>
+      <div style="font-size:0.75rem;color:var(--text2);margin-top:4px">Boş bıraktığın dersler hesaba katılmaz.</div>
     </div>
 
     <div class="form-group" style="margin-top:8px">
@@ -1095,8 +1118,32 @@ function renderTeacherPage(id, el) {
   else if(id==='students') el.innerHTML = teacherStudents();
   else if(id==='analysis') el.innerHTML = teacherAnalysis();
   else if(id==='tasks-teacher') el.innerHTML = teacherTasks();
-  else if(id==='messages') el.innerHTML = messagesPage('teacher');
-  else if(id==='notifs') el.innerHTML = notificationsPage();
+  else if(id==='messages') {
+    // Mesaj sayfası açılınca aktif sohbeti yükle
+    const myData = window.currentUserData || {};
+    const myUid = myData.uid || '';
+    let partners = [];
+    if (currentRole === 'teacher') partners = students.map(s=>({uid:s.uid}));
+    else if (myData.teacherId) partners = [{uid: myData.teacherId}];
+    if (!activeChat && partners.length > 0) activeChat = partners[0].uid;
+    if (activeChat && myUid) {
+      const cId = convId(myUid, activeChat);
+      if (!chatMessages[cId]) {
+        db.collection('messages').doc(cId).collection('msgs')
+          .orderBy('createdAt','asc').limit(100).get()
+          .then(snap => {
+            chatMessages[cId] = [];
+            snap.forEach(d => chatMessages[cId].push(d.data()));
+            el.innerHTML = messagesPage('teacher');
+            setTimeout(()=>{ const cm=document.getElementById('chatMessages'); if(cm) cm.scrollTop=cm.scrollHeight; }, 50);
+          }).catch(()=>{ el.innerHTML = messagesPage('teacher'); });
+        el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text2)">💬 Mesajlar yükleniyor...</div>`;
+        return;
+      }
+    }
+    el.innerHTML = messagesPage('teacher');
+  }
+  else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
   else if(id==='profile') el.innerHTML = profilePage();
   setTimeout(()=>drawCharts(), 50);
 }
@@ -1201,6 +1248,10 @@ function teacherDashboard() {
 }
 
 function teacherStudents() {
+  const todayKey = new Date().toISOString().split('T')[0];
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+  const weekKey = weekAgo.toISOString().split('T')[0];
+
   return `
     <div class="page-title">👥 Öğrencilerim</div>
     <div class="page-sub">Koçluk takibindeki öğrenciler</div>
@@ -1215,23 +1266,41 @@ function teacherStudents() {
           <div style="font-weight:700;margin-bottom:8px">Henüz öğrenci eklenmedi</div>
           <div style="font-size:0.85rem">+ Öğrenci Ekle butonuna basarak başla</div>
         </div>
-      ` : students.map((s,i)=>`
+      ` : students.map((s,i)=>{
+        const sEntries = studyEntries.filter(e=>e.studentName===s.name);
+        const weekEntries = sEntries.filter(e=>e.dateKey>=weekKey);
+        const activeDays = new Set(weekEntries.map(e=>e.dateKey)).size;
+        const totalQ = sEntries.reduce((a,e)=>a+(e.questions||0),0);
+        const totalNet = sEntries.reduce((a,e)=>a+(e.net||0),0);
+        const avgNet = weekEntries.length > 0
+          ? (weekEntries.reduce((a,e)=>a+(e.net||0),0) / weekEntries.length).toFixed(1)
+          : 0;
+        const isActiveToday = sEntries.some(e=>e.dateKey===todayKey);
+        const pendingTasks = tasks.filter(t=>t.studentName===s.name && !t.done).length;
+        // Durum: son 7 günde 4+ gün aktifse İyi, 2-3 gün Normal, <2 gün Dikkat
+        const status = activeDays >= 4 ? 'good' : activeDays >= 2 ? 'normal' : 'warn';
+        const statusBadge = status==='good'
+          ? `<span class="badge badge-green">✅ Aktif</span>`
+          : status==='normal'
+          ? `<span class="badge badge-yellow">📊 Normal</span>`
+          : `<span class="badge badge-red">⚠️ Dikkat!</span>`;
+        return `
         <div class="student-row">
           <div class="student-avatar" style="background:${s.color}20;color:${s.color};font-size:1.1rem">${s.name[0]}</div>
-          <div class="student-info">
+          <div class="student-info" style="flex:1">
             <div class="student-name">${s.name}</div>
-            <div class="student-meta">Son aktif: ${s.lastActive}</div>
+            <div class="student-meta">Bu hafta ${activeDays} gün • ${totalQ} soru • Net ort: ${avgNet}</div>
+            <div style="font-size:0.72rem;color:var(--text2)">${pendingTasks} bekleyen görev • ${isActiveToday?'✅ Bugün aktif':'⏳ Bugün giriş yok'}</div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span class="badge ${s.avg>=80?'badge-green':s.avg>=70?'badge-yellow':'badge-red'}">${s.avg>=80?'İyi Gidiyor':s.avg>=70?'Normal':'Dikkat!'}</span>
-            <div class="student-score" style="color:${s.avg>=80?'var(--accent3)':s.avg>=70?'var(--accent4)':'var(--accent2)'}">${s.avg}</div>
-            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem;color:#ff6584;border-color:#ff6584" onclick="deleteStudent(${i})">🗑️</button>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            ${statusBadge}
+            <button class="btn btn-outline" style="padding:4px 10px;font-size:0.75rem;color:#ff6584;border-color:#ff6584" onclick="deleteStudent(${i})">🗑️</button>
           </div>
-        </div>
-      `).join('')}
+        </div>`;
+      }).join('')}
     </div>
     <div style="margin-top:20px" class="card">
-      <div class="card-title">📊 Öğrenci Karşılaştırma</div>
+      <div class="card-title">📊 Öğrenci Karşılaştırma (Bu Hafta Soru)</div>
       <canvas id="compareChart" height="160"></canvas>
     </div>
   `;
@@ -1342,8 +1411,29 @@ function renderStudentPage(id, el) {
   else if(id==='my-analysis') el.innerHTML = studentAnalysis();
   else if(id==='kazanimlar') el.innerHTML = studentKazanimlar();
   else if(id==='my-tasks') el.innerHTML = studentTasks();
-  else if(id==='messages') el.innerHTML = messagesPage('student');
-  else if(id==='notifs') el.innerHTML = notificationsPage();
+  else if(id==='messages') {
+    const myData = window.currentUserData || {};
+    const myUid = myData.uid || '';
+    const tId = myData.teacherId || '';
+    if (!activeChat && tId) activeChat = tId;
+    if (activeChat && myUid) {
+      const cId = convId(myUid, activeChat);
+      if (!chatMessages[cId]) {
+        db.collection('messages').doc(cId).collection('msgs')
+          .orderBy('createdAt','asc').limit(100).get()
+          .then(snap => {
+            chatMessages[cId] = [];
+            snap.forEach(d => chatMessages[cId].push(d.data()));
+            el.innerHTML = messagesPage('student');
+            setTimeout(()=>{ const cm=document.getElementById('chatMessages'); if(cm) cm.scrollTop=cm.scrollHeight; }, 50);
+          }).catch(()=>{ el.innerHTML = messagesPage('student'); });
+        el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text2)">💬 Mesajlar yükleniyor...</div>`;
+        return;
+      }
+    }
+    el.innerHTML = messagesPage('student');
+  }
+  else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
   else if(id==='profile') el.innerHTML = profilePage();
   setTimeout(()=>drawCharts(), 50);
 }
@@ -1938,11 +2028,13 @@ function messagesPage(role) {
     </div>`;
   }).join('');
 
-  const msgsHTML = msgs.map(m => {
+  const msgsHTML = msgs.map((m,i) => {
     const mine = m.senderUid === myUid;
+    const isLast = mine && i === msgs.length - 1;
+    const seenTick = mine ? ` <span style="font-size:0.62rem;color:${m.seen?'var(--accent3)':'var(--text2)'}">${m.seen?'✓✓':'✓'}</span>` : '';
     return `<div class="msg ${mine?'mine':'theirs'}">
       <div class="msg-bubble">${m.text}</div>
-      <div class="msg-time">${m.time||''}</div>
+      <div class="msg-time">${m.time||''}${seenTick}</div>
     </div>`;
   }).join('');
 
@@ -1976,14 +2068,13 @@ async function switchChatTo(uid, role) {
   activeChat = uid;
   const myUid = (window.currentUserData || {}).uid || '';
   const cId = convId(myUid, uid);
-  if (!chatMessages[cId]) {
-    try {
-      const snap = await db.collection('messages').doc(cId).collection('msgs')
-        .orderBy('createdAt','asc').limit(100).get();
-      chatMessages[cId] = [];
-      snap.forEach(d => chatMessages[cId].push(d.data()));
-    } catch(e) { chatMessages[cId] = []; }
-  }
+  try {
+    const snap = await db.collection('messages').doc(cId).collection('msgs')
+      .orderBy('createdAt','asc').limit(100).get();
+    chatMessages[cId] = [];
+    snap.forEach(d => chatMessages[cId].push(d.data()));
+  } catch(e) { chatMessages[cId] = chatMessages[cId] || []; }
+  markMessagesAsSeen(uid);
   showPage('messages');
   setTimeout(()=>{ const el=document.getElementById('chatMessages'); if(el) el.scrollTop=el.scrollHeight; },80);
 }
@@ -1996,18 +2087,21 @@ async function sendMessage(role) {
   const myUid = myData.uid || '';
   const cId = convId(myUid, activeChat);
   const time = new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
-  const msg = { text, senderUid: myUid, senderName: myData.name||'', time,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+  const msgId = Date.now().toString();
+  const msg = { id: msgId, text, senderUid: myUid, senderName: myData.name||'', time,
+    seen: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
 
   if (!chatMessages[cId]) chatMessages[cId] = [];
   chatMessages[cId].push({ ...msg, createdAt: { seconds: Date.now()/1000 } });
   input.value = '';
 
+  // DOM'a ekle
   const msgEl = document.getElementById('chatMessages');
   if (msgEl) {
     const div = document.createElement('div');
     div.className = 'msg mine';
-    div.innerHTML = `<div class="msg-bubble">${text}</div><div class="msg-time">${time}</div>`;
+    div.id = 'msg_' + msgId;
+    div.innerHTML = `<div class="msg-bubble">${text}</div><div class="msg-time">${time} <span class="seen-status" style="font-size:0.65rem;color:var(--text2)">✓</span></div>`;
     msgEl.appendChild(div);
     msgEl.scrollTop = msgEl.scrollHeight;
   }
@@ -2019,9 +2113,27 @@ async function sendMessage(role) {
       toUid: activeChat,
       text: `💬 ${myData.name||'Biri'}: "${text.substring(0,40)}"`,
       type: 'message', read: false, time,
+      fromUid: myUid,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch(e) { console.log('Mesaj hatası:', e.message); }
+}
+
+// Mesajları okunan olarak işaretle (sohbet açıldığında)
+async function markMessagesAsSeen(partnerUid) {
+  const myUid = (window.currentUserData||{}).uid || '';
+  if (!myUid || !partnerUid) return;
+  const cId = convId(myUid, partnerUid);
+  try {
+    // Kendi notiflerindeki bu kişiden gelen mesajları okundu işaretle
+    const snap = await db.collection('notifications')
+      .where('toUid','==',myUid).where('fromUid','==',partnerUid).where('read','==',false).get();
+    snap.forEach(d => d.ref.update({ read: true }));
+    // Local güncelle
+    const notifs = currentRole==='teacher' ? teacherNotifs : studentNotifs;
+    notifs.forEach(n => { if(n.fromUid===partnerUid) n.read=true; });
+    updateNotifBadge();
+  } catch(e) {}
 }
 
 function profilePage() {
@@ -2189,7 +2301,30 @@ async function loadNotifications() {
     notifs.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
     if (currentRole === 'teacher') teacherNotifs = notifs;
     else studentNotifs = notifs;
+    // Badge güncelle
+    updateNotifBadge();
   } catch(e) { console.log('Bildirim yükleme hatası:', e.message); }
+}
+
+function updateNotifBadge() {
+  const notifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
+  const unread = notifs.filter(n => !n.read).length;
+  const badge = document.getElementById('notifBadge');
+  if (badge) {
+    if (unread > 0) {
+      badge.textContent = unread > 9 ? '9+' : unread;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  // Mobile nav bildirim badge
+  const mobileNotifBtns = document.querySelectorAll('.mobile-nav-item');
+  mobileNotifBtns.forEach(btn => {
+    if (btn.onclick && btn.onclick.toString().includes('notifs')) {
+      // handled via renderMobileNav
+    }
+  });
 }
 
 /* =================== HELPERS =================== */
@@ -2769,37 +2904,59 @@ function showToast(icon, msg) {
 
 /* =================== CHARTS =================== */
 function drawCharts() {
-  // Week chart - empty (no real data yet)
+  const now = new Date();
+  const todayKey = now.toISOString().split('T')[0];
+
+  // Son 7 günlük veri
+  const last7 = [];
+  for (let i=6;i>=0;i--) {
+    const d = new Date(now); d.setDate(now.getDate()-i);
+    const dk = d.toISOString().split('T')[0];
+    last7.push(studyEntries.filter(e=>e.dateKey===dk).reduce((a,e)=>a+(e.questions||0),0));
+  }
+
+  // Week chart - gerçek soru sayısı
   const wc = document.getElementById('weekChart');
-  if(wc && !wc._drawn) {
+  if(wc) {
+    wc._drawn = false; // her seferinde yenile
     wc._drawn = true;
     const ctx = wc.getContext('2d');
-    drawLineChart(ctx, wc.width, 120, [0,0,0,0,0,0,0], '#6c63ff');
+    drawLineChart(ctx, wc.width, 100, last7.length ? last7 : [0,0,0,0,0,0,0], '#6c63ff');
   }
-  // Compare chart - real student data
+
+  // Compare chart - öğrenci bazlı bu hafta soru
   const cc = document.getElementById('compareChart');
-  if(cc && !cc._drawn) {
+  if(cc) {
     cc._drawn = true;
     const ctx = cc.getContext('2d');
+    const weekAgo = new Date(now); weekAgo.setDate(now.getDate()-7);
+    const weekKey = weekAgo.toISOString().split('T')[0];
     if (students.length > 0) {
-      drawBarChart(ctx, cc.width, 160, students.map(s=>s.name.split(' ')[0]), students.map(s=>s.avg));
+      const names = students.map(s=>s.name.split(' ')[0]);
+      const vals = students.map(s=>
+        studyEntries.filter(e=>e.studentName===s.name && e.dateKey>=weekKey)
+          .reduce((a,e)=>a+(e.questions||0),0)
+      );
+      drawBarChart(ctx, cc.width, 160, names, vals);
     } else {
-      drawBarChart(ctx, cc.width, 160, [''], [0]);
+      drawBarChart(ctx, cc.width, 160, ['Öğrenci Yok'], [0]);
     }
   }
-  // Trend chart - empty
+
+  // Trend chart (analysis page) - son 7 gün
   const tc = document.getElementById('trendChart');
-  if(tc && !tc._drawn) {
+  if(tc) {
     tc._drawn = true;
     const ctx = tc.getContext('2d');
-    drawLineChart(ctx, tc.width, 220, [0,0,0,0,0,0,0], '#43e97b');
+    drawLineChart(ctx, tc.width, 180, last7, '#43e97b');
   }
-  // Student trend - empty
+
+  // Student trend chart
   const st = document.getElementById('studentTrend');
-  if(st && !st._drawn) {
+  if(st) {
     st._drawn = true;
     const ctx = st.getContext('2d');
-    drawLineChart(ctx, st.width, 200, [0,0,0,0,0,0,0], '#6c63ff');
+    drawLineChart(ctx, st.width, 200, last7, '#6c63ff');
   }
 }
 
