@@ -473,7 +473,7 @@
         <span style="font-size:1.3rem;">🔔</span>
         <span id="notifBadge" style="position:absolute;top:-4px;right:-4px;background:var(--accent2);color:#fff;font-size:0.6rem;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;">3</span>
       </div>
-      <div class="header-user">
+      <div class="header-user" onclick="showPage('profile')" style="cursor:pointer">
         <div class="avatar" id="headerAvatar">A</div>
         <div>
           <div class="header-name" id="headerName">Ahmet Hoca</div>
@@ -807,6 +807,7 @@ function renderTeacherPage(id, el) {
   else if(id==='tasks-teacher') el.innerHTML = teacherTasks();
   else if(id==='messages') el.innerHTML = messagesPage('teacher');
   else if(id==='notifs') el.innerHTML = notificationsPage();
+  else if(id==='profile') el.innerHTML = profilePage();
   setTimeout(()=>drawCharts(), 50);
 }
 
@@ -862,13 +863,23 @@ function teacherDashboard() {
       <div class="card">
         <div class="card-title">📅 Bu Hafta Aktivite</div>
         <div class="week-grid">
-          ${weekDays.map((d,i)=>`
-            <div class="day-cell ${i<4?'has-data':''} ${i===2?'today':''}">
-              <div class="day-name">${d}</div>
-              <div class="day-num">${10+i}</div>
-              ${i<4?'<div class="day-dot"></div>':''}
-            </div>
-          `).join('')}
+          ${(()=>{
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon...
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - (dayOfWeek===0?6:dayOfWeek-1));
+            return weekDays.map((d,i)=>{
+              const day = new Date(monday);
+              day.setDate(monday.getDate()+i);
+              const isToday = day.toDateString()===today.toDateString();
+              const isPast = day < today && !isToday;
+              return `<div class="day-cell ${isPast?'has-data':''} ${isToday?'today':''}">
+                <div class="day-name">${d}</div>
+                <div class="day-num">${day.getDate()}</div>
+                ${isPast?'<div class="day-dot"></div>':''}
+              </div>`;
+            }).join('');
+          })()}
         </div>
         <div style="margin-top:16px">
           <canvas id="weekChart" class="mini-chart" height="120"></canvas>
@@ -911,10 +922,10 @@ function teacherStudents() {
             <div class="student-name">${s.name}</div>
             <div class="student-meta">Son aktif: ${s.lastActive}</div>
           </div>
-          <div style="display:flex;align-items:center;gap:12px">
+          <div style="display:flex;align-items:center;gap:8px">
             <span class="badge ${s.avg>=80?'badge-green':s.avg>=70?'badge-yellow':'badge-red'}">${s.avg>=80?'İyi Gidiyor':s.avg>=70?'Normal':'Dikkat!'}</span>
             <div class="student-score" style="color:${s.avg>=80?'var(--accent3)':s.avg>=70?'var(--accent4)':'var(--accent2)'}">${s.avg}</div>
-            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showToast('📊','${s.name} detaylı analiz açıldı')">Detay</button>
+            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem;color:#ff6584;border-color:#ff6584" onclick="deleteStudent(${i})">🗑️</button>
           </div>
         </div>
       `).join('')}
@@ -1013,6 +1024,7 @@ function renderStudentPage(id, el) {
   else if(id==='my-tasks') el.innerHTML = studentTasks();
   else if(id==='messages') el.innerHTML = messagesPage('student');
   else if(id==='notifs') el.innerHTML = notificationsPage();
+  else if(id==='profile') el.innerHTML = profilePage();
   setTimeout(()=>drawCharts(), 50);
 }
 
@@ -1230,42 +1242,10 @@ function studentTasks() {
 
 /* =================== MESSAGING =================== */
 let activeChat = 0;
-const conversations = [
-  {
-    id:0, name:'Zeynep Kaya', color:'#6c63ff', unread:2, lastMsg:'Hoca bu konuyu anlamadım...',
-    messages:[
-      {from:'student', text:'Hocam merhaba! Olasılık konusunda takıldım, yardımcı olabilir misiniz?', time:'09:15'},
-      {from:'teacher', text:'Tabii Zeynep, hangi kısımda takıldın?', time:'09:18'},
-      {from:'student', text:'Permütasyon ve kombinasyon farkını karıştırıyorum sürekli.', time:'09:20'},
-      {from:'teacher', text:'Kolay bir kural: sıra önemliyse permütasyon, değilse kombinasyon. Yarın bunu ödev olarak ekliyorum sana.', time:'09:25'},
-      {from:'student', text:'Çok teşekkürler hocam! Hoca bu konuyu anlamadım...', time:'10:02'},
-    ]
-  },
-  {
-    id:1, name:'Emre Demir', color:'#ff6584', unread:0, lastMsg:'Tamam hocam, yarın yapacağım.',
-    messages:[
-      {from:'teacher', text:'Emre, 2 gündür giriş yapmıyorsun. Sorun var mı?', time:'Dün 16:00'},
-      {from:'student', text:'Özür dilerim hocam, hasta oldum.', time:'Dün 18:30'},
-      {from:'teacher', text:'Geçmiş olsun! İyileşince telafi ederiz, acele etme.', time:'Dün 18:35'},
-      {from:'student', text:'Tamam hocam, yarın yapacağım.', time:'Dün 19:00'},
-    ]
-  },
-  {
-    id:2, name:'Selin Yıldız', color:'#43e97b', unread:1, lastMsg:'Sınav nasıl geçti?',
-    messages:[
-      {from:'student', text:'Hocam deneme sınavında Türkçe\'den 32 doğru yaptım!', time:'11:00'},
-      {from:'teacher', text:'Harika Selin! Geçen ay 24\'tü, çok iyi gelişme 🎉', time:'11:05'},
-      {from:'student', text:'Sınav nasıl geçti?', time:'11:10'},
-    ]
-  },
-  {
-    id:3, name:'Mert Çelik', color:'#f9ca24', unread:0, lastMsg:'Anlıyorum hocam.',
-    messages:[
-      {from:'teacher', text:'Mert, Fen ödevini teslim etmedin. Bugün içinde gönderir misin?', time:'08:30'},
-      {from:'student', text:'Anlıyorum hocam.', time:'08:45'},
-    ]
-  },
-];
+let teacherNotifs = [];
+let studentNotifs = [];
+
+const conversations = [];
 
 function messagesPage(role) {
   const isTeacher = role==='teacher';
@@ -1380,19 +1360,78 @@ function sendMessage(role) {
   }
 }
 
+function profilePage() {
+  const user = auth.currentUser;
+  const name = document.getElementById('headerName').textContent;
+  const role = currentRole === 'teacher' ? 'Koç Öğretmen' : '8. Sınıf Öğrencisi';
+  return `
+    <div class="page-title">👤 Profilim</div>
+    <div class="page-sub">Hesap bilgileri ve ayarlar</div>
+    <div class="card" style="text-align:center;padding:32px 20px">
+      <div class="avatar" style="width:72px;height:72px;font-size:1.8rem;margin:0 auto 16px">${name[0].toUpperCase()}</div>
+      <div style="font-size:1.2rem;font-weight:800;margin-bottom:4px">${name}</div>
+      <div style="color:var(--accent);font-size:0.88rem;font-weight:600">${role}</div>
+      <div style="color:var(--text2);font-size:0.82rem;margin-top:4px">${user ? user.email : ''}</div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">⚙️ Ayarlar</div>
+      <div class="form-group">
+        <label class="form-label">Ad Soyad</label>
+        <input class="form-input" type="text" id="profileName" value="${name}">
+      </div>
+      <div id="profileError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="saveProfile()">Kaydet ✓</button>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">🔒 Şifre Değiştir</div>
+      <div class="form-group">
+        <label class="form-label">Yeni Şifre</label>
+        <input class="form-input" type="password" id="newPassword" placeholder="En az 6 karakter">
+      </div>
+      <div id="passwordError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
+      <button class="btn btn-outline" style="width:100%" onclick="changePassword()">Şifreyi Güncelle</button>
+    </div>
+  `;
+}
+
+async function saveProfile() {
+  const name = document.getElementById('profileName').value.trim();
+  const errEl = document.getElementById('profileError');
+  errEl.style.display = 'none';
+  if (!name) { errEl.textContent = 'İsim boş olamaz.'; errEl.style.display='block'; return; }
+  const user = auth.currentUser;
+  if (user) {
+    await db.collection('users').doc(user.uid).update({ name });
+    document.getElementById('headerName').textContent = name;
+    document.getElementById('headerAvatar').textContent = name[0].toUpperCase();
+    showToast('✅', 'Profil güncellendi!');
+    showPage('profile');
+  }
+}
+
+async function changePassword() {
+  const pass = document.getElementById('newPassword').value;
+  const errEl = document.getElementById('passwordError');
+  errEl.style.display = 'none';
+  if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
+  try {
+    await auth.currentUser.updatePassword(pass);
+    showToast('✅', 'Şifre güncellendi!');
+    document.getElementById('newPassword').value = '';
+  } catch(e) {
+    errEl.textContent = 'Şifre güncellenemedi. Tekrar giriş yapıp deneyin.';
+    errEl.style.display = 'block';
+  }
+}
+
 function notificationsPage() {
-  const notifs = [
-    { text:'Koçunuz yeni bir görev atadı: "Matematik Test 15"', time:'5 dk önce', read:false },
-    { text:'Zeynep Kaya bugünkü çalışma girişini tamamladı', time:'2 saat önce', read:false },
-    { text:'Emre Demir 2 gündür giriş yapmadı, hatırlatma gönderildi', time:'3 saat önce', read:false },
-    { text:'Selin Yıldız tüm ödevleri teslim etti 🎉', time:'1 gün önce', read:true },
-    { text:'Haftalık analiz raporu hazır, inceleyebilirsiniz', time:'2 gün önce', read:true },
-  ];
+  const notifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
   return `
     <div class="page-title">🔔 Bildirimler</div>
     <div class="page-sub">Son aktiviteler ve güncellemeler</div>
     <div class="card">
-      ${notifs.map(n=>`
+      ${notifs.length === 0 ? `<div style="text-align:center;padding:30px;color:var(--text2)">Henüz bildirim yok</div>` :
+      notifs.map(n=>`
         <div class="notif-item">
           <div class="notif-dot ${n.read?'read':''}"></div>
           <div>
@@ -1436,6 +1475,22 @@ function saveEntry() {
   closeModal('addEntryModal');
   showToast('✅', `${sub} girişi kaydedildi! Koçun bildirim aldı.`);
   showPage('daily-entry');
+}
+
+async function deleteStudent(i) {
+  const s = students[i];
+  if (!confirm(`${s.name} silinsin mi?`)) return;
+  students.splice(i, 1);
+  // Firestore'dan da sil
+  const user = auth.currentUser;
+  if (user) {
+    const snap = await db.collection('pendingStudents')
+      .where('teacherId','==',user.uid)
+      .where('name','==',s.name).get();
+    snap.forEach(doc => doc.ref.delete());
+  }
+  showToast('🗑️', `${s.name} silindi.`);
+  showPage('students');
 }
 
 async function saveNewStudent() {
