@@ -613,8 +613,8 @@ const subjects = [
 let students = [];
 
 const weekDays = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
-const subjectProgress = [78, 85, 62, 71, 88, 55];
-const subjectProgressT = [72, 68, 80, 65, 90, 58];
+const subjectProgress = [0, 0, 0, 0, 0, 0];
+const subjectProgressT = [0, 0, 0, 0, 0, 0];
 
 const kazanimlar = {
   'Türkçe': ['Sözcük Türleri','Cümle Türleri','Paragraf Analizi','Anlatım Bozukluğu','Noktalama','Yazım Kuralları','Söz Sanatları','Metin Türleri'],
@@ -651,17 +651,9 @@ function renderMobileNav() {
     </button>`).join('')}</div>`;
 }
 
-let studyEntries = [
-  { subject:'Matematik', topic:'Denklemler', duration:60, questions:30, date:'Bugün 09:15' },
-  { subject:'Türkçe', topic:'Sözcük Türleri', duration:45, questions:25, date:'Bugün 11:00' },
-  { subject:'Fen Bilimleri', topic:'Optik', duration:50, questions:20, date:'Dün 15:30' },
-];
+let studyEntries = [];
 
-let tasks = [
-  { title:'Matematik Test 14', subject:'Matematik', desc:'56 soruluk karma test', due:'15 Mar', done:false },
-  { title:'Türkçe Paragraf', subject:'Türkçe', desc:'10 paragraf sorusu çöz', due:'16 Mar', done:true },
-  { title:'Fen Deney Notu', subject:'Fen Bilimleri', desc:'Deney raporunu hazırla', due:'18 Mar', done:false },
-];
+let tasks = [];
 
 // =================== FIREBASE ===================
 const firebaseConfig = {
@@ -889,7 +881,8 @@ function teacherDashboard() {
 
     <div class="card">
       <div class="card-title">📚 Ders Bazlı Sınıf Performansı</div>
-      ${subjects.map((s,i)=>`
+      ${students.length === 0 ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.88rem">Öğrenci eklendikten sonra veriler burada görünecek</div>` :
+      subjects.map((s,i)=>`
         <div class="subject-row">
           <div class="subject-name c-${s.cls}">${s.icon} ${s.name}</div>
           <div class="bar-bg"><div class="bar-fill bg-${s.cls}" style="width:${subjectProgress[i]}%"></div></div>
@@ -1774,33 +1767,37 @@ function showToast(icon, msg) {
 
 /* =================== CHARTS =================== */
 function drawCharts() {
-  // Week chart
+  // Week chart - empty (no real data yet)
   const wc = document.getElementById('weekChart');
   if(wc && !wc._drawn) {
     wc._drawn = true;
     const ctx = wc.getContext('2d');
-    drawLineChart(ctx, wc.width, 120, [25,40,35,60,45,0,0], '#6c63ff');
+    drawLineChart(ctx, wc.width, 120, [0,0,0,0,0,0,0], '#6c63ff');
   }
-  // Compare chart
+  // Compare chart - real student data
   const cc = document.getElementById('compareChart');
   if(cc && !cc._drawn) {
     cc._drawn = true;
     const ctx = cc.getContext('2d');
-    drawBarChart(ctx, cc.width, 160, students.map(s=>s.name.split(' ')[0]), students.map(s=>s.avg));
+    if (students.length > 0) {
+      drawBarChart(ctx, cc.width, 160, students.map(s=>s.name.split(' ')[0]), students.map(s=>s.avg));
+    } else {
+      drawBarChart(ctx, cc.width, 160, [''], [0]);
+    }
   }
-  // Trend chart
+  // Trend chart - empty
   const tc = document.getElementById('trendChart');
   if(tc && !tc._drawn) {
     tc._drawn = true;
     const ctx = tc.getContext('2d');
-    drawLineChart(ctx, tc.width, 220, [45,62,55,80,70,90,75], '#43e97b');
+    drawLineChart(ctx, tc.width, 220, [0,0,0,0,0,0,0], '#43e97b');
   }
-  // Student trend
+  // Student trend - empty
   const st = document.getElementById('studentTrend');
   if(st && !st._drawn) {
     st._drawn = true;
     const ctx = st.getContext('2d');
-    drawLineChart(ctx, st.width, 200, [30,50,45,65,55,72,60], '#6c63ff');
+    drawLineChart(ctx, st.width, 200, [0,0,0,0,0,0,0], '#6c63ff');
   }
 }
 
