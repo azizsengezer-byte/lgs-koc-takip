@@ -910,6 +910,7 @@ auth.onAuthStateChanged(async (user) => {
 
       renderSidebar();
       showPage('dashboard');
+      loadNotifications();
 
       // Öğrenci sınıf seçmemişse sor
       if (currentRole==='student' && !data.classroom) {
@@ -920,9 +921,9 @@ auth.onAuthStateChanged(async (user) => {
       }
     } catch(err) {
       console.log('Auth hata:', err.message);
-      // Hata olsa bile uygulamayı göster
       renderSidebar();
       showPage('dashboard');
+      loadNotifications();
     }
   } else {
     document.getElementById('app').style.display = 'none';
@@ -1134,57 +1135,67 @@ function teacherDashboard() {
       <div class="card">
         <div class="card-title">👥 Öğrenci Durumları</div>
         ${studentCount === 0 ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.88rem">Henüz öğrenci eklenmedi</div>` :
-        students.map(s=>`
+        students.map(s=>{
+          const sEntries = studyEntries.filter(e=>e.studentName===s.name);
+          const sTasks = tasks.filter(t=>t.studentName===s.name && !t.done).length;
+          const todayKey = new Date().toISOString().split('T')[0];
+          const activeToday = sEntries.some(e=>e.dateKey===todayKey);
+          const totalQ = sEntries.reduce((a,e)=>a+(e.questions||0),0);
+          return `
           <div class="student-row" onclick="showPage('students')">
             <div class="student-avatar" style="background:${s.color}20;color:${s.color}">${s.name[0]}</div>
             <div class="student-info">
               <div class="student-name">${s.name}</div>
-              <div class="student-meta">${s.lastActive} • ${s.tasks} aktif görev</div>
+              <div class="student-meta">${sTasks} aktif görev • ${totalQ} soru</div>
             </div>
             <div style="text-align:right">
-              <div class="student-score" style="color:${s.avg>=80?'var(--accent3)':s.avg>=70?'var(--accent4)':'var(--accent2)'}">${s.avg}</div>
-              <div class="stat-change ${s.trend}">${s.trend==='up'?'↑ İyi':'↓ Dikkat'}</div>
+              <span class="badge ${activeToday?'badge-green':'badge-yellow'}" style="font-size:0.7rem">${activeToday?'✅ Bugün':'⏳ Bekliyor'}</span>
             </div>
-          </div>
-        `).join('')}
+          </div>`;
+        }).join('')}
       </div>
       <div class="card">
-        <div class="card-title">📅 Bu Hafta Aktivite</div>
+        <div class="card-title">📅 Bu Hafta Sınıf Aktivitesi</div>
         <div class="week-grid">
           ${(()=>{
             const today = new Date();
-            const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon...
+            const todayKey = today.toISOString().split('T')[0];
             const monday = new Date(today);
-            monday.setDate(today.getDate() - (dayOfWeek===0?6:dayOfWeek-1));
+            monday.setDate(today.getDate() - (today.getDay()===0?6:today.getDay()-1));
             return weekDays.map((d,i)=>{
               const day = new Date(monday);
               day.setDate(monday.getDate()+i);
-              const isToday = day.toDateString()===today.toDateString();
-              const isPast = day < today && !isToday;
-              return `<div class="day-cell ${isPast?'has-data':''} ${isToday?'today':''}">
+              const dk = day.toISOString().split('T')[0];
+              const isToday = dk === todayKey;
+              const count = studyEntries.filter(e=>e.dateKey===dk).length;
+              const hasData = count > 0;
+              return `<div class="day-cell ${hasData?'has-data':''} ${isToday?'today':''}">
                 <div class="day-name">${d}</div>
                 <div class="day-num">${day.getDate()}</div>
-                ${isPast?'<div class="day-dot"></div>':''}
+                ${hasData?`<div class="day-dot" title="${count} giriş"></div>`:''}
               </div>`;
             }).join('');
           })()}
         </div>
-        <div style="margin-top:16px">
-          <canvas id="weekChart" class="mini-chart" height="120"></canvas>
-        </div>
+        <canvas id="weekChart" class="mini-chart" height="100" style="margin-top:12px"></canvas>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">📚 Ders Bazlı Sınıf Performansı</div>
+      <div class="card-title">📚 Ders Bazlı Sınıf Aktivitesi</div>
       ${students.length === 0 ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.88rem">Öğrenci eklendikten sonra veriler burada görünecek</div>` :
-      subjects.map((s,i)=>`
+      subjects.map((s,i)=>{
+        const subEntries = studyEntries.filter(e=>e.subject===s.name);
+        const totalQ = subEntries.reduce((a,e)=>a+(e.questions||0),0);
+        const maxQ = Math.max(...subjects.map(sub=>studyEntries.filter(e=>e.subject===sub.name).reduce((a,e)=>a+(e.questions||0),0)),1);
+        const pct = Math.round(totalQ/maxQ*100);
+        return `
         <div class="subject-row">
           <div class="subject-name c-${s.cls}">${s.icon} ${s.name}</div>
-          <div class="bar-bg"><div class="bar-fill bg-${s.cls}" style="width:${subjectProgress[i]}%"></div></div>
-          <div class="subject-pct">${subjectProgress[i]}%</div>
-        </div>
-      `).join('')}
+          <div class="bar-bg"><div class="bar-fill bg-${s.cls}" style="width:${pct}%"></div></div>
+          <div class="subject-pct">${totalQ} soru</div>
+        </div>`;
+      }).join('')}
     </div>
   `;
 }
@@ -1493,55 +1504,337 @@ function studentDailyEntry() {
   `;
 }
 
+let analysisPeriod = 'weekly'; // 'daily' | 'weekly' | 'monthly'
+
 function studentAnalysis() {
+  const now = new Date();
+  const todayKey = now.toISOString().split('T')[0];
+
+  // Period filtre
+  let filtered = [];
+  let periodLabel = '';
+  if (analysisPeriod === 'daily') {
+    filtered = studyEntries.filter(e => e.dateKey === todayKey);
+    periodLabel = 'Bugün';
+  } else if (analysisPeriod === 'weekly') {
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (now.getDay()===0?6:now.getDay()-1));
+    const mondayKey = monday.toISOString().split('T')[0];
+    filtered = studyEntries.filter(e => e.dateKey >= mondayKey);
+    periodLabel = 'Bu Hafta';
+  } else {
+    const monthStart = todayKey.substring(0,7) + '-01';
+    filtered = studyEntries.filter(e => e.dateKey >= monthStart);
+    periodLabel = 'Bu Ay';
+  }
+
+  // İstatistikler
+  const totalDur = filtered.reduce((a,e)=>a+(e.duration||0),0);
+  const totalQ = filtered.reduce((a,e)=>a+(e.questions||0),0);
+  const totalCorrect = filtered.reduce((a,e)=>a+(e.correct||0),0);
+  const totalWrong = filtered.reduce((a,e)=>a+(e.wrong||0),0);
+  const totalNet = filtered.reduce((a,e)=>a+(e.net||0),0);
+  const dayCount = new Set(filtered.map(e=>e.dateKey)).size;
+
+  // Ders bazlı analiz
+  const subjectStats = subjects.map(s => {
+    const se = filtered.filter(e=>e.subject===s.name);
+    const q = se.reduce((a,e)=>a+(e.questions||0),0);
+    const d = se.reduce((a,e)=>a+(e.correct||0),0);
+    const y = se.reduce((a,e)=>a+(e.wrong||0),0);
+    const net = se.reduce((a,e)=>a+(e.net||0),0);
+    const dur = se.reduce((a,e)=>a+(e.duration||0),0);
+    const netPct = q > 0 ? Math.round((d/q)*100) : 0;
+    return { ...s, q, d, y, net, dur, netPct, count: se.length };
+  });
+
+  const maxQ = Math.max(...subjectStats.map(s=>s.q), 1);
+
+  // Güçlü/zayıf konular
+  const subWithQ = subjectStats.filter(s=>s.q>0).sort((a,b)=>b.netPct-a.netPct);
+  const strong = subWithQ.slice(0,2);
+  const weak = [...subjectStats].filter(s=>s.q>0).sort((a,b)=>a.netPct-b.netPct).slice(0,2);
+
+  // Yorum üret
+  const comment = generateAnalysisComment(filtered, subjectStats, totalDur, totalQ, totalNet, dayCount, analysisPeriod);
+
+  // Haftalık trend tablosu (son 7 gün)
+  const trendData = [];
+  for (let i=6;i>=0;i--) {
+    const d = new Date(now); d.setDate(now.getDate()-i);
+    const dk = d.toISOString().split('T')[0];
+    const dayQ = studyEntries.filter(e=>e.dateKey===dk).reduce((a,e)=>a+(e.questions||0),0);
+    const dayDur = studyEntries.filter(e=>e.dateKey===dk).reduce((a,e)=>a+(e.duration||0),0);
+    trendData.push({ label: d.toLocaleDateString('tr-TR',{weekday:'short'}), q: dayQ, dur: dayDur, dk });
+  }
+  const maxTQ = Math.max(...trendData.map(t=>t.q),1);
+
   return `
     <div class="page-title">📈 Analizlerim</div>
-    <div class="page-sub">Kişisel performans takibim</div>
+    <div class="page-sub">Kişisel performans takibi</div>
 
-    <div class="pdf-actions">
-      <select class="pdf-period-select" id="pdfPeriodS">
-        <option value="weekly">Bu Hafta</option>
-        <option value="monthly" selected>Bu Ay</option>
-      </select>
-      <button class="pdf-btn" onclick="exportPDF('student')">
-        📄 Karnemi İndir
-      </button>
+    <!-- Dönem seçici -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;background:var(--surface2);border-radius:12px;padding:4px">
+      ${['daily','weekly','monthly'].map((p,i)=>{
+        const lbl = ['Günlük','Haftalık','Aylık'][i];
+        return `<button onclick="analysisPeriod='${p}';showPage('my-analysis')"
+          style="flex:1;padding:8px;border:none;border-radius:10px;cursor:pointer;font-weight:700;font-size:0.85rem;
+            background:${analysisPeriod===p?'var(--accent)':'transparent'};
+            color:${analysisPeriod===p?'#fff':'var(--text2)'};transition:all .2s">${lbl}</button>`;
+      }).join('')}
     </div>
 
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title">📚 Ders Başarılarım</div>
-        ${subjects.map((s,i)=>`
-          <div class="subject-row">
-            <div class="subject-name c-${s.cls}">${s.icon} ${s.name}</div>
-            <div class="bar-bg"><div class="bar-fill bg-${s.cls}" style="width:${subjectProgressT[i]}%"></div></div>
-            <div class="subject-pct">${subjectProgressT[i]}%</div>
+    <!-- Özet kartlar -->
+    <div class="grid-3" style="margin-bottom:16px">
+      <div class="stat-card">
+        <div class="stat-label">Çalışma Süresi</div>
+        <div class="stat-value" style="color:var(--accent)">${totalDur}<span style="font-size:0.8rem">dk</span></div>
+        <div class="stat-change">${dayCount} gün aktif</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Toplam Soru</div>
+        <div class="stat-value" style="color:var(--accent4)">${totalQ}</div>
+        <div class="stat-change">✅${totalCorrect} ❌${totalWrong}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Toplam Net</div>
+        <div class="stat-value" style="color:var(--accent3)">${totalNet.toFixed(1)}</div>
+        <div class="stat-change">${totalQ>0?(totalNet/totalQ*100).toFixed(0)+'% isabet':'-'}</div>
+      </div>
+    </div>
+
+    <!-- Son 7 günlük trend -->
+    ${analysisPeriod !== 'daily' ? `
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">📊 Son 7 Günlük Trend</div>
+      <div style="display:flex;align-items:flex-end;gap:6px;height:80px;padding:0 4px">
+        ${trendData.map(t=>{
+          const h = Math.round((t.q/maxTQ)*70)+2;
+          const isToday = t.dk === todayKey;
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="font-size:0.65rem;color:var(--text2)">${t.q||''}</div>
+            <div style="width:100%;height:${h}px;background:${isToday?'var(--accent)':'var(--accent)44'};border-radius:4px 4px 0 0;min-height:3px"></div>
+            <div style="font-size:0.68rem;color:${isToday?'var(--accent)':'var(--text2)'};font-weight:${isToday?'800':'600'}">${t.label}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
+
+    <!-- Ders bazlı detay -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">📚 Ders Bazlı Analiz — ${periodLabel}</div>
+      ${filtered.length === 0
+        ? `<div style="text-align:center;padding:24px;color:var(--text2)">Bu dönemde henüz veri yok. Çalışma girişi ekle! 💪</div>`
+        : subjectStats.map(s=>`
+          <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <span style="font-weight:700;font-size:0.88rem;color:var(--${s.cls})">${s.icon} ${s.name}</span>
+              <span style="font-size:0.78rem;color:var(--text2)">${s.q} soru • ${s.dur}dk • Net: <b style="color:var(--accent3)">${s.net.toFixed(1)}</b></span>
+            </div>
+            <div class="bar-bg" style="height:6px">
+              <div class="bar-fill bg-${s.cls}" style="width:${Math.round(s.q/maxQ*100)}%"></div>
+            </div>
+            ${s.q>0?`<div style="font-size:0.72rem;color:var(--text2);margin-top:4px">✅${s.d} doğru &nbsp; ❌${s.y} yanlış &nbsp; 🎯%${s.netPct} isabet</div>`:''}
           </div>
         `).join('')}
-      </div>
-      <div class="card">
-        <div class="card-title">📅 Haftalık Soru Trendi</div>
-        <canvas id="studentTrend" height="200"></canvas>
-      </div>
     </div>
-    <div class="card">
-      <div class="card-title">⚡ Güçlü & Zayıf Konularım</div>
+
+    <!-- Güçlü / Zayıf -->
+    ${filtered.length > 0 ? `
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">⚡ Güçlü & Zayıf Derslerim</div>
       <div class="grid-2">
         <div>
-          <div style="color:var(--accent3);font-weight:800;margin-bottom:10px">💪 Güçlü Konular</div>
-          ${['Din Kültürü — Temel Kavramlar (%90)','Türkçe — Paragraf Analizi (%85)','İnkılap — Kurtuluş Savaşı (%82)'].map(t=>`
-            <div style="padding:8px 12px;background:rgba(67,233,123,.08);border-radius:8px;font-size:0.85rem;margin-bottom:6px;border:1px solid rgba(67,233,123,.2)">${t}</div>
-          `).join('')}
+          <div style="color:var(--accent3);font-weight:800;margin-bottom:10px">💪 En Başarılı</div>
+          ${strong.length ? strong.map(s=>`
+            <div style="padding:8px 12px;background:rgba(67,233,123,.08);border-radius:8px;font-size:0.83rem;margin-bottom:6px;border:1px solid rgba(67,233,123,.2)">
+              ${s.icon} ${s.name} — %${s.netPct} isabet
+            </div>`).join('') : '<div style="color:var(--text2);font-size:0.82rem">Yeterli veri yok</div>'}
         </div>
         <div>
-          <div style="color:var(--accent2);font-weight:800;margin-bottom:10px">⚠️ Çalışılması Gerekenler</div>
-          ${['Fen — Kimyasal Tepkimeler (%55)','İngilizce — Grammar (%58)','Matematik — Olasılık (%62)'].map(t=>`
-            <div style="padding:8px 12px;background:rgba(255,101,132,.08);border-radius:8px;font-size:0.85rem;margin-bottom:6px;border:1px solid rgba(255,101,132,.2)">${t}</div>
-          `).join('')}
+          <div style="color:var(--accent2);font-weight:800;margin-bottom:10px">⚠️ Çalışılmalı</div>
+          ${weak.length ? weak.map(s=>`
+            <div style="padding:8px 12px;background:rgba(255,101,132,.08);border-radius:8px;font-size:0.83rem;margin-bottom:6px;border:1px solid rgba(255,101,132,.2)">
+              ${s.icon} ${s.name} — %${s.netPct} isabet
+            </div>`).join('') : '<div style="color:var(--text2);font-size:0.82rem">Yeterli veri yok</div>'}
         </div>
       </div>
+    </div>` : ''}
+
+    <!-- Koç Yorumu -->
+    <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,var(--accent)12,var(--accent)05);border:1px solid var(--accent)33">
+      <div class="card-title">🤖 Performans Yorumu</div>
+      <div style="font-size:0.88rem;line-height:1.7;color:var(--text)">${comment}</div>
+    </div>
+
+    <!-- PDF -->
+    <div class="pdf-actions">
+      <button class="pdf-btn" onclick="exportStudentPDF()">📄 PDF Raporu İndir</button>
     </div>
   `;
+}
+
+function generateAnalysisComment(filtered, subjectStats, totalDur, totalQ, totalNet, dayCount, period) {
+  if (filtered.length === 0) {
+    return `Henüz bu dönem için çalışma verisi bulunmuyor. Düzenli çalışma girişi yaparak performansını takip edebilirsin. Her gün küçük adımlar büyük fark yaratır! 💪`;
+  }
+  const avgDurPerDay = dayCount > 0 ? Math.round(totalDur/dayCount) : 0;
+  const netRate = totalQ > 0 ? (totalNet/totalQ*100).toFixed(0) : 0;
+  const subWithQ = subjectStats.filter(s=>s.q>0).sort((a,b)=>b.netPct-a.netPct);
+  const bestSub = subWithQ[0];
+  const worstSub = [...subWithQ].reverse()[0];
+
+  let comments = [];
+
+  // Süre yorumu
+  if (period === 'daily') {
+    if (totalDur >= 180) comments.push(`Bugün <b>${totalDur} dakika</b> çalıştın — harika bir gün! 🏆`);
+    else if (totalDur >= 90) comments.push(`Bugün <b>${totalDur} dakika</b> çalıştın — iyi devam! ✅`);
+    else comments.push(`Bugün <b>${totalDur} dakika</b> çalıştın. Günlük en az 2 saat hedeflemeye çalış. 📚`);
+  } else if (period === 'weekly') {
+    if (dayCount >= 5) comments.push(`Bu hafta <b>${dayCount} gün</b> çalışman düzenlilik açısından çok iyi! 🌟`);
+    else comments.push(`Bu hafta <b>${dayCount} gün</b> aktif oldun. Haftada en az 5 gün hedefle. 📅`);
+    if (avgDurPerDay >= 120) comments.push(`Günlük ortalama <b>${avgDurPerDay} dakika</b> çalıştın — bu harika bir tempo! 🚀`);
+    else comments.push(`Günlük ortalama <b>${avgDurPerDay} dakika</b> çalışıyorsun. Bunu artırmak için günlük küçük hedefler koy. ⏰`);
+  } else {
+    if (dayCount >= 20) comments.push(`Bu ay <b>${dayCount} gün</b> çalıştın — aylık hedefini tutturuyorsun! 🏆`);
+    else comments.push(`Bu ay <b>${dayCount} aktif gün</b> var. Aylık 25 gün hedefle. 📆`);
+    comments.push(`Toplam <b>${totalDur} dakika</b> (${(totalDur/60).toFixed(1)} saat) çalışma yaptın.`);
+  }
+
+  // Soru/net yorumu
+  if (totalQ > 0) {
+    if (netRate >= 70) comments.push(`<b>${totalQ} sorudan</b> net oranın <b>%${netRate}</b> — isabetli çalışıyorsun! ✨`);
+    else if (netRate >= 50) comments.push(`<b>${totalQ} sorudan</b> net oranın <b>%${netRate}</b>. Yanlışları tekrar et, oran yükselecek. 📖`);
+    else comments.push(`<b>${totalQ} soru</b> çözdün ancak isabet oranın <b>%${netRate}</b>. Hız yerine anlayarak çöz. 🔍`);
+  }
+
+  // Ders yorumu
+  if (bestSub) comments.push(`En güçlü dersin <b>${bestSub.name}</b> (%${bestSub.netPct} isabet) — tebrikler! 🎯`);
+  if (worstSub && worstSub.name !== bestSub?.name) comments.push(`<b>${worstSub.name}</b> dersine biraz daha odaklanabilirsin (%${worstSub.netPct} isabet). 💡`);
+
+  // Genel öneri
+  const lgsDate = new Date('2026-06-14T09:30:00+03:00');
+  const daysLeft = Math.floor((lgsDate - new Date())/(1000*60*60*24));
+  comments.push(`<b>LGS'ye ${daysLeft} gün</b> kaldı — her gün düzenli çalışmak seni hedefe taşır! 🚀`);
+
+  return comments.join('<br><br>');
+}
+
+function exportStudentPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'p', unit:'mm', format:'a4' });
+  const name = document.getElementById('headerName').textContent;
+  const periodLabels = { daily:'Günlük', weekly:'Haftalık', monthly:'Aylık' };
+  const pLabel = periodLabels[analysisPeriod] || 'Haftalık';
+
+  // Gradient header
+  doc.setFillColor(108,99,255); doc.rect(0,0,210,38,'F');
+  doc.setFillColor(67,233,123); doc.rect(0,36,210,3,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(255,255,255);
+  doc.text('LGSKoc - Ogrenci Analiz Raporu', 105, 16, {align:'center'});
+  doc.setFontSize(11); doc.setFont('helvetica','normal');
+  doc.text(`${name} | ${pLabel} Rapor | ${new Date().toLocaleDateString('tr-TR')}`, 105, 27, {align:'center'});
+
+  let y = 50;
+
+  // Özet kutuları
+  const now = new Date();
+  const todayKey = now.toISOString().split('T')[0];
+  let filtered = [];
+  if (analysisPeriod === 'daily') filtered = studyEntries.filter(e=>e.dateKey===todayKey);
+  else if (analysisPeriod === 'weekly') {
+    const monday = new Date(now); monday.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
+    filtered = studyEntries.filter(e=>e.dateKey>=monday.toISOString().split('T')[0]);
+  } else {
+    filtered = studyEntries.filter(e=>e.dateKey>=todayKey.substring(0,7)+'-01');
+  }
+
+  const totalDur = filtered.reduce((a,e)=>a+(e.duration||0),0);
+  const totalQ = filtered.reduce((a,e)=>a+(e.questions||0),0);
+  const totalCorrect = filtered.reduce((a,e)=>a+(e.correct||0),0);
+  const totalWrong = filtered.reduce((a,e)=>a+(e.wrong||0),0);
+  const totalNet = filtered.reduce((a,e)=>a+(e.net||0),0);
+  const dayCount = new Set(filtered.map(e=>e.dateKey)).size;
+
+  const stats = [
+    ['Sure (dk)', totalDur], ['Toplam Soru', totalQ],
+    ['Dogru', totalCorrect], ['Yanlis', totalWrong],
+    ['Net', totalNet.toFixed(1)], ['Aktif Gun', dayCount]
+  ];
+  const bw = 28, bh = 16, bx = 14, gap = 4;
+  stats.forEach((s,i)=>{
+    const x = bx + i*(bw+gap);
+    doc.setFillColor(245,245,255); doc.roundedRect(x, y, bw, bh, 2, 2, 'F');
+    doc.setFontSize(14); doc.setFont('helvetica','bold'); doc.setTextColor(108,99,255);
+    doc.text(String(s[1]), x+bw/2, y+10, {align:'center'});
+    doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(100,100,120);
+    doc.text(s[0], x+bw/2, y+14, {align:'center'});
+  });
+  y += 26;
+
+  // Ders tablosu
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(30,30,50);
+  doc.text('Ders Bazli Analiz', 14, y); y += 7;
+
+  const headers = ['Ders','Sure(dk)','Soru','Dogru','Yanlis','Net','%Isabet'];
+  const colW = [40,22,18,18,18,16,22];
+  let cx = 14;
+  doc.setFillColor(108,99,255);
+  headers.forEach((h,i)=>{ doc.rect(cx,y,colW[i],7,'F'); cx+=colW[i]; });
+  doc.setTextColor(255,255,255); doc.setFontSize(8);
+  cx = 14;
+  headers.forEach((h,i)=>{ doc.text(h, cx+colW[i]/2, y+5, {align:'center'}); cx+=colW[i]; });
+  y += 7;
+
+  subjects.forEach((s,idx)=>{
+    const se = filtered.filter(e=>e.subject===s.name);
+    const q = se.reduce((a,e)=>a+(e.questions||0),0);
+    const d = se.reduce((a,e)=>a+(e.correct||0),0);
+    const w = se.reduce((a,e)=>a+(e.wrong||0),0);
+    const net = se.reduce((a,e)=>a+(e.net||0),0);
+    const dur = se.reduce((a,e)=>a+(e.duration||0),0);
+    const pct = q>0?Math.round(d/q*100):0;
+    const row = [s.name, dur, q, d, w, net.toFixed(1), '%'+pct];
+    doc.setFillColor(idx%2===0?248:255, idx%2===0?248:255, idx%2===0?252:255);
+    cx = 14;
+    colW.forEach(w=>{ doc.rect(cx,y,w,6,'F'); cx+=w; });
+    doc.setTextColor(30,30,50); doc.setFontSize(8);
+    cx = 14;
+    row.forEach((v,i)=>{ doc.text(String(v), cx+colW[i]/2, y+4.5, {align:'center'}); cx+=colW[i]; });
+    y += 6;
+  });
+  y += 8;
+
+  // Yorum
+  const subjectStats = subjects.map(s=>{
+    const se=filtered.filter(e=>e.subject===s.name);
+    const q=se.reduce((a,e)=>a+(e.questions||0),0);
+    const d=se.reduce((a,e)=>a+(e.correct||0),0);
+    const w=se.reduce((a,e)=>a+(e.wrong||0),0);
+    const net=se.reduce((a,e)=>a+(e.net||0),0);
+    const dur=se.reduce((a,e)=>a+(e.duration||0),0);
+    const netPct=q>0?Math.round(d/q*100):0;
+    return {...s,q,d,y:w,net,dur,netPct};
+  });
+  const rawComment = generateAnalysisComment(filtered,subjectStats,totalDur,totalQ,totalNet,dayCount,analysisPeriod)
+    .replace(/<b>/g,'').replace(/<\/b>/g,'').replace(/<br><br>/g,'\n').replace(/<[^>]+>/g,'');
+
+  if (y > 240) { doc.addPage(); y = 20; }
+  doc.setFillColor(245,245,255); doc.roundedRect(14, y, 182, 6, 2, 2, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(108,99,255);
+  doc.text('Performans Yorumu', 105, y+4.5, {align:'center'}); y += 10;
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(40,40,60);
+  const lines = doc.splitTextToSize(rawComment, 182);
+  lines.forEach(l=>{ if(y>280){doc.addPage();y=20;} doc.text(l,14,y); y+=5; });
+
+  // Footer
+  doc.setFillColor(108,99,255); doc.rect(0,287,210,10,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(8);
+  doc.text('LGSKoc - Ogrenci Takip Sistemi | lgs-koc-takip.firebaseapp.com', 105, 293, {align:'center'});
+
+  doc.save(`${name}_${pLabel}_analiz_${todayKey}.pdf`);
+  showToast('📄', 'PDF hazırlandı!');
 }
 
 function studentKazanimlar() {
@@ -1598,123 +1891,137 @@ function studentTasks() {
 }
 
 /* =================== MESSAGING =================== */
-let activeChat = 0;
+let activeChat = null; // partnerUid
+let chatMessages = {}; // { convId: [msgs] }
 let teacherNotifs = [];
 let studentNotifs = [];
-
 const conversations = [];
 
+function convId(uid1, uid2) { return [uid1,uid2].sort().join('_'); }
+
 function messagesPage(role) {
-  const isTeacher = role==='teacher';
-  const conv = conversations[activeChat];
+  const isTeacher = role === 'teacher';
+  const myData = window.currentUserData || {};
+  const myUid = myData.uid || '';
 
-  const chatListHTML = conversations.map((c,i)=>`
-    <div class="chat-list-item ${activeChat===i?'active':''}" onclick="switchChat(${i})">
-      <div class="student-avatar" style="background:${c.color}22;color:${c.color};width:36px;height:36px;font-size:0.9rem">${c.name[0]}</div>
+  let partners = [];
+  if (isTeacher) {
+    partners = students.map(s => ({ uid: s.uid, name: s.name, color: s.color || '#6c63ff' }));
+  } else {
+    const tId = myData.teacherId || '';
+    if (tId) partners = [{ uid: tId, name: myData.teacherName || 'Koçum', color: '#6c63ff' }];
+  }
+
+  if (partners.length === 0) {
+    return `<div class="page-title">💬 Mesajlar</div>
+    <div class="card" style="text-align:center;padding:40px;color:var(--text2)">
+      <div style="font-size:3rem">💬</div>
+      <div style="font-weight:700;margin-top:12px">${isTeacher ? 'Henüz öğrenci eklenmedi' : 'Koç henüz atanmadı'}</div>
+    </div>`;
+  }
+
+  if (!activeChat) activeChat = partners[0].uid;
+  const partner = partners.find(p => p.uid === activeChat) || partners[0];
+  const cId = convId(myUid, partner.uid);
+  const msgs = chatMessages[cId] || [];
+
+  const listHTML = partners.map(p => {
+    const cid = convId(myUid, p.uid);
+    const lastMsgs = chatMessages[cid] || [];
+    const last = lastMsgs[lastMsgs.length - 1];
+    return `<div class="chat-list-item ${activeChat===p.uid?'active':''}" onclick="switchChatTo('${p.uid}','${role}')">
+      <div class="student-avatar" style="background:${p.color}22;color:${p.color};width:36px;height:36px;font-size:0.9rem">${p.name[0]}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:0.88rem">${isTeacher?c.name:document.getElementById('headerName').textContent}</div>
-        <div style="font-size:0.75rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.lastMsg}</div>
+        <div style="font-weight:700;font-size:0.88rem">${p.name}</div>
+        <div style="font-size:0.75rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${last ? last.text.substring(0,28)+'…' : 'Henüz mesaj yok'}</div>
       </div>
-      ${c.unread>0?`<div class="unread">${c.unread}</div>`:''}
-    </div>
-  `).join('');
-
-  const messagesHTML = conv.messages.map(m=>{
-    const isMine = (isTeacher && m.from==='teacher') || (!isTeacher && m.from==='student');
-    return `
-      <div class="msg ${isMine?'mine':'theirs'}">
-        <div class="msg-bubble">${m.text}</div>
-        <div class="msg-time">${m.time}</div>
-      </div>
-    `;
+    </div>`;
   }).join('');
 
-  const headerName = isTeacher ? conv.name : document.getElementById('headerName').textContent;
-  const headerColor = isTeacher ? conv.color : '#6c63ff';
+  const msgsHTML = msgs.map(m => {
+    const mine = m.senderUid === myUid;
+    return `<div class="msg ${mine?'mine':'theirs'}">
+      <div class="msg-bubble">${m.text}</div>
+      <div class="msg-time">${m.time||''}</div>
+    </div>`;
+  }).join('');
 
   return `
     <div class="page-title">💬 Mesajlar</div>
-    <div class="page-sub">Öğrencilerle birebir iletişim</div>
+    <div class="page-sub">Birebir iletişim</div>
     <div class="chat-layout">
       <div class="chat-list">
         <div class="chat-list-header">💬 Konuşmalar</div>
-        ${chatListHTML}
+        ${listHTML}
       </div>
       <div class="chat-window">
         <div class="chat-header">
-          <div class="student-avatar" style="background:${headerColor}22;color:${headerColor};width:36px;height:36px;font-size:0.95rem">${headerName[0]}</div>
-          <div>
-            <div style="font-weight:800;font-size:0.95rem">${headerName}</div>
-            <div style="font-size:0.75rem;color:var(--accent3)">● Çevrimiçi</div>
-          </div>
-          <div style="margin-left:auto;display:flex;gap:8px">
-            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showToast('📋','Görev atama açıldı')">📋 Görev At</button>
-            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showToast('📞','Arama özelliği yakında!')">📞</button>
-          </div>
+          <div class="student-avatar" style="background:${partner.color}22;color:${partner.color};width:36px;height:36px">${partner.name[0]}</div>
+          <div><div style="font-weight:800">${partner.name}</div><div style="font-size:0.75rem;color:var(--accent3)">● Aktif</div></div>
         </div>
         <div class="chat-messages" id="chatMessages">
-          <div class="msg-system">📅 Bugün</div>
-          ${messagesHTML}
+          ${msgs.length===0?'<div class="msg-system">İlk mesajı sen gönder! 👋</div>':'<div class="msg-system">Konuşma geçmişi</div>'}
+          ${msgsHTML}
         </div>
         <div class="chat-input-row">
-          <input class="chat-input" id="chatInput" type="text" placeholder="Mesaj yaz..." 
+          <input class="chat-input" id="chatInput" type="text" placeholder="Mesaj yaz..."
             onkeydown="if(event.key==='Enter')sendMessage('${role}')">
           <button class="chat-send-btn" onclick="sendMessage('${role}')">➤</button>
         </div>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
-function switchChat(idx) {
-  activeChat = idx;
-  conversations[idx].unread = 0;
+async function switchChatTo(uid, role) {
+  activeChat = uid;
+  const myUid = (window.currentUserData || {}).uid || '';
+  const cId = convId(myUid, uid);
+  if (!chatMessages[cId]) {
+    try {
+      const snap = await db.collection('messages').doc(cId).collection('msgs')
+        .orderBy('createdAt','asc').limit(100).get();
+      chatMessages[cId] = [];
+      snap.forEach(d => chatMessages[cId].push(d.data()));
+    } catch(e) { chatMessages[cId] = []; }
+  }
   showPage('messages');
-  setTimeout(()=>{
-    const el = document.getElementById('chatMessages');
-    if(el) el.scrollTop = el.scrollHeight;
-  }, 80);
+  setTimeout(()=>{ const el=document.getElementById('chatMessages'); if(el) el.scrollTop=el.scrollHeight; },80);
 }
 
-function sendMessage(role) {
+async function sendMessage(role) {
   const input = document.getElementById('chatInput');
   const text = input?.value?.trim();
-  if(!text) return;
-  const from = role==='teacher' ? 'teacher' : 'student';
-  const now = new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
-  conversations[activeChat].messages.push({from, text, time:now});
-  conversations[activeChat].lastMsg = text;
+  if (!text || !activeChat) return;
+  const myData = window.currentUserData || {};
+  const myUid = myData.uid || '';
+  const cId = convId(myUid, activeChat);
+  const time = new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+  const msg = { text, senderUid: myUid, senderName: myData.name||'', time,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+
+  if (!chatMessages[cId]) chatMessages[cId] = [];
+  chatMessages[cId].push({ ...msg, createdAt: { seconds: Date.now()/1000 } });
   input.value = '';
 
-  // Re-render chat messages only
-  const isMine = true;
   const msgEl = document.getElementById('chatMessages');
-  if(msgEl) {
+  if (msgEl) {
     const div = document.createElement('div');
-    div.className = `msg mine`;
-    div.innerHTML = `<div class="msg-bubble">${text}</div><div class="msg-time">${now}</div>`;
+    div.className = 'msg mine';
+    div.innerHTML = `<div class="msg-bubble">${text}</div><div class="msg-time">${time}</div>`;
     msgEl.appendChild(div);
     msgEl.scrollTop = msgEl.scrollHeight;
   }
 
-  // Simulate reply after 1.5s
-  if(role==='teacher') {
-    const replies = ['Tamam hocam, şimdi bakıyorum!','Anladım, teşekkürler 🙏','Hemen yapıyorum!','Peki hocam, anlıyorum.'];
-    setTimeout(()=>{
-      const reply = replies[Math.floor(Math.random()*replies.length)];
-      const replyTime = new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
-      conversations[activeChat].messages.push({from:'student',text:reply,time:replyTime});
-      const msgEl2 = document.getElementById('chatMessages');
-      if(msgEl2) {
-        const div2 = document.createElement('div');
-        div2.className = 'msg theirs';
-        div2.innerHTML = `<div class="msg-bubble">${reply}</div><div class="msg-time">${replyTime}</div>`;
-        msgEl2.appendChild(div2);
-        msgEl2.scrollTop = msgEl2.scrollHeight;
-        showToast('💬', `${conversations[activeChat].name}: "${reply}"`);
-      }
-    }, 1500);
-  }
+  try {
+    await db.collection('messages').doc(cId).collection('msgs').add(msg);
+    // Karşı tarafa bildirim gönder
+    await db.collection('notifications').add({
+      toUid: activeChat,
+      text: `💬 ${myData.name||'Biri'}: "${text.substring(0,40)}"`,
+      type: 'message', read: false, time,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) { console.log('Mesaj hatası:', e.message); }
 }
 
 function profilePage() {
@@ -1848,22 +2155,41 @@ async function changePassword() {
 
 function notificationsPage() {
   const notifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
+  // Okunmamışları okundu yap
+  notifs.forEach(n => n.read = true);
   return `
     <div class="page-title">🔔 Bildirimler</div>
     <div class="page-sub">Son aktiviteler ve güncellemeler</div>
     <div class="card">
-      ${notifs.length === 0 ? `<div style="text-align:center;padding:30px;color:var(--text2)">Henüz bildirim yok</div>` :
-      notifs.map(n=>`
-        <div class="notif-item">
-          <div class="notif-dot ${n.read?'read':''}"></div>
-          <div>
-            <div class="notif-text">${n.text}</div>
-            <div class="notif-time">${n.time}</div>
+      ${notifs.length === 0
+        ? `<div style="text-align:center;padding:40px;color:var(--text2)">
+            <div style="font-size:2.5rem;margin-bottom:12px">🔔</div>
+            <div>Henüz bildirim yok</div>
+           </div>`
+        : notifs.map(n=>`
+          <div class="notif-item">
+            <div class="notif-dot ${n.read?'read':''}"></div>
+            <div style="flex:1">
+              <div class="notif-text">${n.text}</div>
+              <div class="notif-time">${n.time||''}</div>
+            </div>
           </div>
-        </div>
-      `).join('')}
-    </div>
-  `;
+        `).join('')}
+    </div>`;
+}
+
+async function loadNotifications() {
+  const myUid = (window.currentUserData||{}).uid || '';
+  if (!myUid) return;
+  try {
+    const snap = await db.collection('notifications')
+      .where('toUid','==',myUid).get();
+    const notifs = [];
+    snap.forEach(d => notifs.push({ ...d.data(), id: d.id }));
+    notifs.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    if (currentRole === 'teacher') teacherNotifs = notifs;
+    else studentNotifs = notifs;
+  } catch(e) { console.log('Bildirim yükleme hatası:', e.message); }
 }
 
 /* =================== HELPERS =================== */
@@ -2141,6 +2467,17 @@ async function saveTask() {
   try {
     const ref = await db.collection('tasks').add(taskData);
     tasks.unshift({ ...taskData, id: ref.id });
+    // Öğrenciye bildirim gönder
+    const studentObj = students.find(s => s.name === student);
+    if (studentObj && studentObj.uid) {
+      await db.collection('notifications').add({
+        toUid: studentObj.uid,
+        text: `📋 Yeni görev: "${title}" — ${sub} (Son: ${due})`,
+        type: 'task', read: false,
+        time: new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
   } catch(e) {
     tasks.unshift({ ...taskData, id: Date.now().toString() });
   }
