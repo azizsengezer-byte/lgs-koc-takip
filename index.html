@@ -539,27 +539,46 @@
     <div class="modal-title">📚 Günlük Çalışma Ekle</div>
     <div class="form-group">
       <label class="form-label">Ders</label>
-      <select class="form-select" id="entrySubject">
-        <option value="Türkçe">Türkçe</option>
-        <option value="Matematik">Matematik</option>
-        <option value="Fen Bilimleri">Fen Bilimleri</option>
-        <option value="İnkılap Tarihi">İnkılap Tarihi</option>
-        <option value="Din Kültürü">Din Kültürü</option>
-        <option value="İngilizce">İngilizce</option>
+      <select class="form-select" id="entrySubject" onchange="updateEntryTopics()">
+        <option value="Türkçe">📖 Türkçe</option>
+        <option value="Matematik">📐 Matematik</option>
+        <option value="Fen Bilimleri">🔬 Fen Bilimleri</option>
+        <option value="İnkılap Tarihi">🏛️ İnkılap Tarihi</option>
+        <option value="Din Kültürü">☪️ Din Kültürü</option>
+        <option value="İngilizce">🌍 İngilizce</option>
       </select>
     </div>
     <div class="form-group">
       <label class="form-label">Konu</label>
-      <input class="form-input" type="text" id="entryTopic" placeholder="örn. Sözcük Türleri, Denklemler...">
+      <select class="form-select" id="entryTopic"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Çalışma Türü</label>
+      <select class="form-select" id="entryType">
+        <option value="soru">📝 Soru Çözümü</option>
+        <option value="konu">📖 Konu Çalışma</option>
+        <option value="test">📊 Test</option>
+        <option value="tekrar">🔁 Tekrar</option>
+      </select>
     </div>
     <div class="grid-2">
       <div class="form-group">
         <label class="form-label">⏱ Süre (dk)</label>
-        <input class="form-input" type="number" id="entryDuration" placeholder="45" min="1">
+        <input class="form-input" type="number" id="entryDuration" placeholder="45" min="1" max="300">
       </div>
       <div class="form-group">
-        <label class="form-label">📝 Soru Sayısı</label>
+        <label class="form-label">📝 Toplam Soru</label>
         <input class="form-input" type="number" id="entryQuestions" placeholder="20" min="0">
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label">✅ Doğru</label>
+        <input class="form-input" type="number" id="entryCorrect" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">❌ Yanlış</label>
+        <input class="form-input" type="number" id="entryWrong" placeholder="0" min="0">
       </div>
     </div>
     <div class="form-group">
@@ -579,26 +598,43 @@
     <div class="form-group">
       <label class="form-label">Öğrenci</label>
       <select class="form-select" id="taskStudent">
-        <option>Zeynep Kaya</option>
-        <option>Emre Demir</option>
-        <option>Selin Yıldız</option>
-        <option>Mert Çelik</option>
+        <option value="">-- Öğrenci Seç --</option>
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Görev Başlığı</label>
-      <input class="form-input" type="text" id="taskTitle" placeholder="örn. Matematik Test 15">
-    </div>
-    <div class="form-group">
       <label class="form-label">Ders</label>
-      <select class="form-select" id="taskSubject">
+      <select class="form-select" id="taskSubject" onchange="updateTaskUnits()">
         <option>Türkçe</option><option>Matematik</option><option>Fen Bilimleri</option>
         <option>İnkılap Tarihi</option><option>Din Kültürü</option><option>İngilizce</option>
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Açıklama</label>
-      <input class="form-input" type="text" id="taskDesc" placeholder="Detaylar...">
+      <label class="form-label">Ünite / Konu</label>
+      <select class="form-select" id="taskUnit">
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Görev Türü</label>
+      <select class="form-select" id="taskType" onchange="updateTaskTitle()">
+        <option value="soru">📝 Soru Çözümü</option>
+        <option value="konu">📖 Konu Çalışma</option>
+        <option value="test">📊 Test Çözme</option>
+        <option value="ozet">✏️ Özet Çıkarma</option>
+        <option value="tekrar">🔁 Tekrar</option>
+        <option value="diger">📌 Diğer</option>
+      </select>
+    </div>
+    <div class="form-group" id="taskCountGroup">
+      <label class="form-label">Soru Sayısı</label>
+      <input class="form-input" type="number" id="taskCount" placeholder="örn. 20" min="1">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Görev Başlığı</label>
+      <input class="form-input" type="text" id="taskTitle" placeholder="Otomatik doldurulur veya kendiniz yazın">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Açıklama (isteğe bağlı)</label>
+      <input class="form-input" type="text" id="taskDesc" placeholder="Ek detaylar...">
     </div>
     <div class="form-group">
       <label class="form-label">Son Tarih</label>
@@ -660,12 +696,43 @@ const subjectProgress = [0, 0, 0, 0, 0, 0];
 const subjectProgressT = [0, 0, 0, 0, 0, 0];
 
 const kazanimlar = {
-  'Türkçe': ['Sözcük Türleri','Cümle Türleri','Paragraf Analizi','Anlatım Bozukluğu','Noktalama','Yazım Kuralları','Söz Sanatları','Metin Türleri'],
-  'Matematik': ['Çarpanlara Ayırma','Üslü Sayılar','Kök İfadeler','Denklemler','Eşitsizlikler','Olasılık','Veri Analizi','Geometri Temelleri','Dönüşüm Geometrisi'],
-  'Fen Bilimleri': ['Mevsimler ve İklim','DNA ve Genetik','Basınç','Madde ve Endüstri','Kimyasal Tepkimeler','Optik','Elektrik','Canlılar Alemi'],
-  'İnkılap Tarihi': ['Osmanlı Çöküşü','Kurtuluş Savaşı','Atatürk İlkeleri','Cumhuriyet Tarihi','Atatürk Dönemi Reformlar','Türk Dış Politikası'],
-  'Din Kültürü': ['Hz. Muhammed\'in Hayatı','Kur\'an','Temel İbadetler','İslam Tarihi','Ahlak','Diğer Dinler'],
-  'İngilizce': ['Tenses','Passive Voice','Reported Speech','Conditionals','Vocabulary','Reading Comprehension','Listening Skills'],
+  'Türkçe': [
+    'Sözcük Türleri', 'İsim Tamlamaları', 'Sıfat Tamlamaları', 'Zamirler',
+    'Fiiller ve Çekimi', 'Cümle Türleri', 'Cümle Ögesi', 'Paragraf Analizi',
+    'Ana Fikir ve Yardımcı Fikir', 'Anlatım Bozukluğu', 'Noktalama İşaretleri',
+    'Yazım Kuralları', 'Söz Sanatları', 'Metin Türleri', 'Şiir Bilgisi',
+  ],
+  'Matematik': [
+    'Çarpanlara Ayırma', 'Özdeşlikler', 'Üslü Sayılar', 'Kök İfadeler',
+    'Birinci Dereceden Denklemler', 'Birinci Dereceden Eşitsizlikler',
+    'Doğrusal Denklem Sistemleri', 'Üçgenler', 'Dörtgenler',
+    'Dönüşüm Geometrisi', 'Veri Analizi', 'Olasılık',
+    'Eğim ve Doğru', 'Fonksiyonlar',
+  ],
+  'Fen Bilimleri': [
+    'Mevsimler ve İklim', 'DNA ve Genetik Kod', 'Basit Makineler',
+    'Basınç', 'Madde ve Endüstri', 'Kimyasal Tepkimeler',
+    'Asit-Baz ve Tuzlar', 'Optik', 'Elektrik Yükleri',
+    'Elektrik Devreleri', 'Canlılar Alemi', 'Ekosistem',
+  ],
+  'İnkılap Tarihi': [
+    'Osmanlı Devletinin Çöküşü', 'I. Dünya Savaşı', 'Kurtuluş Savaşı Hazırlık Dönemi',
+    'Kurtuluş Savaşı Muharebeler', 'Lozan Antlaşması', 'Cumhuriyetin İlanı',
+    'Hukuk Alanındaki İnkılaplar', 'Eğitim Alanındaki İnkılaplar',
+    'Ekonomi Alanındaki İnkılaplar', 'Atatürk İlkeleri', 'Türk Dış Politikası',
+  ],
+  'Din Kültürü': [
+    'Hz. Muhammed\'in Hayatı', 'Kur\'an-ı Kerim', 'Temel İbadetler',
+    'İslam\'ın Şartları', 'İmanın Şartları', 'İslam Tarihi',
+    'Ahlak ve Değerler', 'Diğer Dinler', 'Peygamberler Tarihi',
+  ],
+  'İngilizce': [
+    'Simple Present Tense', 'Present Continuous Tense', 'Simple Past Tense',
+    'Past Continuous Tense', 'Future Tense (will/going to)', 'Present Perfect Tense',
+    'Passive Voice', 'Reported Speech', 'Conditionals (Type 1-2)',
+    'Modals', 'Relative Clauses', 'Vocabulary & Expressions',
+    'Reading Comprehension', 'Listening Skills',
+  ],
 };
 
 let kazanimDone = {};
@@ -978,7 +1045,7 @@ function teacherStudents() {
     <div class="page-sub">Koçluk takibindeki öğrenciler</div>
     <div style="display:flex;gap:10px;margin-bottom:20px">
       <button class="btn btn-primary" onclick="openModal('addStudentModal')">+ Öğrenci Ekle</button>
-      <button class="btn btn-outline" onclick="openModal('addTaskModal')">📋 Görev Ata</button>
+      <button class="btn btn-outline" onclick="openTaskModal()">📋 Görev Ata</button>
     </div>
     <div class="card">
       ${students.length === 0 ? `
@@ -1012,56 +1079,74 @@ function teacherStudents() {
 function teacherAnalysis() {
   return `
     <div class="page-title">📈 Analizler</div>
-    <div class="page-sub">Detaylı performans raporları</div>
+    <div class="page-sub">Öğrenci çalışma raporları</div>
 
-    <div class="pdf-actions">
-      <select class="pdf-period-select" id="pdfPeriod">
-        <option value="weekly">Bu Hafta</option>
-        <option value="monthly" selected>Bu Ay</option>
-        <option value="all">Tüm Dönem</option>
-      </select>
-      <select class="pdf-period-select" id="pdfStudent">
-        <option value="all">Tüm Öğrenciler</option>
-        ${students.map(s=>`<option>${s.name}</option>`).join('')}
-      </select>
-      <button class="pdf-btn" onclick="exportPDF('teacher')">
-        📄 PDF Rapor İndir
-      </button>
-      <button class="btn btn-outline" onclick="showToast('📧','Rapor e-posta ile gönderildi!')">📧 E-posta Gönder</button>
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">📄 PDF Rapor İndir</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">
+        <select class="pdf-period-select" id="pdfPeriod" style="flex:1;min-width:120px">
+          <option value="weekly">Bu Hafta</option>
+          <option value="monthly" selected>Bu Ay</option>
+          <option value="all">Tüm Dönem</option>
+        </select>
+        <select class="pdf-period-select" id="pdfStudent" style="flex:1;min-width:120px">
+          <option value="all">Tüm Öğrenciler</option>
+          ${students.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')}
+        </select>
+        <button class="pdf-btn" onclick="exportPDF('teacher')" style="flex:1;min-width:140px">📄 PDF İndir</button>
+      </div>
     </div>
 
-    <div class="tabs">
-      <button class="tab active">Ders Analizi</button>
-      <button class="tab" onclick="showToast('📊','Öğrenci analizi yükleniyor...')">Öğrenci Analizi</button>
-      <button class="tab" onclick="showToast('📅','Haftalık rapor hazırlanıyor...')">Haftalık Rapor</button>
-    </div>
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title">🎯 Ders Bazlı Başarı Oranı</div>
-        <canvas id="radarChart" height="220"></canvas>
+    ${students.length === 0 ? `
+      <div class="card" style="text-align:center;padding:40px;color:var(--text2)">
+        <div style="font-size:3rem;margin-bottom:12px">📊</div>
+        <div style="font-weight:700">Henüz öğrenci eklenmedi</div>
+        <div style="font-size:0.85rem;margin-top:8px">Öğrenciler çalışma girişi yaptıkça veriler burada görünecek</div>
+      </div>
+    ` : `
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">📊 Haftalık Özet</div>
+        <canvas id="trendChart" height="180"></canvas>
       </div>
       <div class="card">
-        <div class="card-title">📅 Günlük Soru Çözüm Trendi</div>
-        <canvas id="trendChart" height="220"></canvas>
+        <div class="card-title">👥 Öğrenci Bazlı Çalışma Tablosu</div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:0.82rem">
+            <thead>
+              <tr style="border-bottom:2px solid var(--border)">
+                <th style="text-align:left;padding:8px 4px;color:var(--text2)">Öğrenci</th>
+                <th style="text-align:center;padding:8px 4px;color:var(--text2)">Toplam Süre</th>
+                <th style="text-align:center;padding:8px 4px;color:var(--text2)">Toplam Soru</th>
+                <th style="text-align:center;padding:8px 4px;color:var(--text2)">Ort. Net</th>
+                <th style="text-align:center;padding:8px 4px;color:var(--text2)">Giriş</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${students.map(s=>`
+                <tr style="border-bottom:1px solid var(--border)">
+                  <td style="padding:10px 4px;font-weight:700">
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <div style="width:28px;height:28px;border-radius:50%;background:${s.color}22;color:${s.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem">${s.name[0]}</div>
+                      ${s.name}
+                    </div>
+                  </td>
+                  <td style="text-align:center;padding:10px 4px;color:var(--accent)">— dk</td>
+                  <td style="text-align:center;padding:10px 4px;color:var(--accent4)">—</td>
+                  <td style="text-align:center;padding:10px 4px;color:var(--accent3)">—</td>
+                  <td style="text-align:center;padding:10px 4px;color:var(--text2)">0</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div style="font-size:0.75rem;color:var(--text2);margin-top:12px">* Öğrenciler çalışma girişi yaptıkça veriler güncellenir</div>
       </div>
-    </div>
-    <div class="card">
-      <div class="card-title">⚠️ Dikkat Gerektiren Konular</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-        ${[
-          {subject:'Matematik', topic:'Olasılık', pct:42, cls:'math'},
-          {subject:'Fen', topic:'Kimyasal Tepkimeler', pct:51, cls:'science'},
-          {subject:'Türkçe', topic:'Anlatım Bozuklukları', pct:58, cls:'turkish'},
-        ].map(t=>`
-          <div style="background:var(--surface2);border-radius:12px;padding:16px;border:1px solid var(--border)">
-            <div class="c-${t.cls}" style="font-weight:800;font-size:0.85rem;margin-bottom:4px">${t.subject}</div>
-            <div style="font-weight:700;margin-bottom:10px">${t.topic}</div>
-            <div class="bar-bg"><div class="bar-fill bg-${t.cls}" style="width:${t.pct}%"></div></div>
-            <div style="font-size:0.8rem;color:var(--accent2);font-weight:700;margin-top:6px">%${t.pct} başarı</div>
-          </div>
-        `).join('')}
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">📚 Ders Bazlı Soru Dağılımı</div>
+        <canvas id="compareChart" height="160"></canvas>
       </div>
-    </div>
+    `}
   `;
 }
 
@@ -1069,13 +1154,15 @@ function teacherTasks() {
   return `
     <div class="page-title">📋 Görevler</div>
     <div class="page-sub">Ödevler ve çalışma programları</div>
-    <button class="btn btn-primary" style="margin-bottom:20px" onclick="openModal('addTaskModal')">+ Yeni Görev Ata</button>
-    ${tasks.map((t,i)=>`
+    <button class="btn btn-primary" style="margin-bottom:20px" onclick="openTaskModal()">+ Yeni Görev Ata</button>
+    ${tasks.length === 0 ? `<div style="text-align:center;padding:30px;color:var(--text2)">Henüz görev atanmadı</div>` :
+    tasks.map((t,i)=>`
       <div class="assignment-card">
-        <div class="assignment-icon" style="background:rgba(108,99,255,.15)">📝</div>
+        <div class="assignment-icon" style="background:rgba(108,99,255,.15)">${t.typeLabel?t.typeLabel.split(' ')[0]:'📝'}</div>
         <div style="flex:1">
           <div class="assignment-title">${t.title}</div>
-          <div class="assignment-desc">${t.desc} • ${t.subject}</div>
+          <div style="font-size:0.78rem;color:var(--accent);font-weight:600;margin-bottom:2px">${t.typeLabel||''} • ${t.subject}</div>
+          <div class="assignment-desc">${t.desc}${t.student?' • '+t.student:''}</div>
           <div class="assignment-footer">
             <span class="badge ${t.done?'badge-green':'badge-yellow'}">${t.done?'Tamamlandı':'Bekliyor'}</span>
             <span style="font-size:0.78rem;color:var(--text2)">Son: ${t.due}</span>
@@ -1171,39 +1258,67 @@ function studentDashboard() {
 }
 
 function studentDailyEntry() {
+  const todayStr = new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'long'});
+  const todayEntries = studyEntries.filter(e => e.isToday);
+  const totalDur = todayEntries.reduce((a,e)=>a+(e.duration||0),0);
+  const totalQ = todayEntries.reduce((a,e)=>a+(e.questions||0),0);
+  const totalCorrect = todayEntries.reduce((a,e)=>a+(e.correct||0),0);
+  const totalWrong = todayEntries.reduce((a,e)=>a+(e.wrong||0),0);
+
   return `
     <div class="page-title">✏️ Günlük Çalışma Girişi</div>
-    <div class="page-sub">Bugünkü çalışmalarını ekle</div>
+    <div class="page-sub">${todayStr}</div>
+
+    <div class="grid-3" style="margin-bottom:20px">
+      <div class="stat-card">
+        <div class="stat-label">Toplam Süre</div>
+        <div class="stat-value" style="color:var(--accent)">${totalDur}<span style="font-size:0.9rem">dk</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Toplam Soru</div>
+        <div class="stat-value" style="color:var(--accent4)">${totalQ}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Doğru / Yanlış</div>
+        <div class="stat-value" style="font-size:1.2rem"><span style="color:var(--accent3)">${totalCorrect}</span><span style="color:var(--text2);font-size:0.9rem"> / </span><span style="color:var(--accent2)">${totalWrong}</span></div>
+      </div>
+    </div>
 
     <div class="card" style="margin-bottom:20px">
-      <div class="card-title">📚 Ders Seç</div>
+      <div class="card-title">📚 Ders Seç & Çalışma Ekle</div>
       <div class="subject-entry-grid">
         ${subjects.map(s=>`
-          <div class="subject-entry-card" onclick="selectSubjectCard(this,'${s.name}')">
+          <div class="subject-entry-card" onclick="openEntryFor('${s.name}')">
             <div class="sec-name"><span class="sec-dot" style="background:${s.color}"></span>${s.icon} ${s.name}</div>
-            <div style="font-size:0.78rem;color:var(--text2)">Giriş ekle</div>
+            <div style="font-size:0.75rem;color:var(--text2)">${todayEntries.filter(e=>e.subject===s.name).length} giriş</div>
           </div>
         `).join('')}
       </div>
-      <button class="btn btn-primary" onclick="openModal('addEntryModal')">+ Çalışma Ekle</button>
+      <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="openEntryFor(null)">+ Çalışma Ekle</button>
     </div>
 
     <div class="card">
       <div class="card-title">📋 Bugünkü Girişler</div>
-      ${studyEntries.filter(e=>e.date.includes('Bugün')).map(e=>`
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+      ${todayEntries.length === 0 ? `<div style="text-align:center;padding:24px;color:var(--text2)">Henüz giriş yok. Yukarıdan ekle! 💪</div>` :
+      todayEntries.map((e,i)=>`
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
           <div style="font-size:1.4rem">${subjects.find(s=>s.name===e.subject)?.icon||'📚'}</div>
           <div style="flex:1">
-            <div style="font-weight:700">${e.subject} — <span style="color:var(--text2)">${e.topic}</span></div>
-            <div style="font-size:0.8rem;color:var(--text2);margin-top:3px">⏱ ${e.duration} dakika &nbsp; 📝 ${e.questions} soru</div>
+            <div style="font-weight:700">${e.subject}</div>
+            <div style="color:var(--accent);font-size:0.83rem;font-weight:600">${e.topic}</div>
+            <div style="font-size:0.78rem;color:var(--text2);margin-top:4px">
+              ⏱ ${e.duration}dk &nbsp;
+              📝 ${e.questions} soru &nbsp;
+              ${e.questions>0?`✅ ${e.correct||0} &nbsp; ❌ ${e.wrong||0}`:''}
+            </div>
+            ${e.note?`<div style="font-size:0.78rem;color:var(--text2);margin-top:3px;font-style:italic">📌 ${e.note}</div>`:''}
           </div>
-          <span class="badge badge-green">✓ Kaydedildi</span>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span class="badge badge-green" style="font-size:0.7rem">✓</span>
+            <span style="font-size:0.72rem;color:var(--text2)">${e.time||''}</span>
+          </div>
         </div>
       `).join('')}
-      <div style="margin-top:16px;padding-top:4px;display:flex;gap:12px;font-size:0.9rem;font-weight:700">
-        <span style="color:var(--accent3)">⏱ Toplam: 105 dk</span>
-        <span style="color:var(--accent4)">📝 Toplam: 55 soru</span>
-      </div>
     </div>
   `;
 }
@@ -1592,25 +1707,65 @@ function selectSubjectCard(el, name) {
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
+function updateEntryTopics() {
+  const sub = document.getElementById('entrySubject').value;
+  const topics = kazanimlar[sub] || [];
+  const sel = document.getElementById('entryTopic');
+  sel.innerHTML = topics.map(t=>`<option>${t}</option>`).join('');
+}
+
+function openEntryFor(subjectName) {
+  updateEntryTopics();
+  if (subjectName) {
+    document.getElementById('entrySubject').value = subjectName;
+    updateEntryTopics();
+  }
+  // Reset fields
+  document.getElementById('entryDuration').value = '';
+  document.getElementById('entryQuestions').value = '';
+  document.getElementById('entryCorrect').value = '';
+  document.getElementById('entryWrong').value = '';
+  document.getElementById('entryNote').value = '';
+  openModal('addEntryModal');
+}
+
 function saveEntry() {
   const sub = document.getElementById('entrySubject').value;
   const topic = document.getElementById('entryTopic').value || 'Genel Çalışma';
-  const dur = document.getElementById('entryDuration').value || 30;
-  const q = document.getElementById('entryQuestions').value || 0;
-  const entry = { subject:sub, topic, duration:parseInt(dur), questions:parseInt(q), date:'Bugün '+new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}) };
+  const type = document.getElementById('entryType').value;
+  const dur = parseInt(document.getElementById('entryDuration').value) || 0;
+  const q = parseInt(document.getElementById('entryQuestions').value) || 0;
+  const correct = parseInt(document.getElementById('entryCorrect').value) || 0;
+  const wrong = parseInt(document.getElementById('entryWrong').value) || 0;
+  const note = document.getElementById('entryNote').value;
+  if (!dur && !q) { showToast('⚠️', 'Süre veya soru sayısı giriniz!'); return; }
+
+  const now = new Date();
+  const time = now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+  const dateKey = now.toISOString().split('T')[0];
+
+  const entry = {
+    subject: sub, topic, type, duration: dur, questions: q,
+    correct, wrong, note, time, dateKey,
+    isToday: true,
+    date: 'Bugün ' + time,
+    net: correct - (wrong/4),
+  };
   studyEntries.unshift(entry);
 
-  // Firebase'e kaydet
   const user = auth.currentUser;
   if (user) {
     db.collection('studyEntries').add({
       ...entry, userId: user.uid,
+      teacherId: (window.currentUserData||{}).teacherId || '',
+      studentName: document.getElementById('headerName').textContent,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     }).catch(e => console.log('Firestore error:', e));
   }
 
   closeModal('addEntryModal');
-  showToast('✅', `${sub} girişi kaydedildi! Koçun bildirim aldı.`);
+  const netStr = q > 0 ? ` | Net: ${entry.net.toFixed(1)}` : '';
+  showToast('✅', `${sub} — ${topic} kaydedildi!${netStr}`);
   showPage('daily-entry');
 }
 
@@ -1638,6 +1793,7 @@ async function saveNewStudent() {
   errEl.style.display = 'none';
   if (!name || !email || !pass) { errEl.textContent = 'Tüm alanları doldurunuz.'; errEl.style.display='block'; return; }
   if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
+  if (students.length >= 6) { errEl.textContent = 'En fazla 6 öğrenci eklenebilir.'; errEl.style.display='block'; return; }
   try {
     // Mevcut kullanıcıyı sakla
     const currentUser = auth.currentUser;
@@ -1660,14 +1816,69 @@ async function saveNewStudent() {
   }
 }
 
+function populateTaskStudents() {
+  const sel = document.getElementById('taskStudent');
+  sel.innerHTML = '<option value="">-- Öğrenci Seç --</option>';
+  students.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.name;
+    opt.textContent = s.name;
+    sel.appendChild(opt);
+  });
+  if (students.length === 0) {
+    sel.innerHTML = '<option value="">Henüz öğrenci eklenmedi</option>';
+  }
+  updateTaskUnits();
+}
+
+function updateTaskUnits() {
+  const sub = document.getElementById('taskSubject').value;
+  const units = kazanimlar[sub] || [];
+  const sel = document.getElementById('taskUnit');
+  sel.innerHTML = units.map(u => `<option>${u}</option>`).join('');
+  updateTaskTitle();
+}
+
+function updateTaskTitle() {
+  const type = document.getElementById('taskType').value;
+  const unit = document.getElementById('taskUnit')?.value || '';
+  const countGroup = document.getElementById('taskCountGroup');
+  const titleEl = document.getElementById('taskTitle');
+  const typeLabels = {
+    soru: 'Soru Çözümü', konu: 'Konu Çalışma', test: 'Test Çözme',
+    ozet: 'Özet Çıkarma', tekrar: 'Tekrar', diger: 'Görev'
+  };
+  countGroup.style.display = (type === 'soru' || type === 'test') ? 'block' : 'none';
+  if (unit) titleEl.value = `${unit} — ${typeLabels[type]||'Görev'}`;
+}
+
+function openTaskModal() {
+  populateTaskStudents();
+  // Varsayılan tarihi bugünden 3 gün sonraya ayarla
+  const d = new Date();
+  d.setDate(d.getDate() + 3);
+  document.getElementById('taskDue').value = d.toISOString().split('T')[0];
+  openModal('addTaskModal');
+}
+
 function saveTask() {
   const student = document.getElementById('taskStudent').value;
+  if (!student) { showToast('⚠️', 'Lütfen öğrenci seçin!'); return; }
   const title = document.getElementById('taskTitle').value || 'Yeni Görev';
   const sub = document.getElementById('taskSubject').value;
-  const desc = document.getElementById('taskDesc').value || '-';
-  const due = document.getElementById('taskDue').value || '20 Mar';
-  tasks.unshift({ title, subject:sub, desc, due, done:false });
+  const unit = document.getElementById('taskUnit').value;
+  const type = document.getElementById('taskType').value;
+  const count = document.getElementById('taskCount').value;
+  const desc = document.getElementById('taskDesc').value || `${unit} konusunda görev`;
+  const dueRaw = document.getElementById('taskDue').value;
+  const due = dueRaw ? new Date(dueRaw).toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) : '—';
+  const typeLabels = {soru:'📝 Soru Çözümü', konu:'📖 Konu Çalışma', test:'📊 Test', ozet:'✏️ Özet', tekrar:'🔁 Tekrar', diger:'📌 Diğer'};
+  const fullDesc = (count ? `${count} soru — ` : '') + desc;
+  tasks.unshift({ title, subject:sub, unit, type, typeLabel:typeLabels[type]||'Görev', desc:fullDesc, due, student, done:false });
   closeModal('addTaskModal');
+  document.getElementById('taskTitle').value = '';
+  document.getElementById('taskDesc').value = '';
+  document.getElementById('taskCount').value = '';
   showToast('📤', `${student}'e görev gönderildi!`);
   showPage('tasks-teacher');
 }
@@ -1702,7 +1913,7 @@ function exportPDF(role) {
         ? (document.getElementById('pdfPeriod')?.value || 'monthly')
         : (document.getElementById('pdfPeriodS')?.value || 'monthly');
       const periodLabel = period==='weekly'?'Haftalık':period==='monthly'?'Aylık':'Dönem';
-      const studentFilter = role==='teacher' ? (document.getElementById('pdfStudent')?.value || 'all') : 'Zeynep Kaya';
+      const studentFilter = role==='teacher' ? (document.getElementById('pdfStudent')?.value || 'all') : document.getElementById('headerName').textContent;
       const now = new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
       const subjectColors = ['#ff6b6b','#4ecdc4','#45b7d1','#f9ca24','#a29bfe','#fd79a8'];
 
@@ -1748,9 +1959,23 @@ function exportPDF(role) {
       doc.setFillColor(108,99,255); doc.rect(14,y,30,1,'F'); y+=8;
 
       // ── STAT BOXES ──
+      const totalEntries = studyEntries.length;
+      const totalDurAll = studyEntries.reduce((a,e)=>a+(e.duration||0),0);
+      const totalQAll = studyEntries.reduce((a,e)=>a+(e.questions||0),0);
+      const totalNetAll = studyEntries.reduce((a,e)=>a+(e.net||0),0);
       const stats = role==='teacher'
-        ? [{label:'Aktif Ogrenci',val:'4',color:[108,99,255]},{label:'Bu Hafta Giris',val:'3',color:[67,233,123]},{label:'Bekleyen Odev',val:'7',color:[249,202,36]},{label:'Sinif Ort.',val:'78.5',color:[255,101,132]}]
-        : [{label:'Haftalik Soru',val:'347',color:[108,99,255]},{label:'Calisma Suresi',val:'18.5 sa',color:[67,233,123]},{label:'Bek. Odev',val:'2',color:[249,202,36]},{label:'Genel Ort.',val:'72',color:[255,101,132]}];
+        ? [
+            {label:'Aktif Ogrenci', val:String(students.length), color:[108,99,255]},
+            {label:'Toplam Giris', val:String(totalEntries), color:[67,233,123]},
+            {label:'Toplam Soru', val:String(totalQAll), color:[249,202,36]},
+            {label:'Ort. Net', val:totalEntries>0?(totalNetAll/totalEntries).toFixed(1):'—', color:[255,101,132]}
+          ]
+        : [
+            {label:'Toplam Giris', val:String(totalEntries), color:[108,99,255]},
+            {label:'Calisma Suresi', val:totalDurAll+'dk', color:[67,233,123]},
+            {label:'Toplam Soru', val:String(totalQAll), color:[249,202,36]},
+            {label:'Ort. Net', val:totalEntries>0?(totalNetAll/totalEntries).toFixed(1):'—', color:[255,101,132]}
+          ];
       const bw = (W-28-9)/4, bh = 22;
       stats.forEach((s,i)=>{
         const bx = 14+i*(bw+3);
@@ -1794,58 +2019,82 @@ function exportPDF(role) {
       y += 6;
 
       // ── STUDY ENTRIES TABLE ──
-      if(role==='student' || studentFilter!=='all') {
+      if(role==='student' || (role==='teacher' && studentFilter!=='all')) {
         doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
-        doc.text('Son Calisma Girisler', 14, y); y+=7;
+        doc.text('Calisma Giris Detaylari', 14, y); y+=7;
 
         // table header
         doc.setFillColor(46,51,80); doc.rect(14,y,W-28,8,'F');
-        doc.setTextColor(139,144,184); doc.setFontSize(8); doc.setFont('helvetica','bold');
+        doc.setTextColor(139,144,184); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
         doc.text('Ders', 18, y+5.5);
-        doc.text('Konu', 55, y+5.5);
-        doc.text('Sure', 115, y+5.5);
-        doc.text('Soru', 140, y+5.5);
-        doc.text('Tarih', 165, y+5.5);
+        doc.text('Konu', 52, y+5.5);
+        doc.text('Sure', 110, y+5.5);
+        doc.text('Soru', 128, y+5.5);
+        doc.text('Dogru', 144, y+5.5);
+        doc.text('Yanlis', 160, y+5.5);
+        doc.text('Net', 176, y+5.5);
+        doc.text('Saat', 190, y+5.5);
         y += 9;
 
-        studyEntries.forEach((e,i)=>{
-          if(y>265) { doc.addPage(); y=20; doc.setFillColor(15,17,23); doc.rect(0,0,W,H,'F'); }
-          doc.setFillColor(i%2===0?34:28, i%2===0?38:30, i%2===0?58:45);
-          doc.rect(14,y,W-28,8,'F');
-          doc.setTextColor(232,234,246); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
-          doc.text(e.subject.substring(0,12), 18, y+5.5);
-          doc.text(e.topic.substring(0,20), 55, y+5.5);
-          doc.text(e.duration+'dk', 115, y+5.5);
-          doc.text(String(e.questions), 140, y+5.5);
-          doc.text(e.date.substring(0,14), 165, y+5.5);
-          y += 9;
-        });
+        const filterEntries = role==='teacher' && studentFilter!=='all'
+          ? studyEntries.filter(e=>e.studentName===studentFilter)
+          : studyEntries;
+
+        if (filterEntries.length === 0) {
+          doc.setTextColor(139,144,184); doc.setFontSize(9);
+          doc.text('Henuz calisma girisi yapilmamis.', 14, y+6); y+=14;
+        } else {
+          filterEntries.forEach((e,i)=>{
+            if(y>265) { doc.addPage(); y=20; doc.setFillColor(15,17,23); doc.rect(0,0,W,H,'F'); }
+            doc.setFillColor(i%2===0?34:28, i%2===0?38:30, i%2===0?58:45);
+            doc.rect(14,y,W-28,8,'F');
+            doc.setTextColor(232,234,246); doc.setFontSize(7); doc.setFont('helvetica','normal');
+            doc.text((e.subject||'').substring(0,10), 18, y+5.5);
+            doc.text((e.topic||'').substring(0,22), 52, y+5.5);
+            doc.text((e.duration||0)+'dk', 110, y+5.5);
+            doc.text(String(e.questions||0), 128, y+5.5);
+            doc.setTextColor(67,233,123); doc.text(String(e.correct||0), 144, y+5.5);
+            doc.setTextColor(255,101,132); doc.text(String(e.wrong||0), 160, y+5.5);
+            doc.setTextColor(249,202,36); doc.text(e.net!=null?e.net.toFixed(1):'—', 176, y+5.5);
+            doc.setTextColor(139,144,184); doc.text(e.time||e.date||'', 190, y+5.5);
+            y += 9;
+          });
+        }
         y += 6;
       }
 
       // ── TEACHER: STUDENT TABLE ──
       if(role==='teacher' && studentFilter==='all') {
         doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
-        doc.text('Ogrenci Durum Tablosu', 14, y); y+=7;
+        doc.text('Ogrenci Calisma Ozeti', 14, y); y+=7;
 
         doc.setFillColor(46,51,80); doc.rect(14,y,W-28,9,'F');
         doc.setTextColor(139,144,184); doc.setFontSize(8); doc.setFont('helvetica','bold');
-        doc.text('Ad Soyad',18,y+6); doc.text('Ortalama',90,y+6); doc.text('Durum',125,y+6); doc.text('Son Aktif',160,y+6);
+        doc.text('Ad Soyad',18,y+6); doc.text('Giris',85,y+6); doc.text('Top. Sure',105,y+6);
+        doc.text('Top. Soru',135,y+6); doc.text('Ort. Net',165,y+6); doc.text('Son Aktif',190,y+6);
         y+=10;
 
-        students.forEach((s,i)=>{
-          doc.setFillColor(i%2===0?34:28,i%2===0?38:30,i%2===0?58:45);
-          doc.rect(14,y,W-28,10,'F');
-          doc.setTextColor(232,234,246); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
-          doc.text(s.name,18,y+6.5);
-          const avgRgb = s.avg>=80?[67,233,123]:s.avg>=70?[249,202,36]:[255,101,132];
-          doc.setTextColor(...avgRgb); doc.setFont('helvetica','bold');
-          doc.text(String(s.avg),90,y+6.5);
-          doc.setTextColor(232,234,246); doc.setFont('helvetica','normal');
-          doc.text(s.avg>=80?'Iyi Gidiyor':s.avg>=70?'Normal':'Dikkat!',125,y+6.5);
-          doc.text(s.lastActive,160,y+6.5);
-          y+=11;
-        });
+        if (students.length === 0) {
+          doc.setTextColor(139,144,184); doc.setFontSize(9);
+          doc.text('Henuz ogrenci eklenmemis.', 14, y+6); y+=14;
+        } else {
+          students.forEach((s,i)=>{
+            const sEntries = studyEntries.filter(e=>e.studentName===s.name);
+            const sDur = sEntries.reduce((a,e)=>a+(e.duration||0),0);
+            const sQ = sEntries.reduce((a,e)=>a+(e.questions||0),0);
+            const sNet = sEntries.length>0?(sEntries.reduce((a,e)=>a+(e.net||0),0)/sEntries.length).toFixed(1):'—';
+            doc.setFillColor(i%2===0?34:28,i%2===0?38:30,i%2===0?58:45);
+            doc.rect(14,y,W-28,10,'F');
+            doc.setTextColor(232,234,246); doc.setFontSize(8); doc.setFont('helvetica','normal');
+            doc.text(s.name,18,y+6.5);
+            doc.text(String(sEntries.length),85,y+6.5);
+            doc.text(sDur+'dk',105,y+6.5);
+            doc.text(String(sQ),135,y+6.5);
+            doc.setTextColor(249,202,36); doc.text(String(sNet),165,y+6.5);
+            doc.setTextColor(139,144,184); doc.text(s.lastActive||'—',190,y+6.5);
+            y+=11;
+          });
+        }
         y+=6;
       }
 
