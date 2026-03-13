@@ -818,8 +818,13 @@ const db = firebase.firestore();
 // Auth state listener
 auth.onAuthStateChanged(async (user) => {
   if (user) {
-    const doc = await db.collection('users').doc(user.uid).get();
-    if (doc.exists) {
+    try {
+      const doc = await db.collection('users').doc(user.uid).get();
+      if (!doc.exists) {
+        document.getElementById('app').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'flex';
+        return;
+      }
       const data = doc.data();
       currentRole = data.role || 'student';
       window.currentUserData = { ...data, uid: user.uid };
@@ -838,47 +843,69 @@ auth.onAuthStateChanged(async (user) => {
         document.getElementById('headerAvatar').textContent = (data.name||user.email)[0].toUpperCase();
       }
 
-      // Öğretmense → öğrencileri Firestore'dan çek
+      const todayKey = new Date().toISOString().split('T')[0];
+
       if (currentRole === 'teacher') {
-        const snap = await db.collection('users')
-          .where('role','==','student')
-          .where('teacherId','==',user.uid).get();
-        students = [];
-        const colors = ['#6c63ff','#ff6584','#43e97b','#f9ca24','#00b4d8','#ff9f43'];
-        snap.forEach((d,i) => {
-          const s = d.data();
-          students.push({
-            uid: d.id, name: s.name, email: s.email,
-            avg: s.avg||0, lastActive: s.lastActive||'Yeni',
-            color: s.color || colors[students.length % colors.length],
-            tasks: 0, classroom: s.classroom||'', school: s.school||''
+        // Öğrencileri çek
+        try {
+          const snap = await db.collection('users')
+            .where('role','==','student')
+            .where('teacherId','==',user.uid).get();
+          students = [];
+          const colors = ['#6c63ff','#ff6584','#43e97b','#f9ca24','#00b4d8','#ff9f43'];
+          snap.forEach(d => {
+            const s = d.data();
+            students.push({
+              uid: d.id, name: s.name, email: s.email,
+              avg: s.avg||0, lastActive: s.lastActive||'Yeni',
+              color: s.color || colors[students.length % colors.length],
+              tasks: 0, classroom: s.classroom||'', school: s.school||''
+            });
           });
-        });
-        // Tüm öğrencilerin çalışma girişlerini çek
-        if (students.length > 0) {
+        } catch(e) { console.log('Öğrenci çekme hatası:', e.message); }
+
+        // Çalışma girişlerini çek (index gerektirmeyen sorgu)
+        try {
           const eSnap = await db.collection('studyEntries')
-            .where('teacherId','==',user.uid)
-            .orderBy('createdAt','desc').limit(200).get();
+            .where('teacherId','==',user.uid).get();
           studyEntries = [];
-          const todayKey = new Date().toISOString().split('T')[0];
           eSnap.forEach(d => {
             const e = d.data();
             studyEntries.push({ ...e, isToday: e.dateKey === todayKey });
           });
-        }
+          studyEntries.sort((a,b)=>(b.dateKey||'').localeCompare(a.dateKey||''));
+        } catch(e) { console.log('Giriş çekme hatası:', e.message); studyEntries = []; }
+
+        // Görevleri çek
+        try {
+          const tSnap = await db.collection('tasks')
+            .where('teacherId','==',user.uid).get();
+          tasks = [];
+          tSnap.forEach(d => tasks.push({ ...d.data(), id: d.id }));
+          tasks.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+        } catch(e) { console.log('Görev çekme hatası:', e.message); tasks = []; }
       }
 
-      // Öğrenciyse → kendi çalışma girişlerini çek
       if (currentRole === 'student') {
-        const eSnap = await db.collection('studyEntries')
-          .where('userId','==',user.uid)
-          .orderBy('createdAt','desc').limit(200).get();
-        studyEntries = [];
-        const todayKey = new Date().toISOString().split('T')[0];
-        eSnap.forEach(d => {
-          const e = d.data();
-          studyEntries.push({ ...e, isToday: e.dateKey === todayKey });
-        });
+        // Kendi girişlerini çek
+        try {
+          const eSnap = await db.collection('studyEntries')
+            .where('userId','==',user.uid).get();
+          studyEntries = [];
+          eSnap.forEach(d => {
+            const e = d.data();
+            studyEntries.push({ ...e, isToday: e.dateKey === todayKey });
+          });
+          studyEntries.sort((a,b)=>(b.dateKey||'').localeCompare(a.dateKey||''));
+        } catch(e) { console.log('Giriş çekme hatası:', e.message); studyEntries = []; }
+
+        // Kendine atanan görevleri çek
+        try {
+          const tSnap = await db.collection('tasks')
+            .where('studentName','==',data.name).get();
+          tasks = [];
+          tSnap.forEach(d => tasks.push({ ...d.data(), id: d.id }));
+        } catch(e) { console.log('Görev çekme hatası:', e.message); tasks = []; }
       }
 
       renderSidebar();
@@ -891,6 +918,11 @@ auth.onAuthStateChanged(async (user) => {
           openModal('classSetupModal');
         }, 600);
       }
+    } catch(err) {
+      console.log('Auth hata:', err.message);
+      // Hata olsa bile uygulamayı göster
+      renderSidebar();
+      showPage('dashboard');
     }
   } else {
     document.getElementById('app').style.display = 'none';
@@ -984,6 +1016,41 @@ function doLogout() {
   auth.signOut();
 }
 
+function lgsCountdownWidget() {
+  const lgs = new Date('2026-06-14T09:30:00+03:00');
+  const now = new Date();
+  const diff = lgs - now;
+  if (diff <= 0) {
+    return `<div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#43e97b22,#38f9d722);border:1px solid #43e97b44;text-align:center;padding:20px">
+      <div style="font-size:1.5rem">🎉</div>
+      <div style="font-weight:800;color:var(--accent3);font-size:1.1rem">LGS Sınavı Gerçekleşti!</div>
+    </div>`;
+  }
+  const days = Math.floor(diff / (1000*60*60*24));
+  const hours = Math.floor((diff%(1000*60*60*24))/(1000*60*60));
+  const mins = Math.floor((diff%(1000*60*60))/(1000*60));
+  const urgColor = days < 30 ? '#ff6584' : days < 60 ? '#f9ca24' : '#6c63ff';
+  return `
+    <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,${urgColor}18,${urgColor}08);border:1px solid ${urgColor}44;text-align:center;padding:20px 16px" id="lgsCountdownCard">
+      <div style="font-size:0.78rem;color:var(--text2);font-weight:700;letter-spacing:1px;margin-bottom:10px">📅 LGS SINAVI GERİ SAYIM</div>
+      <div style="display:flex;justify-content:center;gap:12px">
+        <div style="background:${urgColor}22;border-radius:12px;padding:10px 14px;min-width:52px">
+          <div style="font-size:1.8rem;font-weight:900;color:${urgColor};line-height:1">${days}</div>
+          <div style="font-size:0.68rem;color:var(--text2);margin-top:4px">GÜN</div>
+        </div>
+        <div style="background:${urgColor}22;border-radius:12px;padding:10px 14px;min-width:52px">
+          <div style="font-size:1.8rem;font-weight:900;color:${urgColor};line-height:1">${hours}</div>
+          <div style="font-size:0.68rem;color:var(--text2);margin-top:4px">SAAT</div>
+        </div>
+        <div style="background:${urgColor}22;border-radius:12px;padding:10px 14px;min-width:52px">
+          <div style="font-size:1.8rem;font-weight:900;color:${urgColor};line-height:1">${mins}</div>
+          <div style="font-size:0.68rem;color:var(--text2);margin-top:4px">DAKİKA</div>
+        </div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--text2);margin-top:10px">14 Haziran 2026 • Saat 09:30</div>
+    </div>`;
+}
+
 function renderSidebar() {
   const sb = document.getElementById('sidebar');
   const teacherNav = [
@@ -1036,12 +1103,16 @@ function renderTeacherPage(id, el) {
 function teacherDashboard() {
   const name = document.getElementById('headerName').textContent || 'Hoca';
   const studentCount = students.length;
-  const avgScore = studentCount > 0 ? Math.round(students.reduce((a,s)=>a+s.avg,0)/studentCount) : 0;
+  const todayKey = new Date().toISOString().split('T')[0];
+  const todayEntries = studyEntries.filter(e=>e.dateKey===todayKey);
+  const activeToday = new Set(todayEntries.map(e=>e.studentName)).size;
   return `
     <div class="page-title">📊 Ana Panel</div>
     <div class="page-sub">Merhaba ${name}! Bugün ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
 
-    <div class="grid-4">
+    ${lgsCountdownWidget()}
+
+    <div class="grid-3">
       <div class="stat-card">
         <div class="stat-label">Aktif Öğrenci</div>
         <div class="stat-value" style="color:var(--accent)">${studentCount}</div>
@@ -1049,18 +1120,13 @@ function teacherDashboard() {
       </div>
       <div class="stat-card">
         <div class="stat-label">Bugün Giriş</div>
-        <div class="stat-value" style="color:var(--accent3)">${studentCount}</div>
-        <div class="stat-change up">↑ Aktif</div>
+        <div class="stat-value" style="color:var(--accent3)">${activeToday}</div>
+        <div class="stat-change">${activeToday>0?'✅ Aktif':'⏳ Bekliyor'}</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Bekleyen Ödev</div>
         <div class="stat-value" style="color:var(--accent4)">${tasks.filter(t=>!t.done).length}</div>
         <div class="stat-change down">↓ ${tasks.filter(t=>t.done).length} teslim edildi</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Sınıf Ort.</div>
-        <div class="stat-value" style="color:var(--accent2)">${avgScore || '-'}</div>
-        <div class="stat-change up">↑ Genel ortalama</div>
       </div>
     </div>
 
@@ -1308,6 +1374,8 @@ function studentDashboard() {
   return `
     <div class="page-title">🏠 Ana Sayfa</div>
     <div class="page-sub">Merhaba ${firstName}! Bugün ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
+
+    ${lgsCountdownWidget()}
 
     <div class="grid-3">
       <div class="stat-card">
@@ -2047,7 +2115,7 @@ function openTaskModal() {
   openModal('addTaskModal');
 }
 
-function saveTask() {
+async function saveTask() {
   const student = document.getElementById('taskStudent').value;
   if (!student) { showToast('⚠️', 'Lütfen öğrenci seçin!'); return; }
   const title = document.getElementById('taskTitle').value || 'Yeni Görev';
@@ -2060,7 +2128,22 @@ function saveTask() {
   const due = dueRaw ? new Date(dueRaw).toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) : '—';
   const typeLabels = {soru:'📝 Soru Çözümü', konu:'📖 Konu Çalışma', test:'📊 Test', ozet:'✏️ Özet', tekrar:'🔁 Tekrar', diger:'📌 Diğer'};
   const fullDesc = (count ? `${count} soru — ` : '') + desc;
-  tasks.unshift({ title, subject:sub, unit, type, typeLabel:typeLabels[type]||'Görev', desc:fullDesc, due, student, done:false });
+  const user = auth.currentUser;
+  const taskData = {
+    title, subject: sub, unit, type,
+    typeLabel: typeLabels[type]||'Görev',
+    desc: fullDesc, due, studentName: student,
+    teacherId: user ? user.uid : '',
+    teacherName: document.getElementById('headerName').textContent,
+    done: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try {
+    const ref = await db.collection('tasks').add(taskData);
+    tasks.unshift({ ...taskData, id: ref.id });
+  } catch(e) {
+    tasks.unshift({ ...taskData, id: Date.now().toString() });
+  }
   closeModal('addTaskModal');
   document.getElementById('taskTitle').value = '';
   document.getElementById('taskDesc').value = '';
@@ -2069,9 +2152,12 @@ function saveTask() {
   showPage('tasks-teacher');
 }
 
-function completeTask(i) {
+async function completeTask(i) {
   tasks[i].done = true;
-  showToast('🎉', 'Görev tamamlandı olarak işaretlendi!');
+  if (tasks[i].id) {
+    try { await db.collection('tasks').doc(tasks[i].id).update({ done: true }); } catch(e) {}
+  }
+  showToast('🎉', 'Görev tamamlandı!');
   showPage('my-tasks');
 }
 
