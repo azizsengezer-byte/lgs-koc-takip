@@ -441,6 +441,20 @@
   </div>
 </div>
 
+
+<!-- PROFİL GÖRÜNTÜLEME MODAL -->
+<div class="modal-overlay" id="viewProfileModal">
+  <div class="modal" style="max-width:340px">
+    <div style="text-align:center;padding:8px 0 16px">
+      <div id="vpPhoto" style="width:80px;height:80px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;background:var(--accent)22;color:var(--accent);overflow:hidden"></div>
+      <div id="vpName" style="font-size:1.3rem;font-weight:900;margin-bottom:4px"></div>
+      <div id="vpRole" style="font-size:0.82rem;color:var(--accent);font-weight:600;margin-bottom:16px"></div>
+      <div id="vpDetails" style="text-align:left;font-size:0.83rem;color:var(--text2);line-height:2"></div>
+    </div>
+    <button class="btn btn-outline" style="width:100%" onclick="closeModal('viewProfileModal')">Kapat</button>
+  </div>
+</div>
+
 <!-- REGISTER MODAL -->
 <div class="modal-overlay" id="registerModal">
   <div class="modal">
@@ -896,29 +910,34 @@ auth.onAuthStateChanged(async (user) => {
               uid: d.id, name: s.name, email: s.email,
               avg: s.avg||0, lastActive: s.lastActive||'Yeni',
               color: s.color || colors[students.length % colors.length],
-              tasks: 0, classroom: s.classroom||'', school: s.school||''
+              tasks: 0, classroom: s.classroom||'', school: s.school||'',
+              photo: s.photo||''
             });
           });
         } catch(e) { console.log('Öğrenci çekme hatası:', e.message); }
 
-        // Çalışma girişlerini çek — hem teacherId hem studentName ile (eksik teacherId durumunu yakala)
+        // Çalışma girişlerini çek — teacherId + her öğrencinin userId ile (en güvenilir yöntem)
         try {
+          const entryMap = {};
+
+          // 1. teacherId ile çek
           const eSnap = await db.collection('studyEntries')
             .where('teacherId','==',user.uid).get();
-          const entryMap = {};
           eSnap.forEach(d => { entryMap[d.id] = { ...d.data(), id: d.id }; });
 
-          // Öğrenci isimlerine göre de çek (teacherId boş kaydedilmiş olabilir)
-          const studentNames = students.map(s=>s.name);
-          for (const sName of studentNames) {
+          // 2. Her öğrencinin userId'si ile çek (teacherId boş/farklı olsa bile yakalar)
+          for (const student of students) {
+            if (!student.uid) continue;
             try {
-              const sSnap = await db.collection('studyEntries')
-                .where('studentName','==',sName).get();
-              sSnap.forEach(d => {
-                if (!entryMap[d.id]) entryMap[d.id] = { ...d.data(), id: d.id };
-                // teacherId eksikse güncelle
-                else if (!d.data().teacherId) {
-                  d.ref.update({ teacherId: user.uid }).catch(()=>{});
+              const uSnap = await db.collection('studyEntries')
+                .where('userId','==',student.uid).get();
+              uSnap.forEach(d => {
+                if (!entryMap[d.id]) {
+                  entryMap[d.id] = { ...d.data(), id: d.id };
+                  // teacherId eksikse arka planda güncelle
+                  if (!d.data().teacherId) {
+                    d.ref.update({ teacherId: user.uid }).catch(()=>{});
+                  }
                 }
               });
             } catch(e2) {}
@@ -1229,7 +1248,9 @@ function teacherDashboard() {
           const weekDays2 = new Set(sEntries.filter(e=>e.dateKey>=weekKey2).map(e=>e.dateKey)).size;
           return `
           <div class="student-row" onclick="openStudentAnalysis('${s.name}')" style="cursor:pointer">
-            <div class="student-avatar" style="background:${s.color}20;color:${s.color}">${s.name[0]}</div>
+            ${s.photo
+              ? `<img src="${s.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">`
+              : `<div class="student-avatar" style="background:${s.color}20;color:${s.color};cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">${s.name[0]}</div>`}
             <div class="student-info">
               <div class="student-name">${s.name}</div>
               <div class="student-meta">${sTasks} görev • ${totalQ} soru • Bu hafta: ${weekDays2}g</div>
@@ -1320,7 +1341,9 @@ function teacherStudents() {
           : `<span class="badge badge-red">⚠️ Dikkat!</span>`;
         return `
         <div class="student-row" onclick="openStudentAnalysis('${s.name}')" style="cursor:pointer">
-          <div class="student-avatar" style="background:${s.color}20;color:${s.color};font-size:1.1rem">${s.name[0]}</div>
+          ${s.photo
+            ? `<img src="${s.photo}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">`
+            : `<div class="student-avatar" style="background:${s.color}20;color:${s.color};font-size:1.1rem;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">${s.name[0]}</div>`}
           <div class="student-info" style="flex:1">
             <div class="student-name">${s.name}</div>
             <div class="student-meta">Bu hafta ${activeDays} gün • ${totalQ} soru • Net ort: ${avgNet}</div>
@@ -1363,6 +1386,59 @@ function teacherStudents() {
 let selectedStudentName = '';
 let studentAnalysisPeriod = 'weekly';
 
+// Profil görüntüleme — hem öğretmen hem öğrenci tıklayabilir
+async function showUserProfile(uid, fallbackName, fallbackColor) {
+  const vpPhoto = document.getElementById('vpPhoto');
+  const vpName  = document.getElementById('vpName');
+  const vpRole  = document.getElementById('vpRole');
+  const vpDet   = document.getElementById('vpDetails');
+  if (!vpPhoto) return;
+
+  // Önce local cache'e bak
+  let data = null;
+  if (uid === (window.currentUserData||{}).uid) {
+    data = window.currentUserData;
+  } else {
+    // students dizisinden bak
+    const s = students.find(x=>x.uid===uid);
+    if (s) data = { name:s.name, role:'student', school:s.school||'', classroom:s.classroom||'', photo:s.photo||'' };
+  }
+
+  // Firestore'dan çek
+  if (!data) {
+    try {
+      const snap = await db.collection('users').doc(uid).get();
+      if (snap.exists) data = snap.data();
+    } catch(e) {}
+  }
+
+  if (!data) { showToast('⚠️','Profil bulunamadı'); return; }
+
+  const name = data.name || fallbackName || 'Kullanıcı';
+  const color = fallbackColor || '#6c63ff';
+
+  // Fotoğraf
+  if (data.photo) {
+    vpPhoto.innerHTML = `<img src="${data.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  } else {
+    vpPhoto.style.background = color+'22';
+    vpPhoto.style.color = color;
+    vpPhoto.textContent = name[0].toUpperCase();
+  }
+
+  vpName.textContent = name;
+  vpRole.textContent = data.role==='teacher' ? '👨‍🏫 Koç Öğretmen' : '🎒 Öğrenci';
+
+  const details = [];
+  if (data.school) details.push(`🏫 <b>Okul:</b> ${data.school}`);
+  if (data.classroom) details.push(`📚 <b>Sınıf:</b> ${data.classroom}`);
+  if (data.branch) details.push(`📐 <b>Branş:</b> ${data.branch}`);
+  if (data.email) details.push(`✉️ <b>E-posta:</b> ${data.email}`);
+  vpDet.innerHTML = details.join('<br>') || '<span style="color:var(--text2)">Bilgi eklenmemiş</span>';
+
+  openModal('viewProfileModal');
+}
+
 function toggleDenemeAcc(id) {
   const el = document.getElementById(id);
   const arrow = document.getElementById(id+'_arrow');
@@ -1381,8 +1457,12 @@ function openStudentAnalysis(name) {
 function studentDetailAnalysis() {
   const sName = selectedStudentName;
   const sObj = students.find(s=>s.name===sName) || { color:'#6c63ff' };
+  const sUid = sObj.uid || '';
   const now = new Date();
   const todayKey = now.toISOString().split('T')[0];
+
+  // Öğrenci girişleri: studentName VEYA userId ile eşleştir (her ikisi de çalışsın)
+  const matchEntry = e => e.studentName===sName || (sUid && e.userId===sUid);
 
   // Dönem filtre
   let filtered = [];
@@ -1393,17 +1473,17 @@ function studentDetailAnalysis() {
   const monthStart = todayKey.substring(0,7)+'-01';
 
   if (studentAnalysisPeriod==='daily') {
-    filtered = studyEntries.filter(e=>e.studentName===sName && e.dateKey===todayKey);
+    filtered = studyEntries.filter(e=>matchEntry(e) && e.dateKey===todayKey);
     periodLabel = 'Bugün';
   } else if (studentAnalysisPeriod==='weekly') {
-    filtered = studyEntries.filter(e=>e.studentName===sName && e.dateKey>=mondayKey);
+    filtered = studyEntries.filter(e=>matchEntry(e) && e.dateKey>=mondayKey);
     periodLabel = 'Bu Hafta';
   } else {
-    filtered = studyEntries.filter(e=>e.studentName===sName && e.dateKey>=monthStart);
+    filtered = studyEntries.filter(e=>matchEntry(e) && e.dateKey>=monthStart);
     periodLabel = 'Bu Ay';
   }
 
-  const allEntries = studyEntries.filter(e=>e.studentName===sName);
+  const allEntries = studyEntries.filter(e=>matchEntry(e));
 
   // Özet istatistikler
   const totalDur = filtered.reduce((a,e)=>a+(e.duration||0),0);
@@ -1798,12 +1878,15 @@ async function exportStudentDetailPDF(sName) {
   monday.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
   const mondayKey = monday.toISOString().split('T')[0];
   const monthStart = todayKey.substring(0,7)+'-01';
+  const sObjPdf = students.find(s=>s.name===sName) || {};
+  const sUidPdf = sObjPdf.uid || '';
+  const matchPdf = e => e.studentName===sName || (sUidPdf && e.userId===sUidPdf);
   let filtered = [];
-  if (studentAnalysisPeriod==='daily') filtered = studyEntries.filter(e=>e.studentName===sName&&e.dateKey===todayKey);
-  else if (studentAnalysisPeriod==='weekly') filtered = studyEntries.filter(e=>e.studentName===sName&&e.dateKey>=mondayKey);
-  else filtered = studyEntries.filter(e=>e.studentName===sName&&e.dateKey>=monthStart);
+  if (studentAnalysisPeriod==='daily') filtered = studyEntries.filter(e=>matchPdf(e)&&e.dateKey===todayKey);
+  else if (studentAnalysisPeriod==='weekly') filtered = studyEntries.filter(e=>matchPdf(e)&&e.dateKey>=mondayKey);
+  else filtered = studyEntries.filter(e=>matchPdf(e)&&e.dateKey>=monthStart);
 
-  const allEntries = studyEntries.filter(e=>e.studentName===sName);
+  const allEntries = studyEntries.filter(e=>matchPdf(e));
   const soruEntries = filtered.filter(e=>e.type!=='deneme');
 
   // ---- Genel özetler ----
@@ -2570,6 +2653,22 @@ function studentDashboard() {
         `).join('')
       }
     </div>
+
+    <!-- Koç Kartı -->
+    ${(window.currentUserData||{}).teacherId ? `
+    <div class="card" style="margin-top:16px;cursor:pointer" onclick="showUserProfile('${(window.currentUserData||{}).teacherId}','${(window.currentUserData||{}).teacherName||'Koçum'}','#6c63ff')">
+      <div style="display:flex;align-items:center;gap:14px">
+        ${(window.currentUserData||{}).teacherPhoto
+          ? `<img src="${(window.currentUserData||{}).teacherPhoto}" style="width:52px;height:52px;border-radius:50%;object-fit:cover">`
+          : `<div style="width:52px;height:52px;border-radius:50%;background:var(--accent)22;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:800;flex-shrink:0">👨‍🏫</div>`}
+        <div style="flex:1">
+          <div style="font-weight:800;font-size:1rem">${(window.currentUserData||{}).teacherName||'Koçum'}</div>
+          <div style="font-size:0.78rem;color:var(--accent)">Koç Öğretmenim</div>
+          <div style="font-size:0.72rem;color:var(--text2);margin-top:2px">Profili görüntülemek için tıkla 👆</div>
+        </div>
+        <span style="color:var(--text2);font-size:1.2rem">›</span>
+      </div>
+    </div>` : ''}
   `;
 }
 
@@ -3050,10 +3149,10 @@ function messagesPage(role) {
 
   let partners = [];
   if (isTeacher) {
-    partners = students.map(s => ({ uid: s.uid, name: s.name, color: s.color || '#6c63ff' }));
+    partners = students.map(s => ({ uid: s.uid, name: s.name, color: s.color || '#6c63ff', photo: s.photo||'' }));
   } else {
     const tId = myData.teacherId || '';
-    if (tId) partners = [{ uid: tId, name: myData.teacherName || 'Koçum', color: '#6c63ff' }];
+    if (tId) partners = [{ uid: tId, name: myData.teacherName || 'Koçum', color: '#6c63ff', photo: myData.teacherPhoto||'' }];
   }
 
   if (partners.length === 0) {
@@ -3075,8 +3174,11 @@ function messagesPage(role) {
     const lastMsgs = chatMessages[cid] || [];
     const last = lastMsgs[lastMsgs.length - 1];
     const unread = unreadByPartner[p.uid]||0;
+    const avatarHTML = p.photo
+      ? `<img src="${p.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${p.uid}','${p.name}','${p.color}')">`
+      : `<div class="student-avatar" style="background:${p.color}22;color:${p.color};width:40px;height:40px;font-size:1rem;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${p.uid}','${p.name}','${p.color}')">${p.name[0]}</div>`;
     return `<div class="chat-list-item" onclick="switchChatTo('${p.uid}','${role}')">
-      <div class="student-avatar" style="background:${p.color}22;color:${p.color};width:40px;height:40px;font-size:1rem;flex-shrink:0">${p.name[0]}</div>
+      ${avatarHTML}
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:0.9rem">${p.name}</div>
         <div style="font-size:0.75rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${last ? last.text.substring(0,30)+'…' : 'Henüz mesaj yok'}</div>
@@ -3102,8 +3204,13 @@ function messagesPage(role) {
     chatWindowHTML = `
       <div class="chat-header">
         <button class="mobile-chat-back" onclick="activeChat=null;showPage('messages')">← Geri</button>
-        <div class="student-avatar" style="background:${partner.color}22;color:${partner.color};width:36px;height:36px">${partner.name[0]}</div>
-        <div><div style="font-weight:800">${partner.name}</div><div style="font-size:0.75rem;color:var(--accent3)">● Aktif</div></div>
+        ${partner.photo
+          ? `<img src="${partner.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;cursor:pointer" onclick="showUserProfile('${partner.uid}','${partner.name}','${partner.color}')">`
+          : `<div class="student-avatar" style="background:${partner.color}22;color:${partner.color};width:36px;height:36px;cursor:pointer" onclick="showUserProfile('${partner.uid}','${partner.name}','${partner.color}')">${partner.name[0]}</div>`}
+        <div style="cursor:pointer" onclick="showUserProfile('${partner.uid}','${partner.name}','${partner.color}')">
+          <div style="font-weight:800">${partner.name}</div>
+          <div style="font-size:0.75rem;color:var(--accent3)">● Aktif · profile tıkla</div>
+        </div>
       </div>
       <div class="chat-messages" id="chatMessages">
         ${msgs.length===0?'<div class="msg-system">İlk mesajı sen gönder! 👋</div>':'<div class="msg-system">Konuşma geçmişi</div>'}
@@ -3310,6 +3417,16 @@ async function uploadPhoto(input) {
       document.getElementById('headerAvatar').style.backgroundImage = `url(${photoData})`;
       document.getElementById('headerAvatar').style.backgroundSize = 'cover';
       document.getElementById('headerAvatar').textContent = '';
+      // Öğretmense → öğrencilerin teacherPhoto'sunu güncelle
+      if (currentRole === 'teacher' && students.length > 0) {
+        students.forEach(s => {
+          if (s.uid) {
+            db.collection('users').doc(s.uid).update({ teacherPhoto: photoData }).catch(()=>{});
+          }
+        });
+      }
+      // Öğrenci listesindeki fotolarını da güncelle
+      students.forEach(s => { if (s.uid === user.uid) s.photo = photoData; });
       showToast('✅', 'Profil fotoğrafı güncellendi!');
       showPage('profile');
     }
@@ -3652,6 +3769,8 @@ async function saveNewStudent() {
     await db.collection('users').doc(studentUid).set({
       name, email, role: 'student',
       teacherId: teacherUser.uid,
+      teacherName: teacherData.name || '',
+      teacherPhoto: teacherData.photo || '',
       school: teacherData.school || '',
       photo: '', color, avg: 0,
       createdAt: new Date()
