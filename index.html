@@ -811,37 +811,41 @@ function renderTeacherPage(id, el) {
 }
 
 function teacherDashboard() {
+  const name = document.getElementById('headerName').textContent || 'Hoca';
+  const studentCount = students.length;
+  const avgScore = studentCount > 0 ? Math.round(students.reduce((a,s)=>a+s.avg,0)/studentCount) : 0;
   return `
     <div class="page-title">📊 Ana Panel</div>
-    <div class="page-sub">Merhaba Ahmet Hoca! Bugün ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
+    <div class="page-sub">Merhaba ${name}! Bugün ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
 
     <div class="grid-4">
       <div class="stat-card">
         <div class="stat-label">Aktif Öğrenci</div>
-        <div class="stat-value" style="color:var(--accent)">4</div>
-        <div class="stat-change up">↑ Hepsi aktif</div>
+        <div class="stat-value" style="color:var(--accent)">${studentCount}</div>
+        <div class="stat-change up">↑ Toplam öğrenci</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Bugün Giriş</div>
-        <div class="stat-value" style="color:var(--accent3)">3</div>
-        <div class="stat-change up">↑ Dün 2 kişiydi</div>
+        <div class="stat-value" style="color:var(--accent3)">${studentCount}</div>
+        <div class="stat-change up">↑ Aktif</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Bekleyen Ödev</div>
-        <div class="stat-value" style="color:var(--accent4)">7</div>
-        <div class="stat-change down">↓ 3 teslim edildi</div>
+        <div class="stat-value" style="color:var(--accent4)">${tasks.filter(t=>!t.done).length}</div>
+        <div class="stat-change down">↓ ${tasks.filter(t=>t.done).length} teslim edildi</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Sınıf Ort.</div>
-        <div class="stat-value" style="color:var(--accent2)">78.5</div>
-        <div class="stat-change up">↑ +2.3 bu hafta</div>
+        <div class="stat-value" style="color:var(--accent2)">${avgScore || '-'}</div>
+        <div class="stat-change up">↑ Genel ortalama</div>
       </div>
     </div>
 
     <div class="grid-2">
       <div class="card">
         <div class="card-title">👥 Öğrenci Durumları</div>
-        ${students.map(s=>`
+        ${studentCount === 0 ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.88rem">Henüz öğrenci eklenmedi</div>` :
+        students.map(s=>`
           <div class="student-row" onclick="showPage('students')">
             <div class="student-avatar" style="background:${s.color}20;color:${s.color}">${s.name[0]}</div>
             <div class="student-info">
@@ -1271,7 +1275,7 @@ function messagesPage(role) {
     <div class="chat-list-item ${activeChat===i?'active':''}" onclick="switchChat(${i})">
       <div class="student-avatar" style="background:${c.color}22;color:${c.color};width:36px;height:36px;font-size:0.9rem">${c.name[0]}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:0.88rem">${isTeacher?c.name:'Ahmet Hoca'}</div>
+        <div style="font-weight:700;font-size:0.88rem">${isTeacher?c.name:document.getElementById('headerName').textContent}</div>
         <div style="font-size:0.75rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.lastMsg}</div>
       </div>
       ${c.unread>0?`<div class="unread">${c.unread}</div>`:''}
@@ -1288,7 +1292,7 @@ function messagesPage(role) {
     `;
   }).join('');
 
-  const headerName = isTeacher ? conv.name : 'Ahmet Hoca';
+  const headerName = isTeacher ? conv.name : document.getElementById('headerName').textContent;
   const headerColor = isTeacher ? conv.color : '#6c63ff';
 
   return `
@@ -1378,7 +1382,7 @@ function sendMessage(role) {
 
 function notificationsPage() {
   const notifs = [
-    { text:'Ahmet Hoca yeni bir görev atadı: "Matematik Test 15"', time:'5 dk önce', read:false },
+    { text:'Koçunuz yeni bir görev atadı: "Matematik Test 15"', time:'5 dk önce', read:false },
     { text:'Zeynep Kaya bugünkü çalışma girişini tamamladı', time:'2 saat önce', read:false },
     { text:'Emre Demir 2 gündür giriş yapmadı, hatırlatma gönderildi', time:'3 saat önce', read:false },
     { text:'Selin Yıldız tüm ödevleri teslim etti 🎉', time:'1 gün önce', read:true },
