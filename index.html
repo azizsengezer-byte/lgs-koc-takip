@@ -306,7 +306,15 @@
   .chat-send-btn { width:38px; height:38px; border-radius:50%; background:var(--accent); border:none; color:#fff; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center; transition:all .2s; flex-shrink:0; }
   .chat-send-btn:hover { background:#5a52e0; transform:scale(1.08); }
   .msg-system { text-align:center; font-size:0.75rem; color:var(--text2); padding:4px 12px; background:var(--surface2); border-radius:99px; align-self:center; }
-  @media(max-width:600px) { .chat-layout { grid-template-columns:1fr; } .chat-list { display:none; } .chat-list.mobile-show { display:block; } }
+  @media(max-width:600px) {
+    .chat-layout { grid-template-columns:1fr; height:auto; border:none; border-radius:0; background:transparent; }
+    .chat-list { border-right:none; border-radius:16px; overflow:hidden; border:1px solid var(--border); }
+    .chat-list.mobile-hidden { display:none; }
+    .chat-window { display:none; border-radius:16px; overflow:hidden; border:1px solid var(--border); }
+    .chat-window.mobile-show { display:flex; height:calc(100vh - 160px); }
+    .mobile-chat-back { display:inline-flex !important; }
+  }
+  .mobile-chat-back { display:none; align-items:center; gap:6px; padding:8px 14px; background:var(--surface2); border:none; border-radius:10px; color:var(--text); cursor:pointer; font-weight:700; font-size:0.85rem; margin-bottom:10px; }
 
   /* SCROLLBAR */
   ::-webkit-scrollbar { width:6px; }
@@ -814,10 +822,16 @@ function renderMobileNav() {
     {id:'notifs',icon:'🔔',label:'Bildirim'},
   ];
   const items = currentRole==='teacher' ? teacherNav : studentNav;
-  nav.innerHTML = `<div class="mobile-nav-inner">${items.map(n=>`
-    <button class="mobile-nav-item ${currentPage===n.id?'active':''}" onclick="showPage('${n.id}')">
-      <span>${n.icon}</span><span>${n.label}</span>
-    </button>`).join('')}</div>`;
+  const unreadMsg = (currentRole==='teacher' ? teacherNotifs : studentNotifs).filter(n=>!n.read&&n.type==='message').length;
+  const unreadNotif = (currentRole==='teacher' ? teacherNotifs : studentNotifs).filter(n=>!n.read&&n.type!=='message').length;
+  nav.innerHTML = `<div class="mobile-nav-inner">${items.map(n=>{
+    let badge = '';
+    if(n.id==='messages' && unreadMsg>0) badge=`<span style="position:absolute;top:2px;right:8px;background:var(--accent2);color:#fff;font-size:0.55rem;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 3px">${unreadMsg>9?'9+':unreadMsg}</span>`;
+    if(n.id==='notifs' && unreadNotif>0) badge=`<span style="position:absolute;top:2px;right:8px;background:var(--accent2);color:#fff;font-size:0.55rem;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 3px">${unreadNotif>9?'9+':unreadNotif}</span>`;
+    return `<button class="mobile-nav-item ${currentPage===n.id?'active':''}" onclick="showPage('${n.id}')" style="position:relative">
+      <span>${n.icon}</span>${badge}<span>${n.label}</span>
+    </button>`;
+  }).join('')}</div>`;
 }
 
 let studyEntries = [];
@@ -1120,28 +1134,7 @@ function renderTeacherPage(id, el) {
   else if(id==='analysis') el.innerHTML = teacherAnalysis();
   else if(id==='tasks-teacher') el.innerHTML = teacherTasks();
   else if(id==='messages') {
-    // Mesaj sayfası açılınca aktif sohbeti yükle
-    const myData = window.currentUserData || {};
-    const myUid = myData.uid || '';
-    let partners = [];
-    if (currentRole === 'teacher') partners = students.map(s=>({uid:s.uid}));
-    else if (myData.teacherId) partners = [{uid: myData.teacherId}];
-    if (!activeChat && partners.length > 0) activeChat = partners[0].uid;
-    if (activeChat && myUid) {
-      const cId = convId(myUid, activeChat);
-      if (!chatMessages[cId]) {
-        db.collection('messages').doc(cId).collection('msgs')
-          .orderBy('createdAt','asc').limit(100).get()
-          .then(snap => {
-            chatMessages[cId] = [];
-            snap.forEach(d => chatMessages[cId].push(d.data()));
-            el.innerHTML = messagesPage('teacher');
-            setTimeout(()=>{ const cm=document.getElementById('chatMessages'); if(cm) cm.scrollTop=cm.scrollHeight; }, 50);
-          }).catch(()=>{ el.innerHTML = messagesPage('teacher'); });
-        el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text2)">💬 Mesajlar yükleniyor...</div>`;
-        return;
-      }
-    }
+    // activeChat null ise liste göster (mobilde seçim yapılmamış)
     el.innerHTML = messagesPage('teacher');
   }
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
@@ -1186,64 +1179,62 @@ function teacherDashboard() {
         students.map(s=>{
           const sEntries = studyEntries.filter(e=>e.studentName===s.name);
           const sTasks = tasks.filter(t=>t.studentName===s.name && !t.done).length;
-          const todayKey = new Date().toISOString().split('T')[0];
-          const activeToday = sEntries.some(e=>e.dateKey===todayKey);
+          const todayKey2 = new Date().toISOString().split('T')[0];
+          const activeToday2 = sEntries.some(e=>e.dateKey===todayKey2);
           const totalQ = sEntries.reduce((a,e)=>a+(e.questions||0),0);
+          const weekAgo2 = new Date(); weekAgo2.setDate(weekAgo2.getDate()-7);
+          const weekKey2 = weekAgo2.toISOString().split('T')[0];
+          const weekDays2 = new Set(sEntries.filter(e=>e.dateKey>=weekKey2).map(e=>e.dateKey)).size;
           return `
-          <div class="student-row" onclick="showPage('students')">
+          <div class="student-row" onclick="openStudentAnalysis('${s.name}')" style="cursor:pointer">
             <div class="student-avatar" style="background:${s.color}20;color:${s.color}">${s.name[0]}</div>
             <div class="student-info">
               <div class="student-name">${s.name}</div>
-              <div class="student-meta">${sTasks} aktif görev • ${totalQ} soru</div>
+              <div class="student-meta">${sTasks} görev • ${totalQ} soru • Bu hafta: ${weekDays2}g</div>
             </div>
             <div style="text-align:right">
-              <span class="badge ${activeToday?'badge-green':'badge-yellow'}" style="font-size:0.7rem">${activeToday?'✅ Bugün':'⏳ Bekliyor'}</span>
+              <span class="badge ${activeToday2?'badge-green':'badge-yellow'}" style="font-size:0.7rem">${activeToday2?'✅ Aktif':'⏳ Bekliyor'}</span>
             </div>
           </div>`;
         }).join('')}
       </div>
       <div class="card">
-        <div class="card-title">📅 Bu Hafta Sınıf Aktivitesi</div>
-        <div class="week-grid">
-          ${(()=>{
-            const today = new Date();
-            const todayKey = today.toISOString().split('T')[0];
-            const monday = new Date(today);
-            monday.setDate(today.getDate() - (today.getDay()===0?6:today.getDay()-1));
-            return weekDays.map((d,i)=>{
-              const day = new Date(monday);
-              day.setDate(monday.getDate()+i);
-              const dk = day.toISOString().split('T')[0];
-              const isToday = dk === todayKey;
-              const count = studyEntries.filter(e=>e.dateKey===dk).length;
-              const hasData = count > 0;
-              return `<div class="day-cell ${hasData?'has-data':''} ${isToday?'today':''}">
-                <div class="day-name">${d}</div>
-                <div class="day-num">${day.getDate()}</div>
-                ${hasData?`<div class="day-dot" title="${count} giriş"></div>`:''}
-              </div>`;
-            }).join('');
-          })()}
+        <div class="card-title">⚡ Hızlı İşlemler</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+          <button class="btn btn-primary" style="width:100%;padding:12px;text-align:left" onclick="showPage('students')">
+            👥 Öğrenci Listesi & Analiz
+          </button>
+          <button class="btn btn-outline" style="width:100%;padding:12px;text-align:left" onclick="openTaskModal()">
+            📋 Görev Ata
+          </button>
+          <button class="btn btn-outline" style="width:100%;padding:12px;text-align:left" onclick="showPage('tasks-teacher')">
+            📊 Görev Takibi
+          </button>
+          <button class="btn btn-outline" style="width:100%;padding:12px;text-align:left" onclick="showPage('messages')">
+            💬 Mesajlaş
+          </button>
         </div>
-        <canvas id="weekChart" class="mini-chart" height="100" style="margin-top:12px"></canvas>
+        <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:10px">
+          <div style="font-size:0.78rem;color:var(--text2);margin-bottom:6px">📅 Bugün Giriş Yapan</div>
+          <div style="font-size:1.4rem;font-weight:800;color:var(--accent3)">${activeToday} <span style="font-size:0.85rem;font-weight:600;color:var(--text2)">/ ${studentCount} öğrenci</span></div>
+        </div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">📚 Ders Bazlı Sınıf Aktivitesi</div>
-      ${students.length === 0 ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.88rem">Öğrenci eklendikten sonra veriler burada görünecek</div>` :
-      subjects.map((s,i)=>{
-        const subEntries = studyEntries.filter(e=>e.subject===s.name);
-        const totalQ = subEntries.reduce((a,e)=>a+(e.questions||0),0);
-        const maxQ = Math.max(...subjects.map(sub=>studyEntries.filter(e=>e.subject===sub.name).reduce((a,e)=>a+(e.questions||0),0)),1);
-        const pct = Math.round(totalQ/maxQ*100);
-        return `
-        <div class="subject-row">
-          <div class="subject-name c-${s.cls}">${s.icon} ${s.name}</div>
-          <div class="bar-bg"><div class="bar-fill bg-${s.cls}" style="width:${pct}%"></div></div>
-          <div class="subject-pct">${totalQ} soru</div>
-        </div>`;
-      }).join('')}
+      <div class="card-title">📋 Son Atanan Görevler</div>
+      ${tasks.length===0
+        ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.85rem">Henüz görev atanmadı</div>`
+        : tasks.slice(0,4).map(t=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+            <div style="font-size:1.2rem">${t.done?'✅':'📋'}</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:0.85rem">${t.title}</div>
+              <div style="font-size:0.75rem;color:var(--text2)">${t.studentName||t.student||''} • Son: ${t.due}</div>
+            </div>
+            <span class="badge ${t.done?'badge-green':'badge-yellow'}" style="font-size:0.7rem">${t.done?'Tamam':'Bekliyor'}</span>
+          </div>`).join('')}
+      ${tasks.length>4?`<div style="text-align:center;margin-top:10px"><button class="btn btn-outline" style="font-size:0.8rem;padding:6px 16px" onclick="showPage('tasks-teacher')">Tümünü Gör</button></div>`:''}
     </div>
   `;
 }
@@ -1405,6 +1396,17 @@ function studentDetailAnalysis() {
   }
   const maxMQ = Math.max(...monthTrend.map(t=>t.q),1);
 
+  // Deneme sonuçları
+  const denemeler = filtered.filter(e=>e.type==='deneme');
+  const denemeSubStats = subjects.map(s=>{
+    const de = denemeler.filter(e=>e.subject===s.name);
+    const net = de.reduce((a,e)=>a+(e.net||0),0);
+    const count = de.length;
+    return {...s, net, count, avgNet: count>0 ? (net/count) : 0};
+  });
+  const lgsScore = calcLGSScore(denemeSubStats);
+  const hasDenemeler = denemeler.length > 0;
+
   // Yorum üret
   const comment = generateStudentComment(sName, filtered, subStats, totalDur, totalQ, totalNet, activeDays, studentAnalysisPeriod);
 
@@ -1445,29 +1447,30 @@ function studentDetailAnalysis() {
       </div>
     </div>
 
-    <!-- Haftalık/Aylık trend -->
+    <!-- Soru trendi grafik (bar) -->
     ${studentAnalysisPeriod !== 'daily' ? `
     <div class="card" style="margin-bottom:16px">
-      <div class="card-title">${studentAnalysisPeriod==='weekly'?'📅 Son 7 Gün Soru Trendi':'📆 Haftalık Soru Trendi (Son 4 Hafta)'}</div>
-      <div style="display:flex;align-items:flex-end;gap:6px;height:90px;padding:4px">
+      <div class="card-title">${studentAnalysisPeriod==='weekly'?'📅 Son 7 Gün — Soru & Net Trendi':'📆 Haftalık Soru Trendi (Son 4 Hafta)'}</div>
+      <div style="display:flex;align-items:flex-end;gap:5px;height:90px;padding:4px 0">
         ${(studentAnalysisPeriod==='weekly'?trendDays:monthTrend).map(t=>{
           const maxV = studentAnalysisPeriod==='weekly'?maxTQ:maxMQ;
-          const h = Math.max(Math.round((t.q/maxV)*75),2);
+          const hQ = Math.max(Math.round((t.q/maxV)*70),2);
+          const hN = maxV>0 ? Math.max(Math.round((t.net/maxV)*70),1) : 0;
           const isToday = t.dk===todayKey;
-          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
-            <div style="font-size:0.65rem;color:var(--text2)">${t.q||''}</div>
-            <div style="width:100%;height:${h}px;background:${isToday?'var(--accent)':'var(--accent)55'};border-radius:4px 4px 0 0;min-height:3px"></div>
-            <div style="font-size:0.65rem;color:${isToday?'var(--accent)':'var(--text2)'};">${t.label}</div>
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+            <div style="font-size:0.6rem;color:var(--text2);line-height:1">${t.q>0?t.q:''}</div>
+            <div style="width:100%;display:flex;gap:1px;align-items:flex-end;height:70px">
+              <div style="flex:1;height:${hQ}px;background:${isToday?'var(--accent)':'var(--accent)66'};border-radius:3px 3px 0 0;min-height:2px" title="Soru: ${t.q}"></div>
+              <div style="flex:1;height:${hN}px;background:${isToday?'var(--accent3)':'var(--accent3)88'};border-radius:3px 3px 0 0;min-height:1px" title="Net: ${t.net.toFixed(1)}"></div>
+            </div>
+            <div style="font-size:0.6rem;color:${isToday?'var(--accent)':'var(--text2)'};">${t.label}</div>
           </div>`;
         }).join('')}
       </div>
-      ${studentAnalysisPeriod==='monthly'?`
-      <div style="display:flex;gap:4px;margin-top:8px;padding:0 4px">
-        ${monthTrend.map(t=>`
-          <div style="flex:1;text-align:center;font-size:0.7rem;color:var(--text2)">
-            <span style="color:var(--accent3)">${t.net.toFixed(1)}</span> net
-          </div>`).join('')}
-      </div>`:''}
+      <div style="display:flex;gap:16px;justify-content:center;margin-top:6px;font-size:0.72rem;color:var(--text2)">
+        <span><span style="display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:2px;margin-right:4px"></span>Soru</span>
+        <span><span style="display:inline-block;width:10px;height:10px;background:var(--accent3);border-radius:2px;margin-right:4px"></span>Net</span>
+      </div>
     </div>` : ''}
 
     <!-- Ders bazlı tablo -->
@@ -1486,6 +1489,34 @@ function studentDetailAnalysis() {
           </div>
           ${s.q>0?`<div style="font-size:0.7rem;color:var(--text2);margin-top:3px">✅${s.d} doğru &nbsp;❌${s.y} yanlış &nbsp;🎯%${s.pct} isabet</div>`:''}
         </div>`).join('')}
+    </div>
+
+    <!-- Deneme Sınavı Sonuçları -->
+    <div class="card" style="margin-bottom:16px;border:1px solid var(--accent4)33">
+      <div class="card-title">🎯 Deneme Sınavı Sonuçları</div>
+      ${!hasDenemeler
+        ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.85rem">Bu dönemde deneme sınavı girilmemiş</div>`
+        : `
+        <!-- LGS Puan Tahmini -->
+        <div style="background:linear-gradient(135deg,var(--accent)15,var(--accent3)10);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center;border:1px solid var(--accent)22">
+          <div style="font-size:0.78rem;color:var(--text2);margin-bottom:4px">Tahmini LGS Puanı</div>
+          <div style="font-size:2.2rem;font-weight:900;color:${lgsScore>=400?'var(--accent3)':lgsScore>=300?'var(--accent4)':'var(--accent2)'}">${lgsScore}</div>
+          <div style="font-size:0.75rem;color:var(--text2)">${lgsScore>=400?'🏆 Çok İyi':''}${lgsScore>=300&&lgsScore<400?'👍 İyi':''}${lgsScore>=200&&lgsScore<300?'📈 Gelişiyor':''}${lgsScore<200?'⚠️ Çalışma Gerekli':''} · Deneme ortalamalarına göre</div>
+        </div>
+        <!-- Ders bazlı deneme netleri grafik -->
+        <div style="margin-bottom:10px">
+          ${denemeSubStats.filter(s=>s.count>0).map(s=>{
+            const maxN = Math.max(...denemeSubStats.map(x=>x.avgNet),1);
+            const pct = Math.round((s.avgNet/maxN)*100);
+            return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+              <div style="font-size:0.78rem;min-width:80px;color:var(--${s.cls})">${s.icon} ${s.name}</div>
+              <div class="bar-bg" style="flex:1;height:8px"><div style="height:100%;width:${pct}%;background:var(--${s.cls}77);border-radius:4px;transition:.3s"></div></div>
+              <div style="font-size:0.78rem;font-weight:700;min-width:30px;text-align:right;color:var(--accent3)">${s.avgNet.toFixed(1)}</div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div style="font-size:0.75rem;color:var(--text2);text-align:center">${denemeler.length} deneme sınavı · Dönem ortalaması</div>`
+      }
     </div>
 
     <!-- Güçlü / Zayıf -->
@@ -1565,27 +1596,70 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
   return parts.join('<br><br>');
 }
 
+// Türkçe karakter dönüştürücü (jsPDF Latin-1 için)
+function toSafe(str) {
+  return String(str||'')
+    .replace(/ğ/g,'g').replace(/Ğ/g,'G')
+    .replace(/ü/g,'u').replace(/Ü/g,'U')
+    .replace(/ş/g,'s').replace(/Ş/g,'S')
+    .replace(/ı/g,'i').replace(/İ/g,'I')
+    .replace(/ö/g,'o').replace(/Ö/g,'O')
+    .replace(/ç/g,'c').replace(/Ç/g,'C');
+}
+
+// LGS puan hesaplama (deneme netlerinden tahmini)
+function calcLGSScore(subStats) {
+  // LGS 2024 ham puan katsayıları (yaklaşık)
+  const katSayi = {
+    'Türkçe': 4.1, 'Matematik': 4.1, 'Fen Bilimleri': 4.1,
+    'İnkılap Tarihi': 2.05, 'Din Kültürü': 2.05, 'İngilizce': 2.05
+  };
+  let hamPuan = 0;
+  subStats.forEach(s => {
+    const k = katSayi[s.name] || 2.05;
+    hamPuan += (s.net||0) * k;
+  });
+  // 100 baz puan + ham puan (yaklaşık formül)
+  const lgs = Math.min(Math.round(100 + hamPuan * 0.85), 500);
+  return lgs;
+}
+
 async function exportStudentDetailPDF(sName) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'p', unit:'mm', format:'a4' });
   const now = new Date();
   const todayKey = now.toISOString().split('T')[0];
-  const pLabels = {daily:'Günlük',weekly:'Haftalık',monthly:'Aylık'};
-  const pLabel = pLabels[studentAnalysisPeriod]||'Haftalık';
+  const pLabels = {daily:'Gunluk',weekly:'Haftalik',monthly:'Aylik'};
+  const pLabel = pLabels[studentAnalysisPeriod]||'Haftalik';
 
   // Dönem filtre
   const monday = new Date(now); monday.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
+  const mondayKey = monday.toISOString().split('T')[0];
+  const monthStart = todayKey.substring(0,7)+'-01';
   let filtered = [];
   if (studentAnalysisPeriod==='daily') filtered=studyEntries.filter(e=>e.studentName===sName&&e.dateKey===todayKey);
-  else if (studentAnalysisPeriod==='weekly') filtered=studyEntries.filter(e=>e.studentName===sName&&e.dateKey>=monday.toISOString().split('T')[0]);
-  else filtered=studyEntries.filter(e=>e.studentName===sName&&e.dateKey>=todayKey.substring(0,7)+'-01');
+  else if (studentAnalysisPeriod==='weekly') filtered=studyEntries.filter(e=>e.studentName===sName&&e.dateKey>=mondayKey);
+  else filtered=studyEntries.filter(e=>e.studentName===sName&&e.dateKey>=monthStart);
 
+  const allEntries = studyEntries.filter(e=>e.studentName===sName);
   const totalDur=filtered.reduce((a,e)=>a+(e.duration||0),0);
   const totalQ=filtered.reduce((a,e)=>a+(e.questions||0),0);
   const totalD=filtered.reduce((a,e)=>a+(e.correct||0),0);
   const totalY=filtered.reduce((a,e)=>a+(e.wrong||0),0);
   const totalNet=filtered.reduce((a,e)=>a+(e.net||0),0);
   const activeDays=new Set(filtered.map(e=>e.dateKey)).size;
+
+  // Deneme sonuçları
+  const denemeler = filtered.filter(e=>e.type==='deneme');
+  // Son deneme netleri (ders bazlı)
+  const denemeSubStats = subjects.map(s=>{
+    const de = denemeler.filter(e=>e.subject===s.name);
+    const net = de.reduce((a,e)=>a+(e.net||0),0);
+    const count = de.length;
+    return {...s, net, count, avgNet: count>0?(net/count).toFixed(1):0};
+  });
+  // LGS puan hesabı (son/ortalama deneme)
+  const lgsScore = calcLGSScore(denemeSubStats);
 
   const subStats=subjects.map(s=>{
     const se=filtered.filter(e=>e.subject===s.name);
@@ -1598,102 +1672,167 @@ async function exportStudentDetailPDF(sName) {
     return {...s,q,d,y,net,dur,pct};
   });
 
+  // Gün bazlı liste (haftalık: son 7 gün, aylık: tüm ayın günleri)
+  let dayList = [];
+  if (studentAnalysisPeriod==='weekly') {
+    for(let i=6;i>=0;i--){
+      const d=new Date(now);d.setDate(now.getDate()-i);
+      const dk=d.toISOString().split('T')[0];
+      const de=allEntries.filter(e=>e.dateKey===dk);
+      dayList.push({
+        label: d.toLocaleDateString('tr-TR',{weekday:'short',day:'numeric',month:'short'}),
+        q:de.reduce((a,e)=>a+(e.questions||0),0),
+        dur:de.reduce((a,e)=>a+(e.duration||0),0),
+        net:de.reduce((a,e)=>a+(e.net||0),0)
+      });
+    }
+  } else if (studentAnalysisPeriod==='monthly') {
+    const daysInMonth = new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+    for(let i=1;i<=Math.min(daysInMonth,now.getDate());i++){
+      const dk=`${todayKey.substring(0,7)}-${String(i).padStart(2,'0')}`;
+      const de=allEntries.filter(e=>e.dateKey===dk);
+      dayList.push({
+        label:`${i} ${now.toLocaleDateString('tr-TR',{month:'short'})}`,
+        q:de.reduce((a,e)=>a+(e.questions||0),0),
+        dur:de.reduce((a,e)=>a+(e.duration||0),0),
+        net:de.reduce((a,e)=>a+(e.net||0),0)
+      });
+    }
+  }
+
+  // ---- PDF ÇİZİMİ ----
+  let Y = 0;
+
   // Header
   doc.setFillColor(108,99,255); doc.rect(0,0,210,38,'F');
   doc.setFillColor(67,233,123); doc.rect(0,36,210,3,'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(255,255,255);
-  doc.text('LGSKoc - Ogrenci Bireysel Analiz', 105,14,{align:'center'});
-  doc.setFontSize(11); doc.setFont('helvetica','normal');
-  doc.text(`${sName} | ${pLabel} Rapor | ${now.toLocaleDateString('tr-TR')}`,105,26,{align:'center'});
-
-  let y=48;
+  doc.text(toSafe('LGSKoc - Ogrenci Bireysel Analiz'), 105,14,{align:'center'});
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text(toSafe(`${sName} | ${pLabel} Rapor | ${now.toLocaleDateString('tr-TR')}`),105,26,{align:'center'});
+  Y=48;
 
   // Özet kutular
   const stats=[['Sure(dk)',totalDur],['Soru',totalQ],['Dogru',totalD],['Yanlis',totalY],['Net',totalNet.toFixed(1)],['Aktif Gun',activeDays]];
-  const bw=28,bh=16,bx=14,gap=4;
+  const bw=27,bh=16,bx=14,gap=3.6;
   stats.forEach((s,i)=>{
     const x=bx+i*(bw+gap);
-    doc.setFillColor(245,245,255); doc.roundedRect(x,y,bw,bh,2,2,'F');
-    doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(108,99,255);
-    doc.text(String(s[1]),x+bw/2,y+10,{align:'center'});
-    doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(100,100,120);
-    doc.text(s[0],x+bw/2,y+15,{align:'center'});
+    doc.setFillColor(245,245,255); doc.roundedRect(x,Y,bw,bh,2,2,'F');
+    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(108,99,255);
+    doc.text(String(s[1]),x+bw/2,Y+10,{align:'center'});
+    doc.setFontSize(6.5); doc.setFont('helvetica','normal'); doc.setTextColor(100,100,120);
+    doc.text(toSafe(s[0]),x+bw/2,Y+15,{align:'center'});
   });
-  y+=24;
+  Y+=22;
 
-  // Ders tablosu
-  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(30,30,50);
-  doc.text('Ders Bazli Analiz',14,y); y+=7;
-  const headers=['Ders','Sure(dk)','Soru','Dogru','Yanlis','Net','%Isabet'];
+  // ---- DERS BAZLI ANALİZ ----
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(30,30,50);
+  doc.text(toSafe('Ders Bazli Analiz'),14,Y); Y+=6;
+  const hdr=['Ders','Sure(dk)','Soru','Dogru','Yanlis','Net','%Isabet'];
   const colW=[40,22,18,18,18,16,22];
   let cx=14;
   doc.setFillColor(108,99,255);
-  headers.forEach((h,i)=>{doc.rect(cx,y,colW[i],7,'F');cx+=colW[i];});
-  doc.setTextColor(255,255,255); doc.setFontSize(8);
-  cx=14; headers.forEach((h,i)=>{doc.text(h,cx+colW[i]/2,y+5,{align:'center'});cx+=colW[i];});
-  y+=7;
+  hdr.forEach((h,i)=>{doc.rect(cx,Y,colW[i],7,'F');cx+=colW[i];});
+  doc.setTextColor(255,255,255); doc.setFontSize(8); cx=14;
+  hdr.forEach((h,i)=>{doc.text(toSafe(h),cx+colW[i]/2,Y+5,{align:'center'});cx+=colW[i];});
+  Y+=7;
   subStats.forEach((s,idx)=>{
     const row=[s.name,s.dur,s.q,s.d,s.y,s.net.toFixed(1),'%'+s.pct];
-    doc.setFillColor(idx%2===0?248:255,idx%2===0?248:255,idx%2===0?252:255);
-    cx=14; colW.forEach(w=>{doc.rect(cx,y,w,6,'F');cx+=w;});
-    doc.setTextColor(30,30,50); doc.setFontSize(8);
-    cx=14; row.forEach((v,i)=>{doc.text(String(v),cx+colW[i]/2,y+4.5,{align:'center'});cx+=colW[i];});
-    y+=6;
+    doc.setFillColor(idx%2===0?245:255,idx%2===0?245:255,idx%2===0?252:255);
+    cx=14; colW.forEach(w=>{doc.rect(cx,Y,w,6,'F');cx+=w;});
+    doc.setTextColor(30,30,50); doc.setFontSize(8); cx=14;
+    row.forEach((v,i)=>{doc.text(toSafe(String(v)),cx+colW[i]/2,Y+4.5,{align:'center'});cx+=colW[i];});
+    Y+=6;
   });
-  y+=8;
+  Y+=6;
 
-  // Trend bar chart (son 7 gün) — metin tablo olarak
-  if (studentAnalysisPeriod!=='daily') {
-    if(y>240){doc.addPage();y=20;}
-    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(30,30,50);
-    doc.text('Son 7 Gunluk Aktivite',14,y);y+=7;
-    const allE=studyEntries.filter(e=>e.studentName===sName);
-    const days7=[];
-    for(let i=6;i>=0;i--){
-      const d=new Date(now);d.setDate(now.getDate()-i);
-      const dk=d.toISOString().split('T')[0];
-      const de=allE.filter(e=>e.dateKey===dk);
-      days7.push({label:d.toLocaleDateString('tr-TR',{weekday:'short',day:'numeric'}),
-        q:de.reduce((a,e)=>a+(e.questions||0),0),
-        dur:de.reduce((a,e)=>a+(e.duration||0),0),
-        net:de.reduce((a,e)=>a+(e.net||0),0)});
-    }
-    const dW=24,dH=8,dX=14,dGap=2;
-    ['Gun','Soru','Sure(dk)','Net'].forEach((h,i)=>{
-      doc.setFillColor(108,99,255);doc.rect(dX+i*(dW+dGap),y,dW,dH,'F');
-      doc.setTextColor(255,255,255);doc.setFontSize(8);
-      doc.text(h,dX+i*(dW+dGap)+dW/2,y+5.5,{align:'center'});
+  // ---- DENEME SINAVI SONUÇLARI ----
+  if(denemeler.length>0) {
+    if(Y>240){doc.addPage();Y=20;}
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(30,30,50);
+    doc.text(toSafe('Deneme Sinavi Sonuclari'),14,Y); Y+=6;
+
+    // LGS puan kutusu
+    doc.setFillColor(108,99,255,15);
+    doc.setFillColor(240,238,255);
+    doc.roundedRect(14,Y,182,14,3,3,'F');
+    doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(108,99,255);
+    doc.text(toSafe('Tahmini LGS Puani (Deneme Ortalamasi):'),20,Y+5);
+    doc.setFontSize(14); doc.setTextColor(67,233,123);
+    doc.text(String(lgsScore)+(lgsScore>400?' (Cok Iyi)':lgsScore>300?' (Iyi)':lgsScore>200?' (Orta)':' (Gelisebilir)'), 120,Y+10);
+    Y+=18;
+
+    // Deneme ders tablosu
+    const dHdr=['Ders','Ort.Net','Deneme Sayisi'];
+    const dW=[70,50,60];
+    cx=14;
+    doc.setFillColor(80,60,200);
+    dHdr.forEach((h,i)=>{doc.rect(cx,Y,dW[i],7,'F');cx+=dW[i];});
+    doc.setTextColor(255,255,255); doc.setFontSize(8); cx=14;
+    dHdr.forEach((h,i)=>{doc.text(toSafe(h),cx+dW[i]/2,Y+5,{align:'center'});cx+=dW[i];});
+    Y+=7;
+    denemeSubStats.forEach((s,idx)=>{
+      const row=[s.name, s.avgNet, s.count];
+      doc.setFillColor(idx%2===0?240:255,idx%2===0?238:255,idx%2===0?255:255);
+      cx=14; dW.forEach(w=>{doc.rect(cx,Y,w,6,'F');cx+=w;});
+      doc.setTextColor(30,30,50); doc.setFontSize(8); cx=14;
+      row.forEach((v,i)=>{doc.text(toSafe(String(v)),cx+dW[i]/2,Y+4.5,{align:'center'});cx+=dW[i];});
+      Y+=6;
     });
-    y+=dH;
-    days7.forEach((d,idx)=>{
-      const row=[d.label,d.q,d.dur,d.net.toFixed(1)];
-      doc.setFillColor(idx%2===0?248:255,idx%2===0?248:255,idx%2===0?252:255);
-      row.forEach((v,i)=>{doc.rect(dX+i*(dW+dGap),y,dW,6,'F');});
-      doc.setTextColor(30,30,50);doc.setFontSize(8);
-      row.forEach((v,i)=>{doc.text(String(v),dX+i*(dW+dGap)+dW/2,y+4.5,{align:'center'});});
-      y+=6;
-    });
-    y+=8;
+    Y+=6;
   }
 
-  // Yorum
-  if(y>240){doc.addPage();y=20;}
-  doc.setFillColor(245,245,255);doc.roundedRect(14,y,182,7,2,2,'F');
-  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(108,99,255);
-  doc.text('Koc Degerlendirmesi',105,y+5,{align:'center'});y+=11;
+  // ---- GÜN BAZLI LİSTE ----
+  if(dayList.length>0 && studentAnalysisPeriod!=='daily') {
+    if(Y>220){doc.addPage();Y=20;}
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(30,30,50);
+    doc.text(toSafe(studentAnalysisPeriod==='weekly'?'Son 7 Gunluk Aktivite':'Bu Ayin Gun Gun Aktivitesi'),14,Y); Y+=6;
+
+    const gHdr=['Tarih','Soru','Sure(dk)','Net'];
+    const gW=[50,35,40,35];
+    cx=14;
+    doc.setFillColor(43,180,123);
+    gHdr.forEach((h,i)=>{doc.rect(cx,Y,gW[i],7,'F');cx+=gW[i];});
+    doc.setTextColor(255,255,255); doc.setFontSize(8); cx=14;
+    gHdr.forEach((h,i)=>{doc.text(toSafe(h),cx+gW[i]/2,Y+5,{align:'center'});cx+=gW[i];});
+    Y+=7;
+
+    dayList.forEach((d,idx)=>{
+      if(Y>278){doc.addPage();Y=20;}
+      const row=[d.label, d.q||0, d.dur||0, (d.net||0).toFixed(1)];
+      const hasData = d.q>0;
+      doc.setFillColor(
+        hasData?(idx%2===0?230:245):(idx%2===0?250:255),
+        hasData?(idx%2===0?248:252):(idx%2===0?250:255),
+        hasData?(idx%2===0?238:245):(idx%2===0?250:255)
+      );
+      cx=14; gW.forEach(w=>{doc.rect(cx,Y,w,6,'F');cx+=w;});
+      doc.setTextColor(hasData?20:140, hasData?30:140, hasData?50:140);
+      doc.setFont('helvetica', hasData?'bold':'normal'); doc.setFontSize(7.5); cx=14;
+      row.forEach((v,i)=>{doc.text(toSafe(String(v)),cx+gW[i]/2,Y+4.5,{align:'center'});cx+=gW[i];});
+      Y+=6;
+    });
+    Y+=6;
+  }
+
+  // ---- KOÇ YORUMU ----
+  if(Y>240){doc.addPage();Y=20;}
+  doc.setFillColor(240,238,255); doc.roundedRect(14,Y,182,8,2,2,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(108,99,255);
+  doc.text(toSafe('Koc Degerlendirmesi'),105,Y+5.5,{align:'center'}); Y+=12;
   const rawComment=generateStudentComment(sName,filtered,subStats,totalDur,totalQ,totalNet,activeDays,studentAnalysisPeriod)
     .replace(/<b>/g,'').replace(/<\/b>/g,'').replace(/<br><br>/g,'\n').replace(/<[^>]+>/g,'');
-  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(40,40,60);
-  const lines=doc.splitTextToSize(rawComment,182);
-  lines.forEach(l=>{if(y>280){doc.addPage();y=20;}doc.text(l,14,y);y+=5;});
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(40,40,60);
+  const lines=doc.splitTextToSize(toSafe(rawComment),182);
+  lines.forEach(l=>{if(Y>276){doc.addPage();Y=20;}doc.text(l,14,Y);Y+=5;});
 
   // Footer
-  doc.setFillColor(108,99,255);doc.rect(0,287,210,10,'F');
-  doc.setTextColor(255,255,255);doc.setFontSize(8);
-  doc.text('LGSKoc Ogretmen Paneli | '+now.toLocaleDateString('tr-TR'),105,293,{align:'center'});
+  doc.setFillColor(108,99,255); doc.rect(0,287,210,10,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(8);
+  doc.text(toSafe('LGSKoc Ogretmen Paneli | '+now.toLocaleDateString('tr-TR')),105,293,{align:'center'});
 
-  doc.save(`${sName.replace(/ /g,'_')}_${pLabel}_${todayKey}.pdf`);
-  showToast('📄','PDF hazırlandı!');
+  doc.save(toSafe(`${sName.replace(/ /g,'_')}_${pLabel}_${todayKey}.pdf`));
+  showToast('📄',toSafe('PDF hazırlandi!'));
 }
 
 function teacherAnalysis() {
@@ -1802,25 +1941,7 @@ function renderStudentPage(id, el) {
   else if(id==='kazanimlar') el.innerHTML = studentKazanimlar();
   else if(id==='my-tasks') el.innerHTML = studentTasks();
   else if(id==='messages') {
-    const myData = window.currentUserData || {};
-    const myUid = myData.uid || '';
-    const tId = myData.teacherId || '';
-    if (!activeChat && tId) activeChat = tId;
-    if (activeChat && myUid) {
-      const cId = convId(myUid, activeChat);
-      if (!chatMessages[cId]) {
-        db.collection('messages').doc(cId).collection('msgs')
-          .orderBy('createdAt','asc').limit(100).get()
-          .then(snap => {
-            chatMessages[cId] = [];
-            snap.forEach(d => chatMessages[cId].push(d.data()));
-            el.innerHTML = messagesPage('student');
-            setTimeout(()=>{ const cm=document.getElementById('chatMessages'); if(cm) cm.scrollTop=cm.scrollHeight; }, 50);
-          }).catch(()=>{ el.innerHTML = messagesPage('student'); });
-        el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text2)">💬 Mesajlar yükleniyor...</div>`;
-        return;
-      }
-    }
+    // Öğrencinin tek koçu var, ama yine de tutarlı olsun
     el.innerHTML = messagesPage('student');
   }
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
@@ -2383,6 +2504,7 @@ function messagesPage(role) {
   const isTeacher = role === 'teacher';
   const myData = window.currentUserData || {};
   const myUid = myData.uid || '';
+  const allNotifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
 
   let partners = [];
   if (isTeacher) {
@@ -2400,56 +2522,72 @@ function messagesPage(role) {
     </div>`;
   }
 
-  if (!activeChat) activeChat = partners[0].uid;
-  const partner = partners.find(p => p.uid === activeChat) || partners[0];
-  const cId = convId(myUid, partner.uid);
-  const msgs = chatMessages[cId] || [];
+  // Okunmamış mesaj sayısı partner başına
+  const unreadByPartner = {};
+  allNotifs.filter(n=>n.type==='message'&&!n.read).forEach(n=>{
+    unreadByPartner[n.fromUid] = (unreadByPartner[n.fromUid]||0)+1;
+  });
 
   const listHTML = partners.map(p => {
     const cid = convId(myUid, p.uid);
     const lastMsgs = chatMessages[cid] || [];
     const last = lastMsgs[lastMsgs.length - 1];
-    return `<div class="chat-list-item ${activeChat===p.uid?'active':''}" onclick="switchChatTo('${p.uid}','${role}')">
-      <div class="student-avatar" style="background:${p.color}22;color:${p.color};width:36px;height:36px;font-size:0.9rem">${p.name[0]}</div>
+    const unread = unreadByPartner[p.uid]||0;
+    return `<div class="chat-list-item" onclick="switchChatTo('${p.uid}','${role}')">
+      <div class="student-avatar" style="background:${p.color}22;color:${p.color};width:40px;height:40px;font-size:1rem;flex-shrink:0">${p.name[0]}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:0.88rem">${p.name}</div>
-        <div style="font-size:0.75rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${last ? last.text.substring(0,28)+'…' : 'Henüz mesaj yok'}</div>
+        <div style="font-weight:700;font-size:0.9rem">${p.name}</div>
+        <div style="font-size:0.75rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${last ? last.text.substring(0,30)+'…' : 'Henüz mesaj yok'}</div>
       </div>
+      ${unread>0?`<span style="background:var(--accent2);color:#fff;font-size:0.65rem;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0">${unread}</span>`:'<span style="color:var(--text2);font-size:1rem">›</span>'}
     </div>`;
   }).join('');
 
-  const msgsHTML = msgs.map((m,i) => {
-    const mine = m.senderUid === myUid;
-    const isLast = mine && i === msgs.length - 1;
-    const seenTick = mine ? ` <span style="font-size:0.62rem;color:${m.seen?'var(--accent3)':'var(--text2)'}">${m.seen?'✓✓':'✓'}</span>` : '';
-    return `<div class="msg ${mine?'mine':'theirs'}">
-      <div class="msg-bubble">${m.text}</div>
-      <div class="msg-time">${m.time||''}${seenTick}</div>
-    </div>`;
-  }).join('');
+  // Aktif sohbet penceresi
+  let chatWindowHTML = '';
+  if (activeChat) {
+    const partner = partners.find(p => p.uid === activeChat) || partners[0];
+    const cId = convId(myUid, partner.uid);
+    const msgs = chatMessages[cId] || [];
+    const msgsHTML = msgs.map((m) => {
+      const mine = m.senderUid === myUid;
+      const seenTick = mine ? ` <span style="font-size:0.62rem;color:${m.seen?'var(--accent3)':'var(--text2)'}">${m.seen?'✓✓':'✓'}</span>` : '';
+      return `<div class="msg ${mine?'mine':'theirs'}">
+        <div class="msg-bubble">${m.text}</div>
+        <div class="msg-time">${m.time||''}${seenTick}</div>
+      </div>`;
+    }).join('');
+    chatWindowHTML = `
+      <div class="chat-header">
+        <button class="mobile-chat-back" onclick="activeChat=null;showPage('messages')">← Geri</button>
+        <div class="student-avatar" style="background:${partner.color}22;color:${partner.color};width:36px;height:36px">${partner.name[0]}</div>
+        <div><div style="font-weight:800">${partner.name}</div><div style="font-size:0.75rem;color:var(--accent3)">● Aktif</div></div>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        ${msgs.length===0?'<div class="msg-system">İlk mesajı sen gönder! 👋</div>':'<div class="msg-system">Konuşma geçmişi</div>'}
+        ${msgsHTML}
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chatInput" type="text" placeholder="Mesaj yaz..."
+          onkeydown="if(event.key==='Enter')sendMessage('${role}')">
+        <button class="chat-send-btn" onclick="sendMessage('${role}')">➤</button>
+      </div>`;
+  }
+
+  // Mobilde: activeChat varsa listeyi gizle, pencereyi göster
+  const listClass = activeChat ? 'chat-list mobile-hidden' : 'chat-list';
+  const winClass = activeChat ? 'chat-window mobile-show' : 'chat-window';
 
   return `
     <div class="page-title">💬 Mesajlar</div>
     <div class="page-sub">Birebir iletişim</div>
     <div class="chat-layout">
-      <div class="chat-list">
+      <div class="${listClass}">
         <div class="chat-list-header">💬 Konuşmalar</div>
         ${listHTML}
       </div>
-      <div class="chat-window">
-        <div class="chat-header">
-          <div class="student-avatar" style="background:${partner.color}22;color:${partner.color};width:36px;height:36px">${partner.name[0]}</div>
-          <div><div style="font-weight:800">${partner.name}</div><div style="font-size:0.75rem;color:var(--accent3)">● Aktif</div></div>
-        </div>
-        <div class="chat-messages" id="chatMessages">
-          ${msgs.length===0?'<div class="msg-system">İlk mesajı sen gönder! 👋</div>':'<div class="msg-system">Konuşma geçmişi</div>'}
-          ${msgsHTML}
-        </div>
-        <div class="chat-input-row">
-          <input class="chat-input" id="chatInput" type="text" placeholder="Mesaj yaz..."
-            onkeydown="if(event.key==='Enter')sendMessage('${role}')">
-          <button class="chat-send-btn" onclick="sendMessage('${role}')">➤</button>
-        </div>
+      <div class="${winClass}">
+        ${chatWindowHTML}
       </div>
     </div>`;
 }
@@ -2458,15 +2596,25 @@ async function switchChatTo(uid, role) {
   activeChat = uid;
   const myUid = (window.currentUserData || {}).uid || '';
   const cId = convId(myUid, uid);
+  const el = document.getElementById('pageContent');
+  if(el) el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text2)">💬 Yükleniyor...</div>`;
   try {
     const snap = await db.collection('messages').doc(cId).collection('msgs')
       .orderBy('createdAt','asc').limit(100).get();
     chatMessages[cId] = [];
     snap.forEach(d => chatMessages[cId].push(d.data()));
   } catch(e) { chatMessages[cId] = chatMessages[cId] || []; }
+  // Mesaj bildirimlerini okundu yap
   markMessagesAsSeen(uid);
+  // Mesaj bildirimlerini notifications'ta okundu yap
+  const allNotifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
+  allNotifs.filter(n=>n.type==='message'&&n.fromUid===uid&&!n.read).forEach(n=>{
+    n.read = true;
+    if(n.id) db.collection('notifications').doc(n.id).update({read:true}).catch(()=>{});
+  });
+  updateNotifBadge();
   showPage('messages');
-  setTimeout(()=>{ const el=document.getElementById('chatMessages'); if(el) el.scrollTop=el.scrollHeight; },80);
+  setTimeout(()=>{ const cm=document.getElementById('chatMessages'); if(cm) cm.scrollTop=cm.scrollHeight; },80);
 }
 
 async function sendMessage(role) {
@@ -2657,26 +2805,37 @@ async function changePassword() {
 
 function notificationsPage() {
   const notifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
-  // Okunmamışları okundu yap
-  notifs.forEach(n => n.read = true);
+  const taskNotifs = notifs.filter(n => n.type !== 'message');
+  // Okundu işaretle
+  taskNotifs.forEach(n => { n.read = true; });
+  const myUid = (window.currentUserData||{}).uid||'';
+  if (myUid) {
+    taskNotifs.filter(n=>n.id).forEach(n => {
+      db.collection('notifications').doc(n.id).update({read:true}).catch(()=>{});
+    });
+  }
+  setTimeout(()=>updateNotifBadge(), 100);
   return `
     <div class="page-title">🔔 Bildirimler</div>
-    <div class="page-sub">Son aktiviteler ve güncellemeler</div>
+    <div class="page-sub">Görev ve sistem bildirimleri</div>
     <div class="card">
-      ${notifs.length === 0
+      ${taskNotifs.length === 0
         ? `<div style="text-align:center;padding:40px;color:var(--text2)">
             <div style="font-size:2.5rem;margin-bottom:12px">🔔</div>
             <div>Henüz bildirim yok</div>
            </div>`
-        : notifs.map(n=>`
+        : taskNotifs.map(n=>`
           <div class="notif-item">
-            <div class="notif-dot ${n.read?'read':''}"></div>
+            <div class="notif-dot read"></div>
             <div style="flex:1">
               <div class="notif-text">${n.text}</div>
               <div class="notif-time">${n.time||''}</div>
             </div>
           </div>
         `).join('')}
+    </div>
+    <div style="text-align:center;margin-top:12px;font-size:0.8rem;color:var(--text2)">
+      💬 Mesaj bildirimleri için <button onclick="showPage('messages')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-weight:700">Mesajlar</button> bölümüne git
     </div>`;
 }
 
@@ -2723,31 +2882,19 @@ async function loadNotifications() { loadNotificationsOnce(); }
 
 function updateNotifBadge() {
   const notifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
-  const unread = notifs.filter(n => !n.read).length;
+  // Görev/sistem bildirimleri → header zil ikonu
+  const unreadTask = notifs.filter(n => !n.read && n.type !== 'message').length;
   const badge = document.getElementById('notifBadge');
-  if (!badge) return;
-  if (unread > 0) {
-    badge.textContent = unread > 9 ? '9+' : String(unread);
-    badge.style.display = 'flex';
-  } else {
-    badge.style.display = 'none';
-  }
-  // Mobile nav'daki bildirim butonuna da badge ekle
-  const navBtns = document.querySelectorAll('.mobile-nav-item');
-  navBtns.forEach(btn => {
-    if (btn.textContent.includes('Bildirim') || btn.textContent.includes('🔔')) {
-      let dot = btn.querySelector('.nav-notif-dot');
-      if (unread > 0) {
-        if (!dot) {
-          dot = document.createElement('span');
-          dot.className = 'nav-notif-dot';
-          dot.style.cssText = 'position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--accent2);border-radius:50%;';
-          btn.style.position = 'relative';
-          btn.appendChild(dot);
-        }
-      } else if (dot) { dot.remove(); }
+  if (badge) {
+    if (unreadTask > 0) {
+      badge.textContent = unreadTask > 9 ? '9+' : String(unreadTask);
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
     }
-  });
+  }
+  // Mobile nav'ı yenile (mesaj badge dahil)
+  renderMobileNav();
 }
 
 /* =================== HELPERS =================== */
