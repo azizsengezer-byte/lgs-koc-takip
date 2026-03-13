@@ -628,6 +628,10 @@
 
     <!-- Deneme Sınavı için tüm dersler -->
     <div id="denemeFields" style="display:none">
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">📝 Deneme Adı <span style="color:var(--text2);font-weight:400">(opsiyonel)</span></label>
+        <input class="form-input" type="text" id="denemeTitle" placeholder="örn. Günay Yayınları Deneme 1">
+      </div>
       <div style="font-size:0.82rem;color:var(--text2);margin-bottom:12px">Her dersin doğru ve yanlış sayısını gir:</div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <div style="width:90px;font-size:0.82rem;font-weight:700;color:var(--turkish)">📖 Türkçe</div>
@@ -1439,6 +1443,48 @@ async function showUserProfile(uid, fallbackName, fallbackColor) {
   openModal('viewProfileModal');
 }
 
+async function editDeneme(examId, currentTitle) {
+  const newTitle = prompt('Deneme adını düzenle:', currentTitle);
+  if (!newTitle || newTitle.trim() === currentTitle) return;
+  const trimmed = newTitle.trim();
+  const user = auth.currentUser;
+  if (!user) return;
+  showToast('⏳', 'Güncelleniyor...');
+  try {
+    // studyEntries local güncelle
+    studyEntries.forEach(e => { if (e.examId === examId) { e.examTitle = trimmed; e.topic = trimmed; } });
+    // Firestore güncelle
+    const snap = await db.collection('studyEntries')
+      .where('userId','==',user.uid)
+      .where('examId','==',examId).get();
+    const batch = db.batch();
+    snap.forEach(d => batch.update(d.ref, { examTitle: trimmed, topic: trimmed }));
+    await batch.commit();
+    showToast('✅', 'Deneme adı güncellendi!');
+    showPage('my-analysis');
+  } catch(e) { showToast('❌', 'Güncelleme başarısız'); }
+}
+
+async function deleteDeneme(examId) {
+  if (!confirm('Bu denemeyi silmek istediğinize emin misiniz?')) return;
+  const user = auth.currentUser;
+  if (!user) return;
+  showToast('⏳', 'Siliniyor...');
+  try {
+    // local sil
+    studyEntries = studyEntries.filter(e => e.examId !== examId);
+    // Firestore sil
+    const snap = await db.collection('studyEntries')
+      .where('userId','==',user.uid)
+      .where('examId','==',examId).get();
+    const batch = db.batch();
+    snap.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    showToast('✅', 'Deneme silindi!');
+    showPage('my-analysis');
+  } catch(e) { showToast('❌', 'Silme başarısız'); }
+}
+
 function toggleDenemeAcc(id) {
   const el = document.getElementById(id);
   const arrow = document.getElementById(id+'_arrow');
@@ -1543,26 +1589,35 @@ function studentDetailAnalysis() {
   }
   const maxMQ = Math.max(...monthTrend.map(t=>t.q),1);
 
-  // Deneme sonuçları — TÜM ZAMANLAR (dönem filtresi değil, tüm geçmiş denemeler)
+  // Deneme sonuçları — examId ile grupla (yoksa dateKey), TÜM ZAMANLAR
   const tumDenemeler = allEntries.filter(e=>e.type==='deneme');
   const denemeDateMap = {};
   tumDenemeler.forEach(e=>{
-    if(!denemeDateMap[e.dateKey]) denemeDateMap[e.dateKey]=[];
-    denemeDateMap[e.dateKey].push(e);
+    const key = e.examId || (e.dateKey+'_legacy');
+    if(!denemeDateMap[key]) denemeDateMap[key]=[];
+    denemeDateMap[key].push(e);
   });
-  const denemeSinavlari = Object.keys(denemeDateMap).sort().reverse().map(dk=>{
-    const dersler = denemeDateMap[dk];
-    const subResults = subjects.map(s=>{
-      const se = dersler.find(e=>e.subject===s.name);
-      if (!se) return {...s, d:0, y:0, net:0, q:0};
-      const d = se.correct||0, y = se.wrong||0;
-      const net = d - y/3; // Doğru formül: Y/3
-      return {...s, d, y, net: Math.round(net*100)/100, q: d+y};
+  const denemeSinavlari = Object.entries(denemeDateMap)
+    .sort((a,b)=>{
+      const da = a[1][0]?.dateKey||''; const db2 = b[1][0]?.dateKey||'';
+      return db2.localeCompare(da);
+    })
+    .map(([key, dersler])=>{
+      const examTitle = dersler[0]?.examTitle || dersler[0]?.topic || (dersler[0]?.dateKey+' Denemesi');
+      const dk = dersler[0]?.dateKey || '';
+      const subResults = subjects.map(s=>{
+        const se = dersler.find(e=>e.subject===s.name);
+        if (!se) return {...s, d:0, y:0, net:0, q:0};
+        const d = se.correct||0, y = se.wrong||0;
+        return {...s, d, y, net: Math.round((d-y/3)*100)/100, q: d+y};
+      });
+      const lgsInput = subResults.map(s=>({...s, avgNet:s.net, count:s.q>0?1:0}));
+      const lgsRes = calcLGSScore(lgsInput);
+      // Düzenleme/silme için firestoreIds
+      const firestoreIds = dersler.map(e=>e.firestoreId||e.id).filter(Boolean);
+      const examId2 = dersler[0]?.examId || key;
+      return { key, examId: examId2, examTitle, dk, subResults, lgsRes, firestoreIds, dersler };
     });
-    const lgsInput = subResults.map(s=>({...s, avgNet:s.net, count:s.q>0?1:0}));
-    const lgsRes = calcLGSScore(lgsInput);
-    return { dk, subResults, lgsRes };
-  });
   const hasDenemeler = denemeSinavlari.length > 0;
 
   // Yorum üret
@@ -1655,18 +1710,18 @@ function studentDetailAnalysis() {
       ${!hasDenemeler
         ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.85rem">Henüz deneme sınavı girilmemiş</div>`
         : `
-        <!-- Deneme puanı trendi (her zaman görünür) -->
+        <!-- Puan trendi -->
         ${denemeSinavlari.length>1?`
         <div style="margin-bottom:14px">
-          <div style="font-size:0.78rem;font-weight:700;color:var(--text2);margin-bottom:8px">📈 Puan Trendi (en eskiden en yeniye)</div>
+          <div style="font-size:0.78rem;font-weight:700;color:var(--text2);margin-bottom:8px">📈 Puan Trendi</div>
           <div style="display:flex;align-items:flex-end;gap:5px;height:68px">
             ${[...denemeSinavlari].reverse().map((d,i)=>{
               const h = Math.max(Math.round((d.lgsRes.puan/500)*56),4);
               const isLast = i===denemeSinavlari.length-1;
-              return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+              return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px" title="${d.examTitle}">
                 <div style="font-size:0.58rem;color:var(--accent);font-weight:700">${d.lgsRes.puan}</div>
-                <div style="width:100%;height:${h}px;background:${isLast?'var(--accent)':'var(--accent)55'};border-radius:3px 3px 0 0;transition:.3s"></div>
-                <div style="font-size:0.56rem;color:var(--text2)">D${i+1}</div>
+                <div style="width:100%;height:${h}px;background:${isLast?'var(--accent)':'var(--accent)55'};border-radius:3px 3px 0 0"></div>
+                <div style="font-size:0.52rem;color:var(--text2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">D${i+1}</div>
               </div>`;
             }).join('')}
           </div>
@@ -1675,50 +1730,57 @@ function studentDetailAnalysis() {
         <!-- Accordion liste -->
         <div style="display:flex;flex-direction:column;gap:8px">
           ${denemeSinavlari.map((d,i)=>{
-            const dateLabel = new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+            const dateLabel = d.dk ? new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'}) : '';
             const lgsDetay = d.lgsRes.detail || [];
             const accId = 'deneme_acc_'+i;
             const num = denemeSinavlari.length - i;
+            const canEdit = currentRole === 'student'; // Sadece öğrenci kendi denemelerini düzenler
             return `
             <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden">
-              <!-- Başlık (tıklanabilir) -->
-              <div onclick="toggleDenemeAcc('${accId}')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;background:var(--surface2);user-select:none">
-                <div style="display:flex;align-items:center;gap:10px">
-                  <div style="width:30px;height:30px;border-radius:50%;background:var(--accent)22;color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.8rem">${num}</div>
-                  <div>
-                    <div style="font-weight:800;font-size:0.88rem">Deneme ${num}</div>
-                    <div style="font-size:0.72rem;color:var(--text2)">${dateLabel}</div>
+              <div style="display:flex;align-items:stretch">
+                <!-- Başlık (tıklanabilir) -->
+                <div onclick="toggleDenemeAcc('${accId}')" style="flex:1;display:flex;justify-content:space-between;align-items:center;padding:12px 10px;cursor:pointer;background:var(--surface2);user-select:none">
+                  <div style="display:flex;align-items:center;gap:10px;min-width:0">
+                    <div style="width:28px;height:28px;border-radius:50%;background:var(--accent)22;color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.78rem;flex-shrink:0">${num}</div>
+                    <div style="min-width:0">
+                      <div style="font-weight:800;font-size:0.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${d.examTitle}</div>
+                      <div style="font-size:0.7rem;color:var(--text2)">${dateLabel}</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                    <div style="text-align:right">
+                      <div style="font-size:1.2rem;font-weight:900;color:var(--accent);line-height:1">${d.lgsRes.puan}</div>
+                      <div style="font-size:0.6rem;color:var(--text2)">/500</div>
+                    </div>
+                    <span id="${accId}_arrow" style="font-size:0.9rem;color:var(--text2)">▼</span>
                   </div>
                 </div>
-                <div style="display:flex;align-items:center;gap:10px">
-                  <div style="text-align:right">
-                    <div style="font-size:1.3rem;font-weight:900;color:var(--accent);line-height:1">${d.lgsRes.puan}</div>
-                    <div style="font-size:0.6rem;color:var(--text2)">/500</div>
-                  </div>
-                  <span id="${accId}_arrow" style="font-size:1rem;color:var(--text2);transition:.2s">▼</span>
-                </div>
+                ${canEdit ? `
+                <!-- Düzenleme butonları -->
+                <div style="display:flex;flex-direction:column;border-left:1px solid var(--border)">
+                  <button onclick="editDeneme('${d.examId}','${d.examTitle.replace(/'/g,'\\\'')}')" style="flex:1;background:var(--accent)15;border:none;padding:0 10px;cursor:pointer;font-size:0.75rem;color:var(--accent);border-bottom:1px solid var(--border)" title="İsim düzenle">✏️</button>
+                  <button onclick="deleteDeneme('${d.examId}')" style="flex:1;background:#ff658415;border:none;padding:0 10px;cursor:pointer;font-size:0.75rem;color:#ff6584" title="Sil">🗑️</button>
+                </div>` : ''}
               </div>
-              <!-- Detay (açılır/kapanır) -->
+              <!-- Detay -->
               <div id="${accId}" style="display:none;padding:12px 14px;background:var(--surface);border-top:1px solid var(--border)">
-                <!-- Ders sonuçları -->
-                ${d.subResults.map(s=>`
+                ${d.subResults.filter(s=>s.q>0).map(s=>`
                   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
                     <span style="font-size:0.8rem;color:var(--${s.cls})">${s.icon} ${s.name}</span>
                     <span style="font-size:0.8rem">D:<b>${s.d}</b> Y:<b>${s.y}</b> <span style="color:var(--accent3);font-weight:800;margin-left:6px">Net:${s.net.toFixed(2)}</span></span>
                   </div>`).join('')}
-                <!-- LGS hesap detayı -->
                 <div style="margin-top:10px;background:var(--accent)08;border-radius:8px;padding:10px;border:1px solid var(--accent)22">
-                  <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:6px">📐 Puan Hesabı (Net × Katsayı)</div>
+                  <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:6px">📐 Puan Hesabı</div>
                   ${lgsDetay.map(ld=>`
-                    <div style="display:flex;justify-content:space-between;font-size:0.72rem;padding:3px 0;border-bottom:1px solid var(--border)">
+                    <div style="display:flex;justify-content:space-between;font-size:0.72rem;padding:2px 0;border-bottom:1px solid var(--border)">
                       <span style="color:var(--text2)">${toSafe(ld.name)}</span>
                       <span>${ld.net} × ${ld.kat} = <b style="color:var(--accent3)">${ld.agNet}</b></span>
                     </div>`).join('')}
-                  <div style="display:flex;justify-content:space-between;font-size:0.78rem;font-weight:800;margin-top:6px;padding-top:4px">
+                  <div style="display:flex;justify-content:space-between;font-size:0.78rem;font-weight:800;margin-top:6px">
                     <span>Ham Puan</span><span style="color:var(--accent)">${d.lgsRes.hamPuan}</span>
                   </div>
-                  <div style="display:flex;justify-content:space-between;font-size:0.78rem;font-weight:900;color:var(--accent)">
-                    <span>LGS Puanı</span><span style="font-size:1rem">${d.lgsRes.puan} / 500</span>
+                  <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:900;color:var(--accent)">
+                    <span>LGS Puanı</span><span>${d.lgsRes.puan} / 500</span>
                   </div>
                 </div>
               </div>
@@ -1914,22 +1976,29 @@ async function exportStudentDetailPDF(sName) {
     return {...s,q,d,y,net,dur,pct,weakTopics};
   });
 
-  // ---- Deneme verileri (TÜM ZAMANLAR) ----
+  // ---- Deneme verileri (TÜM ZAMANLAR, examId ile grupla) ----
   const allDenemeler = allEntries.filter(e=>e.type==='deneme');
-  const denemeDateMapP = {};
-  allDenemeler.forEach(e=>{ if(!denemeDateMapP[e.dateKey]) denemeDateMapP[e.dateKey]=[]; denemeDateMapP[e.dateKey].push(e); });
-  const denemeler = Object.keys(denemeDateMapP).sort().map((dk,di)=>{
-    const dersler = denemeDateMapP[dk];
-    const subR = subjects.map(s=>{
-      const se = dersler.find(e=>e.subject===s.name);
-      if(!se) return {name:s.name,shortName:s.name.substring(0,3),d:0,y:0,net:0,q:0};
-      const d=se.correct||0, y=se.wrong||0;
-      return {name:s.name,shortName:s.name.substring(0,3),d,y,net:Math.round((d-y/3)*100)/100,q:d+y};
-    });
-    const lgsIn = subR.map(s=>({...s,avgNet:s.net,count:s.q>0?1:0}));
-    const lgsR = calcLGSScore(lgsIn);
-    return {dk,di:di+1,subR,lgs:lgsR.puan,hamPuan:lgsR.hamPuan,detail:lgsR.detail};
+  const denemePdfMap = {};
+  allDenemeler.forEach(e=>{
+    const key = e.examId || (e.dateKey+'_legacy');
+    if(!denemePdfMap[key]) denemePdfMap[key]=[];
+    denemePdfMap[key].push(e);
   });
+  const denemeler = Object.entries(denemePdfMap)
+    .sort((a,b)=>(a[1][0]?.dateKey||'').localeCompare(b[1][0]?.dateKey||''))
+    .map(([key,dersler],di)=>{
+      const examTitle = dersler[0]?.examTitle || dersler[0]?.topic || (dersler[0]?.dateKey+' Denemesi');
+      const dk = dersler[0]?.dateKey || '';
+      const subR = subjects.map(s=>{
+        const se = dersler.find(e=>e.subject===s.name);
+        if(!se) return {name:s.name,d:0,y:0,net:0,q:0};
+        const d=se.correct||0, y=se.wrong||0;
+        return {name:s.name,d,y,net:Math.round((d-y/3)*100)/100,q:d+y};
+      });
+      const lgsIn = subR.map(s=>({...s,avgNet:s.net,count:s.q>0?1:0}));
+      const lgsR = calcLGSScore(lgsIn);
+      return {dk,di:di+1,examTitle,subR,lgs:lgsR.puan,hamPuan:lgsR.hamPuan,detail:lgsR.detail};
+    });
 
   // ---- Günlük trend (son 30 gün veya seçili dönem) ----
   const trendDays = studentAnalysisPeriod==='daily' ? 1 : studentAnalysisPeriod==='weekly' ? 7 : 30;
@@ -2343,8 +2412,8 @@ async function exportStudentDetailPDF(sName) {
     // Her deneme detay tablosu
     denemeler.forEach((den,di)=>{
       Y=checkY(Y,14);
-      const dateL=new Date(den.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
-      Y=secHeader('Deneme '+den.di+' — '+ts(dateL)+'   LGS: '+den.lgs+' / 500', Y, 100,85,220);
+      const dateL=den.dk?new Date(den.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'}):'';
+      Y=secHeader(ts(den.examTitle||('Deneme '+den.di))+' — '+ts(dateL)+'   LGS: '+den.lgs+' / 500', Y, 100,85,220);
 
       const dHdr=['Ders','D','Y','Net (D-Y/3)','Katsayi','Ag.Net'];
       const dW=[48,18,18,36,24,38];
@@ -2432,23 +2501,28 @@ async function exportStudentDetailPDF(sName) {
   }
 
   const fname = ts(sName.replace(/\s+/g,'_'))+'_'+pLabel+'_'+todayKey+'.pdf';
-  
-  // Mobil uyumlu PDF indirme
+
   try {
     const pdfBlob = doc.output('blob');
     const blobUrl = URL.createObjectURL(pdfBlob);
+    // Yöntem 1: <a> tıklama (masaüstü + bazı mobil)
     const a = document.createElement('a');
     a.href = blobUrl;
     a.download = fname;
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(blobUrl); document.body.removeChild(a); }, 3000);
+    document.body.removeChild(a);
+    // Yöntem 2: 1sn sonra yeni sekmede aç (mobil Android fallback)
+    setTimeout(()=>{
+      window.open(blobUrl, '_blank');
+      setTimeout(()=>URL.revokeObjectURL(blobUrl), 10000);
+    }, 800);
+    showToast('📄','PDF hazır! İndirme başladı veya yeni sekmede açıldı.');
   } catch(e) {
-    // Fallback: doğrudan save
-    doc.save(fname);
+    try { doc.save(fname); showToast('📄','PDF indirildi!'); }
+    catch(e2) { showToast('❌','PDF hatası: '+e2.message); }
   }
-  showToast('📄','PDF indirildi!');
 }
 
 
@@ -2900,6 +2974,56 @@ function studentAnalysis() {
       <div class="card-title">🤖 Performans Yorumu</div>
       <div style="font-size:0.88rem;line-height:1.7;color:var(--text)">${comment}</div>
     </div>
+
+    <!-- Deneme Sınavları -->
+    ${(()=>{
+      const allD = studyEntries.filter(e=>e.type==='deneme');
+      if(allD.length===0) return '';
+      const dMap = {};
+      allD.forEach(e=>{ const k=e.examId||(e.dateKey+'_legacy'); if(!dMap[k]) dMap[k]=[]; dMap[k].push(e); });
+      const dList = Object.entries(dMap).sort((a,b)=>(b[1][0]?.dateKey||'').localeCompare(a[1][0]?.dateKey||'')).map(([k,dersler],i)=>{
+        const title = dersler[0]?.examTitle||dersler[0]?.topic||(dersler[0]?.dateKey+' Denemesi');
+        const dk = dersler[0]?.dateKey||'';
+        const dateL = dk ? new Date(dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'}) : '';
+        const subR = subjects.map(s=>{ const se=dersler.find(e=>e.subject===s.name); if(!se) return {...s,d:0,y:0,net:0,q:0}; const d=se.correct||0,y=se.wrong||0; return {...s,d,y,net:Math.round((d-y/3)*100)/100,q:d+y}; });
+        const lgsR = calcLGSScore(subR.map(s=>({...s,avgNet:s.net,count:s.q>0?1:0})));
+        const examId2 = dersler[0]?.examId||k;
+        const accId = 'std_den_'+i;
+        const num = dList ? dList.length-i : i+1;
+        return `<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:8px">
+          <div style="display:flex;align-items:stretch">
+            <div onclick="toggleDenemeAcc('${accId}')" style="flex:1;display:flex;justify-content:space-between;align-items:center;padding:12px 10px;cursor:pointer;background:var(--surface2);user-select:none">
+              <div style="min-width:0">
+                <div style="font-weight:800;font-size:0.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">${title}</div>
+                <div style="font-size:0.7rem;color:var(--text2)">${dateL}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                <div style="text-align:right">
+                  <div style="font-size:1.2rem;font-weight:900;color:var(--accent)">${lgsR.puan}</div>
+                  <div style="font-size:0.6rem;color:var(--text2)">/500</div>
+                </div>
+                <span id="${accId}_arrow" style="font-size:0.9rem;color:var(--text2)">▼</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;border-left:1px solid var(--border)">
+              <button onclick="editDeneme('${examId2}','${title.replace(/'/g,'\\\'')}')" style="flex:1;background:var(--accent)15;border:none;padding:0 12px;cursor:pointer;font-size:0.85rem;color:var(--accent);border-bottom:1px solid var(--border)" title="Düzenle">✏️</button>
+              <button onclick="deleteDeneme('${examId2}')" style="flex:1;background:#ff658415;border:none;padding:0 12px;cursor:pointer;font-size:0.85rem;color:#ff6584" title="Sil">🗑️</button>
+            </div>
+          </div>
+          <div id="${accId}" style="display:none;padding:12px;background:var(--surface);border-top:1px solid var(--border)">
+            ${subR.filter(s=>s.q>0).map(s=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.8rem"><span style="color:var(--${s.cls})">${s.icon} ${s.name}</span><span>D:${s.d} Y:${s.y} <b style="color:var(--accent3)">Net:${s.net.toFixed(2)}</b></span></div>`).join('')}
+            <div style="text-align:right;font-size:0.78rem;font-weight:800;color:var(--accent);margin-top:8px">Ham: ${lgsR.hamPuan} → LGS: ${lgsR.puan}/500</div>
+          </div>
+        </div>`;
+      });
+      return `<div class="card" style="margin-bottom:16px;border:1px solid var(--accent4)33">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="card-title" style="margin:0">🎯 Deneme Sınavlarım</div>
+          <div style="font-size:0.75rem;color:var(--text2)">${dList.length} deneme</div>
+        </div>
+        ${dList.join('')}
+      </div>`;
+    })()}
 
     <!-- PDF -->
     <div class="pdf-actions">
@@ -3634,8 +3758,13 @@ function saveEntry() {
   const teacherId = (window.currentUserData||{}).teacherId || '';
 
   if (type === 'deneme') {
-    // Deneme sınavı — tüm dersler ayrı ayrı kaydet
+    // examId: bu denemenin tüm derslerini bağlayan benzersiz ID
+    const examId = 'exam_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
+    const examTitleRaw = (document.getElementById('denemeTitle')?.value||'').trim();
+    const examTitle = examTitleRaw || new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'})+' Denemesi';
+    // Deneme sınavı — tüm dersler ayrı ayrı kaydet, hepsi aynı examId ile
     let saved = 0;
+    const savedPromises = [];
     subjects.forEach(s => {
       const d = parseInt(document.getElementById('deneme_d_'+s.name)?.value)||0;
       const y = parseInt(document.getElementById('deneme_y_'+s.name)?.value)||0;
@@ -3643,28 +3772,31 @@ function saveEntry() {
       const net = d - y/3;
       const q = d + y;
       const entry = {
-        subject: s.name, topic: 'Deneme Sınavı', type: 'deneme',
+        subject: s.name, topic: examTitle, type: 'deneme',
+        examId, examTitle,
         duration: Math.round(dur/subjects.length), questions: q,
         correct: d, wrong: y, net, note, time, dateKey, isToday: true,
         date: 'Bugün '+time
       };
       studyEntries.unshift(entry);
       if (user) {
-        db.collection('studyEntries').add({
+        const p = db.collection('studyEntries').add({
           ...entry, userId: user.uid, teacherId, studentName,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).catch(()=>{});
+        }).then(docRef => { entry.firestoreId = docRef.id; }).catch(()=>{});
+        savedPromises.push(p);
         saved++;
       } else { saved++; }
     });
+    // Input temizle
+    if(document.getElementById('denemeTitle')) document.getElementById('denemeTitle').value = '';
     closeModal('addEntryModal');
-    showToast('✅', `Deneme sınavı kaydedildi! (${saved} ders)`);
-    // Öğretmene bildirim gönder
+    showToast('✅', `"${examTitle}" kaydedildi! (${saved} ders)`);
     if (user && teacherId) {
       const time2 = new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
       db.collection('notifications').add({
         toUid: teacherId, fromUid: user.uid,
-        text: `🎯 ${studentName} deneme sınavı sonuçlarını girdi (${saved} ders)`,
+        text: `🎯 ${studentName} deneme girdi: "${examTitle}" (${saved} ders)`,
         type: 'entry', read: false, time: time2,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(()=>{});
