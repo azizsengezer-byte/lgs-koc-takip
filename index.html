@@ -442,6 +442,47 @@
 </div>
 
 
+<!-- GİRİŞ DÜZENLEME MODAL -->
+<div class="modal-overlay" id="editEntryModalEl">
+  <div class="modal">
+    <div class="modal-title">✏️ Girişi Düzenle</div>
+    <input type="hidden" id="editEntryId">
+    <input type="hidden" id="editEntryIdx">
+    <div class="form-group">
+      <label class="form-label">Ders</label>
+      <select class="form-select" id="editEntrySub">
+        ${subjects.map(s=>`<option value="${s.name}">${s.icon} ${s.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Konu / Başlık</label>
+      <input class="form-input" type="text" id="editEntryTopic" placeholder="Konu adı">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Süre (dk)</label>
+      <input class="form-input" type="number" id="editEntryDur" min="0">
+    </div>
+    <div id="editEntryQFields">
+      <div class="form-group">
+        <label class="form-label">Doğru</label>
+        <input class="form-input" type="number" id="editEntryCorrect" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Yanlış</label>
+        <input class="form-input" type="number" id="editEntryWrong" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Not (opsiyonel)</label>
+      <input class="form-input" type="text" id="editEntryNote" placeholder="...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('editEntryModalEl')">İptal</button>
+      <button class="btn btn-primary" onclick="saveEditEntry()">Kaydet ✓</button>
+    </div>
+  </div>
+</div>
+
 <!-- PROFİL GÖRÜNTÜLEME MODAL -->
 <div class="modal-overlay" id="viewProfileModal">
   <div class="modal" style="max-width:340px">
@@ -727,7 +768,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('addTaskModal')">İptal</button>
-      <button class="btn btn-primary" onclick="saveTask()">Gönder 📤</button>
+      <button class="btn btn-primary" id="taskSaveBtn" onclick="saveTask()">Gönder 📤</button>
     </div>
   </div>
 </div>
@@ -971,7 +1012,7 @@ auth.onAuthStateChanged(async (user) => {
           studyEntries = [];
           eSnap.forEach(d => {
             const e = d.data();
-            studyEntries.push({ ...e, isToday: e.dateKey === todayKey });
+            studyEntries.push({ ...e, firestoreId: d.id, isToday: e.dateKey === todayKey });
           });
           studyEntries.sort((a,b)=>(b.dateKey||'').localeCompare(a.dateKey||''));
         } catch(e) { console.log('Giriş çekme hatası:', e.message); studyEntries = []; }
@@ -1483,6 +1524,132 @@ async function deleteDeneme(examId) {
     showToast('✅', 'Deneme silindi!');
     showPage('my-analysis');
   } catch(e) { showToast('❌', 'Silme başarısız'); }
+}
+
+// ---- GİRİŞ DÜZENLEME / SİLME ----
+function editEntryModal(firestoreId, localIdx) {
+  const entry = studyEntries[localIdx];
+  if (!entry) return;
+  document.getElementById('editEntryId').value = firestoreId;
+  document.getElementById('editEntryIdx').value = localIdx;
+  document.getElementById('editEntrySub').value = entry.subject || subjects[0].name;
+  document.getElementById('editEntryTopic').value = entry.topic || '';
+  document.getElementById('editEntryDur').value = entry.duration || 0;
+  const hasQ = entry.type === 'soru';
+  document.getElementById('editEntryQFields').style.display = hasQ ? 'block' : 'none';
+  document.getElementById('editEntryCorrect').value = entry.correct || 0;
+  document.getElementById('editEntryWrong').value = entry.wrong || 0;
+  document.getElementById('editEntryNote').value = entry.note || '';
+  openModal('editEntryModalEl');
+}
+
+async function saveEditEntry() {
+  const firestoreId = document.getElementById('editEntryId').value;
+  const localIdx = parseInt(document.getElementById('editEntryIdx').value);
+  const sub = document.getElementById('editEntrySub').value;
+  const topic = document.getElementById('editEntryTopic').value.trim() || 'Genel Çalışma';
+  const dur = parseInt(document.getElementById('editEntryDur').value) || 0;
+  const correct = parseInt(document.getElementById('editEntryCorrect').value) || 0;
+  const wrong = parseInt(document.getElementById('editEntryWrong').value) || 0;
+  const note = document.getElementById('editEntryNote').value.trim();
+  const net = correct > 0 || wrong > 0 ? correct - wrong/3 : (studyEntries[localIdx]?.net || 0);
+  const q = correct + wrong;
+
+  const updates = { subject: sub, topic, duration: dur, correct, wrong, net, questions: q, note };
+
+  if (studyEntries[localIdx]) Object.assign(studyEntries[localIdx], updates);
+
+  if (firestoreId && firestoreId !== 'undefined') {
+    try {
+      await db.collection('studyEntries').doc(firestoreId).update(updates);
+    } catch(e) {
+      try {
+        const snap = await db.collection('studyEntries')
+          .where('userId','==',auth.currentUser?.uid)
+          .where('time','==',studyEntries[localIdx]?.time)
+          .where('dateKey','==',studyEntries[localIdx]?.dateKey).get();
+        snap.forEach(d => d.ref.update(updates));
+      } catch(e2) {}
+    }
+  }
+
+  closeModal('editEntryModalEl');
+  showToast('✅', 'Giriş güncellendi!');
+  showPage('daily-entry');
+}
+
+async function deleteEntry(firestoreId, localIdx) {
+  if (!confirm('Bu girişi silmek istediğinize emin misiniz?')) return;
+
+  const entry = studyEntries[localIdx];
+  studyEntries.splice(localIdx, 1);
+
+  if (firestoreId && firestoreId !== 'undefined') {
+    try {
+      await db.collection('studyEntries').doc(firestoreId).delete();
+    } catch(e) {
+      if (entry && auth.currentUser) {
+        try {
+          const snap = await db.collection('studyEntries')
+            .where('userId','==',auth.currentUser.uid)
+            .where('time','==',entry.time)
+            .where('dateKey','==',entry.dateKey).get();
+          snap.forEach(d => d.ref.delete());
+        } catch(e2) {}
+      }
+    }
+  }
+
+  showToast('🗑️', 'Giriş silindi!');
+  showPage('daily-entry');
+}
+
+// ---- GÖREV SİLME / DÜZENLEME ----
+async function deleteTask(taskId, idx) {
+  if (!confirm('Bu görevi silmek istediğinize emin misiniz?')) return;
+  tasks.splice(idx, 1);
+  if (taskId) {
+    try { await db.collection('tasks').doc(taskId).delete(); } catch(e) {}
+  }
+  showToast('🗑️', 'Görev silindi!');
+  showPage('tasks-teacher');
+}
+
+function editTaskModal(idx) {
+  const t = tasks[idx];
+  if (!t) return;
+  document.getElementById('taskStudent').value = t.student || '';
+  document.getElementById('taskTitle').value = t.title || '';
+  document.getElementById('taskSubject').value = t.subject || subjects[0].name;
+  document.getElementById('taskDesc').value = t.desc || '';
+  document.getElementById('taskDue').value = t.due || '';
+  // Düzenleme modunda kaydet
+  document.getElementById('taskSaveBtn').onclick = () => saveEditTask(idx);
+  document.querySelector('#addTaskModal .modal-title').textContent = '✏️ Görevi Düzenle';
+  openModal('addTaskModal');
+}
+
+async function saveEditTask(idx) {
+  const t = tasks[idx];
+  if (!t) return;
+  const updates = {
+    student: document.getElementById('taskStudent').value,
+    title: document.getElementById('taskTitle').value.trim(),
+    subject: document.getElementById('taskSubject').value,
+    desc: document.getElementById('taskDesc').value.trim(),
+    due: document.getElementById('taskDue').value,
+  };
+  if (!updates.title) { showToast('⚠️','Başlık boş olamaz!'); return; }
+  Object.assign(t, updates);
+  if (t.id) {
+    try { await db.collection('tasks').doc(t.id).update(updates); } catch(e) {}
+  }
+  closeModal('addTaskModal');
+  // Butonları sıfırla
+  document.getElementById('taskSaveBtn').onclick = saveTask;
+  document.querySelector('#addTaskModal .modal-title').textContent = '📋 Görev Ata';
+  showToast('✅','Görev güncellendi!');
+  showPage('tasks-teacher');
 }
 
 function toggleDenemeAcc(id) {
@@ -2607,18 +2774,21 @@ function teacherTasks() {
     <button class="btn btn-primary" style="margin-bottom:20px" onclick="openTaskModal()">+ Yeni Görev Ata</button>
     ${tasks.length === 0 ? `<div style="text-align:center;padding:30px;color:var(--text2)">Henüz görev atanmadı</div>` :
     tasks.map((t,i)=>`
-      <div class="assignment-card">
+      <div class="assignment-card" style="position:relative">
         <div class="assignment-icon" style="background:rgba(108,99,255,.15)">${t.typeLabel?t.typeLabel.split(' ')[0]:'📝'}</div>
-        <div style="flex:1">
+        <div style="flex:1;min-width:0">
           <div class="assignment-title">${t.title}</div>
-          <div style="font-size:0.78rem;color:var(--accent);font-weight:600;margin-bottom:2px">${t.typeLabel||''} • ${t.subject}</div>
-          <div class="assignment-desc">${t.desc}${t.student?' • '+t.student:''}</div>
+          <div style="font-size:0.78rem;color:var(--accent);font-weight:600;margin-bottom:2px">${t.subject||''}${t.student?' → '+t.student:''}</div>
+          <div class="assignment-desc">${t.desc||''}</div>
           <div class="assignment-footer">
-            <span class="badge ${t.done?'badge-green':'badge-yellow'}">${t.done?'Tamamlandı':'Bekliyor'}</span>
-            <span style="font-size:0.78rem;color:var(--text2)">Son: ${t.due}</span>
+            <span class="badge ${t.done?'badge-green':'badge-yellow'}">${t.done?'✅ Tamamlandı':'⏳ Bekliyor'}</span>
+            <span style="font-size:0.75rem;color:var(--text2)">Son: ${t.due||'-'}</span>
           </div>
         </div>
-        <button class="btn btn-outline" style="padding:6px 12px;font-size:0.78rem" onclick="showToast('🔔','Hatırlatma gönderildi!')">Hatırlat</button>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+          <button onclick="editTaskModal(${i})" style="background:var(--accent)15;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:0.8rem;color:var(--accent)">✏️</button>
+          <button onclick="deleteTask('${t.id||''}',${i})" style="background:#ff658415;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:0.8rem;color:#ff6584">🗑️</button>
+        </div>
       </div>
     `).join('')}
   `;
@@ -2788,26 +2958,34 @@ function studentDailyEntry() {
 
     <div class="card">
       <div class="card-title">📋 Bugünkü Girişler</div>
-      ${todayEntries.length === 0 ? `<div style="text-align:center;padding:24px;color:var(--text2)">Henüz giriş yok. Yukarıdan ekle! 💪</div>` :
-      todayEntries.map((e,i)=>`
-        <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
-          <div style="font-size:1.4rem">${subjects.find(s=>s.name===e.subject)?.icon||'📚'}</div>
-          <div style="flex:1">
-            <div style="font-weight:700">${e.subject}</div>
-            <div style="color:var(--accent);font-size:0.83rem;font-weight:600">${e.topic}</div>
-            <div style="font-size:0.78rem;color:var(--text2);margin-top:4px">
-              ⏱ ${e.duration}dk &nbsp;
-              📝 ${e.questions} soru &nbsp;
-              ${e.questions>0?`✅ ${e.correct||0} &nbsp; ❌ ${e.wrong||0}`:''}
-            </div>
-            ${e.note?`<div style="font-size:0.78rem;color:var(--text2);margin-top:3px;font-style:italic">📌 ${e.note}</div>`:''}
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-            <span class="badge badge-green" style="font-size:0.7rem">✓</span>
-            <span style="font-size:0.72rem;color:var(--text2)">${e.time||''}</span>
-          </div>
-        </div>
-      `).join('')}
+      ${todayEntries.length === 0
+        ? `<div style="text-align:center;padding:24px;color:var(--text2)">Henüz giriş yok. Yukarıdan ekle! 💪</div>`
+        : todayEntries.map((e,i)=>{
+            const icon = subjects.find(s=>s.name===e.subject)?.icon||'📚';
+            const netStr = e.questions>0 ? ` · Net: <b style="color:var(--accent3)">${(e.net||0).toFixed(1)}</b>` : '';
+            const typeEmoji = e.type==='deneme'?'🎯':e.type==='konu'?'📖':e.type==='tekrar'?'🔁':'📝';
+            const eid = e.firestoreId || e.id || ('entry_'+i);
+            return `
+            <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">
+              <div style="display:flex;align-items:center;padding:10px 12px;background:var(--surface2)">
+                <div style="font-size:1.3rem;margin-right:10px">${icon}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:800;font-size:0.9rem">${e.subject}</div>
+                  <div style="color:var(--accent);font-size:0.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${typeEmoji} ${e.topic||'Genel Çalışma'}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                  <span style="font-size:0.7rem;color:var(--text2)">${e.time||''}</span>
+                  <button onclick="editEntryModal('${eid}',${i})" style="background:var(--accent)15;border:none;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:0.8rem;color:var(--accent)">✏️</button>
+                  <button onclick="deleteEntry('${eid}',${i})" style="background:#ff658415;border:none;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:0.8rem;color:#ff6584">🗑️</button>
+                </div>
+              </div>
+              <div style="padding:8px 12px;font-size:0.78rem;color:var(--text2);background:var(--surface)">
+                ⏱ ${e.duration||0}dk &nbsp;
+                ${e.questions>0?`📝 ${e.questions} soru &nbsp; ✅ ${e.correct||0} &nbsp; ❌ ${e.wrong||0}${netStr}`:''}
+                ${e.note?`<div style="margin-top:4px;font-style:italic">📌 ${e.note}</div>`:''}
+              </div>
+            </div>`;
+          }).join('')}
     </div>
   `;
 }
@@ -3824,7 +4002,8 @@ function saveEntry() {
     db.collection('studyEntries').add({
       ...entry, userId: user.uid, teacherId, studentName,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(()=>{
+    }).then(docRef => {
+      entry.firestoreId = docRef.id;
       // Öğretmene bildirim gönder
       if (teacherId) {
         const subLabel = sub || 'Genel';
@@ -3972,10 +4151,16 @@ function updateTaskTitle() {
 
 function openTaskModal() {
   populateTaskStudents();
-  // Varsayılan tarihi bugünden 3 gün sonraya ayarla
   const d = new Date();
   d.setDate(d.getDate() + 3);
   document.getElementById('taskDue').value = d.toISOString().split('T')[0];
+  document.getElementById('taskTitle').value = '';
+  document.getElementById('taskDesc').value = '';
+  // Başlık ve butonu sıfırla (editTaskModal'dan gelmiş olabilir)
+  const titleEl = document.querySelector('#addTaskModal .modal-title');
+  if (titleEl) titleEl.textContent = '📋 Görev Ata';
+  const btn = document.getElementById('taskSaveBtn');
+  if (btn) btn.onclick = saveTask;
   openModal('addTaskModal');
 }
 
