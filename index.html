@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LGS Koç Takip Sistemi</title>
+<title>LGS KoÃ§ Takip Sistemi</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -340,7 +340,7 @@
   .kazanim-check { width:18px; height:18px; border-radius:5px; border:2px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.75rem; transition:all .2s; }
   .kazanim-item.done .kazanim-check { background:var(--accent3); border-color:var(--accent3); color:#000; }
 
-  /* MESAJLAŞMA */
+  /* MESAJLAÅMA */
   .msg-layout { display:grid; grid-template-columns:260px 1fr; gap:0; height:calc(100vh - 130px); background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; }
   .msg-list { border-right:1px solid var(--border); overflow-y:auto; }
   .msg-list-header { padding:16px; border-bottom:1px solid var(--border); font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:space-between; }
@@ -415,19 +415,19 @@
 <!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-box">
-    <div class="login-logo">LGS<span>Koç</span></div>
-    <div class="login-sub">Öğrenci Takip & Koçluk Sistemi</div>
+    <div class="login-logo">LGS<span>KoÃ§</span></div>
+    <div class="login-sub">ÃÄrenci Takip & KoÃ§luk Sistemi</div>
     <div class="role-btns">
-      <button class="role-btn active" onclick="selectRole('teacher')" id="roleTeacher">👨‍🏫 Öğretmen</button>
-      <button class="role-btn" onclick="selectRole('student')" id="roleStudent">🎒 Öğrenci</button>
+      <button class="role-btn active" onclick="selectRole('teacher')" id="roleTeacher">ğ¨âğ« ÃÄretmen</button>
+      <button class="role-btn" onclick="selectRole('student')" id="roleStudent">ğ ÃÄrenci</button>
     </div>
     <input class="login-input" type="email" placeholder="E-posta adresi" id="loginUser">
-    <input class="login-input" type="password" placeholder="Şifre" id="loginPass">
+    <input class="login-input" type="password" placeholder="Åifre" id="loginPass">
     <div id="loginError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none;text-align:left;padding:0 4px"></div>
-    <button class="login-btn" onclick="doLogin()" id="loginBtn">Giriş Yap →</button>
+    <button class="login-btn" onclick="doLogin()" id="loginBtn">GiriÅ Yap â</button>
     <div style="margin-top:16px;text-align:center">
-      <span style="font-size:0.82rem;color:var(--text2)">Hesabın yok mu? </span>
-      <button onclick="showRegister()" style="background:none;border:none;color:var(--accent);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">Kayıt Ol</button>
+      <span style="font-size:0.82rem;color:var(--text2)">HesabÄ±n yok mu? </span>
+      <button onclick="showRegister()" style="background:none;border:none;color:var(--accent);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">KayÄ±t Ol</button>
     </div>
   </div>
 </div>
@@ -435,30 +435,30 @@
 <!-- REGISTER MODAL -->
 <div class="modal-overlay" id="registerModal">
   <div class="modal">
-    <div class="modal-title">👤 Yeni Hesap Oluştur</div>
+    <div class="modal-title">ğ¤ Yeni Hesap OluÅtur</div>
     <div class="form-group">
       <label class="form-label">Ad Soyad</label>
-      <input class="form-input" type="text" id="regName" placeholder="Adınız Soyadınız">
+      <input class="form-input" type="text" id="regName" placeholder="AdÄ±nÄ±z SoyadÄ±nÄ±z">
     </div>
     <div class="form-group">
       <label class="form-label">E-posta</label>
       <input class="form-input" type="email" id="regEmail" placeholder="ornek@gmail.com">
     </div>
     <div class="form-group">
-      <label class="form-label">Şifre</label>
+      <label class="form-label">Åifre</label>
       <input class="form-input" type="password" id="regPass" placeholder="En az 6 karakter">
     </div>
     <div class="form-group">
       <label class="form-label">Rol</label>
       <select class="form-select" id="regRole">
-        <option value="student">🎒 Öğrenci</option>
-        <option value="teacher">👨‍🏫 Öğretmen</option>
+        <option value="student">ğ ÃÄrenci</option>
+        <option value="teacher">ğ¨âğ« ÃÄretmen</option>
       </select>
     </div>
     <div id="regError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('registerModal')">İptal</button>
-      <button class="btn btn-primary" onclick="doRegister()">Kayıt Ol ✓</button>
+      <button class="btn btn-outline" onclick="closeModal('registerModal')">Ä°ptal</button>
+      <button class="btn btn-primary" onclick="doRegister()">KayÄ±t Ol â</button>
     </div>
   </div>
 </div>
@@ -466,20 +466,20 @@
 <!-- APP -->
 <div id="app">
   <div class="app-header">
-    <div class="header-logo">LGS<span>Koç</span></div>
+    <div class="header-logo">LGS<span>KoÃ§</span></div>
     <div style="display:flex;align-items:center;gap:14px;">
       <div style="position:relative;cursor:pointer" onclick="showPage('notifs')">
-        <span style="font-size:1.3rem;">🔔</span>
+        <span style="font-size:1.3rem;">ğ</span>
         <span id="notifBadge" style="position:absolute;top:-4px;right:-4px;background:var(--accent2);color:#fff;font-size:0.6rem;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;">3</span>
       </div>
       <div class="header-user">
         <div class="avatar" id="headerAvatar">A</div>
         <div>
           <div class="header-name" id="headerName">Ahmet Hoca</div>
-          <div class="header-role" id="headerRole">Koç Öğretmen</div>
+          <div class="header-role" id="headerRole">KoÃ§ ÃÄretmen</div>
         </div>
       </div>
-      <button class="logout-btn" onclick="doLogout()">Çıkış</button>
+      <button class="logout-btn" onclick="doLogout()">ÃÄ±kÄ±Å</button>
     </div>
   </div>
 
@@ -492,68 +492,68 @@
 <!-- MODALS -->
 <div class="modal-overlay" id="addEntryModal">
   <div class="modal">
-    <div class="modal-title">📚 Günlük Çalışma Ekle</div>
+    <div class="modal-title">ğ GÃ¼nlÃ¼k ÃalÄ±Åma Ekle</div>
     <div class="form-group">
       <label class="form-label">Ders</label>
       <select class="form-select" id="entrySubject">
-        <option value="Türkçe">Türkçe</option>
+        <option value="TÃ¼rkÃ§e">TÃ¼rkÃ§e</option>
         <option value="Matematik">Matematik</option>
         <option value="Fen Bilimleri">Fen Bilimleri</option>
-        <option value="İnkılap Tarihi">İnkılap Tarihi</option>
-        <option value="Din Kültürü">Din Kültürü</option>
-        <option value="İngilizce">İngilizce</option>
+        <option value="Ä°nkÄ±lap Tarihi">Ä°nkÄ±lap Tarihi</option>
+        <option value="Din KÃ¼ltÃ¼rÃ¼">Din KÃ¼ltÃ¼rÃ¼</option>
+        <option value="Ä°ngilizce">Ä°ngilizce</option>
       </select>
     </div>
     <div class="form-group">
       <label class="form-label">Konu</label>
-      <input class="form-input" type="text" id="entryTopic" placeholder="örn. Sözcük Türleri, Denklemler...">
+      <input class="form-input" type="text" id="entryTopic" placeholder="Ã¶rn. SÃ¶zcÃ¼k TÃ¼rleri, Denklemler...">
     </div>
     <div class="grid-2">
       <div class="form-group">
-        <label class="form-label">⏱ Süre (dk)</label>
+        <label class="form-label">â± SÃ¼re (dk)</label>
         <input class="form-input" type="number" id="entryDuration" placeholder="45" min="1">
       </div>
       <div class="form-group">
-        <label class="form-label">📝 Soru Sayısı</label>
+        <label class="form-label">ğ Soru SayÄ±sÄ±</label>
         <input class="form-input" type="number" id="entryQuestions" placeholder="20" min="0">
       </div>
     </div>
     <div class="form-group">
       <label class="form-label">Not (opsiyonel)</label>
-      <input class="form-input" type="text" id="entryNote" placeholder="örn. Zor sorularda takıldım...">
+      <input class="form-input" type="text" id="entryNote" placeholder="Ã¶rn. Zor sorularda takÄ±ldÄ±m...">
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('addEntryModal')">İptal</button>
-      <button class="btn btn-primary" onclick="saveEntry()">Kaydet ✓</button>
+      <button class="btn btn-outline" onclick="closeModal('addEntryModal')">Ä°ptal</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Kaydet â</button>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="addTaskModal">
   <div class="modal">
-    <div class="modal-title">📋 Ödev / Görev Ata</div>
+    <div class="modal-title">ğ Ãdev / GÃ¶rev Ata</div>
     <div class="form-group">
-      <label class="form-label">Öğrenci</label>
+      <label class="form-label">ÃÄrenci</label>
       <select class="form-select" id="taskStudent">
         <option>Zeynep Kaya</option>
         <option>Emre Demir</option>
-        <option>Selin Yıldız</option>
-        <option>Mert Çelik</option>
+        <option>Selin YÄ±ldÄ±z</option>
+        <option>Mert Ãelik</option>
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Görev Başlığı</label>
-      <input class="form-input" type="text" id="taskTitle" placeholder="örn. Matematik Test 15">
+      <label class="form-label">GÃ¶rev BaÅlÄ±ÄÄ±</label>
+      <input class="form-input" type="text" id="taskTitle" placeholder="Ã¶rn. Matematik Test 15">
     </div>
     <div class="form-group">
       <label class="form-label">Ders</label>
       <select class="form-select" id="taskSubject">
-        <option>Türkçe</option><option>Matematik</option><option>Fen Bilimleri</option>
-        <option>İnkılap Tarihi</option><option>Din Kültürü</option><option>İngilizce</option>
+        <option>TÃ¼rkÃ§e</option><option>Matematik</option><option>Fen Bilimleri</option>
+        <option>Ä°nkÄ±lap Tarihi</option><option>Din KÃ¼ltÃ¼rÃ¼</option><option>Ä°ngilizce</option>
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Açıklama</label>
+      <label class="form-label">AÃ§Ä±klama</label>
       <input class="form-input" type="text" id="taskDesc" placeholder="Detaylar...">
     </div>
     <div class="form-group">
@@ -561,8 +561,32 @@
       <input class="form-input" type="date" id="taskDue">
     </div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('addTaskModal')">İptal</button>
-      <button class="btn btn-primary" onclick="saveTask()">Gönder 📤</button>
+      <button class="btn btn-outline" onclick="closeModal('addTaskModal')">Ä°ptal</button>
+      <button class="btn btn-primary" onclick="saveTask()">GÃ¶nder ğ¤</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD STUDENT MODAL -->
+<div class="modal-overlay" id="addStudentModal">
+  <div class="modal">
+    <div class="modal-title">ğ¤ Yeni ÃÄrenci Ekle</div>
+    <div class="form-group">
+      <label class="form-label">Ad Soyad</label>
+      <input class="form-input" type="text" id="newStudentName" placeholder="ÃÄrencinin adÄ± soyadÄ±">
+    </div>
+    <div class="form-group">
+      <label class="form-label">E-posta</label>
+      <input class="form-input" type="email" id="newStudentEmail" placeholder="ogrenci@gmail.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Åifre</label>
+      <input class="form-input" type="text" id="newStudentPass" placeholder="En az 6 karakter">
+    </div>
+    <div id="addStudentError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('addStudentModal')">Ä°ptal</button>
+      <button class="btn btn-primary" onclick="saveNewStudent()">Ekle â</button>
     </div>
   </div>
 </div>
@@ -577,32 +601,27 @@ let currentRole = 'teacher';
 let currentPage = 'dashboard';
 
 const subjects = [
-  { name:'Türkçe', color:'var(--turkish)', cls:'turkish', icon:'📖' },
-  { name:'Matematik', color:'var(--math)', cls:'math', icon:'📐' },
-  { name:'Fen Bilimleri', color:'var(--science)', cls:'science', icon:'🔬' },
-  { name:'İnkılap Tarihi', color:'var(--history)', cls:'history', icon:'🏛️' },
-  { name:'Din Kültürü', color:'var(--religion)', cls:'religion', icon:'☪️' },
-  { name:'İngilizce', color:'var(--english)', cls:'english', icon:'🌍' },
+  { name:'TÃ¼rkÃ§e', color:'var(--turkish)', cls:'turkish', icon:'ğ' },
+  { name:'Matematik', color:'var(--math)', cls:'math', icon:'ğ' },
+  { name:'Fen Bilimleri', color:'var(--science)', cls:'science', icon:'ğ¬' },
+  { name:'Ä°nkÄ±lap Tarihi', color:'var(--history)', cls:'history', icon:'ğï¸' },
+  { name:'Din KÃ¼ltÃ¼rÃ¼', color:'var(--religion)', cls:'religion', icon:'âªï¸' },
+  { name:'Ä°ngilizce', color:'var(--english)', cls:'english', icon:'ğ' },
 ];
 
-const students = [
-  { name:'Zeynep Kaya', avg:82, trend:'up', lastActive:'2 saat önce', color:'#6c63ff', tasks:3 },
-  { name:'Emre Demir', avg:67, trend:'down', lastActive:'1 gün önce', color:'#ff6584', tasks:1 },
-  { name:'Selin Yıldız', avg:91, trend:'up', lastActive:'30 dk önce', color:'#43e97b', tasks:2 },
-  { name:'Mert Çelik', avg:74, trend:'up', lastActive:'3 saat önce', color:'#f9ca24', tasks:4 },
-];
+let students = [];
 
-const weekDays = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+const weekDays = ['Pzt','Sal','Ãar','Per','Cum','Cmt','Paz'];
 const subjectProgress = [78, 85, 62, 71, 88, 55];
 const subjectProgressT = [72, 68, 80, 65, 90, 58];
 
 const kazanimlar = {
-  'Türkçe': ['Sözcük Türleri','Cümle Türleri','Paragraf Analizi','Anlatım Bozukluğu','Noktalama','Yazım Kuralları','Söz Sanatları','Metin Türleri'],
-  'Matematik': ['Çarpanlara Ayırma','Üslü Sayılar','Kök İfadeler','Denklemler','Eşitsizlikler','Olasılık','Veri Analizi','Geometri Temelleri','Dönüşüm Geometrisi'],
-  'Fen Bilimleri': ['Mevsimler ve İklim','DNA ve Genetik','Basınç','Madde ve Endüstri','Kimyasal Tepkimeler','Optik','Elektrik','Canlılar Alemi'],
-  'İnkılap Tarihi': ['Osmanlı Çöküşü','Kurtuluş Savaşı','Atatürk İlkeleri','Cumhuriyet Tarihi','Atatürk Dönemi Reformlar','Türk Dış Politikası'],
-  'Din Kültürü': ['Hz. Muhammed\'in Hayatı','Kur\'an','Temel İbadetler','İslam Tarihi','Ahlak','Diğer Dinler'],
-  'İngilizce': ['Tenses','Passive Voice','Reported Speech','Conditionals','Vocabulary','Reading Comprehension','Listening Skills'],
+  'TÃ¼rkÃ§e': ['SÃ¶zcÃ¼k TÃ¼rleri','CÃ¼mle TÃ¼rleri','Paragraf Analizi','AnlatÄ±m BozukluÄu','Noktalama','YazÄ±m KurallarÄ±','SÃ¶z SanatlarÄ±','Metin TÃ¼rleri'],
+  'Matematik': ['Ãarpanlara AyÄ±rma','ÃslÃ¼ SayÄ±lar','KÃ¶k Ä°fadeler','Denklemler','EÅitsizlikler','OlasÄ±lÄ±k','Veri Analizi','Geometri Temelleri','DÃ¶nÃ¼ÅÃ¼m Geometrisi'],
+  'Fen Bilimleri': ['Mevsimler ve Ä°klim','DNA ve Genetik','BasÄ±nÃ§','Madde ve EndÃ¼stri','Kimyasal Tepkimeler','Optik','Elektrik','CanlÄ±lar Alemi'],
+  'Ä°nkÄ±lap Tarihi': ['OsmanlÄ± ÃÃ¶kÃ¼ÅÃ¼','KurtuluÅ SavaÅÄ±','AtatÃ¼rk Ä°lkeleri','Cumhuriyet Tarihi','AtatÃ¼rk DÃ¶nemi Reformlar','TÃ¼rk DÄ±Å PolitikasÄ±'],
+  'Din KÃ¼ltÃ¼rÃ¼': ['Hz. Muhammed\'in HayatÄ±','Kur\'an','Temel Ä°badetler','Ä°slam Tarihi','Ahlak','DiÄer Dinler'],
+  'Ä°ngilizce': ['Tenses','Passive Voice','Reported Speech','Conditionals','Vocabulary','Reading Comprehension','Listening Skills'],
 };
 
 let kazanimDone = {};
@@ -611,18 +630,18 @@ function renderMobileNav() {
   const nav = document.getElementById('mobileNav');
   if(!nav) return;
   const teacherNav = [
-    {id:'dashboard',icon:'📊',label:'Panel'},
-    {id:'students',icon:'👥',label:'Öğrenciler'},
-    {id:'messages',icon:'💬',label:'Mesaj'},
-    {id:'tasks-teacher',icon:'📋',label:'Görevler'},
-    {id:'notifs',icon:'🔔',label:'Bildirim'},
+    {id:'dashboard',icon:'ğ',label:'Panel'},
+    {id:'students',icon:'ğ¥',label:'ÃÄrenciler'},
+    {id:'messages',icon:'ğ¬',label:'Mesaj'},
+    {id:'tasks-teacher',icon:'ğ',label:'GÃ¶revler'},
+    {id:'notifs',icon:'ğ',label:'Bildirim'},
   ];
   const studentNav = [
-    {id:'dashboard',icon:'🏠',label:'Ana Sayfa'},
-    {id:'daily-entry',icon:'✏️',label:'Giriş Yap'},
-    {id:'messages',icon:'💬',label:'Mesaj'},
-    {id:'my-tasks',icon:'📋',label:'Ödevler'},
-    {id:'notifs',icon:'🔔',label:'Bildirim'},
+    {id:'dashboard',icon:'ğ ',label:'Ana Sayfa'},
+    {id:'daily-entry',icon:'âï¸',label:'GiriÅ Yap'},
+    {id:'messages',icon:'ğ¬',label:'Mesaj'},
+    {id:'my-tasks',icon:'ğ',label:'Ãdevler'},
+    {id:'notifs',icon:'ğ',label:'Bildirim'},
   ];
   const items = currentRole==='teacher' ? teacherNav : studentNav;
   nav.innerHTML = `<div class="mobile-nav-inner">${items.map(n=>`
@@ -632,15 +651,15 @@ function renderMobileNav() {
 }
 
 let studyEntries = [
-  { subject:'Matematik', topic:'Denklemler', duration:60, questions:30, date:'Bugün 09:15' },
-  { subject:'Türkçe', topic:'Sözcük Türleri', duration:45, questions:25, date:'Bugün 11:00' },
-  { subject:'Fen Bilimleri', topic:'Optik', duration:50, questions:20, date:'Dün 15:30' },
+  { subject:'Matematik', topic:'Denklemler', duration:60, questions:30, date:'BugÃ¼n 09:15' },
+  { subject:'TÃ¼rkÃ§e', topic:'SÃ¶zcÃ¼k TÃ¼rleri', duration:45, questions:25, date:'BugÃ¼n 11:00' },
+  { subject:'Fen Bilimleri', topic:'Optik', duration:50, questions:20, date:'DÃ¼n 15:30' },
 ];
 
 let tasks = [
   { title:'Matematik Test 14', subject:'Matematik', desc:'56 soruluk karma test', due:'15 Mar', done:false },
-  { title:'Türkçe Paragraf', subject:'Türkçe', desc:'10 paragraf sorusu çöz', due:'16 Mar', done:true },
-  { title:'Fen Deney Notu', subject:'Fen Bilimleri', desc:'Deney raporunu hazırla', due:'18 Mar', done:false },
+  { title:'TÃ¼rkÃ§e Paragraf', subject:'TÃ¼rkÃ§e', desc:'10 paragraf sorusu Ã§Ã¶z', due:'16 Mar', done:true },
+  { title:'Fen Deney Notu', subject:'Fen Bilimleri', desc:'Deney raporunu hazÄ±rla', due:'18 Mar', done:false },
 ];
 
 // =================== FIREBASE ===================
@@ -668,7 +687,7 @@ auth.onAuthStateChanged(async (user) => {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       document.getElementById('headerName').textContent = data.name || user.email;
-      document.getElementById('headerRole').textContent = currentRole==='teacher' ? 'Koç Öğretmen' : '8. Sınıf Öğrencisi';
+      document.getElementById('headerRole').textContent = currentRole==='teacher' ? 'KoÃ§ ÃÄretmen' : '8. SÄ±nÄ±f ÃÄrencisi';
       document.getElementById('headerAvatar').textContent = (data.name || user.email)[0].toUpperCase();
       renderSidebar();
       showPage('dashboard');
@@ -696,19 +715,19 @@ async function doLogin() {
   const errEl = document.getElementById('loginError');
   const btn = document.getElementById('loginBtn');
   errEl.style.display = 'none';
-  if (!email || !pass) { errEl.textContent = 'E-posta ve şifre giriniz.'; errEl.style.display='block'; return; }
-  btn.textContent = 'Giriş yapılıyor...'; btn.disabled = true;
+  if (!email || !pass) { errEl.textContent = 'E-posta ve Åifre giriniz.'; errEl.style.display='block'; return; }
+  btn.textContent = 'GiriÅ yapÄ±lÄ±yor...'; btn.disabled = true;
   try {
     await auth.signInWithEmailAndPassword(email, pass);
   } catch(e) {
-    btn.textContent = 'Giriş Yap →'; btn.disabled = false;
+    btn.textContent = 'GiriÅ Yap â'; btn.disabled = false;
     const msgs = {
-      'auth/user-not-found': 'Bu e-posta ile kayıtlı hesap bulunamadı.',
-      'auth/wrong-password': 'Şifre yanlış, tekrar deneyin.',
-      'auth/invalid-email': 'Geçersiz e-posta adresi.',
-      'auth/invalid-credential': 'E-posta veya şifre hatalı.',
+      'auth/user-not-found': 'Bu e-posta ile kayÄ±tlÄ± hesap bulunamadÄ±.',
+      'auth/wrong-password': 'Åifre yanlÄ±Å, tekrar deneyin.',
+      'auth/invalid-email': 'GeÃ§ersiz e-posta adresi.',
+      'auth/invalid-credential': 'E-posta veya Åifre hatalÄ±.',
     };
-    errEl.textContent = msgs[e.code] || 'Giriş başarısız: ' + e.message;
+    errEl.textContent = msgs[e.code] || 'GiriÅ baÅarÄ±sÄ±z: ' + e.message;
     errEl.style.display = 'block';
   }
 }
@@ -720,20 +739,20 @@ async function doRegister() {
   const role = document.getElementById('regRole').value;
   const errEl = document.getElementById('regError');
   errEl.style.display = 'none';
-  if (!name || !email || !pass) { errEl.textContent = 'Tüm alanları doldurunuz.'; errEl.style.display='block'; return; }
-  if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
+  if (!name || !email || !pass) { errEl.textContent = 'TÃ¼m alanlarÄ± doldurunuz.'; errEl.style.display='block'; return; }
+  if (pass.length < 6) { errEl.textContent = 'Åifre en az 6 karakter olmalÄ±.'; errEl.style.display='block'; return; }
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
     await db.collection('users').doc(cred.user.uid).set({ name, email, role, createdAt: new Date() });
     closeModal('registerModal');
-    showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
+    showToast('ğ', `HoÅ geldin ${name}! HesabÄ±n oluÅturuldu.`);
   } catch(e) {
     const msgs = {
-      'auth/email-already-in-use': 'Bu e-posta zaten kayıtlı.',
-      'auth/invalid-email': 'Geçersiz e-posta adresi.',
-      'auth/weak-password': 'Şifre çok zayıf.',
+      'auth/email-already-in-use': 'Bu e-posta zaten kayÄ±tlÄ±.',
+      'auth/invalid-email': 'GeÃ§ersiz e-posta adresi.',
+      'auth/weak-password': 'Åifre Ã§ok zayÄ±f.',
     };
-    errEl.textContent = msgs[e.code] || 'Kayıt başarısız: ' + e.message;
+    errEl.textContent = msgs[e.code] || 'KayÄ±t baÅarÄ±sÄ±z: ' + e.message;
     errEl.style.display = 'block';
   }
 }
@@ -745,21 +764,21 @@ function doLogout() {
 function renderSidebar() {
   const sb = document.getElementById('sidebar');
   const teacherNav = [
-    { id:'dashboard', icon:'📊', label:'Ana Panel' },
-    { id:'students', icon:'👥', label:'Öğrencilerim' },
-    { id:'analysis', icon:'📈', label:'Analizler' },
-    { id:'tasks-teacher', icon:'📋', label:'Görevler' },
-    { id:'messages', icon:'💬', label:'Mesajlar' },
-    { id:'notifs', icon:'🔔', label:'Bildirimler' },
+    { id:'dashboard', icon:'ğ', label:'Ana Panel' },
+    { id:'students', icon:'ğ¥', label:'ÃÄrencilerim' },
+    { id:'analysis', icon:'ğ', label:'Analizler' },
+    { id:'tasks-teacher', icon:'ğ', label:'GÃ¶revler' },
+    { id:'messages', icon:'ğ¬', label:'Mesajlar' },
+    { id:'notifs', icon:'ğ', label:'Bildirimler' },
   ];
   const studentNav = [
-    { id:'dashboard', icon:'🏠', label:'Ana Sayfa' },
-    { id:'daily-entry', icon:'✏️', label:'Günlük Giriş' },
-    { id:'my-analysis', icon:'📈', label:'Analizlerim' },
-    { id:'kazanimlar', icon:'🎯', label:'Kazanımlarım' },
-    { id:'my-tasks', icon:'📋', label:'Ödevlerim' },
-    { id:'messages', icon:'💬', label:'Koçumla Mesaj' },
-    { id:'notifs', icon:'🔔', label:'Bildirimler' },
+    { id:'dashboard', icon:'ğ ', label:'Ana Sayfa' },
+    { id:'daily-entry', icon:'âï¸', label:'GÃ¼nlÃ¼k GiriÅ' },
+    { id:'my-analysis', icon:'ğ', label:'Analizlerim' },
+    { id:'kazanimlar', icon:'ğ¯', label:'KazanÄ±mlarÄ±m' },
+    { id:'my-tasks', icon:'ğ', label:'Ãdevlerim' },
+    { id:'messages', icon:'ğ¬', label:'KoÃ§umla Mesaj' },
+    { id:'notifs', icon:'ğ', label:'Bildirimler' },
   ];
   const nav = currentRole==='teacher' ? teacherNav : studentNav;
   sb.innerHTML = nav.map(n => `
@@ -792,51 +811,51 @@ function renderTeacherPage(id, el) {
 
 function teacherDashboard() {
   return `
-    <div class="page-title">📊 Ana Panel</div>
-    <div class="page-sub">Merhaba Ahmet Hoca! Bugün ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
+    <div class="page-title">ğ Ana Panel</div>
+    <div class="page-sub">Merhaba Ahmet Hoca! BugÃ¼n ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
 
     <div class="grid-4">
       <div class="stat-card">
-        <div class="stat-label">Aktif Öğrenci</div>
+        <div class="stat-label">Aktif ÃÄrenci</div>
         <div class="stat-value" style="color:var(--accent)">4</div>
-        <div class="stat-change up">↑ Hepsi aktif</div>
+        <div class="stat-change up">â Hepsi aktif</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Bugün Giriş</div>
+        <div class="stat-label">BugÃ¼n GiriÅ</div>
         <div class="stat-value" style="color:var(--accent3)">3</div>
-        <div class="stat-change up">↑ Dün 2 kişiydi</div>
+        <div class="stat-change up">â DÃ¼n 2 kiÅiydi</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Bekleyen Ödev</div>
+        <div class="stat-label">Bekleyen Ãdev</div>
         <div class="stat-value" style="color:var(--accent4)">7</div>
-        <div class="stat-change down">↓ 3 teslim edildi</div>
+        <div class="stat-change down">â 3 teslim edildi</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Sınıf Ort.</div>
+        <div class="stat-label">SÄ±nÄ±f Ort.</div>
         <div class="stat-value" style="color:var(--accent2)">78.5</div>
-        <div class="stat-change up">↑ +2.3 bu hafta</div>
+        <div class="stat-change up">â +2.3 bu hafta</div>
       </div>
     </div>
 
     <div class="grid-2">
       <div class="card">
-        <div class="card-title">👥 Öğrenci Durumları</div>
+        <div class="card-title">ğ¥ ÃÄrenci DurumlarÄ±</div>
         ${students.map(s=>`
           <div class="student-row" onclick="showPage('students')">
             <div class="student-avatar" style="background:${s.color}20;color:${s.color}">${s.name[0]}</div>
             <div class="student-info">
               <div class="student-name">${s.name}</div>
-              <div class="student-meta">${s.lastActive} • ${s.tasks} aktif görev</div>
+              <div class="student-meta">${s.lastActive} â¢ ${s.tasks} aktif gÃ¶rev</div>
             </div>
             <div style="text-align:right">
               <div class="student-score" style="color:${s.avg>=80?'var(--accent3)':s.avg>=70?'var(--accent4)':'var(--accent2)'}">${s.avg}</div>
-              <div class="stat-change ${s.trend}">${s.trend==='up'?'↑ İyi':'↓ Dikkat'}</div>
+              <div class="stat-change ${s.trend}">${s.trend==='up'?'â Ä°yi':'â Dikkat'}</div>
             </div>
           </div>
         `).join('')}
       </div>
       <div class="card">
-        <div class="card-title">📅 Bu Hafta Aktivite</div>
+        <div class="card-title">ğ Bu Hafta Aktivite</div>
         <div class="week-grid">
           ${weekDays.map((d,i)=>`
             <div class="day-cell ${i<4?'has-data':''} ${i===2?'today':''}">
@@ -853,7 +872,7 @@ function teacherDashboard() {
     </div>
 
     <div class="card">
-      <div class="card-title">📚 Ders Bazlı Sınıf Performansı</div>
+      <div class="card-title">ğ Ders BazlÄ± SÄ±nÄ±f PerformansÄ±</div>
       ${subjects.map((s,i)=>`
         <div class="subject-row">
           <div class="subject-name c-${s.cls}">${s.icon} ${s.name}</div>
@@ -867,14 +886,20 @@ function teacherDashboard() {
 
 function teacherStudents() {
   return `
-    <div class="page-title">👥 Öğrencilerim</div>
-    <div class="page-sub">Koçluk takibindeki öğrenciler</div>
+    <div class="page-title">ğ¥ ÃÄrencilerim</div>
+    <div class="page-sub">KoÃ§luk takibindeki Ã¶Ärenciler</div>
     <div style="display:flex;gap:10px;margin-bottom:20px">
-      <button class="btn btn-primary" onclick="showToast('➕','Öğrenci ekleme formu açıldı')">+ Öğrenci Ekle</button>
-      <button class="btn btn-outline" onclick="openModal('addTaskModal')">📋 Görev Ata</button>
+      <button class="btn btn-primary" onclick="openModal('addStudentModal')">+ ÃÄrenci Ekle</button>
+      <button class="btn btn-outline" onclick="openModal('addTaskModal')">ğ GÃ¶rev Ata</button>
     </div>
     <div class="card">
-      ${students.map((s,i)=>`
+      ${students.length === 0 ? `
+        <div style="text-align:center;padding:40px 20px;color:var(--text2)">
+          <div style="font-size:3rem;margin-bottom:12px">ğ¥</div>
+          <div style="font-weight:700;margin-bottom:8px">HenÃ¼z Ã¶Ärenci eklenmedi</div>
+          <div style="font-size:0.85rem">+ ÃÄrenci Ekle butonuna basarak baÅla</div>
+        </div>
+      ` : students.map((s,i)=>`
         <div class="student-row">
           <div class="student-avatar" style="background:${s.color}20;color:${s.color};font-size:1.1rem">${s.name[0]}</div>
           <div class="student-info">
@@ -882,15 +907,15 @@ function teacherStudents() {
             <div class="student-meta">Son aktif: ${s.lastActive}</div>
           </div>
           <div style="display:flex;align-items:center;gap:12px">
-            <span class="badge ${s.avg>=80?'badge-green':s.avg>=70?'badge-yellow':'badge-red'}">${s.avg>=80?'İyi Gidiyor':s.avg>=70?'Normal':'Dikkat!'}</span>
+            <span class="badge ${s.avg>=80?'badge-green':s.avg>=70?'badge-yellow':'badge-red'}">${s.avg>=80?'Ä°yi Gidiyor':s.avg>=70?'Normal':'Dikkat!'}</span>
             <div class="student-score" style="color:${s.avg>=80?'var(--accent3)':s.avg>=70?'var(--accent4)':'var(--accent2)'}">${s.avg}</div>
-            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showToast('📊','${s.name} detaylı analiz açıldı')">Detay</button>
+            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showToast('ğ','${s.name} detaylÄ± analiz aÃ§Ä±ldÄ±')">Detay</button>
           </div>
         </div>
       `).join('')}
     </div>
     <div style="margin-top:20px" class="card">
-      <div class="card-title">📊 Öğrenci Karşılaştırma</div>
+      <div class="card-title">ğ ÃÄrenci KarÅÄ±laÅtÄ±rma</div>
       <canvas id="compareChart" height="160"></canvas>
     </div>
   `;
@@ -898,53 +923,53 @@ function teacherStudents() {
 
 function teacherAnalysis() {
   return `
-    <div class="page-title">📈 Analizler</div>
-    <div class="page-sub">Detaylı performans raporları</div>
+    <div class="page-title">ğ Analizler</div>
+    <div class="page-sub">DetaylÄ± performans raporlarÄ±</div>
 
     <div class="pdf-actions">
       <select class="pdf-period-select" id="pdfPeriod">
         <option value="weekly">Bu Hafta</option>
         <option value="monthly" selected>Bu Ay</option>
-        <option value="all">Tüm Dönem</option>
+        <option value="all">TÃ¼m DÃ¶nem</option>
       </select>
       <select class="pdf-period-select" id="pdfStudent">
-        <option value="all">Tüm Öğrenciler</option>
+        <option value="all">TÃ¼m ÃÄrenciler</option>
         ${students.map(s=>`<option>${s.name}</option>`).join('')}
       </select>
       <button class="pdf-btn" onclick="exportPDF('teacher')">
-        📄 PDF Rapor İndir
+        ğ PDF Rapor Ä°ndir
       </button>
-      <button class="btn btn-outline" onclick="showToast('📧','Rapor e-posta ile gönderildi!')">📧 E-posta Gönder</button>
+      <button class="btn btn-outline" onclick="showToast('ğ§','Rapor e-posta ile gÃ¶nderildi!')">ğ§ E-posta GÃ¶nder</button>
     </div>
 
     <div class="tabs">
       <button class="tab active">Ders Analizi</button>
-      <button class="tab" onclick="showToast('📊','Öğrenci analizi yükleniyor...')">Öğrenci Analizi</button>
-      <button class="tab" onclick="showToast('📅','Haftalık rapor hazırlanıyor...')">Haftalık Rapor</button>
+      <button class="tab" onclick="showToast('ğ','ÃÄrenci analizi yÃ¼kleniyor...')">ÃÄrenci Analizi</button>
+      <button class="tab" onclick="showToast('ğ','HaftalÄ±k rapor hazÄ±rlanÄ±yor...')">HaftalÄ±k Rapor</button>
     </div>
     <div class="grid-2">
       <div class="card">
-        <div class="card-title">🎯 Ders Bazlı Başarı Oranı</div>
+        <div class="card-title">ğ¯ Ders BazlÄ± BaÅarÄ± OranÄ±</div>
         <canvas id="radarChart" height="220"></canvas>
       </div>
       <div class="card">
-        <div class="card-title">📅 Günlük Soru Çözüm Trendi</div>
+        <div class="card-title">ğ GÃ¼nlÃ¼k Soru ÃÃ¶zÃ¼m Trendi</div>
         <canvas id="trendChart" height="220"></canvas>
       </div>
     </div>
     <div class="card">
-      <div class="card-title">⚠️ Dikkat Gerektiren Konular</div>
+      <div class="card-title">â ï¸ Dikkat Gerektiren Konular</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
         ${[
-          {subject:'Matematik', topic:'Olasılık', pct:42, cls:'math'},
+          {subject:'Matematik', topic:'OlasÄ±lÄ±k', pct:42, cls:'math'},
           {subject:'Fen', topic:'Kimyasal Tepkimeler', pct:51, cls:'science'},
-          {subject:'Türkçe', topic:'Anlatım Bozuklukları', pct:58, cls:'turkish'},
+          {subject:'TÃ¼rkÃ§e', topic:'AnlatÄ±m BozukluklarÄ±', pct:58, cls:'turkish'},
         ].map(t=>`
           <div style="background:var(--surface2);border-radius:12px;padding:16px;border:1px solid var(--border)">
             <div class="c-${t.cls}" style="font-weight:800;font-size:0.85rem;margin-bottom:4px">${t.subject}</div>
             <div style="font-weight:700;margin-bottom:10px">${t.topic}</div>
             <div class="bar-bg"><div class="bar-fill bg-${t.cls}" style="width:${t.pct}%"></div></div>
-            <div style="font-size:0.8rem;color:var(--accent2);font-weight:700;margin-top:6px">%${t.pct} başarı</div>
+            <div style="font-size:0.8rem;color:var(--accent2);font-weight:700;margin-top:6px">%${t.pct} baÅarÄ±</div>
           </div>
         `).join('')}
       </div>
@@ -954,21 +979,21 @@ function teacherAnalysis() {
 
 function teacherTasks() {
   return `
-    <div class="page-title">📋 Görevler</div>
-    <div class="page-sub">Ödevler ve çalışma programları</div>
-    <button class="btn btn-primary" style="margin-bottom:20px" onclick="openModal('addTaskModal')">+ Yeni Görev Ata</button>
+    <div class="page-title">ğ GÃ¶revler</div>
+    <div class="page-sub">Ãdevler ve Ã§alÄ±Åma programlarÄ±</div>
+    <button class="btn btn-primary" style="margin-bottom:20px" onclick="openModal('addTaskModal')">+ Yeni GÃ¶rev Ata</button>
     ${tasks.map((t,i)=>`
       <div class="assignment-card">
-        <div class="assignment-icon" style="background:rgba(108,99,255,.15)">📝</div>
+        <div class="assignment-icon" style="background:rgba(108,99,255,.15)">ğ</div>
         <div style="flex:1">
           <div class="assignment-title">${t.title}</div>
-          <div class="assignment-desc">${t.desc} • ${t.subject}</div>
+          <div class="assignment-desc">${t.desc} â¢ ${t.subject}</div>
           <div class="assignment-footer">
-            <span class="badge ${t.done?'badge-green':'badge-yellow'}">${t.done?'Tamamlandı':'Bekliyor'}</span>
+            <span class="badge ${t.done?'badge-green':'badge-yellow'}">${t.done?'TamamlandÄ±':'Bekliyor'}</span>
             <span style="font-size:0.78rem;color:var(--text2)">Son: ${t.due}</span>
           </div>
         </div>
-        <button class="btn btn-outline" style="padding:6px 12px;font-size:0.78rem" onclick="showToast('🔔','Hatırlatma gönderildi!')">Hatırlat</button>
+        <button class="btn btn-outline" style="padding:6px 12px;font-size:0.78rem" onclick="showToast('ğ','HatÄ±rlatma gÃ¶nderildi!')">HatÄ±rlat</button>
       </div>
     `).join('')}
   `;
@@ -988,30 +1013,30 @@ function renderStudentPage(id, el) {
 
 function studentDashboard() {
   return `
-    <div class="page-title">🏠 Ana Sayfa</div>
-    <div class="page-sub">Merhaba Zeynep! Bugün ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
+    <div class="page-title">ğ  Ana Sayfa</div>
+    <div class="page-sub">Merhaba Zeynep! BugÃ¼n ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
 
     <div class="grid-3">
       <div class="stat-card">
         <div class="stat-label">Bu Hafta Soru</div>
         <div class="stat-value" style="color:var(--accent)">347</div>
-        <div class="stat-change up">↑ Hedef: 400</div>
+        <div class="stat-change up">â Hedef: 400</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Çalışma Süresi</div>
+        <div class="stat-label">ÃalÄ±Åma SÃ¼resi</div>
         <div class="stat-value" style="color:var(--accent3)">18.5<span style="font-size:1rem">sa</span></div>
-        <div class="stat-change up">↑ Geçen hafta 16sa</div>
+        <div class="stat-change up">â GeÃ§en hafta 16sa</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Bekleyen Ödev</div>
+        <div class="stat-label">Bekleyen Ãdev</div>
         <div class="stat-value" style="color:var(--accent4)">2</div>
-        <div class="stat-change">📅 Son: 15 Mar</div>
+        <div class="stat-change">ğ Son: 15 Mar</div>
       </div>
     </div>
 
     <div class="grid-2">
       <div class="card">
-        <div class="card-title">📚 Ders İlerlemem</div>
+        <div class="card-title">ğ Ders Ä°lerlemem</div>
         ${subjects.map((s,i)=>`
           <div class="subject-row">
             <div class="subject-name c-${s.cls}">${s.icon} ${s.name}</div>
@@ -1021,7 +1046,7 @@ function studentDashboard() {
         `).join('')}
       </div>
       <div class="card">
-        <div class="card-title">📅 Bu Hafta</div>
+        <div class="card-title">ğ Bu Hafta</div>
         <div class="week-grid">
           ${weekDays.map((d,i)=>`
             <div class="day-cell ${i<3?'has-data':''} ${i===2?'today':''}">
@@ -1032,23 +1057,23 @@ function studentDashboard() {
           `).join('')}
         </div>
         <div style="margin-top:16px">
-          <button class="btn btn-primary" style="width:100%" onclick="showPage('daily-entry')">+ Bugün Giriş Yap</button>
+          <button class="btn btn-primary" style="width:100%" onclick="showPage('daily-entry')">+ BugÃ¼n GiriÅ Yap</button>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">📊 Son Girişlerim</div>
+      <div class="card-title">ğ Son GiriÅlerim</div>
       ${studyEntries.map(e=>`
         <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
-          <div style="font-size:1.2rem">${subjects.find(s=>s.name===e.subject)?.icon||'📚'}</div>
+          <div style="font-size:1.2rem">${subjects.find(s=>s.name===e.subject)?.icon||'ğ'}</div>
           <div style="flex:1">
-            <div style="font-weight:700;font-size:0.9rem">${e.subject} — ${e.topic}</div>
+            <div style="font-weight:700;font-size:0.9rem">${e.subject} â ${e.topic}</div>
             <div style="font-size:0.78rem;color:var(--text2)">${e.date}</div>
           </div>
           <div style="text-align:right;font-size:0.82rem;color:var(--text2)">
-            <div>⏱ ${e.duration}dk</div>
-            <div>📝 ${e.questions} soru</div>
+            <div>â± ${e.duration}dk</div>
+            <div>ğ ${e.questions} soru</div>
           </div>
         </div>
       `).join('')}
@@ -1058,37 +1083,37 @@ function studentDashboard() {
 
 function studentDailyEntry() {
   return `
-    <div class="page-title">✏️ Günlük Çalışma Girişi</div>
-    <div class="page-sub">Bugünkü çalışmalarını ekle</div>
+    <div class="page-title">âï¸ GÃ¼nlÃ¼k ÃalÄ±Åma GiriÅi</div>
+    <div class="page-sub">BugÃ¼nkÃ¼ Ã§alÄ±ÅmalarÄ±nÄ± ekle</div>
 
     <div class="card" style="margin-bottom:20px">
-      <div class="card-title">📚 Ders Seç</div>
+      <div class="card-title">ğ Ders SeÃ§</div>
       <div class="subject-entry-grid">
         ${subjects.map(s=>`
           <div class="subject-entry-card" onclick="selectSubjectCard(this,'${s.name}')">
             <div class="sec-name"><span class="sec-dot" style="background:${s.color}"></span>${s.icon} ${s.name}</div>
-            <div style="font-size:0.78rem;color:var(--text2)">Giriş ekle</div>
+            <div style="font-size:0.78rem;color:var(--text2)">GiriÅ ekle</div>
           </div>
         `).join('')}
       </div>
-      <button class="btn btn-primary" onclick="openModal('addEntryModal')">+ Çalışma Ekle</button>
+      <button class="btn btn-primary" onclick="openModal('addEntryModal')">+ ÃalÄ±Åma Ekle</button>
     </div>
 
     <div class="card">
-      <div class="card-title">📋 Bugünkü Girişler</div>
-      ${studyEntries.filter(e=>e.date.includes('Bugün')).map(e=>`
+      <div class="card-title">ğ BugÃ¼nkÃ¼ GiriÅler</div>
+      ${studyEntries.filter(e=>e.date.includes('BugÃ¼n')).map(e=>`
         <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
-          <div style="font-size:1.4rem">${subjects.find(s=>s.name===e.subject)?.icon||'📚'}</div>
+          <div style="font-size:1.4rem">${subjects.find(s=>s.name===e.subject)?.icon||'ğ'}</div>
           <div style="flex:1">
-            <div style="font-weight:700">${e.subject} — <span style="color:var(--text2)">${e.topic}</span></div>
-            <div style="font-size:0.8rem;color:var(--text2);margin-top:3px">⏱ ${e.duration} dakika &nbsp; 📝 ${e.questions} soru</div>
+            <div style="font-weight:700">${e.subject} â <span style="color:var(--text2)">${e.topic}</span></div>
+            <div style="font-size:0.8rem;color:var(--text2);margin-top:3px">â± ${e.duration} dakika &nbsp; ğ ${e.questions} soru</div>
           </div>
-          <span class="badge badge-green">✓ Kaydedildi</span>
+          <span class="badge badge-green">â Kaydedildi</span>
         </div>
       `).join('')}
       <div style="margin-top:16px;padding-top:4px;display:flex;gap:12px;font-size:0.9rem;font-weight:700">
-        <span style="color:var(--accent3)">⏱ Toplam: 105 dk</span>
-        <span style="color:var(--accent4)">📝 Toplam: 55 soru</span>
+        <span style="color:var(--accent3)">â± Toplam: 105 dk</span>
+        <span style="color:var(--accent4)">ğ Toplam: 55 soru</span>
       </div>
     </div>
   `;
@@ -1096,8 +1121,8 @@ function studentDailyEntry() {
 
 function studentAnalysis() {
   return `
-    <div class="page-title">📈 Analizlerim</div>
-    <div class="page-sub">Kişisel performans takibim</div>
+    <div class="page-title">ğ Analizlerim</div>
+    <div class="page-sub">KiÅisel performans takibim</div>
 
     <div class="pdf-actions">
       <select class="pdf-period-select" id="pdfPeriodS">
@@ -1105,13 +1130,13 @@ function studentAnalysis() {
         <option value="monthly" selected>Bu Ay</option>
       </select>
       <button class="pdf-btn" onclick="exportPDF('student')">
-        📄 Karnemi İndir
+        ğ Karnemi Ä°ndir
       </button>
     </div>
 
     <div class="grid-2">
       <div class="card">
-        <div class="card-title">📚 Ders Başarılarım</div>
+        <div class="card-title">ğ Ders BaÅarÄ±larÄ±m</div>
         ${subjects.map((s,i)=>`
           <div class="subject-row">
             <div class="subject-name c-${s.cls}">${s.icon} ${s.name}</div>
@@ -1121,22 +1146,22 @@ function studentAnalysis() {
         `).join('')}
       </div>
       <div class="card">
-        <div class="card-title">📅 Haftalık Soru Trendi</div>
+        <div class="card-title">ğ HaftalÄ±k Soru Trendi</div>
         <canvas id="studentTrend" height="200"></canvas>
       </div>
     </div>
     <div class="card">
-      <div class="card-title">⚡ Güçlü & Zayıf Konularım</div>
+      <div class="card-title">â¡ GÃ¼Ã§lÃ¼ & ZayÄ±f KonularÄ±m</div>
       <div class="grid-2">
         <div>
-          <div style="color:var(--accent3);font-weight:800;margin-bottom:10px">💪 Güçlü Konular</div>
-          ${['Din Kültürü — Temel Kavramlar (%90)','Türkçe — Paragraf Analizi (%85)','İnkılap — Kurtuluş Savaşı (%82)'].map(t=>`
+          <div style="color:var(--accent3);font-weight:800;margin-bottom:10px">ğª GÃ¼Ã§lÃ¼ Konular</div>
+          ${['Din KÃ¼ltÃ¼rÃ¼ â Temel Kavramlar (%90)','TÃ¼rkÃ§e â Paragraf Analizi (%85)','Ä°nkÄ±lap â KurtuluÅ SavaÅÄ± (%82)'].map(t=>`
             <div style="padding:8px 12px;background:rgba(67,233,123,.08);border-radius:8px;font-size:0.85rem;margin-bottom:6px;border:1px solid rgba(67,233,123,.2)">${t}</div>
           `).join('')}
         </div>
         <div>
-          <div style="color:var(--accent2);font-weight:800;margin-bottom:10px">⚠️ Çalışılması Gerekenler</div>
-          ${['Fen — Kimyasal Tepkimeler (%55)','İngilizce — Grammar (%58)','Matematik — Olasılık (%62)'].map(t=>`
+          <div style="color:var(--accent2);font-weight:800;margin-bottom:10px">â ï¸ ÃalÄ±ÅÄ±lmasÄ± Gerekenler</div>
+          ${['Fen â Kimyasal Tepkimeler (%55)','Ä°ngilizce â Grammar (%58)','Matematik â OlasÄ±lÄ±k (%62)'].map(t=>`
             <div style="padding:8px 12px;background:rgba(255,101,132,.08);border-radius:8px;font-size:0.85rem;margin-bottom:6px;border:1px solid rgba(255,101,132,.2)">${t}</div>
           `).join('')}
         </div>
@@ -1147,8 +1172,8 @@ function studentAnalysis() {
 
 function studentKazanimlar() {
   return `
-    <div class="page-title">🎯 Kazanımlarım</div>
-    <div class="page-sub">LGS müfredatına göre tamamladığın konular</div>
+    <div class="page-title">ğ¯ KazanÄ±mlarÄ±m</div>
+    <div class="page-sub">LGS mÃ¼fredatÄ±na gÃ¶re tamamladÄ±ÄÄ±n konular</div>
     ${subjects.map(s=>{
       const kList = kazanimlar[s.name] || [];
       const done = kList.filter((_,i)=> kazanimDone[s.name+i]).length;
@@ -1158,7 +1183,7 @@ function studentKazanimlar() {
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
             <div class="card-title c-${s.cls}" style="margin:0">${s.icon} ${s.name}</div>
             <div style="display:flex;align-items:center;gap:10px">
-              <div style="font-size:0.85rem;color:var(--text2)">${done}/${kList.length} kazanım</div>
+              <div style="font-size:0.85rem;color:var(--text2)">${done}/${kList.length} kazanÄ±m</div>
               <span class="badge ${pct>=70?'badge-green':pct>=40?'badge-yellow':'badge-red'}">${pct}%</span>
             </div>
           </div>
@@ -1166,7 +1191,7 @@ function studentKazanimlar() {
           <div class="kazanim-grid">
             ${kList.map((k,i)=>`
               <div class="kazanim-item ${kazanimDone[s.name+i]?'done':''}" onclick="toggleKazanim('${s.name}',${i},this)">
-                <div class="kazanim-check">${kazanimDone[s.name+i]?'✓':''}</div>
+                <div class="kazanim-check">${kazanimDone[s.name+i]?'â':''}</div>
                 <span>${k}</span>
               </div>
             `).join('')}
@@ -1179,20 +1204,20 @@ function studentKazanimlar() {
 
 function studentTasks() {
   return `
-    <div class="page-title">📋 Ödevlerim</div>
-    <div class="page-sub">Koç tarafından atanan görevler</div>
+    <div class="page-title">ğ Ãdevlerim</div>
+    <div class="page-sub">KoÃ§ tarafÄ±ndan atanan gÃ¶revler</div>
     ${tasks.map((t,i)=>`
       <div class="assignment-card">
-        <div class="assignment-icon" style="background:rgba(108,99,255,.15);color:var(--accent);font-size:1.3rem">📝</div>
+        <div class="assignment-icon" style="background:rgba(108,99,255,.15);color:var(--accent);font-size:1.3rem">ğ</div>
         <div style="flex:1">
           <div class="assignment-title">${t.title}</div>
-          <div class="assignment-desc">${t.desc} • ${t.subject}</div>
+          <div class="assignment-desc">${t.desc} â¢ ${t.subject}</div>
           <div class="assignment-footer">
-            <span class="badge ${t.done?'badge-green':'badge-yellow'}">${t.done?'✓ Tamamlandı':'⏳ Bekliyor'}</span>
-            <span style="font-size:0.78rem;color:var(--text2)">📅 Son: ${t.due}</span>
+            <span class="badge ${t.done?'badge-green':'badge-yellow'}">${t.done?'â TamamlandÄ±':'â³ Bekliyor'}</span>
+            <span style="font-size:0.78rem;color:var(--text2)">ğ Son: ${t.due}</span>
           </div>
         </div>
-        ${!t.done?`<button class="btn btn-success" style="padding:8px 14px;font-size:0.8rem" onclick="completeTask(${i})">Tamamla ✓</button>`:''}
+        ${!t.done?`<button class="btn btn-success" style="padding:8px 14px;font-size:0.8rem" onclick="completeTask(${i})">Tamamla â</button>`:''}
       </div>
     `).join('')}
   `;
@@ -1202,37 +1227,37 @@ function studentTasks() {
 let activeChat = 0;
 const conversations = [
   {
-    id:0, name:'Zeynep Kaya', color:'#6c63ff', unread:2, lastMsg:'Hoca bu konuyu anlamadım...',
+    id:0, name:'Zeynep Kaya', color:'#6c63ff', unread:2, lastMsg:'Hoca bu konuyu anlamadÄ±m...',
     messages:[
-      {from:'student', text:'Hocam merhaba! Olasılık konusunda takıldım, yardımcı olabilir misiniz?', time:'09:15'},
-      {from:'teacher', text:'Tabii Zeynep, hangi kısımda takıldın?', time:'09:18'},
-      {from:'student', text:'Permütasyon ve kombinasyon farkını karıştırıyorum sürekli.', time:'09:20'},
-      {from:'teacher', text:'Kolay bir kural: sıra önemliyse permütasyon, değilse kombinasyon. Yarın bunu ödev olarak ekliyorum sana.', time:'09:25'},
-      {from:'student', text:'Çok teşekkürler hocam! Hoca bu konuyu anlamadım...', time:'10:02'},
+      {from:'student', text:'Hocam merhaba! OlasÄ±lÄ±k konusunda takÄ±ldÄ±m, yardÄ±mcÄ± olabilir misiniz?', time:'09:15'},
+      {from:'teacher', text:'Tabii Zeynep, hangi kÄ±sÄ±mda takÄ±ldÄ±n?', time:'09:18'},
+      {from:'student', text:'PermÃ¼tasyon ve kombinasyon farkÄ±nÄ± karÄ±ÅtÄ±rÄ±yorum sÃ¼rekli.', time:'09:20'},
+      {from:'teacher', text:'Kolay bir kural: sÄ±ra Ã¶nemliyse permÃ¼tasyon, deÄilse kombinasyon. YarÄ±n bunu Ã¶dev olarak ekliyorum sana.', time:'09:25'},
+      {from:'student', text:'Ãok teÅekkÃ¼rler hocam! Hoca bu konuyu anlamadÄ±m...', time:'10:02'},
     ]
   },
   {
-    id:1, name:'Emre Demir', color:'#ff6584', unread:0, lastMsg:'Tamam hocam, yarın yapacağım.',
+    id:1, name:'Emre Demir', color:'#ff6584', unread:0, lastMsg:'Tamam hocam, yarÄ±n yapacaÄÄ±m.',
     messages:[
-      {from:'teacher', text:'Emre, 2 gündür giriş yapmıyorsun. Sorun var mı?', time:'Dün 16:00'},
-      {from:'student', text:'Özür dilerim hocam, hasta oldum.', time:'Dün 18:30'},
-      {from:'teacher', text:'Geçmiş olsun! İyileşince telafi ederiz, acele etme.', time:'Dün 18:35'},
-      {from:'student', text:'Tamam hocam, yarın yapacağım.', time:'Dün 19:00'},
+      {from:'teacher', text:'Emre, 2 gÃ¼ndÃ¼r giriÅ yapmÄ±yorsun. Sorun var mÄ±?', time:'DÃ¼n 16:00'},
+      {from:'student', text:'ÃzÃ¼r dilerim hocam, hasta oldum.', time:'DÃ¼n 18:30'},
+      {from:'teacher', text:'GeÃ§miÅ olsun! Ä°yileÅince telafi ederiz, acele etme.', time:'DÃ¼n 18:35'},
+      {from:'student', text:'Tamam hocam, yarÄ±n yapacaÄÄ±m.', time:'DÃ¼n 19:00'},
     ]
   },
   {
-    id:2, name:'Selin Yıldız', color:'#43e97b', unread:1, lastMsg:'Sınav nasıl geçti?',
+    id:2, name:'Selin YÄ±ldÄ±z', color:'#43e97b', unread:1, lastMsg:'SÄ±nav nasÄ±l geÃ§ti?',
     messages:[
-      {from:'student', text:'Hocam deneme sınavında Türkçe\'den 32 doğru yaptım!', time:'11:00'},
-      {from:'teacher', text:'Harika Selin! Geçen ay 24\'tü, çok iyi gelişme 🎉', time:'11:05'},
-      {from:'student', text:'Sınav nasıl geçti?', time:'11:10'},
+      {from:'student', text:'Hocam deneme sÄ±navÄ±nda TÃ¼rkÃ§e\'den 32 doÄru yaptÄ±m!', time:'11:00'},
+      {from:'teacher', text:'Harika Selin! GeÃ§en ay 24\'tÃ¼, Ã§ok iyi geliÅme ğ', time:'11:05'},
+      {from:'student', text:'SÄ±nav nasÄ±l geÃ§ti?', time:'11:10'},
     ]
   },
   {
-    id:3, name:'Mert Çelik', color:'#f9ca24', unread:0, lastMsg:'Anlıyorum hocam.',
+    id:3, name:'Mert Ãelik', color:'#f9ca24', unread:0, lastMsg:'AnlÄ±yorum hocam.',
     messages:[
-      {from:'teacher', text:'Mert, Fen ödevini teslim etmedin. Bugün içinde gönderir misin?', time:'08:30'},
-      {from:'student', text:'Anlıyorum hocam.', time:'08:45'},
+      {from:'teacher', text:'Mert, Fen Ã¶devini teslim etmedin. BugÃ¼n iÃ§inde gÃ¶nderir misin?', time:'08:30'},
+      {from:'student', text:'AnlÄ±yorum hocam.', time:'08:45'},
     ]
   },
 ];
@@ -1266,11 +1291,11 @@ function messagesPage(role) {
   const headerColor = isTeacher ? conv.color : '#6c63ff';
 
   return `
-    <div class="page-title">💬 Mesajlar</div>
-    <div class="page-sub">Öğrencilerle birebir iletişim</div>
+    <div class="page-title">ğ¬ Mesajlar</div>
+    <div class="page-sub">ÃÄrencilerle birebir iletiÅim</div>
     <div class="chat-layout">
       <div class="chat-list">
-        <div class="chat-list-header">💬 Konuşmalar</div>
+        <div class="chat-list-header">ğ¬ KonuÅmalar</div>
         ${chatListHTML}
       </div>
       <div class="chat-window">
@@ -1278,21 +1303,21 @@ function messagesPage(role) {
           <div class="student-avatar" style="background:${headerColor}22;color:${headerColor};width:36px;height:36px;font-size:0.95rem">${headerName[0]}</div>
           <div>
             <div style="font-weight:800;font-size:0.95rem">${headerName}</div>
-            <div style="font-size:0.75rem;color:var(--accent3)">● Çevrimiçi</div>
+            <div style="font-size:0.75rem;color:var(--accent3)">â ÃevrimiÃ§i</div>
           </div>
           <div style="margin-left:auto;display:flex;gap:8px">
-            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showToast('📋','Görev atama açıldı')">📋 Görev At</button>
-            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showToast('📞','Arama özelliği yakında!')">📞</button>
+            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showToast('ğ','GÃ¶rev atama aÃ§Ä±ldÄ±')">ğ GÃ¶rev At</button>
+            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showToast('ğ','Arama Ã¶zelliÄi yakÄ±nda!')">ğ</button>
           </div>
         </div>
         <div class="chat-messages" id="chatMessages">
-          <div class="msg-system">📅 Bugün</div>
+          <div class="msg-system">ğ BugÃ¼n</div>
           ${messagesHTML}
         </div>
         <div class="chat-input-row">
           <input class="chat-input" id="chatInput" type="text" placeholder="Mesaj yaz..." 
             onkeydown="if(event.key==='Enter')sendMessage('${role}')">
-          <button class="chat-send-btn" onclick="sendMessage('${role}')">➤</button>
+          <button class="chat-send-btn" onclick="sendMessage('${role}')">â¤</button>
         </div>
       </div>
     </div>
@@ -1332,7 +1357,7 @@ function sendMessage(role) {
 
   // Simulate reply after 1.5s
   if(role==='teacher') {
-    const replies = ['Tamam hocam, şimdi bakıyorum!','Anladım, teşekkürler 🙏','Hemen yapıyorum!','Peki hocam, anlıyorum.'];
+    const replies = ['Tamam hocam, Åimdi bakÄ±yorum!','AnladÄ±m, teÅekkÃ¼rler ğ','Hemen yapÄ±yorum!','Peki hocam, anlÄ±yorum.'];
     setTimeout(()=>{
       const reply = replies[Math.floor(Math.random()*replies.length)];
       const replyTime = new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
@@ -1344,7 +1369,7 @@ function sendMessage(role) {
         div2.innerHTML = `<div class="msg-bubble">${reply}</div><div class="msg-time">${replyTime}</div>`;
         msgEl2.appendChild(div2);
         msgEl2.scrollTop = msgEl2.scrollHeight;
-        showToast('💬', `${conversations[activeChat].name}: "${reply}"`);
+        showToast('ğ¬', `${conversations[activeChat].name}: "${reply}"`);
       }
     }, 1500);
   }
@@ -1352,15 +1377,15 @@ function sendMessage(role) {
 
 function notificationsPage() {
   const notifs = [
-    { text:'Ahmet Hoca yeni bir görev atadı: "Matematik Test 15"', time:'5 dk önce', read:false },
-    { text:'Zeynep Kaya bugünkü çalışma girişini tamamladı', time:'2 saat önce', read:false },
-    { text:'Emre Demir 2 gündür giriş yapmadı, hatırlatma gönderildi', time:'3 saat önce', read:false },
-    { text:'Selin Yıldız tüm ödevleri teslim etti 🎉', time:'1 gün önce', read:true },
-    { text:'Haftalık analiz raporu hazır, inceleyebilirsiniz', time:'2 gün önce', read:true },
+    { text:'Ahmet Hoca yeni bir gÃ¶rev atadÄ±: "Matematik Test 15"', time:'5 dk Ã¶nce', read:false },
+    { text:'Zeynep Kaya bugÃ¼nkÃ¼ Ã§alÄ±Åma giriÅini tamamladÄ±', time:'2 saat Ã¶nce', read:false },
+    { text:'Emre Demir 2 gÃ¼ndÃ¼r giriÅ yapmadÄ±, hatÄ±rlatma gÃ¶nderildi', time:'3 saat Ã¶nce', read:false },
+    { text:'Selin YÄ±ldÄ±z tÃ¼m Ã¶devleri teslim etti ğ', time:'1 gÃ¼n Ã¶nce', read:true },
+    { text:'HaftalÄ±k analiz raporu hazÄ±r, inceleyebilirsiniz', time:'2 gÃ¼n Ã¶nce', read:true },
   ];
   return `
-    <div class="page-title">🔔 Bildirimler</div>
-    <div class="page-sub">Son aktiviteler ve güncellemeler</div>
+    <div class="page-title">ğ Bildirimler</div>
+    <div class="page-sub">Son aktiviteler ve gÃ¼ncellemeler</div>
     <div class="card">
       ${notifs.map(n=>`
         <div class="notif-item">
@@ -1388,10 +1413,10 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 
 function saveEntry() {
   const sub = document.getElementById('entrySubject').value;
-  const topic = document.getElementById('entryTopic').value || 'Genel Çalışma';
+  const topic = document.getElementById('entryTopic').value || 'Genel ÃalÄ±Åma';
   const dur = document.getElementById('entryDuration').value || 30;
   const q = document.getElementById('entryQuestions').value || 0;
-  const entry = { subject:sub, topic, duration:parseInt(dur), questions:parseInt(q), date:'Bugün '+new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}) };
+  const entry = { subject:sub, topic, duration:parseInt(dur), questions:parseInt(q), date:'BugÃ¼n '+new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}) };
   studyEntries.unshift(entry);
 
   // Firebase'e kaydet
@@ -1404,25 +1429,55 @@ function saveEntry() {
   }
 
   closeModal('addEntryModal');
-  showToast('✅', `${sub} girişi kaydedildi! Koçun bildirim aldı.`);
+  showToast('â', `${sub} giriÅi kaydedildi! KoÃ§un bildirim aldÄ±.`);
   showPage('daily-entry');
+}
+
+async function saveNewStudent() {
+  const name = document.getElementById('newStudentName').value.trim();
+  const email = document.getElementById('newStudentEmail').value.trim();
+  const pass = document.getElementById('newStudentPass').value;
+  const errEl = document.getElementById('addStudentError');
+  errEl.style.display = 'none';
+  if (!name || !email || !pass) { errEl.textContent = 'TÃ¼m alanlarÄ± doldurunuz.'; errEl.style.display='block'; return; }
+  if (pass.length < 6) { errEl.textContent = 'Åifre en az 6 karakter olmalÄ±.'; errEl.style.display='block'; return; }
+  try {
+    // Mevcut kullanÄ±cÄ±yÄ± sakla
+    const currentUser = auth.currentUser;
+    // Ä°kinci bir auth instance oluÅturmadan Firebase Admin yapamayÄ±z
+    // Bu yÃ¼zden Firestore'a "bekleyen Ã¶Ärenci" olarak kaydediyoruz
+    const colors = ['#6c63ff','#ff6584','#43e97b','#f9ca24','#00b4d8','#ff9f43'];
+    const color = colors[students.length % colors.length];
+    const studentData = { name, email, password: pass, role: 'student', teacherId: currentUser.uid, color, avg: 0, createdAt: new Date() };
+    await db.collection('pendingStudents').add(studentData);
+    students.push({ name, avg: 0, trend: 'up', lastActive: 'Yeni', color, tasks: 0 });
+    closeModal('addStudentModal');
+    document.getElementById('newStudentName').value = '';
+    document.getElementById('newStudentEmail').value = '';
+    document.getElementById('newStudentPass').value = '';
+    showToast('â', `${name} eklendi! GiriÅ bilgileri: ${email} / ${pass}`);
+    showPage('students');
+  } catch(e) {
+    errEl.textContent = 'Hata: ' + e.message;
+    errEl.style.display = 'block';
+  }
 }
 
 function saveTask() {
   const student = document.getElementById('taskStudent').value;
-  const title = document.getElementById('taskTitle').value || 'Yeni Görev';
+  const title = document.getElementById('taskTitle').value || 'Yeni GÃ¶rev';
   const sub = document.getElementById('taskSubject').value;
   const desc = document.getElementById('taskDesc').value || '-';
   const due = document.getElementById('taskDue').value || '20 Mar';
   tasks.unshift({ title, subject:sub, desc, due, done:false });
   closeModal('addTaskModal');
-  showToast('📤', `${student}'e görev gönderildi!`);
+  showToast('ğ¤', `${student}'e gÃ¶rev gÃ¶nderildi!`);
   showPage('tasks-teacher');
 }
 
 function completeTask(i) {
   tasks[i].done = true;
-  showToast('🎉', 'Görev tamamlandı olarak işaretlendi!');
+  showToast('ğ', 'GÃ¶rev tamamlandÄ± olarak iÅaretlendi!');
   showPage('my-tasks');
 }
 
@@ -1430,17 +1485,17 @@ function toggleKazanim(subject, idx, el) {
   const key = subject+idx;
   kazanimDone[key] = !kazanimDone[key];
   el.classList.toggle('done', kazanimDone[key]);
-  el.querySelector('.kazanim-check').textContent = kazanimDone[key] ? '✓' : '';
+  el.querySelector('.kazanim-check').textContent = kazanimDone[key] ? 'â' : '';
   // update progress bar
   const kList = kazanimlar[subject] || [];
   const done = kList.filter((_,i)=> kazanimDone[subject+i]).length;
   const pct = kList.length ? Math.round(done/kList.length*100) : 0;
-  showToast(kazanimDone[key]?'✅':'↩️', `${subject} — ${kList[idx]} ${kazanimDone[key]?'tamamlandı':'geri alındı'}`);
+  showToast(kazanimDone[key]?'â':'â©ï¸', `${subject} â ${kList[idx]} ${kazanimDone[key]?'tamamlandÄ±':'geri alÄ±ndÄ±'}`);
 }
 
 /* =================== PDF EXPORT =================== */
 function exportPDF(role) {
-  showToast('⏳','PDF oluşturuluyor...');
+  showToast('â³','PDF oluÅturuluyor...');
   setTimeout(()=>{
     try {
       const { jsPDF } = window.jspdf;
@@ -1449,12 +1504,12 @@ function exportPDF(role) {
       const period = role==='teacher'
         ? (document.getElementById('pdfPeriod')?.value || 'monthly')
         : (document.getElementById('pdfPeriodS')?.value || 'monthly');
-      const periodLabel = period==='weekly'?'Haftalık':period==='monthly'?'Aylık':'Dönem';
+      const periodLabel = period==='weekly'?'HaftalÄ±k':period==='monthly'?'AylÄ±k':'DÃ¶nem';
       const studentFilter = role==='teacher' ? (document.getElementById('pdfStudent')?.value || 'all') : 'Zeynep Kaya';
       const now = new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
       const subjectColors = ['#ff6b6b','#4ecdc4','#45b7d1','#f9ca24','#a29bfe','#fd79a8'];
 
-      // ── HEADER BAND ──
+      // ââ HEADER BAND ââ
       doc.setFillColor(15, 17, 23);
       doc.rect(0, 0, W, H, 'F');
       doc.setFillColor(28, 30, 45);
@@ -1486,16 +1541,16 @@ function exportPDF(role) {
 
       let y = 52;
 
-      // ── STUDENT INFO / SUMMARY ──
+      // ââ STUDENT INFO / SUMMARY ââ
       const title = role==='teacher'
-        ? (studentFilter==='all' ? 'Tum Ogrenciler — Sinif Ozeti' : studentFilter + ' — Ogrenci Raporu')
-        : 'Zeynep Kaya — Kisisel Analiz Raporu';
+        ? (studentFilter==='all' ? 'Tum Ogrenciler â Sinif Ozeti' : studentFilter + ' â Ogrenci Raporu')
+        : 'Zeynep Kaya â Kisisel Analiz Raporu';
 
       doc.setTextColor(232,234,246); doc.setFontSize(15); doc.setFont('helvetica','bold');
       doc.text(title, 14, y); y+=8;
       doc.setFillColor(108,99,255); doc.rect(14,y,30,1,'F'); y+=8;
 
-      // ── STAT BOXES ──
+      // ââ STAT BOXES ââ
       const stats = role==='teacher'
         ? [{label:'Aktif Ogrenci',val:'4',color:[108,99,255]},{label:'Bu Hafta Giris',val:'3',color:[67,233,123]},{label:'Bekleyen Odev',val:'7',color:[249,202,36]},{label:'Sinif Ort.',val:'78.5',color:[255,101,132]}]
         : [{label:'Haftalik Soru',val:'347',color:[108,99,255]},{label:'Calisma Suresi',val:'18.5 sa',color:[67,233,123]},{label:'Bek. Odev',val:'2',color:[249,202,36]},{label:'Genel Ort.',val:'72',color:[255,101,132]}];
@@ -1511,7 +1566,7 @@ function exportPDF(role) {
       });
       y += bh+10;
 
-      // ── SUBJECT PERFORMANCE ──
+      // ââ SUBJECT PERFORMANCE ââ
       doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
       doc.text('Ders Bazli Performans', 14, y); y+=7;
 
@@ -1541,7 +1596,7 @@ function exportPDF(role) {
       });
       y += 6;
 
-      // ── STUDY ENTRIES TABLE ──
+      // ââ STUDY ENTRIES TABLE ââ
       if(role==='student' || studentFilter!=='all') {
         doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
         doc.text('Son Calisma Girisler', 14, y); y+=7;
@@ -1571,7 +1626,7 @@ function exportPDF(role) {
         y += 6;
       }
 
-      // ── TEACHER: STUDENT TABLE ──
+      // ââ TEACHER: STUDENT TABLE ââ
       if(role==='teacher' && studentFilter==='all') {
         doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
         doc.text('Ogrenci Durum Tablosu', 14, y); y+=7;
@@ -1597,7 +1652,7 @@ function exportPDF(role) {
         y+=6;
       }
 
-      // ── WEAK TOPICS ──
+      // ââ WEAK TOPICS ââ
       if(y < 240) {
         doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
         doc.text('Dikkat Gerektiren Konular', 14, y); y+=8;
@@ -1622,11 +1677,11 @@ function exportPDF(role) {
         y+=28;
       }
 
-      // ── FOOTER ──
+      // ââ FOOTER ââ
       doc.setFillColor(28,30,45); doc.rect(0,H-14,W,14,'F');
       doc.setFillColor(108,99,255); doc.rect(0,H-15,W,1,'F');
       doc.setTextColor(139,144,184); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
-      doc.text('LGSKoc — Ogrenci Takip ve Kocluk Sistemi', 14, H-7);
+      doc.text('LGSKoc â Ogrenci Takip ve Kocluk Sistemi', 14, H-7);
       doc.text('Rapor tarihi: '+now, W-14, H-7, {align:'right'});
 
       // SAVE
@@ -1634,10 +1689,10 @@ function exportPDF(role) {
         ? `LGSKoc_Ogretmen_${periodLabel}_${now.replace(/ /g,'_')}.pdf`
         : `LGSKoc_${studentFilter}_${periodLabel}.pdf`;
       doc.save(fname);
-      showToast('✅','PDF indirildi!');
+      showToast('â','PDF indirildi!');
     } catch(e) {
       console.error(e);
-      showToast('❌','PDF oluşturulamadı: '+e.message);
+      showToast('â','PDF oluÅturulamadÄ±: '+e.message);
     }
   }, 300);
 }
@@ -1741,7 +1796,7 @@ function drawLineChart(ctx, w, h, data, color) {
 
   // Labels
   ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '10px Nunito'; ctx.textAlign='center';
-  ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].forEach((d,i)=>{
+  ['Pzt','Sal','Ãar','Per','Cum','Cmt','Paz'].forEach((d,i)=>{
     ctx.fillText(d, pad+i*xStep, ch-4);
   });
 }
