@@ -1346,6 +1346,15 @@ function teacherStudents() {
 let selectedStudentName = '';
 let studentAnalysisPeriod = 'weekly';
 
+function toggleDenemeAcc(id) {
+  const el = document.getElementById(id);
+  const arrow = document.getElementById(id+'_arrow');
+  if (!el) return;
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+}
+
 function openStudentAnalysis(name) {
   selectedStudentName = name;
   studentAnalysisPeriod = 'weekly';
@@ -1437,11 +1446,10 @@ function studentDetailAnalysis() {
   }
   const maxMQ = Math.max(...monthTrend.map(t=>t.q),1);
 
-  // Deneme sonuçları — her deneme ayrı (dateKey bazlı grupla)
-  const denemeler = filtered.filter(e=>e.type==='deneme');
-  // Deneme günleri — aynı gün girilen tüm dersler bir deneme sayılır
+  // Deneme sonuçları — TÜM ZAMANLAR (dönem filtresi değil, tüm geçmiş denemeler)
+  const tumDenemeler = allEntries.filter(e=>e.type==='deneme');
   const denemeDateMap = {};
-  denemeler.forEach(e=>{
+  tumDenemeler.forEach(e=>{
     if(!denemeDateMap[e.dateKey]) denemeDateMap[e.dateKey]=[];
     denemeDateMap[e.dateKey].push(e);
   });
@@ -1449,22 +1457,15 @@ function studentDetailAnalysis() {
     const dersler = denemeDateMap[dk];
     const subResults = subjects.map(s=>{
       const se = dersler.find(e=>e.subject===s.name);
-      return se ? {...s, d:se.correct||0, y:se.wrong||0, net:se.net||0, q:(se.correct||0)+(se.wrong||0)} : {...s,d:0,y:0,net:0,q:0};
+      if (!se) return {...s, d:0, y:0, net:0, q:0};
+      const d = se.correct||0, y = se.wrong||0;
+      const net = d - y/3; // Doğru formül: Y/3
+      return {...s, d, y, net: Math.round(net*100)/100, q: d+y};
     });
-    // Bu denemenin LGS puanı için avgNet = o günkü net (tek deneme)
     const lgsInput = subResults.map(s=>({...s, avgNet:s.net, count:s.q>0?1:0}));
     const lgsRes = calcLGSScore(lgsInput);
     return { dk, subResults, lgsRes };
   });
-  
-  // Ortalama LGS (tüm denemeler)
-  const avgLgsInput = subjects.map(s=>{
-    const deSubs = denemeler.filter(e=>e.subject===s.name);
-    const totalNet = deSubs.reduce((a,e)=>a+(e.net||0),0);
-    const count = denemeSinavlari.length; // kaç deneme var
-    return {...s, avgNet: count>0?totalNet/count:0, count};
-  });
-  const avgLgsRes = denemeSinavlari.length>0 ? calcLGSScore(avgLgsInput) : null;
   const hasDenemeler = denemeSinavlari.length > 0;
 
   // Yorum üret
@@ -1555,58 +1556,78 @@ function studentDetailAnalysis() {
     <div class="card" style="margin-bottom:16px;border:1px solid var(--accent4)33">
       <div class="card-title">🎯 Deneme Sınavı Sonuçları</div>
       ${!hasDenemeler
-        ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.85rem">Bu dönemde deneme sınavı girilmemiş</div>`
+        ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.85rem">Henüz deneme sınavı girilmemiş</div>`
         : `
-        <div style="font-size:0.78rem;color:var(--text2);margin-bottom:10px">${denemeSinavlari.length} deneme → soldan sağa kaydırın</div>
-        <div style="display:flex;gap:12px;overflow-x:auto;overflow-y:visible;padding-bottom:12px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;touch-action:pan-x;cursor:grab"
-          onmousedown="this.style.cursor='grabbing'" onmouseup="this.style.cursor='grab'"
-        >
-          ${denemeSinavlari.map((d,i)=>{
-            const dateLabel = new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'});
-            const lgsDetay = d.lgsRes.detail || [];
-            return `<div style="min-width:280px;max-width:280px;background:var(--surface2);border-radius:14px;padding:14px;border:1px solid var(--border);flex-shrink:0;scroll-snap-align:start">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                <div style="font-weight:800;font-size:0.92rem">Deneme ${denemeSinavlari.length-i}</div>
-                <div style="font-size:0.72rem;color:var(--text2);background:var(--surface);padding:3px 8px;border-radius:99px">${dateLabel}</div>
-              </div>
-              <!-- Dersler -->
-              ${d.subResults.map(s=>`
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
-                  <span style="font-size:0.78rem;color:var(--${s.cls})">${s.icon} ${s.name}</span>
-                  <span style="font-size:0.78rem">D:<b>${s.d}</b> Y:<b>${s.y}</b> <span style="color:var(--accent3);font-weight:800">Net:${s.net.toFixed(1)}</span></span>
-                </div>`).join('')}
-              <!-- LGS Puan Detayı -->
-              <div style="margin-top:12px;background:var(--surface);border-radius:10px;padding:10px">
-                <div style="font-size:0.68rem;color:var(--text2);margin-bottom:6px;text-align:center">Tahmini LGS Puanı</div>
-                <div style="font-size:2rem;font-weight:900;color:var(--accent);text-align:center;line-height:1">${d.lgsRes.puan}</div>
-                <div style="font-size:0.62rem;color:var(--text2);text-align:center;margin-bottom:8px">/ 500</div>
-                ${lgsDetay.map(ld=>`
-                  <div style="font-size:0.65rem;color:var(--text2);display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border)">
-                    <span>${toSafe(ld.name)}</span>
-                    <span>Net:${ld.net} → SP:${ld.sp} × ${ld.kat} = <b style="color:var(--accent3)">${ld.agirlikli}</b></span>
-                  </div>`).join('')}
-                <div style="font-size:0.65rem;font-weight:800;color:var(--accent3);text-align:right;margin-top:4px">Toplam: ${d.lgsRes.toplamAgirlikli}</div>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
-        
-        <!-- Deneme puanları trendi -->
+        <!-- Deneme puanı trendi (her zaman görünür) -->
         ${denemeSinavlari.length>1?`
-        <div style="margin-top:14px">
-          <div style="font-size:0.8rem;font-weight:700;color:var(--text);margin-bottom:8px">📈 Deneme Puanı Trendi</div>
-          <div style="display:flex;align-items:flex-end;gap:6px;height:64px">
+        <div style="margin-bottom:14px">
+          <div style="font-size:0.78rem;font-weight:700;color:var(--text2);margin-bottom:8px">📈 Puan Trendi (en eskiden en yeniye)</div>
+          <div style="display:flex;align-items:flex-end;gap:5px;height:68px">
             ${[...denemeSinavlari].reverse().map((d,i)=>{
-              const h = Math.max(Math.round((d.lgsRes.puan/500)*54),4);
+              const h = Math.max(Math.round((d.lgsRes.puan/500)*56),4);
               const isLast = i===denemeSinavlari.length-1;
               return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
                 <div style="font-size:0.58rem;color:var(--accent);font-weight:700">${d.lgsRes.puan}</div>
-                <div style="width:100%;height:${h}px;background:${isLast?'var(--accent)':'var(--accent)66'};border-radius:4px 4px 0 0"></div>
-                <div style="font-size:0.58rem;color:var(--text2)">D${i+1}</div>
+                <div style="width:100%;height:${h}px;background:${isLast?'var(--accent)':'var(--accent)55'};border-radius:3px 3px 0 0;transition:.3s"></div>
+                <div style="font-size:0.56rem;color:var(--text2)">D${i+1}</div>
               </div>`;
             }).join('')}
           </div>
         </div>`:''}
+
+        <!-- Accordion liste -->
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${denemeSinavlari.map((d,i)=>{
+            const dateLabel = new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+            const lgsDetay = d.lgsRes.detail || [];
+            const accId = 'deneme_acc_'+i;
+            const num = denemeSinavlari.length - i;
+            return `
+            <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden">
+              <!-- Başlık (tıklanabilir) -->
+              <div onclick="toggleDenemeAcc('${accId}')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;background:var(--surface2);user-select:none">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="width:30px;height:30px;border-radius:50%;background:var(--accent)22;color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.8rem">${num}</div>
+                  <div>
+                    <div style="font-weight:800;font-size:0.88rem">Deneme ${num}</div>
+                    <div style="font-size:0.72rem;color:var(--text2)">${dateLabel}</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="text-align:right">
+                    <div style="font-size:1.3rem;font-weight:900;color:var(--accent);line-height:1">${d.lgsRes.puan}</div>
+                    <div style="font-size:0.6rem;color:var(--text2)">/500</div>
+                  </div>
+                  <span id="${accId}_arrow" style="font-size:1rem;color:var(--text2);transition:.2s">▼</span>
+                </div>
+              </div>
+              <!-- Detay (açılır/kapanır) -->
+              <div id="${accId}" style="display:none;padding:12px 14px;background:var(--surface);border-top:1px solid var(--border)">
+                <!-- Ders sonuçları -->
+                ${d.subResults.map(s=>`
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+                    <span style="font-size:0.8rem;color:var(--${s.cls})">${s.icon} ${s.name}</span>
+                    <span style="font-size:0.8rem">D:<b>${s.d}</b> Y:<b>${s.y}</b> <span style="color:var(--accent3);font-weight:800;margin-left:6px">Net:${s.net.toFixed(2)}</span></span>
+                  </div>`).join('')}
+                <!-- LGS hesap detayı -->
+                <div style="margin-top:10px;background:var(--accent)08;border-radius:8px;padding:10px;border:1px solid var(--accent)22">
+                  <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:6px">📐 Puan Hesabı (Net × Katsayı)</div>
+                  ${lgsDetay.map(ld=>`
+                    <div style="display:flex;justify-content:space-between;font-size:0.72rem;padding:3px 0;border-bottom:1px solid var(--border)">
+                      <span style="color:var(--text2)">${toSafe(ld.name)}</span>
+                      <span>${ld.net} × ${ld.kat} = <b style="color:var(--accent3)">${ld.agNet}</b></span>
+                    </div>`).join('')}
+                  <div style="display:flex;justify-content:space-between;font-size:0.78rem;font-weight:800;margin-top:6px;padding-top:4px">
+                    <span>Ham Puan</span><span style="color:var(--accent)">${d.lgsRes.hamPuan}</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.78rem;font-weight:900;color:var(--accent)">
+                    <span>LGS Puanı</span><span style="font-size:1rem">${d.lgsRes.puan} / 500</span>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
         `}
     </div>
 
@@ -1698,43 +1719,33 @@ function toSafe(str) {
     .replace(/ç/g,'c').replace(/Ç/g,'C');
 }
 
-// LGS Puan Hesaplama — Resmi Formül
-// Standart Puan (SP) = 50 + ((Net - OrtNet) / StdSapma) * 10
-// Ağırlıklı Puan = SP * Katsayı
-// Toplam Ağırlıklı Puan = Σ(Ağırlıklı)
-// LGS Puanı = (Toplam Ağırlıklı / Toplam Katsayı) * 10 → maksimum 500
-const LGS_PARAMS = {
-  'Türkçe':        { ortNet: 11.5, std: 4.2, kat: 4 },
-  'Matematik':     { ortNet: 8.8,  std: 4.8, kat: 4 },
-  'Fen Bilimleri': { ortNet: 10.2, std: 4.5, kat: 4 },
-  'İnkılap Tarihi':{ ortNet: 6.1,  std: 2.1, kat: 1 },
-  'Din Kültürü':   { ortNet: 7.2,  std: 1.8, kat: 1 },
-  'İngilizce':     { ortNet: 5.4,  std: 2.8, kat: 1 },
+// LGS Puan Hesaplama (Resmi Formül 2026)
+// 1. Net = Doğru - Yanlış/3
+// 2. Ham Puan = Σ(Net × Katsayı)  [Türkçe/Mat/Fen: ×4, diğerleri: ×1]
+// 3. Standart Puan: ham puanı 100-500 aralığına dönüştür
+//    Türkiye ort. ham puan ≈ 85, std ≈ 58
+//    SP = 300 + ((hamPuan - 85) / 58) * 66.67  → 100-500 arası
+
+const LGS_KATSAYI = {
+  'Türkçe': 4, 'Matematik': 4, 'Fen Bilimleri': 4,
+  'İnkılap Tarihi': 1, 'Din Kültürü': 1, 'İngilizce': 1,
 };
 
 function calcLGSScore(subStats) {
-  // subStats: [{name, avgNet, count}, ...]
-  let toplamAgirlikli = 0;
-  let toplamKat = 0;
+  let hamPuan = 0;
   const detail = [];
   subStats.forEach(s => {
-    const p = LGS_PARAMS[s.name];
-    if (!p) return;
+    const k = LGS_KATSAYI[s.name];
+    if (k == null) return;
     const net = Number(s.avgNet) || 0;
-    const sp = 50 + ((net - p.ortNet) / p.std) * 10;
-    const agirlikli = sp * p.kat;
-    toplamAgirlikli += agirlikli;
-    toplamKat += p.kat;
-    detail.push({
-      name: s.name, net: net.toFixed(2),
-      sp: sp.toFixed(2), agirlikli: agirlikli.toFixed(2), kat: p.kat
-    });
+    const agNet = net * k;
+    hamPuan += agNet;
+    detail.push({ name: s.name, net: net.toFixed(2), kat: k, agNet: agNet.toFixed(2) });
   });
-  if (toplamKat === 0) return { puan: 0, detail: [], toplamAgirlikli: '0' };
-  // LGS = (Toplam Ağırlıklı / Toplam Katsayı) * 10
-  const rawLgs = (toplamAgirlikli / toplamKat) * 10;
-  const lgsPuan = Math.min(Math.max(Math.round(rawLgs * 10) / 10, 100), 500);
-  return { puan: lgsPuan, detail, toplamAgirlikli: toplamAgirlikli.toFixed(2) };
+  // Ortalama ≈ 300 puan, std sapma ≈ 66.67 puan aralığı
+  const sp = 300 + ((hamPuan - 85) / 58) * 66.67;
+  const lgsPuan = Math.min(Math.max(Math.round(sp * 10) / 10, 100), 500);
+  return { puan: lgsPuan, hamPuan: hamPuan.toFixed(2), detail };
 }
 
 async function exportStudentDetailPDF(sName) {
@@ -1777,10 +1788,10 @@ async function exportStudentDetailPDF(sName) {
     return {...s,q,d,y,net,dur,pct};
   });
 
-  // --- Deneme verileri ---
-  const denemeler = filtered.filter(e=>e.type==='deneme');
+  // --- Deneme verileri (TÜM ZAMANLAR) ---
+  const allDenemeler = allEntries.filter(e=>e.type==='deneme');
   const denemeDateMapP = {};
-  denemeler.forEach(e=>{
+  allDenemeler.forEach(e=>{
     if(!denemeDateMapP[e.dateKey]) denemeDateMapP[e.dateKey]=[];
     denemeDateMapP[e.dateKey].push(e);
   });
@@ -1788,17 +1799,14 @@ async function exportStudentDetailPDF(sName) {
     const dersler = denemeDateMapP[dk];
     const subR = subjects.map(s=>{
       const se=dersler.find(e=>e.subject===s.name);
-      return se?{name:s.name,d:se.correct||0,y:se.wrong||0,net:se.net||0,q:(se.correct||0)+(se.wrong||0)}:{name:s.name,d:0,y:0,net:0,q:0};
+      if(!se) return {name:s.name,d:0,y:0,net:0,q:0};
+      const d=se.correct||0, y=se.wrong||0;
+      return {name:s.name, d, y, net: Math.round((d-y/3)*100)/100, q:d+y};
     });
     const lgsIn = subR.map(s=>({...s,avgNet:s.net,count:s.q>0?1:0}));
-    return {dk, subR, lgs: calcLGSScore(lgsIn).puan};
+    const lgsR = calcLGSScore(lgsIn);
+    return {dk, subR, lgs: lgsR.puan, hamPuan: lgsR.hamPuan, detail: lgsR.detail};
   });
-  const avgLgsIn = subjects.map(s=>{
-    const de=denemeler.filter(e=>e.subject===s.name);
-    const n=de.length;
-    return {...s,avgNet:n>0?de.reduce((a,e)=>a+(e.net||0),0)/n:0,count:n};
-  });
-  const avgLgsPuan = denemeSinavlariP.length>0 ? calcLGSScore(avgLgsIn).puan : 0;
 
   // --- Gün bazlı liste ---
   let dayList = [];
@@ -1959,48 +1967,41 @@ async function exportStudentDetailPDF(sName) {
   // ---- BÖLÜM 3: DENEME SINAVI SONUÇLARI ----
   if(denemeSinavlariP.length>0) {
     if(Y>200){doc.addPage();Y=20;}
-    Y = secHeader('DENEME SINAVI SONUCLARI', Y);
-
-    // Ortalama LGS puan kutusu
-    doc.setFillColor(20,20,60); doc.roundedRect(14,Y,182,18,3,3,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(180,180,255);
-    doc.text('Ortalama Tahmini LGS Puani ('+denemeSinavlariP.length+' deneme)', 105, Y+6, {align:'center'});
-    doc.setFontSize(18); doc.setTextColor(255,255,255);
-    doc.text(String(avgLgsPuan), 105, Y+15, {align:'center'});
-    Y+=22;
+    Y = secHeader('DENEME SINAVI SONUCLARI (Tum Zamanlar)', Y);
 
     // Her deneme tablosu
     denemeSinavlariP.forEach((den, di)=>{
       if(Y>240){doc.addPage();Y=20;}
       const dateLabel=new Date(den.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
       
-      // Deneme başlık satırı
+      // Deneme başlık
       doc.setFillColor(80,60,200); doc.roundedRect(14,Y,182,7,1,1,'F');
       doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
-      doc.text(toSafe('Deneme '+(di+1)+' — '+dateLabel), 18, Y+4.8);
-      doc.text('LGS: '+den.lgs+' / 500', 180, Y+4.8, {align:'right'});
+      doc.text('Deneme '+(di+1)+' - '+toSafe(dateLabel), 18, Y+4.8);
+      doc.text('LGS: '+den.lgs+' / 500  Ham: '+den.hamPuan, 196, Y+4.8, {align:'right'});
       Y+=9;
 
-      const dHdr=['Ders','Dogru','Yanlis','Net'];
-      const dW=[65,35,35,35];
-      cx=14;
+      const dHdr=['Ders','Dogru','Yanlis','Net (D-Y/3)','Kat.','Ag.Net'];
+      const dW=[46,22,22,30,16,26];
+      let cx=14;
       doc.setFillColor(100,85,220);
       dHdr.forEach((h,i)=>{doc.rect(cx,Y,dW[i],5.5,'F');cx+=dW[i];});
-      doc.setTextColor(255,255,255); doc.setFontSize(7); cx=14;
+      doc.setTextColor(255,255,255); doc.setFontSize(6.5); cx=14;
       dHdr.forEach((h,i)=>{doc.text(h,cx+dW[i]/2,Y+3.9,{align:'center'});cx+=dW[i];});
       Y+=5.5;
       den.subR.forEach((s,idx)=>{
-        const row=[s.name,s.d,s.y,s.net.toFixed(1)];
-        doc.setFillColor(idx%2===0?242:255,idx%2===0?240:255,idx%2===0?254:255);
+        const detD = den.detail ? den.detail.find(d=>d.name===s.name) : null;
+        const row=[s.name, s.d, s.y, s.net.toFixed(2), detD?detD.kat:'—', detD?detD.agNet:'—'];
+        doc.setFillColor(idx%2===0?242:255, idx%2===0?240:255, idx%2===0?254:255);
         cx=14; dW.forEach(w=>{doc.rect(cx,Y,w,5,'F');cx+=w;});
-        doc.setTextColor(30,30,50); doc.setFontSize(7); cx=14;
+        doc.setTextColor(30,30,50); doc.setFontSize(6.5); cx=14;
         row.forEach((v,i)=>{doc.text(toSafe(String(v)),cx+dW[i]/2,Y+3.6,{align:'center'});cx+=dW[i];});
         Y+=5;
       });
-      Y+=4;
+      Y+=5;
     });
 
-    // Deneme LGS puan trendi grafik
+    // Deneme LGS puan trendi
     if(denemeSinavlariP.length>1) {
       if(Y>230){doc.addPage();Y=20;}
       doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(50,50,80);
@@ -3180,7 +3181,7 @@ function saveEntry() {
       const d = parseInt(document.getElementById('deneme_d_'+s.name)?.value)||0;
       const y = parseInt(document.getElementById('deneme_y_'+s.name)?.value)||0;
       if (d===0 && y===0) return;
-      const net = d - y/4;
+      const net = d - y/3;
       const q = d + y;
       const entry = {
         subject: s.name, topic: 'Deneme Sınavı', type: 'deneme',
@@ -3219,7 +3220,7 @@ function saveEntry() {
   const q = type==='soru' ? (parseInt(document.getElementById('entryQuestions').value)||0) : 0;
   const correct = type==='soru' ? (parseInt(document.getElementById('entryCorrect').value)||0) : 0;
   const wrong = type==='soru' ? (parseInt(document.getElementById('entryWrong').value)||0) : 0;
-  const net = q > 0 ? correct - wrong/4 : 0;
+  const net = q > 0 ? correct - wrong/3 : 0;
 
   const entry = {
     subject: sub, topic, type, duration: dur, questions: q,
