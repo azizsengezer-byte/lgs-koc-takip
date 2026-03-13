@@ -901,15 +901,32 @@ auth.onAuthStateChanged(async (user) => {
           });
         } catch(e) { console.log('Öğrenci çekme hatası:', e.message); }
 
-        // Çalışma girişlerini çek (index gerektirmeyen sorgu)
+        // Çalışma girişlerini çek — hem teacherId hem studentName ile (eksik teacherId durumunu yakala)
         try {
           const eSnap = await db.collection('studyEntries')
             .where('teacherId','==',user.uid).get();
-          studyEntries = [];
-          eSnap.forEach(d => {
-            const e = d.data();
-            studyEntries.push({ ...e, isToday: e.dateKey === todayKey });
-          });
+          const entryMap = {};
+          eSnap.forEach(d => { entryMap[d.id] = { ...d.data(), id: d.id }; });
+
+          // Öğrenci isimlerine göre de çek (teacherId boş kaydedilmiş olabilir)
+          const studentNames = students.map(s=>s.name);
+          for (const sName of studentNames) {
+            try {
+              const sSnap = await db.collection('studyEntries')
+                .where('studentName','==',sName).get();
+              sSnap.forEach(d => {
+                if (!entryMap[d.id]) entryMap[d.id] = { ...d.data(), id: d.id };
+                // teacherId eksikse güncelle
+                else if (!d.data().teacherId) {
+                  d.ref.update({ teacherId: user.uid }).catch(()=>{});
+                }
+              });
+            } catch(e2) {}
+          }
+
+          studyEntries = Object.values(entryMap).map(e => ({
+            ...e, isToday: e.dateKey === todayKey
+          }));
           studyEntries.sort((a,b)=>(b.dateKey||'').localeCompare(a.dateKey||''));
         } catch(e) { console.log('Giriş çekme hatası:', e.message); studyEntries = []; }
 
@@ -2332,7 +2349,22 @@ async function exportStudentDetailPDF(sName) {
   }
 
   const fname = ts(sName.replace(/\s+/g,'_'))+'_'+pLabel+'_'+todayKey+'.pdf';
-  doc.save(fname);
+  
+  // Mobil uyumlu PDF indirme
+  try {
+    const pdfBlob = doc.output('blob');
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fname;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(blobUrl); document.body.removeChild(a); }, 3000);
+  } catch(e) {
+    // Fallback: doğrudan save
+    doc.save(fname);
+  }
   showToast('📄','PDF indirildi!');
 }
 
@@ -2936,8 +2968,16 @@ function exportStudentPDF() {
   doc.setTextColor(255,255,255); doc.setFontSize(8);
   doc.text('LGSKoc - Ogrenci Takip Sistemi | lgs-koc-takip.firebaseapp.com', 105, 293, {align:'center'});
 
-  doc.save(`${name}_${pLabel}_analiz_${todayKey}.pdf`);
-  showToast('📄', 'PDF hazırlandı!');
+  const fname2 = `${name}_${pLabel}_analiz_${todayKey}.pdf`;
+  try {
+    const pdfBlob2 = doc.output('blob');
+    const blobUrl2 = URL.createObjectURL(pdfBlob2);
+    const a2 = document.createElement('a');
+    a2.href = blobUrl2; a2.download = fname2; a2.style.display = 'none';
+    document.body.appendChild(a2); a2.click();
+    setTimeout(()=>{ URL.revokeObjectURL(blobUrl2); document.body.removeChild(a2); }, 3000);
+  } catch(e) { doc.save(fname2); }
+  showToast('📄', 'PDF indirildi!');
 }
 
 function studentKazanimlar() {
