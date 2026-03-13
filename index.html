@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LGS Koç Takip Sistemi</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43e97b;
+    --accent4: #f9ca24;
+    --text: #e8eaf6;
+    --text2: #8b90b8;
+    --turkish: #ff6b6b;
+    --math: #4ecdc4;
+    --science: #45b7d1;
+    --history: #f9ca24;
+    --religion: #a29bfe;
+    --english: #fd79a8;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Nunito',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+
+  /* LOGIN */
+  #loginScreen {
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background: radial-gradient(ellipse at 20% 50%, #1a1460 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, #2d1b69 0%, transparent 50%),
+                var(--bg);
+  }
+  .login-box {
+    background:var(--surface); border:1px solid var(--border); border-radius:24px;
+    padding:48px 40px; width:100%; max-width:420px; text-align:center;
+    box-shadow:0 32px 80px rgba(0,0,0,0.5);
+  }
+  .login-logo { font-family:'Sora',sans-serif; font-size:2.2rem; font-weight:700; margin-bottom:8px; }
+  .login-logo span { color:var(--accent); }
+  .login-sub { color:var(--text2); margin-bottom:36px; font-size:0.95rem; }
+  .role-btns { display:flex; gap:12px; margin-bottom:28px; }
+  .role-btn {
+    flex:1; padding:14px; border-radius:14px; border:2px solid var(--border);
+    background:transparent; color:var(--text2); font-family:'Nunito',sans-serif;
+    font-size:0.95rem; font-weight:700; cursor:pointer; transition:all .2s;
+  }
+  .role-btn.active { border-color:var(--accent); background:rgba(108,99,255,.15); color:var(--accent); }
+  .login-input {
+    width:100%; padding:14px 18px; background:var(--surface2); border:1px solid var(--border);
+    border-radius:12px; color:var(--text); font-family:'Nunito',sans-serif; font-size:1rem;
+    margin-bottom:14px; outline:none; transition:border .2s;
+  }
+  .login-input:focus { border-color:var(--accent); }
+  .login-btn {
+    width:100%; padding:16px; background:var(--accent); border:none; border-radius:14px;
+    color:#fff; font-family:'Nunito',sans-serif; font-size:1.05rem; font-weight:800;
+    cursor:pointer; transition:all .2s; margin-top:4px;
+  }
+  .login-btn:hover { background:#5a52e0; transform:translateY(-1px); }
+
+  /* MAIN APP */
+  #app { display:none; }
+  .app-header {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:16px 24px; display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:100;
+  }
+  .header-logo { font-family:'Sora',sans-serif; font-weight:700; font-size:1.1rem; }
+  .header-logo span { color:var(--accent); }
+  .header-user { display:flex; align-items:center; gap:10px; }
+  .avatar {
+    width:36px; height:36px; border-radius:50%; background:var(--accent);
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.9rem;
+  }
+  .header-name { font-weight:700; font-size:0.9rem; }
+  .header-role { font-size:0.75rem; color:var(--text2); }
+  .logout-btn {
+    background:transparent; border:1px solid var(--border); color:var(--text2);
+    padding:6px 14px; border-radius:8px; cursor:pointer; font-family:'Nunito',sans-serif;
+    font-size:0.8rem; transition:all .2s;
+  }
+  .logout-btn:hover { border-color:var(--accent2); color:var(--accent2); }
+
+  .app-body { display:flex; min-height:calc(100vh - 69px); }
+
+  /* SIDEBAR */
+  .sidebar {
+    width:220px; background:var(--surface); border-right:1px solid var(--border);
+    padding:24px 12px; display:flex; flex-direction:column; gap:4px;
+    position:sticky; top:69px; height:calc(100vh - 69px); overflow-y:auto;
+  }
+  .nav-item {
+    display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:12px;
+    color:var(--text2); cursor:pointer; transition:all .2s; font-weight:600; font-size:0.9rem;
+    border:none; background:transparent; width:100%; text-align:left;
+  }
+  .nav-item:hover { background:var(--surface2); color:var(--text); }
+  .nav-item.active { background:rgba(108,99,255,.18); color:var(--accent); }
+  .nav-icon { font-size:1.1rem; width:20px; text-align:center; }
+  .nav-section { font-size:0.7rem; color:var(--text2); padding:12px 14px 4px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+
+  /* CONTENT */
+  .content { flex:1; padding:28px; overflow-y:auto; }
+
+  /* PAGES */
+  .page { display:none; }
+  .page.active { display:block; }
+
+  .page-title { font-family:'Sora',sans-serif; font-size:1.5rem; font-weight:700; margin-bottom:6px; }
+  .page-sub { color:var(--text2); font-size:0.9rem; margin-bottom:28px; }
+
+  /* CARDS */
+  .card {
+    background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:24px;
+  }
+  .card-title { font-weight:800; font-size:1rem; margin-bottom:16px; }
+
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+  .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+  .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
+
+  /* STAT CARDS */
+  .stat-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:20px; display:flex; flex-direction:column; gap:8px;
+  }
+  .stat-label { font-size:0.8rem; color:var(--text2); font-weight:600; }
+  .stat-value { font-size:2rem; font-weight:900; font-family:'Sora',sans-serif; line-height:1; }
+  .stat-change { font-size:0.8rem; font-weight:700; }
+  .stat-change.up { color:var(--accent3); }
+  .stat-change.down { color:var(--accent2); }
+
+  /* SUBJECT BARS */
+  .subject-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .subject-name { width:100px; font-size:0.85rem; font-weight:700; }
+  .bar-bg { flex:1; background:var(--surface2); border-radius:99px; height:10px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:99px; transition:width 1s ease; }
+  .subject-pct { width:40px; text-align:right; font-size:0.85rem; font-weight:700; color:var(--text2); }
+
+  /* BUTTONS */
+  .btn {
+    padding:10px 20px; border-radius:10px; border:none; font-family:'Nunito',sans-serif;
+    font-weight:700; font-size:0.9rem; cursor:pointer; transition:all .2s;
+  }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-primary:hover { background:#5a52e0; transform:translateY(-1px); }
+  .btn-outline { background:transparent; border:1px solid var(--border); color:var(--text2); }
+  .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-success { background:var(--accent3); color:#000; }
+  .btn-danger { background:var(--accent2); color:#fff; }
+
+  /* FORM */
+  .form-group { margin-bottom:16px; }
+  .form-label { font-size:0.85rem; font-weight:700; color:var(--text2); margin-bottom:6px; display:block; }
+  .form-input, .form-select {
+    width:100%; padding:12px 16px; background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; color:var(--text); font-family:'Nunito',sans-serif; font-size:0.95rem;
+    outline:none; transition:border .2s;
+  }
+  .form-input:focus, .form-select:focus { border-color:var(--accent); }
+  .form-select option { background:var(--surface2); }
+
+  /* SUBJECT COLORS */
+  .c-turkish { color:var(--turkish); }
+  .c-math { color:var(--math); }
+  .c-science { color:var(--science); }
+  .c-history { color:var(--history); }
+  .c-religion { color:var(--religion); }
+  .c-english { color:var(--english); }
+  .bg-turkish { background:var(--turkish); }
+  .bg-math { background:var(--math); }
+  .bg-science { background:var(--science); }
+  .bg-history { background:var(--history); }
+  .bg-religion { background:var(--religion); }
+  .bg-english { background:var(--english); }
+
+  /* SUBJECT CARD */
+  .subject-entry-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:20px; }
+  .subject-entry-card {
+    background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:16px;
+    cursor:pointer; transition:all .2s; position:relative; overflow:hidden;
+  }
+  .subject-entry-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .subject-entry-card.selected { border-color:var(--accent); background:rgba(108,99,255,.1); }
+  .sec-name { font-weight:800; font-size:0.95rem; margin-bottom:4px; }
+  .sec-dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; }
+
+  /* NOTIFICATION */
+  .notif-item {
+    display:flex; gap:12px; align-items:flex-start; padding:14px;
+    border-bottom:1px solid var(--border); transition:background .2s;
+  }
+  .notif-item:hover { background:var(--surface2); border-radius:10px; }
+  .notif-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); margin-top:5px; flex-shrink:0; }
+  .notif-dot.read { background:var(--border); }
+  .notif-text { font-size:0.88rem; line-height:1.5; }
+  .notif-time { font-size:0.75rem; color:var(--text2); margin-top:3px; }
+
+  /* STUDENT LIST */
+  .student-row {
+    display:flex; align-items:center; gap:14px; padding:14px 16px;
+    border-bottom:1px solid var(--border); cursor:pointer; transition:background .2s; border-radius:10px;
+  }
+  .student-row:hover { background:var(--surface2); }
+  .student-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; flex-shrink:0; }
+  .student-info { flex:1; }
+  .student-name { font-weight:700; font-size:0.95rem; }
+  .student-meta { font-size:0.78rem; color:var(--text2); margin-top:2px; }
+  .student-score { font-family:'Sora',sans-serif; font-weight:800; font-size:1.1rem; }
+  .badge { padding:3px 10px; border-radius:99px; font-size:0.75rem; font-weight:700; }
+  .badge-green { background:rgba(67,233,123,.15); color:var(--accent3); }
+  .badge-yellow { background:rgba(249,202,36,.15); color:var(--accent4); }
+  .badge-red { background:rgba(255,101,132,.15); color:var(--accent2); }
+
+  /* CHART AREA */
+  .chart-area { position:relative; height:200px; }
+  .mini-chart { width:100%; height:100%; }
+
+  /* WEEKLY GRID */
+  .week-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .day-cell {
+    aspect-ratio:1; border-radius:8px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; font-size:0.7rem; font-weight:700;
+    border:1px solid var(--border); cursor:pointer; transition:all .2s;
+  }
+  .day-cell:hover { border-color:var(--accent); }
+  .day-cell.has-data { background:rgba(108,99,255,.2); border-color:var(--accent); }
+  .day-cell.today { border-color:var(--accent3); background:rgba(67,233,123,.1); }
+  .day-name { font-size:0.65rem; color:var(--text2); margin-bottom:2px; }
+  .day-num { font-size:0.9rem; font-weight:800; }
+  .day-dot { width:4px; height:4px; border-radius:50%; background:var(--accent3); margin-top:2px; }
+
+  /* ASSIGNMENT CARD */
+  .assignment-card {
+    background:var(--surface2); border:1px solid var(--border); border-radius:14px;
+    padding:16px; margin-bottom:12px; display:flex; gap:14px; align-items:flex-start;
+  }
+  .assignment-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+  .assignment-title { font-weight:800; font-size:0.95rem; margin-bottom:3px; }
+  .assignment-desc { font-size:0.82rem; color:var(--text2); line-height:1.4; }
+  .assignment-footer { display:flex; gap:8px; align-items:center; margin-top:8px; }
+
+  /* PROGRESS RING */
+  .progress-ring-wrap { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .progress-ring-label { font-size:0.78rem; color:var(--text2); font-weight:700; text-align:center; }
+
+  /* TABS */
+  .tabs { display:flex; gap:4px; background:var(--surface2); padding:4px; border-radius:12px; margin-bottom:20px; width:fit-content; }
+  .tab { padding:8px 18px; border-radius:9px; font-weight:700; font-size:0.85rem; cursor:pointer; color:var(--text2); transition:all .2s; border:none; background:transparent; font-family:'Nunito',sans-serif; }
+  .tab.active { background:var(--accent); color:#fff; }
+
+  /* TOAST */
+  #toast {
+    position:fixed; bottom:24px; right:24px; background:var(--surface); border:1px solid var(--accent);
+    border-radius:14px; padding:14px 20px; font-size:0.9rem; font-weight:700; z-index:9999;
+    transform:translateY(100px); opacity:0; transition:all .3s; max-width:300px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.4);
+  }
+  #toast.show { transform:translateY(0); opacity:1; }
+  #toast .toast-icon { font-size:1.1rem; margin-right:8px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:500;
+    display:none; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:28px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto;
+  }
+  .modal-title { font-family:'Sora',sans-serif; font-weight:700; font-size:1.2rem; margin-bottom:20px; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+
+  /* MESSAGING */
+  .chat-layout { display:grid; grid-template-columns:260px 1fr; gap:0; height:calc(100vh - 140px); min-height:400px; background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; }
+  .chat-list { border-right:1px solid var(--border); overflow-y:auto; }
+  .chat-list-header { padding:16px; border-bottom:1px solid var(--border); font-weight:800; font-size:0.95rem; }
+  .chat-list-item { display:flex; align-items:center; gap:10px; padding:12px 16px; cursor:pointer; transition:background .2s; border-bottom:1px solid var(--border); }
+  .chat-list-item:hover { background:var(--surface2); }
+  .chat-list-item.active { background:rgba(108,99,255,.12); }
+  .chat-list-item .unread { background:var(--accent); color:#fff; font-size:0.65rem; font-weight:800; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-left:auto; flex-shrink:0; }
+  .chat-window { display:flex; flex-direction:column; }
+  .chat-header { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; background:var(--surface); }
+  .chat-messages { flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:10px; }
+  .msg { max-width:72%; }
+  .msg.mine { align-self:flex-end; }
+  .msg.theirs { align-self:flex-start; }
+  .msg-bubble { padding:10px 14px; border-radius:16px; font-size:0.88rem; line-height:1.5; }
+  .msg.mine .msg-bubble { background:var(--accent); color:#fff; border-bottom-right-radius:4px; }
+  .msg.theirs .msg-bubble { background:var(--surface2); color:var(--text); border-bottom-left-radius:4px; }
+  .msg-time { font-size:0.7rem; color:var(--text2); margin-top:3px; text-align:right; }
+  .msg.theirs .msg-time { text-align:left; }
+  .chat-input-row { padding:12px 16px; border-top:1px solid var(--border); display:flex; gap:10px; align-items:center; }
+  .chat-input { flex:1; padding:10px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:20px; color:var(--text); font-family:'Nunito',sans-serif; font-size:0.9rem; outline:none; transition:border .2s; }
+  .chat-input:focus { border-color:var(--accent); }
+  .chat-send-btn { width:38px; height:38px; border-radius:50%; background:var(--accent); border:none; color:#fff; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center; transition:all .2s; flex-shrink:0; }
+  .chat-send-btn:hover { background:#5a52e0; transform:scale(1.08); }
+  .msg-system { text-align:center; font-size:0.75rem; color:var(--text2); padding:4px 12px; background:var(--surface2); border-radius:99px; align-self:center; }
+  @media(max-width:600px) { .chat-layout { grid-template-columns:1fr; } .chat-list { display:none; } .chat-list.mobile-show { display:block; } }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+  /* PDF EXPORT */
+  .pdf-btn {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:10px 18px; border-radius:10px; border:none;
+    font-family:'Nunito',sans-serif; font-weight:700; font-size:0.88rem;
+    cursor:pointer; transition:all .2s; background:linear-gradient(135deg,#e84393,#c0392b);
+    color:#fff;
+  }
+  .pdf-btn:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(232,67,147,.35); }
+  .pdf-actions { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; align-items:center; }
+  .pdf-period-select {
+    padding:9px 14px; background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; color:var(--text); font-family:'Nunito',sans-serif; font-size:0.88rem;
+    font-weight:700; outline:none; cursor:pointer;
+  }
+
+  /* KAZANIM */
+  .kazanim-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+  .kazanim-item {
+    display:flex; align-items:center; gap:10px; padding:10px 14px;
+    background:var(--surface2); border-radius:10px; border:1px solid var(--border);
+    cursor:pointer; transition:all .2s; font-size:0.85rem; font-weight:600;
+  }
+  .kazanim-item:hover { border-color:var(--accent); }
+  .kazanim-item.done { background:rgba(67,233,123,.08); border-color:rgba(67,233,123,.3); }
+  .kazanim-check { width:18px; height:18px; border-radius:5px; border:2px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.75rem; transition:all .2s; }
+  .kazanim-item.done .kazanim-check { background:var(--accent3); border-color:var(--accent3); color:#000; }
+
+  /* MESAJLAŞMA */
+  .msg-layout { display:grid; grid-template-columns:260px 1fr; gap:0; height:calc(100vh - 130px); background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; }
+  .msg-list { border-right:1px solid var(--border); overflow-y:auto; }
+  .msg-list-header { padding:16px; border-bottom:1px solid var(--border); font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:space-between; }
+  .msg-contact { display:flex; align-items:center; gap:10px; padding:12px 16px; cursor:pointer; transition:background .2s; border-bottom:1px solid var(--border)05; }
+  .msg-contact:hover { background:var(--surface2); }
+  .msg-contact.active { background:rgba(108,99,255,.12); border-left:3px solid var(--accent); }
+  .msg-contact-info { flex:1; min-width:0; }
+  .msg-contact-name { font-weight:700; font-size:0.9rem; }
+  .msg-contact-preview { font-size:0.75rem; color:var(--text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+  .msg-contact-time { font-size:0.7rem; color:var(--text2); flex-shrink:0; }
+  .msg-unread { background:var(--accent); color:#fff; border-radius:99px; font-size:0.65rem; font-weight:800; padding:2px 6px; min-width:18px; text-align:center; }
+
+  .msg-chat { display:flex; flex-direction:column; height:100%; }
+  .msg-chat-header { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; flex-shrink:0; }
+  .msg-chat-name { font-weight:800; font-size:1rem; }
+  .msg-chat-status { font-size:0.75rem; color:var(--accent3); }
+  .msg-chat-actions { margin-left:auto; display:flex; gap:8px; }
+
+  .msg-body { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .msg-bubble-wrap { display:flex; gap:8px; align-items:flex-end; }
+  .msg-bubble-wrap.mine { flex-direction:row-reverse; }
+  .msg-bubble { max-width:70%; padding:10px 14px; border-radius:16px; font-size:0.88rem; line-height:1.5; }
+  .msg-bubble.theirs { background:var(--surface2); border-bottom-left-radius:4px; }
+  .msg-bubble.mine { background:var(--accent); color:#fff; border-bottom-right-radius:4px; }
+  .msg-bubble-time { font-size:0.68rem; color:var(--text2); margin-top:3px; }
+  .msg-bubble-wrap.mine .msg-bubble-time { text-align:right; }
+  .msg-date-divider { text-align:center; font-size:0.72rem; color:var(--text2); padding:6px 0; font-weight:700; }
+
+  .msg-input-area { padding:12px 16px; border-top:1px solid var(--border); display:flex; gap:10px; align-items:flex-end; flex-shrink:0; }
+  .msg-input { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:10px 14px; color:var(--text); font-family:'Nunito',sans-serif; font-size:0.92rem; outline:none; resize:none; max-height:120px; transition:border .2s; }
+  .msg-input:focus { border-color:var(--accent); }
+  .msg-send-btn { background:var(--accent); border:none; border-radius:10px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .2s; flex-shrink:0; font-size:1.1rem; }
+  .msg-send-btn:hover { background:#5a52e0; transform:scale(1.05); }
+  .msg-quick-btns { display:flex; gap:6px; flex-wrap:wrap; padding:0 16px 8px; }
+  .msg-quick-btn { padding:5px 12px; background:var(--surface2); border:1px solid var(--border); border-radius:99px; font-size:0.75rem; font-weight:700; color:var(--text2); cursor:pointer; transition:all .2s; white-space:nowrap; }
+  .msg-quick-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+  .msg-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text2); gap:10px; }
+  .msg-empty-icon { font-size:3rem; }
+
+  @media(max-width:768px) {
+    .msg-layout { grid-template-columns:1fr; height:auto; }
+    .msg-list { display:none; }
+    .msg-list.show { display:block; }
+    .msg-chat { min-height:500px; }
+  }
+
+  /* MOBILE NAV */
+  .mobile-nav {
+    display:none; position:fixed; bottom:0; left:0; right:0;
+    background:var(--surface); border-top:1px solid var(--border);
+    padding:8px 0 12px; z-index:200;
+  }
+  .mobile-nav-inner { display:flex; justify-content:space-around; }
+  .mobile-nav-item { display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; padding:4px 12px; border-radius:10px; transition:all .2s; border:none; background:transparent; color:var(--text2); font-family:'Nunito',sans-serif; }
+  .mobile-nav-item.active { color:var(--accent); }
+  .mobile-nav-item span:first-child { font-size:1.3rem; }
+  .mobile-nav-item span:last-child { font-size:0.65rem; font-weight:700; }
+
+  @media(max-width:768px) {
+    .sidebar { display:none; }
+    .mobile-nav { display:block; }
+    .grid-4, .grid-3 { grid-template-columns:repeat(2,1fr); }
+    .grid-2 { grid-template-columns:1fr; }
+    .content { padding:14px; padding-bottom:80px; }
+    .app-header { padding:12px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">LGS<span>Koç</span></div>
+    <div class="login-sub">Öğrenci Takip & Koçluk Sistemi</div>
+    <div class="role-btns">
+      <button class="role-btn active" onclick="selectRole('teacher')" id="roleTeacher">👨‍🏫 Öğretmen</button>
+      <button class="role-btn" onclick="selectRole('student')" id="roleStudent">🎒 Öğrenci</button>
+    </div>
+    <input class="login-input" type="email" placeholder="E-posta adresi" id="loginUser">
+    <input class="login-input" type="password" placeholder="Şifre" id="loginPass">
+    <div id="loginError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none;text-align:left;padding:0 4px"></div>
+    <button class="login-btn" onclick="doLogin()" id="loginBtn">Giriş Yap →</button>
+    <div style="margin-top:16px;text-align:center">
+      <span style="font-size:0.82rem;color:var(--text2)">Hesabın yok mu? </span>
+      <button onclick="showRegister()" style="background:none;border:none;color:var(--accent);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">Kayıt Ol</button>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER MODAL -->
+<div class="modal-overlay" id="registerModal">
+  <div class="modal">
+    <div class="modal-title">👤 Yeni Hesap Oluştur</div>
+    <div class="form-group">
+      <label class="form-label">Ad Soyad</label>
+      <input class="form-input" type="text" id="regName" placeholder="Adınız Soyadınız">
+    </div>
+    <div class="form-group">
+      <label class="form-label">E-posta</label>
+      <input class="form-input" type="email" id="regEmail" placeholder="ornek@gmail.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Şifre</label>
+      <input class="form-input" type="password" id="regPass" placeholder="En az 6 karakter">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Rol</label>
+      <select class="form-select" id="regRole">
+        <option value="student">🎒 Öğrenci</option>
+        <option value="teacher">👨‍🏫 Öğretmen</option>
+      </select>
+    </div>
+    <div id="regError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('registerModal')">İptal</button>
+      <button class="btn btn-primary" onclick="doRegister()">Kayıt Ol ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="app-header">
+    <div class="header-logo">LGS<span>Koç</span></div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="position:relative;cursor:pointer" onclick="showPage('notifs')">
+        <span style="font-size:1.3rem;">🔔</span>
+        <span id="notifBadge" style="position:absolute;top:-4px;right:-4px;background:var(--accent2);color:#fff;font-size:0.6rem;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;">3</span>
+      </div>
+      <div class="header-user">
+        <div class="avatar" id="headerAvatar">A</div>
+        <div>
+          <div class="header-name" id="headerName">Ahmet Hoca</div>
+          <div class="header-role" id="headerRole">Koç Öğretmen</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Çıkış</button>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="content" id="mainContent"></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="addEntryModal">
+  <div class="modal">
+    <div class="modal-title">📚 Günlük Çalışma Ekle</div>
+    <div class="form-group">
+      <label class="form-label">Ders</label>
+      <select class="form-select" id="entrySubject">
+        <option value="Türkçe">Türkçe</option>
+        <option value="Matematik">Matematik</option>
+        <option value="Fen Bilimleri">Fen Bilimleri</option>
+        <option value="İnkılap Tarihi">İnkılap Tarihi</option>
+        <option value="Din Kültürü">Din Kültürü</option>
+        <option value="İngilizce">İngilizce</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Konu</label>
+      <input class="form-input" type="text" id="entryTopic" placeholder="örn. Sözcük Türleri, Denklemler...">
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label">⏱ Süre (dk)</label>
+        <input class="form-input" type="number" id="entryDuration" placeholder="45" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">📝 Soru Sayısı</label>
+        <input class="form-input" type="number" id="entryQuestions" placeholder="20" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Not (opsiyonel)</label>
+      <input class="form-input" type="text" id="entryNote" placeholder="örn. Zor sorularda takıldım...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('addEntryModal')">İptal</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Kaydet ✓</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addTaskModal">
+  <div class="modal">
+    <div class="modal-title">📋 Ödev / Görev Ata</div>
+    <div class="form-group">
+      <label class="form-label">Öğrenci</label>
+      <select class="form-select" id="taskStudent">
+        <option>Zeynep Kaya</option>
+        <option>Emre Demir</option>
+        <option>Selin Yıldız</option>
+        <option>Mert Çelik</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Görev Başlığı</label>
+      <input class="form-input" type="text" id="taskTitle" placeholder="örn. Matematik Test 15">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Ders</label>
+      <select class="form-select" id="taskSubject">
+        <option>Türkçe</option><option>Matematik</option><option>Fen Bilimleri</option>
+        <option>İnkılap Tarihi</option><option>Din Kültürü</option><option>İngilizce</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Açıklama</label>
+      <input class="form-input" type="text" id="taskDesc" placeholder="Detaylar...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Son Tarih</label>
+      <input class="form-input" type="date" id="taskDue">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('addTaskModal')">İptal</button>
+      <button class="btn btn-primary" onclick="saveTask()">Gönder 📤</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"><span class="toast-icon"></span><span id="toastMsg"></span></div>
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav" id="mobileNav"></nav>
+
+<script>
+let currentRole = 'teacher';
+let currentPage = 'dashboard';
+
+const subjects = [
+  { name:'Türkçe', color:'var(--turkish)', cls:'turkish', icon:'📖' },
+  { name:'Matematik', color:'var(--math)', cls:'math', icon:'📐' },
+  { name:'Fen Bilimleri', color:'var(--science)', cls:'science', icon:'🔬' },
+  { name:'İnkılap Tarihi', color:'var(--history)', cls:'history', icon:'🏛️' },
+  { name:'Din Kültürü', color:'var(--religion)', cls:'religion', icon:'☪️' },
+  { name:'İngilizce', color:'var(--english)', cls:'english', icon:'🌍' },
+];
+
+const students = [
+  { name:'Zeynep Kaya', avg:82, trend:'up', lastActive:'2 saat önce', color:'#6c63ff', tasks:3 },
+  { name:'Emre Demir', avg:67, trend:'down', lastActive:'1 gün önce', color:'#ff6584', tasks:1 },
+  { name:'Selin Yıldız', avg:91, trend:'up', lastActive:'30 dk önce', color:'#43e97b', tasks:2 },
+  { name:'Mert Çelik', avg:74, trend:'up', lastActive:'3 saat önce', color:'#f9ca24', tasks:4 },
+];
+
+const weekDays = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+const subjectProgress = [78, 85, 62, 71, 88, 55];
+const subjectProgressT = [72, 68, 80, 65, 90, 58];
+
+const kazanimlar = {
+  'Türkçe': ['Sözcük Türleri','Cümle Türleri','Paragraf Analizi','Anlatım Bozukluğu','Noktalama','Yazım Kuralları','Söz Sanatları','Metin Türleri'],
+  'Matematik': ['Çarpanlara Ayırma','Üslü Sayılar','Kök İfadeler','Denklemler','Eşitsizlikler','Olasılık','Veri Analizi','Geometri Temelleri','Dönüşüm Geometrisi'],
+  'Fen Bilimleri': ['Mevsimler ve İklim','DNA ve Genetik','Basınç','Madde ve Endüstri','Kimyasal Tepkimeler','Optik','Elektrik','Canlılar Alemi'],
+  'İnkılap Tarihi': ['Osmanlı Çöküşü','Kurtuluş Savaşı','Atatürk İlkeleri','Cumhuriyet Tarihi','Atatürk Dönemi Reformlar','Türk Dış Politikası'],
+  'Din Kültürü': ['Hz. Muhammed\'in Hayatı','Kur\'an','Temel İbadetler','İslam Tarihi','Ahlak','Diğer Dinler'],
+  'İngilizce': ['Tenses','Passive Voice','Reported Speech','Conditionals','Vocabulary','Reading Comprehension','Listening Skills'],
+};
+
+let kazanimDone = {};
+
+function renderMobileNav() {
+  const nav = document.getElementById('mobileNav');
+  if(!nav) return;
+  const teacherNav = [
+    {id:'dashboard',icon:'📊',label:'Panel'},
+    {id:'students',icon:'👥',label:'Öğrenciler'},
+    {id:'messages',icon:'💬',label:'Mesaj'},
+    {id:'tasks-teacher',icon:'📋',label:'Görevler'},
+    {id:'notifs',icon:'🔔',label:'Bildirim'},
+  ];
+  const studentNav = [
+    {id:'dashboard',icon:'🏠',label:'Ana Sayfa'},
+    {id:'daily-entry',icon:'✏️',label:'Giriş Yap'},
+    {id:'messages',icon:'💬',label:'Mesaj'},
+    {id:'my-tasks',icon:'📋',label:'Ödevler'},
+    {id:'notifs',icon:'🔔',label:'Bildirim'},
+  ];
+  const items = currentRole==='teacher' ? teacherNav : studentNav;
+  nav.innerHTML = `<div class="mobile-nav-inner">${items.map(n=>`
+    <button class="mobile-nav-item ${currentPage===n.id?'active':''}" onclick="showPage('${n.id}')">
+      <span>${n.icon}</span><span>${n.label}</span>
+    </button>`).join('')}</div>`;
+}
+
+let studyEntries = [
+  { subject:'Matematik', topic:'Denklemler', duration:60, questions:30, date:'Bugün 09:15' },
+  { subject:'Türkçe', topic:'Sözcük Türleri', duration:45, questions:25, date:'Bugün 11:00' },
+  { subject:'Fen Bilimleri', topic:'Optik', duration:50, questions:20, date:'Dün 15:30' },
+];
+
+let tasks = [
+  { title:'Matematik Test 14', subject:'Matematik', desc:'56 soruluk karma test', due:'15 Mar', done:false },
+  { title:'Türkçe Paragraf', subject:'Türkçe', desc:'10 paragraf sorusu çöz', due:'16 Mar', done:true },
+  { title:'Fen Deney Notu', subject:'Fen Bilimleri', desc:'Deney raporunu hazırla', due:'18 Mar', done:false },
+];
+
+// =================== FIREBASE ===================
+const firebaseConfig = {
+  apiKey: "AIzaSyArOWE7RqwK7pjUijS590NOUXx7z0gFxrw",
+  authDomain: "lgs-koc-takip.firebaseapp.com",
+  projectId: "lgs-koc-takip",
+  storageBucket: "lgs-koc-takip.firebasestorage.app",
+  messagingSenderId: "131005537763",
+  appId: "1:131005537763:web:69b7171c9099358b00d4d6",
+  measurementId: "G-VTH5M5PMMQ"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Auth state listener
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    // Get user profile from Firestore
+    const doc = await db.collection('users').doc(user.uid).get();
+    if (doc.exists) {
+      const data = doc.data();
+      currentRole = data.role || 'student';
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('headerName').textContent = data.name || user.email;
+      document.getElementById('headerRole').textContent = currentRole==='teacher' ? 'Koç Öğretmen' : '8. Sınıf Öğrencisi';
+      document.getElementById('headerAvatar').textContent = (data.name || user.email)[0].toUpperCase();
+      renderSidebar();
+      showPage('dashboard');
+    }
+  } else {
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+  }
+});
+
+function selectRole(r) {
+  currentRole = r;
+  document.getElementById('roleTeacher').classList.toggle('active', r==='teacher');
+  document.getElementById('roleStudent').classList.toggle('active', r==='student');
+}
+
+function showRegister() {
+  document.getElementById('regRole').value = currentRole;
+  openModal('registerModal');
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  errEl.style.display = 'none';
+  if (!email || !pass) { errEl.textContent = 'E-posta ve şifre giriniz.'; errEl.style.display='block'; return; }
+  btn.textContent = 'Giriş yapılıyor...'; btn.disabled = true;
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    btn.textContent = 'Giriş Yap →'; btn.disabled = false;
+    const msgs = {
+      'auth/user-not-found': 'Bu e-posta ile kayıtlı hesap bulunamadı.',
+      'auth/wrong-password': 'Şifre yanlış, tekrar deneyin.',
+      'auth/invalid-email': 'Geçersiz e-posta adresi.',
+      'auth/invalid-credential': 'E-posta veya şifre hatalı.',
+    };
+    errEl.textContent = msgs[e.code] || 'Giriş başarısız: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+async function doRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPass').value;
+  const role = document.getElementById('regRole').value;
+  const errEl = document.getElementById('regError');
+  errEl.style.display = 'none';
+  if (!name || !email || !pass) { errEl.textContent = 'Tüm alanları doldurunuz.'; errEl.style.display='block'; return; }
+  if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    await db.collection('users').doc(cred.user.uid).set({ name, email, role, createdAt: new Date() });
+    closeModal('registerModal');
+    showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
+  } catch(e) {
+    const msgs = {
+      'auth/email-already-in-use': 'Bu e-posta zaten kayıtlı.',
+      'auth/invalid-email': 'Geçersiz e-posta adresi.',
+      'auth/weak-password': 'Şifre çok zayıf.',
+    };
+    errEl.textContent = msgs[e.code] || 'Kayıt başarısız: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+function doLogout() {
+  auth.signOut();
+}
+
+function renderSidebar() {
+  const sb = document.getElementById('sidebar');
+  const teacherNav = [
+    { id:'dashboard', icon:'📊', label:'Ana Panel' },
+    { id:'students', icon:'👥', label:'Öğrencilerim' },
+    { id:'analysis', icon:'📈', label:'Analizler' },
+    { id:'tasks-teacher', icon:'📋', label:'Görevler' },
+    { id:'messages', icon:'💬', label:'Mesajlar' },
+    { id:'notifs', icon:'🔔', label:'Bildirimler' },
+  ];
+  const studentNav = [
+    { id:'dashboard', icon:'🏠', label:'Ana Sayfa' },
+    { id:'daily-entry', icon:'✏️', label:'Günlük Giriş' },
+    { id:'my-analysis', icon:'📈', label:'Analizlerim' },
+    { id:'kazanimlar', icon:'🎯', label:'Kazanımlarım' },
+    { id:'my-tasks', icon:'📋', label:'Ödevlerim' },
+    { id:'messages', icon:'💬', label:'Koçumla Mesaj' },
+    { id:'notifs', icon:'🔔', label:'Bildirimler' },
+  ];
+  const nav = currentRole==='teacher' ? teacherNav : studentNav;
+  sb.innerHTML = nav.map(n => `
+    <button class="nav-item ${currentPage===n.id?'active':''}" onclick="showPage('${n.id}')">
+      <span class="nav-icon">${n.icon}</span>${n.label}
+    </button>
+  `).join('');
+  renderMobileNav();
+}
+
+function showPage(id) {
+  currentPage = id;
+  renderSidebar();
+  const content = document.getElementById('mainContent');
+  if(currentRole==='teacher') renderTeacherPage(id, content);
+  else renderStudentPage(id, content);
+  window.scrollTo(0,0);
+}
+
+/* =================== TEACHER PAGES =================== */
+function renderTeacherPage(id, el) {
+  if(id==='dashboard') el.innerHTML = teacherDashboard();
+  else if(id==='students') el.innerHTML = teacherStudents();
+  else if(id==='analysis') el.innerHTML = teacherAnalysis();
+  else if(id==='tasks-teacher') el.innerHTML = teacherTasks();
+  else if(id==='messages') el.innerHTML = messagesPage('teacher');
+  else if(id==='notifs') el.innerHTML = notificationsPage();
+  setTimeout(()=>drawCharts(), 50);
+}
+
+function teacherDashboard() {
+  return `
+    <div class="page-title">📊 Ana Panel</div>
+    <div class="page-sub">Merhaba Ahmet Hoca! Bugün ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
+
+    <div class="grid-4">
+      <div class="stat-card">
+        <div class="stat-label">Aktif Öğrenci</div>
+        <div class="stat-value" style="color:var(--accent)">4</div>
+        <div class="stat-change up">↑ Hepsi aktif</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Bugün Giriş</div>
+        <div class="stat-value" style="color:var(--accent3)">3</div>
+        <div class="stat-change up">↑ Dün 2 kişiydi</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Bekleyen Ödev</div>
+        <div class="stat-value" style="color:var(--accent4)">7</div>
+        <div class="stat-change down">↓ 3 teslim edildi</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Sınıf Ort.</div>
+        <div class="stat-value" style="color:var(--accent2)">78.5</div>
+        <div class="stat-change up">↑ +2.3 bu hafta</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">👥 Öğrenci Durumları</div>
+        ${students.map(s=>`
+          <div class="student-row" onclick="showPage('students')">
+            <div class="student-avatar" style="background:${s.color}20;color:${s.color}">${s.name[0]}</div>
+            <div class="student-info">
+              <div class="student-name">${s.name}</div>
+              <div class="student-meta">${s.lastActive} • ${s.tasks} aktif görev</div>
+            </div>
+            <div style="text-align:right">
+              <div class="student-score" style="color:${s.avg>=80?'var(--accent3)':s.avg>=70?'var(--accent4)':'var(--accent2)'}">${s.avg}</div>
+              <div class="stat-change ${s.trend}">${s.trend==='up'?'↑ İyi':'↓ Dikkat'}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title">📅 Bu Hafta Aktivite</div>
+        <div class="week-grid">
+          ${weekDays.map((d,i)=>`
+            <div class="day-cell ${i<4?'has-data':''} ${i===2?'today':''}">
+              <div class="day-name">${d}</div>
+              <div class="day-num">${10+i}</div>
+              ${i<4?'<div class="day-dot"></div>':''}
+            </div>
+          `).join('')}
+        </div>
+        <div style="margin-top:16px">
+          <canvas id="weekChart" class="mini-chart" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📚 Ders Bazlı Sınıf Performansı</div>
+      ${subjects.map((s,i)=>`
+        <div class="subject-row">
+          <div class="subject-name c-${s.cls}">${s.icon} ${s.name}</div>
+          <div class="bar-bg"><div class="bar-fill bg-${s.cls}" style="width:${subjectProgress[i]}%"></div></div>
+          <div class="subject-pct">${subjectProgress[i]}%</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function teacherStudents() {
+  return `
+    <div class="page-title">👥 Öğrencilerim</div>
+    <div class="page-sub">Koçluk takibindeki öğrenciler</div>
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      <button class="btn btn-primary" onclick="showToast('➕','Öğrenci ekleme formu açıldı')">+ Öğrenci Ekle</button>
+      <button class="btn btn-outline" onclick="openModal('addTaskModal')">📋 Görev Ata</button>
+    </div>
+    <div class="card">
+      ${students.map((s,i)=>`
+        <div class="student-row">
+          <div class="student-avatar" style="background:${s.color}20;color:${s.color};font-size:1.1rem">${s.name[0]}</div>
+          <div class="student-info">
+            <div class="student-name">${s.name}</div>
+            <div class="student-meta">Son aktif: ${s.lastActive}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="badge ${s.avg>=80?'badge-green':s.avg>=70?'badge-yellow':'badge-red'}">${s.avg>=80?'İyi Gidiyor':s.avg>=70?'Normal':'Dikkat!'}</span>
+            <div class="student-score" style="color:${s.avg>=80?'var(--accent3)':s.avg>=70?'var(--accent4)':'var(--accent2)'}">${s.avg}</div>
+            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showToast('📊','${s.name} detaylı analiz açıldı')">Detay</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="margin-top:20px" class="card">
+      <div class="card-title">📊 Öğrenci Karşılaştırma</div>
+      <canvas id="compareChart" height="160"></canvas>
+    </div>
+  `;
+}
+
+function teacherAnalysis() {
+  return `
+    <div class="page-title">📈 Analizler</div>
+    <div class="page-sub">Detaylı performans raporları</div>
+
+    <div class="pdf-actions">
+      <select class="pdf-period-select" id="pdfPeriod">
+        <option value="weekly">Bu Hafta</option>
+        <option value="monthly" selected>Bu Ay</option>
+        <option value="all">Tüm Dönem</option>
+      </select>
+      <select class="pdf-period-select" id="pdfStudent">
+        <option value="all">Tüm Öğrenciler</option>
+        ${students.map(s=>`<option>${s.name}</option>`).join('')}
+      </select>
+      <button class="pdf-btn" onclick="exportPDF('teacher')">
+        📄 PDF Rapor İndir
+      </button>
+      <button class="btn btn-outline" onclick="showToast('📧','Rapor e-posta ile gönderildi!')">📧 E-posta Gönder</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active">Ders Analizi</button>
+      <button class="tab" onclick="showToast('📊','Öğrenci analizi yükleniyor...')">Öğrenci Analizi</button>
+      <button class="tab" onclick="showToast('📅','Haftalık rapor hazırlanıyor...')">Haftalık Rapor</button>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🎯 Ders Bazlı Başarı Oranı</div>
+        <canvas id="radarChart" height="220"></canvas>
+      </div>
+      <div class="card">
+        <div class="card-title">📅 Günlük Soru Çözüm Trendi</div>
+        <canvas id="trendChart" height="220"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">⚠️ Dikkat Gerektiren Konular</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        ${[
+          {subject:'Matematik', topic:'Olasılık', pct:42, cls:'math'},
+          {subject:'Fen', topic:'Kimyasal Tepkimeler', pct:51, cls:'science'},
+          {subject:'Türkçe', topic:'Anlatım Bozuklukları', pct:58, cls:'turkish'},
+        ].map(t=>`
+          <div style="background:var(--surface2);border-radius:12px;padding:16px;border:1px solid var(--border)">
+            <div class="c-${t.cls}" style="font-weight:800;font-size:0.85rem;margin-bottom:4px">${t.subject}</div>
+            <div style="font-weight:700;margin-bottom:10px">${t.topic}</div>
+            <div class="bar-bg"><div class="bar-fill bg-${t.cls}" style="width:${t.pct}%"></div></div>
+            <div style="font-size:0.8rem;color:var(--accent2);font-weight:700;margin-top:6px">%${t.pct} başarı</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function teacherTasks() {
+  return `
+    <div class="page-title">📋 Görevler</div>
+    <div class="page-sub">Ödevler ve çalışma programları</div>
+    <button class="btn btn-primary" style="margin-bottom:20px" onclick="openModal('addTaskModal')">+ Yeni Görev Ata</button>
+    ${tasks.map((t,i)=>`
+      <div class="assignment-card">
+        <div class="assignment-icon" style="background:rgba(108,99,255,.15)">📝</div>
+        <div style="flex:1">
+          <div class="assignment-title">${t.title}</div>
+          <div class="assignment-desc">${t.desc} • ${t.subject}</div>
+          <div class="assignment-footer">
+            <span class="badge ${t.done?'badge-green':'badge-yellow'}">${t.done?'Tamamlandı':'Bekliyor'}</span>
+            <span style="font-size:0.78rem;color:var(--text2)">Son: ${t.due}</span>
+          </div>
+        </div>
+        <button class="btn btn-outline" style="padding:6px 12px;font-size:0.78rem" onclick="showToast('🔔','Hatırlatma gönderildi!')">Hatırlat</button>
+      </div>
+    `).join('')}
+  `;
+}
+
+/* =================== STUDENT PAGES =================== */
+function renderStudentPage(id, el) {
+  if(id==='dashboard') el.innerHTML = studentDashboard();
+  else if(id==='daily-entry') el.innerHTML = studentDailyEntry();
+  else if(id==='my-analysis') el.innerHTML = studentAnalysis();
+  else if(id==='kazanimlar') el.innerHTML = studentKazanimlar();
+  else if(id==='my-tasks') el.innerHTML = studentTasks();
+  else if(id==='messages') el.innerHTML = messagesPage('student');
+  else if(id==='notifs') el.innerHTML = notificationsPage();
+  setTimeout(()=>drawCharts(), 50);
+}
+
+function studentDashboard() {
+  return `
+    <div class="page-title">🏠 Ana Sayfa</div>
+    <div class="page-sub">Merhaba Zeynep! Bugün ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
+
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="stat-label">Bu Hafta Soru</div>
+        <div class="stat-value" style="color:var(--accent)">347</div>
+        <div class="stat-change up">↑ Hedef: 400</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Çalışma Süresi</div>
+        <div class="stat-value" style="color:var(--accent3)">18.5<span style="font-size:1rem">sa</span></div>
+        <div class="stat-change up">↑ Geçen hafta 16sa</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Bekleyen Ödev</div>
+        <div class="stat-value" style="color:var(--accent4)">2</div>
+        <div class="stat-change">📅 Son: 15 Mar</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📚 Ders İlerlemem</div>
+        ${subjects.map((s,i)=>`
+          <div class="subject-row">
+            <div class="subject-name c-${s.cls}">${s.icon} ${s.name}</div>
+            <div class="bar-bg"><div class="bar-fill bg-${s.cls}" style="width:${subjectProgressT[i]}%"></div></div>
+            <div class="subject-pct">${subjectProgressT[i]}%</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title">📅 Bu Hafta</div>
+        <div class="week-grid">
+          ${weekDays.map((d,i)=>`
+            <div class="day-cell ${i<3?'has-data':''} ${i===2?'today':''}">
+              <div class="day-name">${d}</div>
+              <div class="day-num">${10+i}</div>
+              ${i<3?'<div class="day-dot"></div>':''}
+            </div>
+          `).join('')}
+        </div>
+        <div style="margin-top:16px">
+          <button class="btn btn-primary" style="width:100%" onclick="showPage('daily-entry')">+ Bugün Giriş Yap</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Son Girişlerim</div>
+      ${studyEntries.map(e=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:1.2rem">${subjects.find(s=>s.name===e.subject)?.icon||'📚'}</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:0.9rem">${e.subject} — ${e.topic}</div>
+            <div style="font-size:0.78rem;color:var(--text2)">${e.date}</div>
+          </div>
+          <div style="text-align:right;font-size:0.82rem;color:var(--text2)">
+            <div>⏱ ${e.duration}dk</div>
+            <div>📝 ${e.questions} soru</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function studentDailyEntry() {
+  return `
+    <div class="page-title">✏️ Günlük Çalışma Girişi</div>
+    <div class="page-sub">Bugünkü çalışmalarını ekle</div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">📚 Ders Seç</div>
+      <div class="subject-entry-grid">
+        ${subjects.map(s=>`
+          <div class="subject-entry-card" onclick="selectSubjectCard(this,'${s.name}')">
+            <div class="sec-name"><span class="sec-dot" style="background:${s.color}"></span>${s.icon} ${s.name}</div>
+            <div style="font-size:0.78rem;color:var(--text2)">Giriş ekle</div>
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn btn-primary" onclick="openModal('addEntryModal')">+ Çalışma Ekle</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Bugünkü Girişler</div>
+      ${studyEntries.filter(e=>e.date.includes('Bugün')).map(e=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:1.4rem">${subjects.find(s=>s.name===e.subject)?.icon||'📚'}</div>
+          <div style="flex:1">
+            <div style="font-weight:700">${e.subject} — <span style="color:var(--text2)">${e.topic}</span></div>
+            <div style="font-size:0.8rem;color:var(--text2);margin-top:3px">⏱ ${e.duration} dakika &nbsp; 📝 ${e.questions} soru</div>
+          </div>
+          <span class="badge badge-green">✓ Kaydedildi</span>
+        </div>
+      `).join('')}
+      <div style="margin-top:16px;padding-top:4px;display:flex;gap:12px;font-size:0.9rem;font-weight:700">
+        <span style="color:var(--accent3)">⏱ Toplam: 105 dk</span>
+        <span style="color:var(--accent4)">📝 Toplam: 55 soru</span>
+      </div>
+    </div>
+  `;
+}
+
+function studentAnalysis() {
+  return `
+    <div class="page-title">📈 Analizlerim</div>
+    <div class="page-sub">Kişisel performans takibim</div>
+
+    <div class="pdf-actions">
+      <select class="pdf-period-select" id="pdfPeriodS">
+        <option value="weekly">Bu Hafta</option>
+        <option value="monthly" selected>Bu Ay</option>
+      </select>
+      <button class="pdf-btn" onclick="exportPDF('student')">
+        📄 Karnemi İndir
+      </button>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📚 Ders Başarılarım</div>
+        ${subjects.map((s,i)=>`
+          <div class="subject-row">
+            <div class="subject-name c-${s.cls}">${s.icon} ${s.name}</div>
+            <div class="bar-bg"><div class="bar-fill bg-${s.cls}" style="width:${subjectProgressT[i]}%"></div></div>
+            <div class="subject-pct">${subjectProgressT[i]}%</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title">📅 Haftalık Soru Trendi</div>
+        <canvas id="studentTrend" height="200"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">⚡ Güçlü & Zayıf Konularım</div>
+      <div class="grid-2">
+        <div>
+          <div style="color:var(--accent3);font-weight:800;margin-bottom:10px">💪 Güçlü Konular</div>
+          ${['Din Kültürü — Temel Kavramlar (%90)','Türkçe — Paragraf Analizi (%85)','İnkılap — Kurtuluş Savaşı (%82)'].map(t=>`
+            <div style="padding:8px 12px;background:rgba(67,233,123,.08);border-radius:8px;font-size:0.85rem;margin-bottom:6px;border:1px solid rgba(67,233,123,.2)">${t}</div>
+          `).join('')}
+        </div>
+        <div>
+          <div style="color:var(--accent2);font-weight:800;margin-bottom:10px">⚠️ Çalışılması Gerekenler</div>
+          ${['Fen — Kimyasal Tepkimeler (%55)','İngilizce — Grammar (%58)','Matematik — Olasılık (%62)'].map(t=>`
+            <div style="padding:8px 12px;background:rgba(255,101,132,.08);border-radius:8px;font-size:0.85rem;margin-bottom:6px;border:1px solid rgba(255,101,132,.2)">${t}</div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function studentKazanimlar() {
+  return `
+    <div class="page-title">🎯 Kazanımlarım</div>
+    <div class="page-sub">LGS müfredatına göre tamamladığın konular</div>
+    ${subjects.map(s=>{
+      const kList = kazanimlar[s.name] || [];
+      const done = kList.filter((_,i)=> kazanimDone[s.name+i]).length;
+      const pct = kList.length ? Math.round(done/kList.length*100) : 0;
+      return `
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div class="card-title c-${s.cls}" style="margin:0">${s.icon} ${s.name}</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="font-size:0.85rem;color:var(--text2)">${done}/${kList.length} kazanım</div>
+              <span class="badge ${pct>=70?'badge-green':pct>=40?'badge-yellow':'badge-red'}">${pct}%</span>
+            </div>
+          </div>
+          <div class="bar-bg" style="margin-bottom:14px"><div class="bar-fill bg-${s.cls}" style="width:${pct}%"></div></div>
+          <div class="kazanim-grid">
+            ${kList.map((k,i)=>`
+              <div class="kazanim-item ${kazanimDone[s.name+i]?'done':''}" onclick="toggleKazanim('${s.name}',${i},this)">
+                <div class="kazanim-check">${kazanimDone[s.name+i]?'✓':''}</div>
+                <span>${k}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+function studentTasks() {
+  return `
+    <div class="page-title">📋 Ödevlerim</div>
+    <div class="page-sub">Koç tarafından atanan görevler</div>
+    ${tasks.map((t,i)=>`
+      <div class="assignment-card">
+        <div class="assignment-icon" style="background:rgba(108,99,255,.15);color:var(--accent);font-size:1.3rem">📝</div>
+        <div style="flex:1">
+          <div class="assignment-title">${t.title}</div>
+          <div class="assignment-desc">${t.desc} • ${t.subject}</div>
+          <div class="assignment-footer">
+            <span class="badge ${t.done?'badge-green':'badge-yellow'}">${t.done?'✓ Tamamlandı':'⏳ Bekliyor'}</span>
+            <span style="font-size:0.78rem;color:var(--text2)">📅 Son: ${t.due}</span>
+          </div>
+        </div>
+        ${!t.done?`<button class="btn btn-success" style="padding:8px 14px;font-size:0.8rem" onclick="completeTask(${i})">Tamamla ✓</button>`:''}
+      </div>
+    `).join('')}
+  `;
+}
+
+/* =================== MESSAGING =================== */
+let activeChat = 0;
+const conversations = [
+  {
+    id:0, name:'Zeynep Kaya', color:'#6c63ff', unread:2, lastMsg:'Hoca bu konuyu anlamadım...',
+    messages:[
+      {from:'student', text:'Hocam merhaba! Olasılık konusunda takıldım, yardımcı olabilir misiniz?', time:'09:15'},
+      {from:'teacher', text:'Tabii Zeynep, hangi kısımda takıldın?', time:'09:18'},
+      {from:'student', text:'Permütasyon ve kombinasyon farkını karıştırıyorum sürekli.', time:'09:20'},
+      {from:'teacher', text:'Kolay bir kural: sıra önemliyse permütasyon, değilse kombinasyon. Yarın bunu ödev olarak ekliyorum sana.', time:'09:25'},
+      {from:'student', text:'Çok teşekkürler hocam! Hoca bu konuyu anlamadım...', time:'10:02'},
+    ]
+  },
+  {
+    id:1, name:'Emre Demir', color:'#ff6584', unread:0, lastMsg:'Tamam hocam, yarın yapacağım.',
+    messages:[
+      {from:'teacher', text:'Emre, 2 gündür giriş yapmıyorsun. Sorun var mı?', time:'Dün 16:00'},
+      {from:'student', text:'Özür dilerim hocam, hasta oldum.', time:'Dün 18:30'},
+      {from:'teacher', text:'Geçmiş olsun! İyileşince telafi ederiz, acele etme.', time:'Dün 18:35'},
+      {from:'student', text:'Tamam hocam, yarın yapacağım.', time:'Dün 19:00'},
+    ]
+  },
+  {
+    id:2, name:'Selin Yıldız', color:'#43e97b', unread:1, lastMsg:'Sınav nasıl geçti?',
+    messages:[
+      {from:'student', text:'Hocam deneme sınavında Türkçe\'den 32 doğru yaptım!', time:'11:00'},
+      {from:'teacher', text:'Harika Selin! Geçen ay 24\'tü, çok iyi gelişme 🎉', time:'11:05'},
+      {from:'student', text:'Sınav nasıl geçti?', time:'11:10'},
+    ]
+  },
+  {
+    id:3, name:'Mert Çelik', color:'#f9ca24', unread:0, lastMsg:'Anlıyorum hocam.',
+    messages:[
+      {from:'teacher', text:'Mert, Fen ödevini teslim etmedin. Bugün içinde gönderir misin?', time:'08:30'},
+      {from:'student', text:'Anlıyorum hocam.', time:'08:45'},
+    ]
+  },
+];
+
+function messagesPage(role) {
+  const isTeacher = role==='teacher';
+  const conv = conversations[activeChat];
+
+  const chatListHTML = conversations.map((c,i)=>`
+    <div class="chat-list-item ${activeChat===i?'active':''}" onclick="switchChat(${i})">
+      <div class="student-avatar" style="background:${c.color}22;color:${c.color};width:36px;height:36px;font-size:0.9rem">${c.name[0]}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:0.88rem">${isTeacher?c.name:'Ahmet Hoca'}</div>
+        <div style="font-size:0.75rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.lastMsg}</div>
+      </div>
+      ${c.unread>0?`<div class="unread">${c.unread}</div>`:''}
+    </div>
+  `).join('');
+
+  const messagesHTML = conv.messages.map(m=>{
+    const isMine = (isTeacher && m.from==='teacher') || (!isTeacher && m.from==='student');
+    return `
+      <div class="msg ${isMine?'mine':'theirs'}">
+        <div class="msg-bubble">${m.text}</div>
+        <div class="msg-time">${m.time}</div>
+      </div>
+    `;
+  }).join('');
+
+  const headerName = isTeacher ? conv.name : 'Ahmet Hoca';
+  const headerColor = isTeacher ? conv.color : '#6c63ff';
+
+  return `
+    <div class="page-title">💬 Mesajlar</div>
+    <div class="page-sub">Öğrencilerle birebir iletişim</div>
+    <div class="chat-layout">
+      <div class="chat-list">
+        <div class="chat-list-header">💬 Konuşmalar</div>
+        ${chatListHTML}
+      </div>
+      <div class="chat-window">
+        <div class="chat-header">
+          <div class="student-avatar" style="background:${headerColor}22;color:${headerColor};width:36px;height:36px;font-size:0.95rem">${headerName[0]}</div>
+          <div>
+            <div style="font-weight:800;font-size:0.95rem">${headerName}</div>
+            <div style="font-size:0.75rem;color:var(--accent3)">● Çevrimiçi</div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showToast('📋','Görev atama açıldı')">📋 Görev At</button>
+            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.8rem" onclick="showToast('📞','Arama özelliği yakında!')">📞</button>
+          </div>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="msg-system">📅 Bugün</div>
+          ${messagesHTML}
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chatInput" type="text" placeholder="Mesaj yaz..." 
+            onkeydown="if(event.key==='Enter')sendMessage('${role}')">
+          <button class="chat-send-btn" onclick="sendMessage('${role}')">➤</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function switchChat(idx) {
+  activeChat = idx;
+  conversations[idx].unread = 0;
+  showPage('messages');
+  setTimeout(()=>{
+    const el = document.getElementById('chatMessages');
+    if(el) el.scrollTop = el.scrollHeight;
+  }, 80);
+}
+
+function sendMessage(role) {
+  const input = document.getElementById('chatInput');
+  const text = input?.value?.trim();
+  if(!text) return;
+  const from = role==='teacher' ? 'teacher' : 'student';
+  const now = new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+  conversations[activeChat].messages.push({from, text, time:now});
+  conversations[activeChat].lastMsg = text;
+  input.value = '';
+
+  // Re-render chat messages only
+  const isMine = true;
+  const msgEl = document.getElementById('chatMessages');
+  if(msgEl) {
+    const div = document.createElement('div');
+    div.className = `msg mine`;
+    div.innerHTML = `<div class="msg-bubble">${text}</div><div class="msg-time">${now}</div>`;
+    msgEl.appendChild(div);
+    msgEl.scrollTop = msgEl.scrollHeight;
+  }
+
+  // Simulate reply after 1.5s
+  if(role==='teacher') {
+    const replies = ['Tamam hocam, şimdi bakıyorum!','Anladım, teşekkürler 🙏','Hemen yapıyorum!','Peki hocam, anlıyorum.'];
+    setTimeout(()=>{
+      const reply = replies[Math.floor(Math.random()*replies.length)];
+      const replyTime = new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+      conversations[activeChat].messages.push({from:'student',text:reply,time:replyTime});
+      const msgEl2 = document.getElementById('chatMessages');
+      if(msgEl2) {
+        const div2 = document.createElement('div');
+        div2.className = 'msg theirs';
+        div2.innerHTML = `<div class="msg-bubble">${reply}</div><div class="msg-time">${replyTime}</div>`;
+        msgEl2.appendChild(div2);
+        msgEl2.scrollTop = msgEl2.scrollHeight;
+        showToast('💬', `${conversations[activeChat].name}: "${reply}"`);
+      }
+    }, 1500);
+  }
+}
+
+function notificationsPage() {
+  const notifs = [
+    { text:'Ahmet Hoca yeni bir görev atadı: "Matematik Test 15"', time:'5 dk önce', read:false },
+    { text:'Zeynep Kaya bugünkü çalışma girişini tamamladı', time:'2 saat önce', read:false },
+    { text:'Emre Demir 2 gündür giriş yapmadı, hatırlatma gönderildi', time:'3 saat önce', read:false },
+    { text:'Selin Yıldız tüm ödevleri teslim etti 🎉', time:'1 gün önce', read:true },
+    { text:'Haftalık analiz raporu hazır, inceleyebilirsiniz', time:'2 gün önce', read:true },
+  ];
+  return `
+    <div class="page-title">🔔 Bildirimler</div>
+    <div class="page-sub">Son aktiviteler ve güncellemeler</div>
+    <div class="card">
+      ${notifs.map(n=>`
+        <div class="notif-item">
+          <div class="notif-dot ${n.read?'read':''}"></div>
+          <div>
+            <div class="notif-text">${n.text}</div>
+            <div class="notif-time">${n.time}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+/* =================== HELPERS =================== */
+function selectSubjectCard(el, name) {
+  document.querySelectorAll('.subject-entry-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('entrySubject').value = name;
+  openModal('addEntryModal');
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function saveEntry() {
+  const sub = document.getElementById('entrySubject').value;
+  const topic = document.getElementById('entryTopic').value || 'Genel Çalışma';
+  const dur = document.getElementById('entryDuration').value || 30;
+  const q = document.getElementById('entryQuestions').value || 0;
+  const entry = { subject:sub, topic, duration:parseInt(dur), questions:parseInt(q), date:'Bugün '+new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}) };
+  studyEntries.unshift(entry);
+
+  // Firebase'e kaydet
+  const user = auth.currentUser;
+  if (user) {
+    db.collection('studyEntries').add({
+      ...entry, userId: user.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(e => console.log('Firestore error:', e));
+  }
+
+  closeModal('addEntryModal');
+  showToast('✅', `${sub} girişi kaydedildi! Koçun bildirim aldı.`);
+  showPage('daily-entry');
+}
+
+function saveTask() {
+  const student = document.getElementById('taskStudent').value;
+  const title = document.getElementById('taskTitle').value || 'Yeni Görev';
+  const sub = document.getElementById('taskSubject').value;
+  const desc = document.getElementById('taskDesc').value || '-';
+  const due = document.getElementById('taskDue').value || '20 Mar';
+  tasks.unshift({ title, subject:sub, desc, due, done:false });
+  closeModal('addTaskModal');
+  showToast('📤', `${student}'e görev gönderildi!`);
+  showPage('tasks-teacher');
+}
+
+function completeTask(i) {
+  tasks[i].done = true;
+  showToast('🎉', 'Görev tamamlandı olarak işaretlendi!');
+  showPage('my-tasks');
+}
+
+function toggleKazanim(subject, idx, el) {
+  const key = subject+idx;
+  kazanimDone[key] = !kazanimDone[key];
+  el.classList.toggle('done', kazanimDone[key]);
+  el.querySelector('.kazanim-check').textContent = kazanimDone[key] ? '✓' : '';
+  // update progress bar
+  const kList = kazanimlar[subject] || [];
+  const done = kList.filter((_,i)=> kazanimDone[subject+i]).length;
+  const pct = kList.length ? Math.round(done/kList.length*100) : 0;
+  showToast(kazanimDone[key]?'✅':'↩️', `${subject} — ${kList[idx]} ${kazanimDone[key]?'tamamlandı':'geri alındı'}`);
+}
+
+/* =================== PDF EXPORT =================== */
+function exportPDF(role) {
+  showToast('⏳','PDF oluşturuluyor...');
+  setTimeout(()=>{
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+      const W = 210, H = 297;
+      const period = role==='teacher'
+        ? (document.getElementById('pdfPeriod')?.value || 'monthly')
+        : (document.getElementById('pdfPeriodS')?.value || 'monthly');
+      const periodLabel = period==='weekly'?'Haftalık':period==='monthly'?'Aylık':'Dönem';
+      const studentFilter = role==='teacher' ? (document.getElementById('pdfStudent')?.value || 'all') : 'Zeynep Kaya';
+      const now = new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+      const subjectColors = ['#ff6b6b','#4ecdc4','#45b7d1','#f9ca24','#a29bfe','#fd79a8'];
+
+      // ── HEADER BAND ──
+      doc.setFillColor(15, 17, 23);
+      doc.rect(0, 0, W, H, 'F');
+      doc.setFillColor(28, 30, 45);
+      doc.rect(0, 0, W, 40, 'F');
+      doc.setFillColor(108, 99, 255);
+      doc.rect(0, 38, W, 2, 'F');
+
+      // Logo
+      doc.setTextColor(108, 99, 255);
+      doc.setFontSize(22); doc.setFont('helvetica','bold');
+      doc.text('LGS', 14, 22);
+      doc.setTextColor(232, 234, 246);
+      doc.text('Koc', 33, 22);
+
+      // Title area
+      doc.setFontSize(11); doc.setFont('helvetica','normal');
+      doc.setTextColor(139, 144, 184);
+      doc.text('Ogrenci Takip ve Kocluk Sistemi', 14, 30);
+
+      // Report badge
+      doc.setFillColor(108, 99, 255);
+      doc.roundedRect(W-55, 8, 42, 12, 3, 3, 'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','bold');
+      doc.text(periodLabel + ' Rapor', W-34, 16, {align:'center'});
+
+      // Date right
+      doc.setTextColor(139,144,184); doc.setFontSize(8); doc.setFont('helvetica','normal');
+      doc.text(now, W-14, 28, {align:'right'});
+
+      let y = 52;
+
+      // ── STUDENT INFO / SUMMARY ──
+      const title = role==='teacher'
+        ? (studentFilter==='all' ? 'Tum Ogrenciler — Sinif Ozeti' : studentFilter + ' — Ogrenci Raporu')
+        : 'Zeynep Kaya — Kisisel Analiz Raporu';
+
+      doc.setTextColor(232,234,246); doc.setFontSize(15); doc.setFont('helvetica','bold');
+      doc.text(title, 14, y); y+=8;
+      doc.setFillColor(108,99,255); doc.rect(14,y,30,1,'F'); y+=8;
+
+      // ── STAT BOXES ──
+      const stats = role==='teacher'
+        ? [{label:'Aktif Ogrenci',val:'4',color:[108,99,255]},{label:'Bu Hafta Giris',val:'3',color:[67,233,123]},{label:'Bekleyen Odev',val:'7',color:[249,202,36]},{label:'Sinif Ort.',val:'78.5',color:[255,101,132]}]
+        : [{label:'Haftalik Soru',val:'347',color:[108,99,255]},{label:'Calisma Suresi',val:'18.5 sa',color:[67,233,123]},{label:'Bek. Odev',val:'2',color:[249,202,36]},{label:'Genel Ort.',val:'72',color:[255,101,132]}];
+      const bw = (W-28-9)/4, bh = 22;
+      stats.forEach((s,i)=>{
+        const bx = 14+i*(bw+3);
+        doc.setFillColor(34,38,58); doc.roundedRect(bx,y,bw,bh,3,3,'F');
+        doc.setFillColor(...s.color); doc.roundedRect(bx,y,3,bh,1,1,'F');
+        doc.setTextColor(139,144,184); doc.setFontSize(7); doc.setFont('helvetica','normal');
+        doc.text(s.label, bx+6, y+7);
+        doc.setTextColor(232,234,246); doc.setFontSize(13); doc.setFont('helvetica','bold');
+        doc.text(s.val, bx+6, y+17);
+      });
+      y += bh+10;
+
+      // ── SUBJECT PERFORMANCE ──
+      doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
+      doc.text('Ders Bazli Performans', 14, y); y+=7;
+
+      const progData = role==='teacher' ? subjectProgress : subjectProgressT;
+      const subjectNames = ['Turkce','Matematik','Fen Bilimleri','Inkilap Tarihi','Din Kulturu','Ingilizce'];
+      const subjectIcons = ['TUR','MAT','FEN','INK','DIN','ING'];
+
+      subjectNames.forEach((name,i)=>{
+        const pct = progData[i];
+        const col = subjectColors[i];
+        // row bg
+        doc.setFillColor(34,38,58); doc.roundedRect(14,y,W-28,10,2,2,'F');
+        // label
+        const rgb = hexToRgb(col);
+        doc.setTextColor(...rgb); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+        doc.text(subjectIcons[i], 18, y+6.5);
+        doc.setTextColor(232,234,246); doc.setFont('helvetica','normal');
+        doc.text(name, 30, y+6.5);
+        // bar track
+        const bx = 90, bw2 = W-28-90-20, bh2 = 4;
+        doc.setFillColor(46,51,80); doc.roundedRect(bx, y+3, bw2, bh2, 1,1,'F');
+        doc.setFillColor(...rgb); doc.roundedRect(bx, y+3, bw2*pct/100, bh2, 1,1,'F');
+        // pct
+        doc.setTextColor(232,234,246); doc.setFontSize(8); doc.setFont('helvetica','bold');
+        doc.text(pct+'%', W-16, y+6.5, {align:'right'});
+        y += 12;
+      });
+      y += 6;
+
+      // ── STUDY ENTRIES TABLE ──
+      if(role==='student' || studentFilter!=='all') {
+        doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
+        doc.text('Son Calisma Girisler', 14, y); y+=7;
+
+        // table header
+        doc.setFillColor(46,51,80); doc.rect(14,y,W-28,8,'F');
+        doc.setTextColor(139,144,184); doc.setFontSize(8); doc.setFont('helvetica','bold');
+        doc.text('Ders', 18, y+5.5);
+        doc.text('Konu', 55, y+5.5);
+        doc.text('Sure', 115, y+5.5);
+        doc.text('Soru', 140, y+5.5);
+        doc.text('Tarih', 165, y+5.5);
+        y += 9;
+
+        studyEntries.forEach((e,i)=>{
+          if(y>265) { doc.addPage(); y=20; doc.setFillColor(15,17,23); doc.rect(0,0,W,H,'F'); }
+          doc.setFillColor(i%2===0?34:28, i%2===0?38:30, i%2===0?58:45);
+          doc.rect(14,y,W-28,8,'F');
+          doc.setTextColor(232,234,246); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+          doc.text(e.subject.substring(0,12), 18, y+5.5);
+          doc.text(e.topic.substring(0,20), 55, y+5.5);
+          doc.text(e.duration+'dk', 115, y+5.5);
+          doc.text(String(e.questions), 140, y+5.5);
+          doc.text(e.date.substring(0,14), 165, y+5.5);
+          y += 9;
+        });
+        y += 6;
+      }
+
+      // ── TEACHER: STUDENT TABLE ──
+      if(role==='teacher' && studentFilter==='all') {
+        doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
+        doc.text('Ogrenci Durum Tablosu', 14, y); y+=7;
+
+        doc.setFillColor(46,51,80); doc.rect(14,y,W-28,9,'F');
+        doc.setTextColor(139,144,184); doc.setFontSize(8); doc.setFont('helvetica','bold');
+        doc.text('Ad Soyad',18,y+6); doc.text('Ortalama',90,y+6); doc.text('Durum',125,y+6); doc.text('Son Aktif',160,y+6);
+        y+=10;
+
+        students.forEach((s,i)=>{
+          doc.setFillColor(i%2===0?34:28,i%2===0?38:30,i%2===0?58:45);
+          doc.rect(14,y,W-28,10,'F');
+          doc.setTextColor(232,234,246); doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+          doc.text(s.name,18,y+6.5);
+          const avgRgb = s.avg>=80?[67,233,123]:s.avg>=70?[249,202,36]:[255,101,132];
+          doc.setTextColor(...avgRgb); doc.setFont('helvetica','bold');
+          doc.text(String(s.avg),90,y+6.5);
+          doc.setTextColor(232,234,246); doc.setFont('helvetica','normal');
+          doc.text(s.avg>=80?'Iyi Gidiyor':s.avg>=70?'Normal':'Dikkat!',125,y+6.5);
+          doc.text(s.lastActive,160,y+6.5);
+          y+=11;
+        });
+        y+=6;
+      }
+
+      // ── WEAK TOPICS ──
+      if(y < 240) {
+        doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
+        doc.text('Dikkat Gerektiren Konular', 14, y); y+=8;
+        const weakTopics = [
+          {s:'Matematik',t:'Olasilik',p:42,c:'#4ecdc4'},
+          {s:'Fen Bilimleri',t:'Kimyasal Tepkimeler',p:51,c:'#45b7d1'},
+          {s:'Turkce',t:'Anlatim Bozuklugu',p:58,c:'#ff6b6b'},
+        ];
+        const cw = (W-28-8)/3;
+        weakTopics.forEach((t,i)=>{
+          const cx = 14+i*(cw+4);
+          doc.setFillColor(34,38,58); doc.roundedRect(cx,y,cw,22,3,3,'F');
+          const rgb = hexToRgb(t.c);
+          doc.setFillColor(...rgb); doc.roundedRect(cx,y,cw,3,1,1,'F');
+          doc.setTextColor(...rgb); doc.setFontSize(7); doc.setFont('helvetica','bold');
+          doc.text(t.s,cx+4,y+9);
+          doc.setTextColor(232,234,246); doc.setFontSize(8); doc.setFont('helvetica','bold');
+          doc.text(t.t.substring(0,18),cx+4,y+15);
+          doc.setTextColor(255,101,132); doc.setFontSize(9);
+          doc.text('%'+t.p,cx+cw-8,y+15,{align:'right'});
+        });
+        y+=28;
+      }
+
+      // ── FOOTER ──
+      doc.setFillColor(28,30,45); doc.rect(0,H-14,W,14,'F');
+      doc.setFillColor(108,99,255); doc.rect(0,H-15,W,1,'F');
+      doc.setTextColor(139,144,184); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+      doc.text('LGSKoc — Ogrenci Takip ve Kocluk Sistemi', 14, H-7);
+      doc.text('Rapor tarihi: '+now, W-14, H-7, {align:'right'});
+
+      // SAVE
+      const fname = role==='teacher'
+        ? `LGSKoc_Ogretmen_${periodLabel}_${now.replace(/ /g,'_')}.pdf`
+        : `LGSKoc_${studentFilter}_${periodLabel}.pdf`;
+      doc.save(fname);
+      showToast('✅','PDF indirildi!');
+    } catch(e) {
+      console.error(e);
+      showToast('❌','PDF oluşturulamadı: '+e.message);
+    }
+  }, 300);
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.querySelector('.toast-icon').textContent = icon;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+/* =================== CHARTS =================== */
+function drawCharts() {
+  // Week chart
+  const wc = document.getElementById('weekChart');
+  if(wc && !wc._drawn) {
+    wc._drawn = true;
+    const ctx = wc.getContext('2d');
+    drawLineChart(ctx, wc.width, 120, [25,40,35,60,45,0,0], '#6c63ff');
+  }
+  // Compare chart
+  const cc = document.getElementById('compareChart');
+  if(cc && !cc._drawn) {
+    cc._drawn = true;
+    const ctx = cc.getContext('2d');
+    drawBarChart(ctx, cc.width, 160, students.map(s=>s.name.split(' ')[0]), students.map(s=>s.avg));
+  }
+  // Trend chart
+  const tc = document.getElementById('trendChart');
+  if(tc && !tc._drawn) {
+    tc._drawn = true;
+    const ctx = tc.getContext('2d');
+    drawLineChart(ctx, tc.width, 220, [45,62,55,80,70,90,75], '#43e97b');
+  }
+  // Student trend
+  const st = document.getElementById('studentTrend');
+  if(st && !st._drawn) {
+    st._drawn = true;
+    const ctx = st.getContext('2d');
+    drawLineChart(ctx, st.width, 200, [30,50,45,65,55,72,60], '#6c63ff');
+  }
+}
+
+function drawLineChart(ctx, w, h, data, color) {
+  const c = ctx.canvas; c.width = c.offsetWidth || 400;
+  const cw = c.width, ch = h;
+  ctx.clearRect(0,0,cw,ch);
+  const max = Math.max(...data), min = 0;
+  const pad = 20;
+  const xStep = (cw-pad*2)/(data.length-1);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<4;i++) {
+    const y = pad + (ch-pad*2)*i/3;
+    ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(cw-pad,y); ctx.stroke();
+  }
+
+  // Fill
+  const gradient = ctx.createLinearGradient(0,0,0,ch);
+  gradient.addColorStop(0, color+'44');
+  gradient.addColorStop(1, color+'00');
+  ctx.beginPath();
+  data.forEach((v,i)=>{
+    const x = pad+i*xStep, y = ch-pad-(v/max)*(ch-pad*2);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.lineTo(pad+(data.length-1)*xStep, ch-pad);
+  ctx.lineTo(pad, ch-pad);
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+  data.forEach((v,i)=>{
+    const x = pad+i*xStep, y = ch-pad-(v/max)*(ch-pad*2);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // Dots
+  data.forEach((v,i)=>{
+    if(v===0) return;
+    const x = pad+i*xStep, y = ch-pad-(v/max)*(ch-pad*2);
+    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+  });
+
+  // Labels
+  ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '10px Nunito'; ctx.textAlign='center';
+  ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].forEach((d,i)=>{
+    ctx.fillText(d, pad+i*xStep, ch-4);
+  });
+}
+
+function drawBarChart(ctx, w, h, labels, data) {
+  const c = ctx.canvas; c.width = c.offsetWidth || 400;
+  const cw = c.width, ch = h;
+  ctx.clearRect(0,0,cw,ch);
+  const max = 100;
+  const barColors = ['#6c63ff','#ff6584','#43e97b','#f9ca24'];
+  const pad = 30, barW = (cw-pad*2)/data.length*0.5;
+  const xStep = (cw-pad*2)/data.length;
+
+  data.forEach((v,i)=>{
+    const x = pad+i*xStep+xStep*0.25;
+    const barH = (v/max)*(ch-pad*2);
+    const y = ch-pad-barH;
+    const r = ctx.createLinearGradient(0,y,0,ch-pad);
+    r.addColorStop(0,barColors[i]); r.addColorStop(1,barColors[i]+'66');
+    ctx.fillStyle = r;
+    ctx.beginPath();
+    ctx.roundRect(x,y,barW,barH,6);
+    ctx.fill();
+    ctx.fillStyle = barColors[i]; ctx.font='bold 12px Nunito'; ctx.textAlign='center';
+    ctx.fillText(v, x+barW/2, y-6);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font='10px Nunito';
+    ctx.fillText(labels[i], x+barW/2, ch-10);
+  });
+}
+
+window.addEventListener('resize', ()=>{ document.querySelectorAll('canvas').forEach(c=>c._drawn=false); drawCharts(); });
+</script>
+</body>
+</html>
