@@ -2257,7 +2257,7 @@ function calcLGSScore(subStats) {
 function ts(v) {
   if (v == null) return '';
   // Türkçe font yüklüyse orijinal metni döndür
-  if (typeof _PF !== 'undefined' && _PF === 'NotoSans') return String(v);
+  if (typeof _PF !== 'undefined' && (_PF === 'NotoSans' || _PF === 'DejaVuSans')) return String(v);
   // Yoksa ASCII'ye çevir
   let s = String(v);
   const map = {'ğ':'g','Ğ':'G','ü':'u','Ü':'U','ş':'s','Ş':'S',
@@ -2368,7 +2368,7 @@ function pdfFooter(doc, totalPages, subtitle) {
 }
 
 function pdfSecHeader(doc, title, Y, r=90, g=72, b=200) {
-  Y = pdfCheck(doc, Y, 12);
+  Y = pdfCheck(doc, Y, 30); // Başlık + biraz içerik için yeterli alan garantisi
   // Yumuşak renk + sol çizgi aksanı
   doc.setFillColor(Math.min(255,Math.round(r*0.12+255*0.88)),Math.min(255,Math.round(g*0.12+255*0.88)),Math.min(255,Math.round(b*0.12+255*0.88))); doc.roundedRect(14,Y,182,8,1.5,1.5,'F');
   doc.setFillColor(r,g,b); doc.roundedRect(14,Y,3,8,1,1,'F');
@@ -2379,7 +2379,7 @@ function pdfSecHeader(doc, title, Y, r=90, g=72, b=200) {
 }
 
 function pdfSubHeader(doc, text, Y) {
-  Y = pdfCheck(doc, Y, 8);
+  Y = pdfCheck(doc, Y, 20); // Alt başlık + biraz içerik için alan garantisi
   doc.setFont(_PF,'bold'); doc.setFontSize(8.5); doc.setTextColor(80,65,180);
   doc.text(tx(text), 14, Y); return Y+6;
 }
