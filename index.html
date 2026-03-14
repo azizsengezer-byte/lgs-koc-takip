@@ -2242,55 +2242,46 @@ function calcLGSScore(subStats) {
 // ts() - Tüm Türkçe karakterleri ASCII'ye çevir (jsPDF font uyumu)
 // ============================================================
 // ts() — PDF için: Türkçe→ASCII + emoji/özel karakter temizle
+// ts() — PDF için kesin Türkçe→ASCII + tüm non-Latin temizle
 function ts(v) {
   if (v == null) return '';
-  return String(v)
-    // Türkçe karakterler
-    .replace(/Ğ/g,'G').replace(/ğ/g,'g')
-    .replace(/Ü/g,'U').replace(/ü/g,'u')
-    .replace(/Ş/g,'S').replace(/ş/g,'s')
-    .replace(/İ/g,'I').replace(/ı/g,'i')
-    .replace(/Ö/g,'O').replace(/ö/g,'o')
-    .replace(/Ç/g,'C').replace(/ç/g,'c')
-    // Emoji ve Unicode özel karakterler (jsPDF Latin-1 dışı)
-    .replace(/[\u{1F000}-\u{1FFFF}]/gu,'')
-    .replace(/[\u{2600}-\u{27BF}]/gu,'')
-    .replace(/[\u{FE00}-\u{FEFF}]/gu,'')
-    .replace(/[^\x00-\xFF]/g,'')
-    .trim();
+  let s = String(v);
+  // Türkçe
+  const map = {'ğ':'g','Ğ':'G','ü':'u','Ü':'U','ş':'s','Ş':'S',
+               'ı':'i','İ':'I','ö':'o','Ö':'O','ç':'c','Ç':'C'};
+  s = s.replace(/[ğĞüÜşŞıİöÖçÇ]/g, m => map[m]||m);
+  // Karakter karakter temizle — sadece ASCII 32-126 bırak
+  let result = '';
+  for (let i = 0; i < s.length; i++) {
+    const code = s.charCodeAt(i);
+    if (code >= 32 && code <= 126) result += s[i];
+    else if (code === 10 || code === 13) result += ' ';
+    // Geri kalanları at (emoji, unicode vb.)
+  }
+  return result.trim();
 }
 
-
 // ============================================================
-// PDF İNDİRME — mobil uyumlu
+// PDF İNDİRME — sadece blob, datauristring büyük dosyalarda bozuluyor
 // ============================================================
 function pdfDownload(doc, fname) {
   try {
-    // Yöntem 1: data URI ile direkt indirme (en güvenilir)
-    const dataUri = doc.output('datauristring');
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = dataUri;
+    a.href = url;
     a.download = fname;
+    a.target = '_blank'; // bazı cihazlarda gerekli
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    showToast('📄', 'PDF indiriliyor...');
-
-    // Yöntem 2: 1 saniye sonra blob URL ile de dene (bazı Android'lerde gerekli)
+    // Temizlik
     setTimeout(() => {
-      try {
-        const blob = doc.output('blob');
-        const blobUrl = URL.createObjectURL(blob);
-        const a2 = document.createElement('a');
-        a2.href = blobUrl; a2.download = fname; a2.style.display = 'none';
-        document.body.appendChild(a2); a2.click(); document.body.removeChild(a2);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
-      } catch(e2) {}
-    }, 1000);
-
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 5000);
+    showToast('📄', fname + ' indiriliyor...');
   } catch(e) {
-    // Son çare: jsPDF save
     try { doc.save(fname); showToast('📄', 'PDF kaydedildi!'); }
     catch(e2) { showToast('❌', 'PDF hatasi: ' + e2.message); }
   }
@@ -2337,9 +2328,9 @@ function pdfFooter(doc, totalPages, subtitle) {
 function pdfSecHeader(doc, title, Y, r=90, g=72, b=200) {
   Y = pdfCheck(doc, Y, 12);
   // Yumuşak renk + sol çizgi aksanı
-  doc.setFillColor(r,g,b,0.12); doc.roundedRect(14,Y,182,8,1.5,1.5,'F');
+  doc.setFillColor(Math.min(255,Math.round(r*0.12+255*0.88)),Math.min(255,Math.round(g*0.12+255*0.88)),Math.min(255,Math.round(b*0.12+255*0.88))); doc.roundedRect(14,Y,182,8,1.5,1.5,'F');
   doc.setFillColor(r,g,b); doc.roundedRect(14,Y,3,8,1,1,'F');
-  doc.setDrawColor(r,g,b,0.4); doc.setLineWidth(0.3); doc.roundedRect(14,Y,182,8,1.5,1.5,'S');
+  doc.setDrawColor(193,184,230); doc.setLineWidth(0.3); doc.roundedRect(14,Y,182,8,1.5,1.5,'S');
   doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(r,g,b);
   doc.text(ts(title), 20, Y+5.6);
   return Y+12;
@@ -2405,9 +2396,12 @@ function pdfBarChart(doc, values, labels, Y, chartH, colors, title) {
     const by = baseY - bh;
     const col = typeof colors[i%colors.length] === 'function' ? colors[i%colors.length](v) : colors[i%colors.length];
     const [r,g,b] = col;
-    // Yumuşak gölge efekti
-    doc.setFillColor(r,g,b,0.15); doc.roundedRect(x+0.5,by+0.5,barW,bh,0.8,0.8,'F');
-    doc.setFillColor(r,g,b,0.75); doc.roundedRect(x,by,barW,bh,0.8,0.8,'F');
+    // Yumuşak gölge — açık ton
+    const rl=Math.min(255,Math.round(r*0.15+255*0.85)), gl2=Math.min(255,Math.round(g*0.15+255*0.85)), bl2=Math.min(255,Math.round(b*0.15+255*0.85));
+    doc.setFillColor(rl,gl2,bl2); doc.roundedRect(x+0.5,by+0.5,barW,bh,0.8,0.8,'F');
+    // Asıl bar — biraz daha açık (%75 doygunluk)
+    const rm=Math.min(255,Math.round(r*0.75+255*0.25)), gm=Math.min(255,Math.round(g*0.75+255*0.25)), bm=Math.min(255,Math.round(b*0.75+255*0.25));
+    doc.setFillColor(rm,gm,bm); doc.roundedRect(x,by,barW,bh,0.8,0.8,'F');
     doc.setFontSize(5); doc.setFont('helvetica','bold'); doc.setTextColor(r,g,b);
     if(v!==0) doc.text(String(v), x+barW/2, Math.max(by-1,Y+1.5), {align:'center'});
     doc.setFontSize(5); doc.setTextColor(110,100,150); doc.setFont('helvetica','normal');
@@ -2445,7 +2439,7 @@ function pdfLineChart(doc, values, labels, Y, chartH, color, title) {
   });
   const pts = values.map((v,i) => ({x:startX+i*stepX, y:baseY-(Math.abs(v)/maxV)*(chartH-10)}));
   if(pts.length>1) {
-    doc.setDrawColor(cr,cg,cb,0.8); doc.setLineWidth(0.7);
+    doc.setDrawColor(cr,cg,cb); doc.setLineWidth(0.7);
     for(let i=0;i<pts.length-1;i++) doc.line(pts[i].x,pts[i].y,pts[i+1].x,pts[i+1].y);
   }
   pts.forEach((p,i) => {
@@ -2629,8 +2623,8 @@ async function exportStudentDetailPDF(sName) {
   boxes.forEach((b,i)=>{
     const x=14+i*(bw+bgap);
     const [r,g,b2]=b[2];
-    doc.setFillColor(r,g,b2,0.08); doc.roundedRect(x,Y,bw,bh,2,2,'F');
-    doc.setDrawColor(r,g,b2,0.25); doc.setLineWidth(0.3); doc.roundedRect(x,Y,bw,bh,2,2,'S');
+    doc.setFillColor(Math.min(255,Math.round(r*0.08+255*0.92)),Math.min(255,Math.round(g2*0.08+255*0.92)),Math.min(255,Math.round(b2*0.08+255*0.92))); doc.roundedRect(x,Y,bw,bh,2,2,'F');
+    doc.setDrawColor(Math.min(255,Math.round(r*0.25+191)),Math.min(255,Math.round(g*0.25+191)),Math.min(255,Math.round(b2*0.25+191))); doc.setLineWidth(0.3); doc.roundedRect(x,Y,bw,bh,2,2,'S');
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(r,g,b2);
     doc.text(ts(String(b[1])),x+bw/2,Y+9,{align:'center'});
     doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(100,95,140);
@@ -4824,8 +4818,8 @@ function exportPDF(role) {
       stats.forEach((s,i)=>{
         const x=14+i*(bw+bgap);
         const [r,g,b]=s[2];
-        doc.setFillColor(r,g,b,0.08); doc.roundedRect(x,Y,bw,bh,2,2,'F');
-        doc.setDrawColor(r,g,b,0.3); doc.setLineWidth(0.3); doc.roundedRect(x,Y,bw,bh,2,2,'S');
+        doc.setFillColor(Math.min(255,Math.round(r*0.08+255*0.92)),Math.min(255,Math.round(g*0.08+255*0.92)),Math.min(255,Math.round(b*0.08+255*0.92))); doc.roundedRect(x,Y,bw,bh,2,2,'F');
+        doc.setDrawColor(210,204,242); doc.setLineWidth(0.3); doc.roundedRect(x,Y,bw,bh,2,2,'S');
         doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(r,g,b);
         doc.text(ts(String(s[1])),x+bw/2,Y+9,{align:'center'});
         doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(100,95,140);
@@ -4847,7 +4841,7 @@ function exportPDF(role) {
         const [r,g,b]=subColors[i];
         Y=pdfCheck(doc,Y,10);
         doc.setFillColor(248,247,254); doc.roundedRect(14,Y,182,8,1.5,1.5,'F');
-        doc.setDrawColor(r,g,b,0.3); doc.setLineWidth(0.2); doc.roundedRect(14,Y,182,8,1.5,1.5,'S');
+        doc.setDrawColor(210,204,242); doc.setLineWidth(0.2); doc.roundedRect(14,Y,182,8,1.5,1.5,'S');
         doc.setTextColor(r,g,b); doc.setFontSize(7); doc.setFont('helvetica','bold');
         doc.text(subjectIcons[i],18,Y+5.5);
         doc.setTextColor(40,35,80); doc.setFont('helvetica','normal');
@@ -4855,7 +4849,7 @@ function exportPDF(role) {
         // Progress bar
         const bx=95, bw2=75, bh2=3;
         doc.setFillColor(220,215,245); doc.roundedRect(bx,Y+2.5,bw2,bh2,1,1,'F');
-        if(pct>0) { doc.setFillColor(r,g,b,0.8); doc.roundedRect(bx,Y+2.5,bw2*pct/100,bh2,1,1,'F'); }
+        if(pct>0) { const rm2=Math.min(255,Math.round(r*0.8+255*0.2)),gm2=Math.min(255,Math.round(g*0.8+255*0.2)),bm2=Math.min(255,Math.round(b*0.8+255*0.2)); doc.setFillColor(rm2,gm2,bm2); doc.roundedRect(bx,Y+2.5,bw2*pct/100,bh2,1,1,'F'); }
         doc.setTextColor(r,g,b); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
         doc.text(pct+'%',194,Y+5.5,{align:'right'});
         if(q>0) {
