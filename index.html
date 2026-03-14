@@ -7,6 +7,7 @@
 <title>LGS Koç Takip Sistemi</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -2274,23 +2275,40 @@ function ts(v) {
 function pdfDownload(doc, fname) {
   try {
     const blob = doc.output('blob');
+
+    // 1. FileSaver.js — Android Chrome dahil en güvenilir yöntem
+    if (typeof saveAs !== 'undefined') {
+      saveAs(blob, fname);
+      showToast('📄', fname + ' indiriliyor...');
+      return;
+    }
+
+    // 2. msSaveBlob — eski IE/Edge için
+    if (navigator.msSaveBlob) {
+      navigator.msSaveBlob(blob, fname);
+      showToast('📄', 'PDF kaydedildi!');
+      return;
+    }
+
+    // 3. Blob URL — masaüstü Chrome/Firefox
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = fname;
-    a.target = '_blank'; // bazı cihazlarda gerekli
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    // Temizlik
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 5000);
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 5000);
     showToast('📄', fname + ' indiriliyor...');
+
   } catch(e) {
-    try { doc.save(fname); showToast('📄', 'PDF kaydedildi!'); }
-    catch(e2) { showToast('❌', 'PDF hatasi: ' + e2.message); }
+    // 4. Son çare: jsPDF kendi save()
+    try {
+      doc.save(fname);
+      showToast('📄', 'PDF kaydedildi!');
+    } catch(e2) {
+      showToast('❌', 'PDF hatasi: ' + e2.message);
+    }
   }
 }
 
@@ -3646,16 +3664,8 @@ function exportStudentPDF() {
   doc.setTextColor(255,255,255); doc.setFontSize(8);
   doc.text('LGSKoc - Ogrenci Takip Sistemi | lgs-koc-takip.firebaseapp.com', 105, 293, {align:'center'});
 
-  const fname2 = `${name}_${pLabel}_analiz_${todayKey}.pdf`;
-  try {
-    const pdfBlob2 = doc.output('blob');
-    const blobUrl2 = URL.createObjectURL(pdfBlob2);
-    const a2 = document.createElement('a');
-    a2.href = blobUrl2; a2.download = fname2; a2.style.display = 'none';
-    document.body.appendChild(a2); a2.click();
-    setTimeout(()=>{ URL.revokeObjectURL(blobUrl2); document.body.removeChild(a2); }, 3000);
-  } catch(e) { doc.save(fname2); }
-  showToast('📄', 'PDF indirildi!');
+  const fname2 = ts(name.replace(/\s+/g,'_'))+'_'+pLabel+'_analiz_'+todayKey+'.pdf';
+  pdfDownload(doc, fname2);
 }
 
 function studentKazanimlar() {
