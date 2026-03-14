@@ -2266,15 +2266,34 @@ function ts(v) {
 // ============================================================
 function pdfDownload(doc, fname) {
   try {
-    const blob = doc.output('blob');
-    const url = URL.createObjectURL(blob);
+    // Yöntem 1: data URI ile direkt indirme (en güvenilir)
+    const dataUri = doc.output('datauristring');
     const a = document.createElement('a');
-    a.href = url; a.download = fname; a.style.display = 'none';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    // Mobil fallback: yeni sekme
-    setTimeout(() => { window.open(url, '_blank'); setTimeout(() => URL.revokeObjectURL(url), 15000); }, 600);
-    showToast('📄', 'PDF acildi! Kaydetmek icin paylasim menusunu kullan.');
-  } catch(e) { doc.save(fname); showToast('📄', 'PDF indirildi!'); }
+    a.href = dataUri;
+    a.download = fname;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('📄', 'PDF indiriliyor...');
+
+    // Yöntem 2: 1 saniye sonra blob URL ile de dene (bazı Android'lerde gerekli)
+    setTimeout(() => {
+      try {
+        const blob = doc.output('blob');
+        const blobUrl = URL.createObjectURL(blob);
+        const a2 = document.createElement('a');
+        a2.href = blobUrl; a2.download = fname; a2.style.display = 'none';
+        document.body.appendChild(a2); a2.click(); document.body.removeChild(a2);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 8000);
+      } catch(e2) {}
+    }, 1000);
+
+  } catch(e) {
+    // Son çare: jsPDF save
+    try { doc.save(fname); showToast('📄', 'PDF kaydedildi!'); }
+    catch(e2) { showToast('❌', 'PDF hatasi: ' + e2.message); }
+  }
 }
 
 // ============================================================
@@ -4742,244 +4761,158 @@ function toggleKazanim(subject, idx, el) {
 
 /* =================== PDF EXPORT =================== */
 function exportPDF(role) {
-  showToast('⏳','PDF oluşturuluyor...');
-  setTimeout(()=>{
+  showToast('⏳','PDF hazirlaniyor...');
+  setTimeout(async ()=>{
     try {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-      const W = 210, H = 297;
+      const now = new Date();
+      const todayKey = now.toISOString().split('T')[0];
+      const nowStr = now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+
       const period = role==='teacher'
         ? (document.getElementById('pdfPeriod')?.value || 'monthly')
         : (document.getElementById('pdfPeriodS')?.value || 'monthly');
-      const periodLabel = period==='weekly'?'Haftalık':period==='monthly'?'Aylık':'Dönem';
-      const studentFilter = role==='teacher' ? (document.getElementById('pdfStudent')?.value || 'all') : document.getElementById('headerName').textContent;
-      const now = new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
-      const subjectColors = ['#ff6b6b','#4ecdc4','#45b7d1','#f9ca24','#a29bfe','#fd79a8'];
+      const pLabel = period==='weekly'?'Haftalik':period==='monthly'?'Aylik':'Donem';
 
-      // ── HEADER BAND ──
-      doc.setFillColor(15, 17, 23);
-      doc.rect(0, 0, W, H, 'F');
-      doc.setFillColor(28, 30, 45);
-      doc.rect(0, 0, W, 40, 'F');
-      doc.setFillColor(108, 99, 255);
-      doc.rect(0, 38, W, 2, 'F');
+      // Dönem filtresi
+      const monday = new Date(now); monday.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
+      const mondayKey = monday.toISOString().split('T')[0];
+      const monthStart = todayKey.substring(0,7)+'-01';
+      const filterE = (arr) => {
+        if (period==='weekly') return arr.filter(e=>e.dateKey>=mondayKey);
+        if (period==='monthly') return arr.filter(e=>e.dateKey>=monthStart);
+        return arr;
+      };
 
-      // Logo
-      doc.setTextColor(108, 99, 255);
-      doc.setFontSize(22); doc.setFont('helvetica','bold');
-      doc.text('LGS', 14, 22);
-      doc.setTextColor(232, 234, 246);
-      doc.text('Koc', 33, 22);
+      const studentFilter = role==='teacher'
+        ? (document.getElementById('pdfStudent')?.value || 'all')
+        : document.getElementById('headerName').textContent;
 
-      // Title area
-      doc.setFontSize(11); doc.setFont('helvetica','normal');
-      doc.setTextColor(139, 144, 184);
-      doc.text('Ogrenci Takip ve Kocluk Sistemi', 14, 30);
+      const filteredEntries = role==='teacher' && studentFilter!=='all'
+        ? filterE(studyEntries.filter(e=>e.studentName===studentFilter))
+        : filterE(studyEntries);
 
-      // Report badge
-      doc.setFillColor(108, 99, 255);
-      doc.roundedRect(W-55, 8, 42, 12, 3, 3, 'F');
-      doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','bold');
-      doc.text(periodLabel + ' Rapor', W-34, 16, {align:'center'});
+      const totalEntries = filteredEntries.length;
+      const totalDurAll = filteredEntries.reduce((a,e)=>a+(e.duration||0),0);
+      const totalQAll = filteredEntries.filter(e=>e.type!=='deneme').reduce((a,e)=>a+(e.questions||0),0);
+      const totalNetAll = filteredEntries.filter(e=>e.type!=='deneme').reduce((a,e)=>a+(e.net||0),0);
+      const activeDays = new Set(filteredEntries.map(e=>e.dateKey)).size;
 
-      // Date right
-      doc.setTextColor(139,144,184); doc.setFontSize(8); doc.setFont('helvetica','normal');
-      doc.text(now, W-14, 28, {align:'right'});
-
-      let y = 52;
-
-      // ── STUDENT INFO / SUMMARY ──
+      // Başlık
       const title = role==='teacher'
-        ? (studentFilter==='all' ? 'Tum Ogrenciler — Sinif Ozeti' : studentFilter + ' — Ogrenci Raporu')
-        : document.getElementById('headerName').textContent + ' — Kisisel Analiz Raporu';
+        ? (studentFilter==='all' ? 'Tum Ogrenciler — Sinif Ozeti' : ts(studentFilter)+' — Ogrenci Raporu')
+        : ts(studentFilter)+' — Kisisel Analiz Raporu';
 
-      doc.setTextColor(232,234,246); doc.setFontSize(15); doc.setFont('helvetica','bold');
-      doc.text(title, 14, y); y+=8;
-      doc.setFillColor(108,99,255); doc.rect(14,y,30,1,'F'); y+=8;
+      // Hafta/ay etiket
+      function getPLabel() {
+        if (period==='weekly') {
+          const sun = new Date(monday); sun.setDate(monday.getDate()+6);
+          return monday.toLocaleDateString('tr-TR',{day:'numeric',month:'short'})+' - '+sun.toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'})+' Haftalik Rapor';
+        }
+        if (period==='monthly') return now.toLocaleDateString('tr-TR',{month:'long',year:'numeric'})+' Aylik Rapor';
+        return 'Donem Raporu';
+      }
 
-      // ── STAT BOXES ──
-      const totalEntries = studyEntries.length;
-      const totalDurAll = studyEntries.reduce((a,e)=>a+(e.duration||0),0);
-      const totalQAll = studyEntries.reduce((a,e)=>a+(e.questions||0),0);
-      const totalNetAll = studyEntries.reduce((a,e)=>a+(e.net||0),0);
-      const stats = role==='teacher'
-        ? [
-            {label:'Aktif Ogrenci', val:String(students.length), color:[108,99,255]},
-            {label:'Toplam Giris', val:String(totalEntries), color:[67,233,123]},
-            {label:'Toplam Soru', val:String(totalQAll), color:[249,202,36]},
-            {label:'Ort. Net', val:totalEntries>0?(totalNetAll/totalEntries).toFixed(1):'—', color:[255,101,132]}
-          ]
-        : [
-            {label:'Toplam Giris', val:String(totalEntries), color:[108,99,255]},
-            {label:'Calisma Suresi', val:totalDurAll+'dk', color:[67,233,123]},
-            {label:'Toplam Soru', val:String(totalQAll), color:[249,202,36]},
-            {label:'Ort. Net', val:totalEntries>0?(totalNetAll/totalEntries).toFixed(1):'—', color:[255,101,132]}
-          ];
-      const bw = (W-28-9)/4, bh = 22;
+      let Y = pdfHeader(doc, ts(title), ts(getPLabel()), ts(nowStr));
+
+      // Özet kutular
+      const stats = role==='teacher' && studentFilter==='all'
+        ? [['Aktif Ogrenci',students.length,[90,72,200]],['Toplam Giris',totalEntries,[38,166,154]],['Toplam Soru',totalQAll,[255,167,38]],['Ort. Net',(totalQAll>0?totalNetAll/totalQAll:0).toFixed(1),[239,83,80]]]
+        : [['Sure(dk)',totalDurAll,[90,72,200]],['Soru',totalQAll,[66,165,245]],['Aktif Gun',activeDays,[38,166,154]],['Ort. Net',(totalQAll>0?totalNetAll/totalQAll:0).toFixed(1),[239,83,80]]];
+      const bw=41, bh=16, bgap=2.8;
       stats.forEach((s,i)=>{
-        const bx = 14+i*(bw+3);
-        doc.setFillColor(34,38,58); doc.roundedRect(bx,y,bw,bh,3,3,'F');
-        doc.setFillColor(...s.color); doc.roundedRect(bx,y,3,bh,1,1,'F');
-        doc.setTextColor(139,144,184); doc.setFontSize(7); doc.setFont('helvetica','normal');
-        doc.text(s.label, bx+6, y+7);
-        doc.setTextColor(232,234,246); doc.setFontSize(13); doc.setFont('helvetica','bold');
-        doc.text(s.val, bx+6, y+17);
+        const x=14+i*(bw+bgap);
+        const [r,g,b]=s[2];
+        doc.setFillColor(r,g,b,0.08); doc.roundedRect(x,Y,bw,bh,2,2,'F');
+        doc.setDrawColor(r,g,b,0.3); doc.setLineWidth(0.3); doc.roundedRect(x,Y,bw,bh,2,2,'S');
+        doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(r,g,b);
+        doc.text(ts(String(s[1])),x+bw/2,Y+9,{align:'center'});
+        doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(100,95,140);
+        doc.text(ts(s[0]),x+bw/2,Y+14.5,{align:'center'});
       });
-      y += bh+10;
+      Y+=21;
 
-      // ── SUBJECT PERFORMANCE ──
-      doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
-      doc.text('Ders Bazli Performans', 14, y); y+=7;
-
-      const progData = role==='teacher' ? subjectProgress : subjectProgressT;
+      // Ders bazlı performans
+      Y = pdfSecHeader(doc,'DERS BAZLI PERFORMANS',Y);
       const subjectNames = ['Turkce','Matematik','Fen Bilimleri','Inkilap Tarihi','Din Kulturu','Ingilizce'];
+      const subjectKeys = ['Türkçe','Matematik','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce'];
+      const subColors = [[108,99,255],[66,165,245],[38,166,154],[255,167,38],[171,71,188],[102,187,106]];
       const subjectIcons = ['TUR','MAT','FEN','INK','DIN','ING'];
-
-      subjectNames.forEach((name,i)=>{
-        const pct = progData[i];
-        const col = subjectColors[i];
-        // row bg
-        doc.setFillColor(34,38,58); doc.roundedRect(14,y,W-28,10,2,2,'F');
-        // label
-        const rgb = hexToRgb(col);
-        doc.setTextColor(...rgb); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
-        doc.text(subjectIcons[i], 18, y+6.5);
-        doc.setTextColor(232,234,246); doc.setFont('helvetica','normal');
-        doc.text(name, 30, y+6.5);
-        // bar track
-        const bx = 90, bw2 = W-28-90-20, bh2 = 4;
-        doc.setFillColor(46,51,80); doc.roundedRect(bx, y+3, bw2, bh2, 1,1,'F');
-        doc.setFillColor(...rgb); doc.roundedRect(bx, y+3, bw2*pct/100, bh2, 1,1,'F');
-        // pct
-        doc.setTextColor(232,234,246); doc.setFontSize(8); doc.setFont('helvetica','bold');
-        doc.text(pct+'%', W-16, y+6.5, {align:'right'});
-        y += 12;
+      subjectKeys.forEach((key,i)=>{
+        const se = filteredEntries.filter(e=>e.subject===key&&e.type!=='deneme');
+        const q=se.reduce((a,e)=>a+(e.questions||0),0);
+        const d=se.reduce((a,e)=>a+(e.correct||0),0);
+        const pct=q>0?Math.round(d/q*100):0;
+        const [r,g,b]=subColors[i];
+        Y=pdfCheck(doc,Y,10);
+        doc.setFillColor(248,247,254); doc.roundedRect(14,Y,182,8,1.5,1.5,'F');
+        doc.setDrawColor(r,g,b,0.3); doc.setLineWidth(0.2); doc.roundedRect(14,Y,182,8,1.5,1.5,'S');
+        doc.setTextColor(r,g,b); doc.setFontSize(7); doc.setFont('helvetica','bold');
+        doc.text(subjectIcons[i],18,Y+5.5);
+        doc.setTextColor(40,35,80); doc.setFont('helvetica','normal');
+        doc.text(subjectNames[i],30,Y+5.5);
+        // Progress bar
+        const bx=95, bw2=75, bh2=3;
+        doc.setFillColor(220,215,245); doc.roundedRect(bx,Y+2.5,bw2,bh2,1,1,'F');
+        if(pct>0) { doc.setFillColor(r,g,b,0.8); doc.roundedRect(bx,Y+2.5,bw2*pct/100,bh2,1,1,'F'); }
+        doc.setTextColor(r,g,b); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+        doc.text(pct+'%',194,Y+5.5,{align:'right'});
+        if(q>0) {
+          doc.setTextColor(120,115,160); doc.setFontSize(6); doc.setFont('helvetica','normal');
+          doc.text(q+' soru | Net:'+(d-se.reduce((a,e)=>a+(e.wrong||0),0)/3).toFixed(1), 175,Y+5.5,{align:'right'});
+        }
+        Y+=10;
       });
-      y += 6;
+      Y+=4;
 
-      // ── STUDY ENTRIES TABLE ──
-      if(role==='student' || (role==='teacher' && studentFilter!=='all')) {
-        doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
-        doc.text('Calisma Giris Detaylari', 14, y); y+=7;
-
-        // table header
-        doc.setFillColor(46,51,80); doc.rect(14,y,W-28,8,'F');
-        doc.setTextColor(139,144,184); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
-        doc.text('Ders', 18, y+5.5);
-        doc.text('Konu', 52, y+5.5);
-        doc.text('Sure', 110, y+5.5);
-        doc.text('Soru', 128, y+5.5);
-        doc.text('Dogru', 144, y+5.5);
-        doc.text('Yanlis', 160, y+5.5);
-        doc.text('Net', 176, y+5.5);
-        doc.text('Saat', 190, y+5.5);
-        y += 9;
-
-        const filterEntries = role==='teacher' && studentFilter!=='all'
-          ? studyEntries.filter(e=>e.studentName===studentFilter)
-          : studyEntries;
-
-        if (filterEntries.length === 0) {
-          doc.setTextColor(139,144,184); doc.setFontSize(9);
-          doc.text('Henuz calisma girisi yapilmamis.', 14, y+6); y+=14;
-        } else {
-          filterEntries.forEach((e,i)=>{
-            if(y>265) { doc.addPage(); y=20; doc.setFillColor(15,17,23); doc.rect(0,0,W,H,'F'); }
-            doc.setFillColor(i%2===0?34:28, i%2===0?38:30, i%2===0?58:45);
-            doc.rect(14,y,W-28,8,'F');
-            doc.setTextColor(232,234,246); doc.setFontSize(7); doc.setFont('helvetica','normal');
-            doc.text((e.subject||'').substring(0,10), 18, y+5.5);
-            doc.text((e.topic||'').substring(0,22), 52, y+5.5);
-            doc.text((e.duration||0)+'dk', 110, y+5.5);
-            doc.text(String(e.questions||0), 128, y+5.5);
-            doc.setTextColor(67,233,123); doc.text(String(e.correct||0), 144, y+5.5);
-            doc.setTextColor(255,101,132); doc.text(String(e.wrong||0), 160, y+5.5);
-            doc.setTextColor(249,202,36); doc.text(e.net!=null?e.net.toFixed(1):'—', 176, y+5.5);
-            doc.setTextColor(139,144,184); doc.text(e.time||e.date||'', 190, y+5.5);
-            y += 9;
-          });
-        }
-        y += 6;
-      }
-
-      // ── TEACHER: STUDENT TABLE ──
+      // Öğrenci tablosu (öğretmen - tüm öğrenciler)
       if(role==='teacher' && studentFilter==='all') {
-        doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
-        doc.text('Ogrenci Calisma Ozeti', 14, y); y+=7;
-
-        doc.setFillColor(46,51,80); doc.rect(14,y,W-28,9,'F');
-        doc.setTextColor(139,144,184); doc.setFontSize(8); doc.setFont('helvetica','bold');
-        doc.text('Ad Soyad',18,y+6); doc.text('Giris',85,y+6); doc.text('Top. Sure',105,y+6);
-        doc.text('Top. Soru',135,y+6); doc.text('Ort. Net',165,y+6); doc.text('Son Aktif',190,y+6);
-        y+=10;
-
-        if (students.length === 0) {
-          doc.setTextColor(139,144,184); doc.setFontSize(9);
-          doc.text('Henuz ogrenci eklenmemis.', 14, y+6); y+=14;
-        } else {
-          students.forEach((s,i)=>{
-            const sEntries = studyEntries.filter(e=>e.studentName===s.name);
-            const sDur = sEntries.reduce((a,e)=>a+(e.duration||0),0);
-            const sQ = sEntries.reduce((a,e)=>a+(e.questions||0),0);
-            const sNet = sEntries.length>0?(sEntries.reduce((a,e)=>a+(e.net||0),0)/sEntries.length).toFixed(1):'—';
-            doc.setFillColor(i%2===0?34:28,i%2===0?38:30,i%2===0?58:45);
-            doc.rect(14,y,W-28,10,'F');
-            doc.setTextColor(232,234,246); doc.setFontSize(8); doc.setFont('helvetica','normal');
-            doc.text(s.name,18,y+6.5);
-            doc.text(String(sEntries.length),85,y+6.5);
-            doc.text(sDur+'dk',105,y+6.5);
-            doc.text(String(sQ),135,y+6.5);
-            doc.setTextColor(249,202,36); doc.text(String(sNet),165,y+6.5);
-            doc.setTextColor(139,144,184); doc.text(s.lastActive||'—',190,y+6.5);
-            y+=11;
-          });
-        }
-        y+=6;
-      }
-
-      // ── WEAK TOPICS ──
-      if(y < 240) {
-        doc.setTextColor(232,234,246); doc.setFontSize(11); doc.setFont('helvetica','bold');
-        doc.text('Dikkat Gerektiren Konular', 14, y); y+=8;
-        const weakTopics = [
-          {s:'Matematik',t:'Olasilik',p:42,c:'#4ecdc4'},
-          {s:'Fen Bilimleri',t:'Kimyasal Tepkimeler',p:51,c:'#45b7d1'},
-          {s:'Turkce',t:'Anlatim Bozuklugu',p:58,c:'#ff6b6b'},
-        ];
-        const cw = (W-28-8)/3;
-        weakTopics.forEach((t,i)=>{
-          const cx = 14+i*(cw+4);
-          doc.setFillColor(34,38,58); doc.roundedRect(cx,y,cw,22,3,3,'F');
-          const rgb = hexToRgb(t.c);
-          doc.setFillColor(...rgb); doc.roundedRect(cx,y,cw,3,1,1,'F');
-          doc.setTextColor(...rgb); doc.setFontSize(7); doc.setFont('helvetica','bold');
-          doc.text(t.s,cx+4,y+9);
-          doc.setTextColor(232,234,246); doc.setFontSize(8); doc.setFont('helvetica','bold');
-          doc.text(t.t.substring(0,18),cx+4,y+15);
-          doc.setTextColor(255,101,132); doc.setFontSize(9);
-          doc.text('%'+t.p,cx+cw-8,y+15,{align:'right'});
+        Y=pdfSecHeader(doc,'OGRENCI CALISMA OZETI',Y);
+        const tH=['Ad Soyad','Giris','Top. Sure','Top. Soru','Ort. Net','Son Aktif'];
+        const tW=[50,20,26,26,22,38];
+        const tR=students.map(s=>{
+          const se=filterE(studyEntries.filter(e=>e.studentName===s.name));
+          const dur=se.reduce((a,e)=>a+(e.duration||0),0);
+          const q=se.reduce((a,e)=>a+(e.questions||0),0);
+          const net=se.length>0?(se.reduce((a,e)=>a+(e.net||0),0)/se.length).toFixed(1):'—';
+          const last=se.length>0?se[0].dateKey:'Yeni';
+          return [s.name,se.length,dur+'dk',q,net,last];
         });
-        y+=28;
+        Y=pdfTable(doc,tH,tW,tR,Y);
+        Y+=4;
       }
 
-      // ── FOOTER ──
-      doc.setFillColor(28,30,45); doc.rect(0,H-14,W,14,'F');
-      doc.setFillColor(108,99,255); doc.rect(0,H-15,W,1,'F');
-      doc.setTextColor(139,144,184); doc.setFontSize(7.5); doc.setFont('helvetica','normal');
-      doc.text('LGSKoc — Ogrenci Takip ve Kocluk Sistemi', 14, H-7);
-      doc.text('Rapor tarihi: '+now, W-14, H-7, {align:'right'});
+      // Çalışma detayları (bireysel)
+      if(role==='student' || (role==='teacher' && studentFilter!=='all')) {
+        Y=pdfCheck(doc,Y,14);
+        Y=pdfSecHeader(doc,'CALISMA GIRIS DETAYLARI',Y);
+        const tH=['Tarih','Ders','Konu','Tur','Sure','Soru','Net'];
+        const tW=[22,28,46,18,16,16,18];
+        const tR=filteredEntries.slice(0,30).map(e=>[
+          e.dateKey||'',ts(e.subject||''),ts((e.topic||'').substring(0,20)),
+          ts(e.type||''),e.duration+'dk',e.questions||0,
+          (e.net!=null?e.net.toFixed(1):'—')
+        ]);
+        Y=pdfTable(doc,tH,tW,tR,Y);
+        if(filteredEntries.length>30) {
+          Y=pdfCheck(doc,Y,7);
+          doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(120,115,160);
+          doc.text('... ve '+( filteredEntries.length-30)+' giriş daha (tam rapor için ogrenci analizine bakin)', 14, Y);
+          Y+=8;
+        }
+      }
 
-      // SAVE
-      const fname = role==='teacher'
-        ? `LGSKoc_Ogretmen_${periodLabel}_${now.replace(/ /g,'_')}.pdf`
-        : `LGSKoc_${studentFilter}_${periodLabel}.pdf`;
-      doc.save(fname);
-      showToast('✅','PDF indirildi!');
+      pdfFooter(doc, doc.internal.getNumberOfPages(), ts(title)+' | '+ts(getPLabel()));
+
+      const fname = 'LGSKoc_'+ts((studentFilter==='all'?'Sinif':studentFilter).replace(/\s+/g,'_'))+'_'+pLabel+'_'+todayKey+'.pdf';
+      pdfDownload(doc, fname);
+
     } catch(e) {
       console.error(e);
-      showToast('❌','PDF oluşturulamadı: '+e.message);
+      showToast('❌','PDF olusturulamadi: '+e.message);
     }
-  }, 300);
+  }, 200);
 }
 
 function hexToRgb(hex) {
