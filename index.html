@@ -2273,30 +2273,8 @@ function ts(v) {
 // PDF İNDİRME — sadece blob, datauristring büyük dosyalarda bozuluyor
 // ============================================================
 function pdfDownload(doc, fname) {
-  try {
-    // Android Chrome için en güvenilir yöntem: yeni sekmede aç
-    const pdfOutput = doc.output('datauristring');
-    
-    // Yeni sekme aç — kullanıcı "..." → "İndir" diyebilir
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(
-        '<html><head><title>' + fname + '</title></head><body style="margin:0">' +
-        '<p style="font-family:sans-serif;padding:10px;background:#eee">PDF yüklendi. Sağ üstten <b>İndir</b> butonuna basın veya uzun basarak kaydedin.</p>' +
-        '<iframe src="' + pdfOutput + '" width="100%" height="95%" style="border:none"></iframe>' +
-        '</body></html>'
-      );
-      win.document.close();
-      showToast('📄', 'PDF yeni sekmede açıldı — indirmek için "..." menüsünü kullanın');
-    } else {
-      // Popup engellendiyse direkt doc.save dene
-      doc.save(fname);
-      showToast('📄', 'PDF indiriliyor...');
-    }
-  } catch(e) {
-    try { doc.save(fname); showToast('📄', 'PDF kaydedildi!'); }
-    catch(e2) { showToast('❌', 'Hata: ' + e2.message); }
-  }
+  doc.save(fname);
+  showToast('📄', 'PDF indiriliyor...');
 }
 
 // ============================================================
@@ -2490,9 +2468,8 @@ function pdfInfoBox(doc, text, Y, bgColor=[240,238,255], textColor=[50,40,140]) 
 // ============================================================
 // ANA PDF FONKSİYONU — exportStudentDetailPDF
 // ============================================================
-async function exportStudentDetailPDF(sName) {
+function exportStudentDetailPDF(sName) {
   showToast('⏳', 'PDF hazirlaniyor...');
-  await new Promise(r => setTimeout(r, 80));
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'p', unit:'mm', format:'a4' });
@@ -4759,8 +4736,7 @@ function toggleKazanim(subject, idx, el) {
 /* =================== PDF EXPORT =================== */
 function exportPDF(role) {
   showToast('⏳','PDF hazirlaniyor...');
-  setTimeout(async ()=>{
-    try {
+  try {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
       const now = new Date();
@@ -4909,7 +4885,6 @@ function exportPDF(role) {
       console.error(e);
       showToast('❌','PDF olusturulamadi: '+e.message);
     }
-  }, 200);
 }
 
 function hexToRgb(hex) {
