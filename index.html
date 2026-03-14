@@ -2114,11 +2114,16 @@ function studentDetailAnalysis() {
   `;
 }
 
-function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, totalNet, activeDays, period) {
+function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, totalNet, activeDays, period, forPdf=false) {
+  // p() — PDF için ASCII, HTML için Türkçe
+  const p = forPdf ? ts : (v=>String(v??''));
+
   if (filtered.length===0) {
-    return `<b>${sName}</b> bu dönem için henüz çalışma girişi bulunmuyor. Öğrenciye hatırlatma yapılması ve düzenli giriş alışkanlığı kazandırılması önerilir.`;
+    if (forPdf) return ts(sName) + ' bu donem icin henuz calisma girisi bulunmuyor.';
+    return `<b>${sName}</b> bu dönem için henüz çalışma girişi bulunmuyor. Öğrenciye hatırlatma yapılması önerilir.`;
   }
-  const firstName = sName.split(' ')[0];
+
+  const firstName = p(sName.split(' ')[0]);
   const netRate = totalQ>0 ? Math.round(totalNet/totalQ*100) : 0;
   const withQ = subStats.filter(s=>s.q>0).sort((a,b)=>b.pct-a.pct);
   const best = withQ[0];
@@ -2127,38 +2132,39 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
   const daysLeft = Math.floor((lgs-new Date())/(1000*60*60*24));
   const avgDurDay = activeDays>0 ? Math.round(totalDur/activeDays) : 0;
   const avgQDay = activeDays>0 ? Math.round(totalQ/activeDays) : 0;
+  const sep = forPdf ? '\n\n' : '<br><br>';
   let parts = [];
 
-  // 1. GENEL PERFORMANS DEĞERLENDİRMESİ
-  const periodLabel = period==='daily'?'bugün':period==='weekly'?'bu hafta':'bu ay';
-  let genelPart = `${firstName} ${periodLabel} toplam ${totalDur} dakika calisma suresi, ${totalQ} soru cozmesi ve ${activeDays} gun aktif olmasi ile `;
+  // 1. GENEL PERFORMANS
+  const periodLabel = period==='daily'?p('bugün'):period==='weekly'?p('bu hafta'):p('bu ay');
+  let genelPart = `${firstName} ${periodLabel} toplam ${totalDur} ${p('dakika çalışma süresi')}, ${totalQ} ${p('soru çözmesi')} ve ${activeDays} ${p('gün aktif olması')} ile `;
   if (activeDays >= (period==='weekly'?5:period==='monthly'?20:1)) {
-    genelPart += `duzenliligi oldukca iyi bir seviyede. Sureklilik bakimindan olumlu bir tablo sergileniyor.`;
+    genelPart += p('düzenliliği oldukça iyi bir seviyede. Süreklilik bakımından olumlu bir tablo sergileniyor.');
   } else if (activeDays >= (period==='weekly'?3:period==='monthly'?12:1)) {
-    genelPart += `orta duzey bir duzenliligi yansitmaktadir. Calisma gunlerinin arttirilmasi onerilir.`;
+    genelPart += p('orta düzey bir düzenliliği yansıtmaktadır. Çalışma günlerinin artırılması önerilir.');
   } else {
-    genelPart += `duzensiz bir calisma ritmi icinde oldugu goruluyor. Bu konuda ivedi onlem alinmalidir.`;
+    genelPart += p('düzensiz bir çalışma ritmi içinde olduğu görülüyor. Bu konuda ivedi önlem alınmalıdır.');
   }
   parts.push(genelPart);
 
-  // 2. SORU ÇÖZÜMEFİLİĞİ
+  // 2. SORU ÇÖZÜMLEFİLİĞİ
   if (totalQ>0) {
-    let qPart = `Soru cozum verilerine bakildiginda gunluk ortalama ${avgQDay} soru ile `;
-    if (netRate>=75) qPart += `%${netRate} isabet orani son derece guclu bir performansin gostergesidir. Anlayarak ve dikkatli okuyarak cozum yapmasi bu basariyi getiriyor.`;
-    else if (netRate>=55) qPart += `%${netRate} isabet orani kabul edilebilir bir seviyede, ancak gelistirilmesi gereken noktalar bulunuyor. Yanlis yapilan sorularin analizi yapilmali.`;
-    else qPart += `%${netRate} isabet orani dusuk bir seviyededir. Hiz yerine dogru anlayis onceliklendirilmeli; sorular once anlasilmadan cevaplanmamalidir.`;
+    let qPart = `${p('Soru çözüm verilerine bakıldığında günlük ortalama')} ${avgQDay} ${p('soru ile')} `;
+    if (netRate>=75) qPart += `%${netRate} ${p('isabet oranı son derece güçlü bir performansın göstergesidir. Anlayarak ve dikkatli okuyarak çözüm yapması bu başarıyı getiriyor.')}`;
+    else if (netRate>=55) qPart += `%${netRate} ${p('isabet oranı kabul edilebilir bir seviyede, ancak geliştirilmesi gereken noktalar bulunuyor. Yanlış yapılan soruların analizi yapılmalı.')}`;
+    else qPart += `%${netRate} ${p('isabet oranı düşük bir seviyededir. Hız yerine doğru anlayış önceliklendirilmeli.')}`;
     parts.push(qPart);
   }
 
-  // 3. DERS BAZLI DEĞERLENDİRME
+  // 3. DERS BAZLI
   if (best) {
-    parts.push(`Guclu Alan: ${best.name} dersinde %${best.pct} isabet orani ile en guclu performansi sergiliyor. Bu dersteki basari stratejisi diger derslere model olabilir.`);
+    parts.push(`${p('Güçlü Alan:')} ${p(best.name)} ${p('dersinde')} %${best.pct} ${p('isabet oranı ile en güçlü performansı sergiliyor. Bu dersteki başarı stratejisi diğer derslere model olabilir.')}`);
   }
   if (worst && worst.name !== best?.name) {
-    let worstPart = `Gelistirilmesi Gereken Alan: ${worst.name} dersinde %${worst.pct} isabet orani ile en dusuk performans gorulmuyor. `;
-    if (worst.pct < 40) worstPart += `Temel kavramlarda ciddi bosluklar var; bu ders icin ozgun, yoğun ve tekrar odakli bir calisma programi hazirlanmali.`;
-    else if (worst.pct < 60) worstPart += `Orta duzey bir performans. Yanlis analizi yapilarak eksik konular tespit edilmeli ve hedefli calisma yapilmali.`;
-    else worstPart += `Nispeten dusuk kalan bu oran, dikkat edilirse kisa surede gelistirilebilir.`;
+    let worstPart = `${p('Geliştirilmesi Gereken Alan:')} ${p(worst.name)} ${p('dersinde')} %${worst.pct} ${p('isabet oranı ile en düşük performans görülüyor. ')}`;
+    if (worst.pct < 40) worstPart += p('Temel kavramlarda ciddi boşluklar var; bu ders için yoğun ve tekrar odaklı çalışma programı hazırlanmalı.');
+    else if (worst.pct < 60) worstPart += p('Orta düzey bir performans. Yanlış analizi yapılarak eksik konular tespit edilmeli.');
+    else worstPart += p('Nispeten düşük kalan bu oran, dikkat edilirse kısa sürede geliştirilebilir.');
     parts.push(worstPart);
   }
 
@@ -2167,34 +2173,35 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
   subStats.filter(s=>s.q>0&&s.topics&&s.topics.length>0).forEach(s=>{
     const weakT = s.topics.filter(t=>t.q>=2&&t.pct<60).sort((a,b)=>a.pct-b.pct)[0];
     if (weakT) {
-      const tName = ts(weakT.name);
+      const tName = p(weakT.name);
       let tip = '';
-      if (s.name==='Türkçe') tip = `"${tName}" konusunda %${weakT.pct} isabet — uzun sorularda odaklanma sorunu olabilir, dikkatli okuma pratigi arttirilmali.`;
-      else if (s.name==='Matematik') tip = `"${tName}" konusunda %${weakT.pct} isabet — gorsel okuma veya islem hatasi soz konusu olabilir, adim adim cozum teknigi onerilir.`;
-      else if (s.name==='Fen Bilimleri') tip = `"${tName}" konusunda %${weakT.pct} isabet — kavramsal yanlis anlamalar var, deney ve gorselle destekli tekrar yapilmali.`;
-      else if (s.name==='İnkılap Tarihi') tip = `"${tName}" konusunda %${weakT.pct} isabet — kronolojik siralama ve neden-sonuc iliskisi uzerinde calisilmali.`;
-      else if (s.name==='Din Kültürü') tip = `"${tName}" konusunda %${weakT.pct} isabet — tanim ve kavram bilgisi guclendirilmeli.`;
-      else if (s.name==='İngilizce') tip = `"${tName}" konusunda %${weakT.pct} isabet — kelime bilgisi ve yapi pratigi arttirilmali.`;
-      if (tip) topicInsights.push(`${ts(s.name)}: ${tip}`);
+      const sn = s.name;
+      if (sn==='Türkçe'||sn==='Turkce') tip = `"${tName}" ${p('konusunda')} %${weakT.pct} ${p('isabet — uzun sorularda odaklanma sorunu olabilir, dikkatli okuma pratiği artırılmalı.')}`;
+      else if (sn==='Matematik') tip = `"${tName}" ${p('konusunda')} %${weakT.pct} ${p('isabet — görsel okuma veya işlem hatası söz konusu olabilir, adım adım çözüm tekniği önerilir.')}`;
+      else if (sn==='Fen Bilimleri') tip = `"${tName}" ${p('konusunda')} %${weakT.pct} ${p('isabet — kavramsal yanlış anlamalar var, deney ve görselle destekli tekrar yapılmalı.')}`;
+      else if (sn==='İnkılap Tarihi'||sn==='Inkilap Tarihi') tip = `"${tName}" ${p('konusunda')} %${weakT.pct} ${p('isabet — kronolojik sıralama ve neden-sonuç ilişkisi üzerinde çalışılmalı.')}`;
+      else if (sn==='Din Kültürü') tip = `"${tName}" ${p('konusunda')} %${weakT.pct} ${p('isabet — tanım ve kavram bilgisi güçlendirilmeli.')}`;
+      else if (sn==='İngilizce') tip = `"${tName}" ${p('konusunda')} %${weakT.pct} ${p('isabet — kelime bilgisi ve yapı pratiği artırılmalı.')}`;
+      if (tip) topicInsights.push(`${p(s.name)}: ${tip}`);
     }
   });
   if (topicInsights.length > 0) {
-    parts.push(`Konu Bazli Tespitler:\n${topicInsights.join('\n')}`);
+    parts.push(`${p('Konu Bazlı Tespitler:')}${forPdf?'\n':' '}${topicInsights.join(forPdf?'\n':'<br>')}`);
   }
 
   // 5. STRATEJİK ÖNERİLER
-  let stratejik = `Strateji Onerisi: `;
-  if (avgDurDay < 90) stratejik += `Gunluk calisma suresi ${avgDurDay} dakika ile yetersiz kalıyor; en az 120-150 dakika hedeflenmeli. `;
-  if (netRate < 60 && totalQ > 0) stratejik += `Soru sayisindan once kalite onemsenmeli; az ama dogru cozum netlerini arttirir. `;
-  if (activeDays < (period==='weekly'?5:period==='monthly'?20:1)) stratejik += `Duzenliligin arttirilmasi en kritik adimdir. Her gun en az bir ders girisinin yapilmasi hedeflenmeli. `;
-  if (best) stratejik += `${ts(best.name)} dersindeki basarinin korunmasi saglanirken `;
-  if (worst) stratejik += `${ts(worst.name)} dersine ek agirlik verilmeli. `;
+  let stratejik = `${p('Strateji Önerisi:')} `;
+  if (avgDurDay < 90) stratejik += `${p('Günlük çalışma süresi')} ${avgDurDay} ${p('dakika ile yetersiz kalıyor; en az 120-150 dakika hedeflenmeli.')} `;
+  if (netRate < 60 && totalQ > 0) stratejik += `${p('Soru sayısından önce kalite önemsenmeli; az ama doğru çözüm netleri artırır.')} `;
+  if (activeDays < (period==='weekly'?5:period==='monthly'?20:1)) stratejik += `${p('Düzenliliğin artırılması en kritik adımdır. Her gün en az bir ders girişinin yapılması hedeflenmeli.')} `;
+  if (best) stratejik += `${p(best.name)} ${p('dersindeki başarının korunması sağlanırken')} `;
+  if (worst) stratejik += `${p(worst.name)} ${p('dersine ek ağırlık verilmeli.')} `;
   parts.push(stratejik);
 
   // 6. LGS HEDEF
-  parts.push(`LGS'ye ${daysLeft} gun kaliyor. ${firstName}'in her geçen gun daha nitelikli calisma yapmasinın önemi artmaktadir. Duzenli takip, motivasyon destegi ve hedef belirleme bu surecte belirleyici rol oynayacaktir.`);
+  parts.push(`${p("LGS'ye")} ${daysLeft} ${p('gün kalıyor.')} ${firstName}'${p('in her geçen gün daha nitelikli çalışmasının önemi artmaktadır. Düzenli takip, motivasyon desteği ve hedef belirleme bu süreçte belirleyici rol oynayacaktır.')}`);
 
-  return parts.join('<br><br>');
+  return parts.join(sep);
 }
 
 // Türkçe karakter dönüştürücü (jsPDF Latin-1 için)
@@ -2819,9 +2826,8 @@ async function exportStudentDetailPDF(sName) {
     Y+=10;
   }
 
-  // Genel yorum (generateStudentComment çıktısını temizle)
-  const rawComment = generateStudentComment(sName,filtered,subStats,totalDur,totalQ,totalNet,activeDays,studentAnalysisPeriod)
-    .replace(/<b>/g,'').replace(/<\/b>/g,'').replace(/<br><br>/g,'\n').replace(/<[^>]+>/g,'');
+  // Genel yorum — PDF için direkt ASCII metin (forPdf=true)
+  const rawComment = generateStudentComment(sName,filtered,subStats,totalDur,totalQ,totalNet,activeDays,studentAnalysisPeriod,true);
   Y=pdfCheck(doc,Y,10);
   doc.setFillColor(240,248,255); doc.roundedRect(14,Y,182,6,2,2,'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(30,80,160);
