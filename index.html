@@ -1157,38 +1157,57 @@ function doLogout() {
 }
 
 function lgsCountdownWidget() {
-  const lgs = new Date('2026-06-14T09:30:00+03:00');
-  const now = new Date();
-  const diff = lgs - now;
-  if (diff <= 0) {
-    return `<div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#43e97b22,#38f9d722);border:1px solid #43e97b44;text-align:center;padding:20px">
-      <div style="font-size:1.5rem">🎉</div>
-      <div style="font-weight:800;color:var(--accent3);font-size:1.1rem">LGS Sınavı Gerçekleşti!</div>
-    </div>`;
-  }
-  const days = Math.floor(diff / (1000*60*60*24));
-  const hours = Math.floor((diff%(1000*60*60*24))/(1000*60*60));
-  const mins = Math.floor((diff%(1000*60*60))/(1000*60));
-  const urgColor = days < 30 ? '#ff6584' : days < 60 ? '#f9ca24' : '#6c63ff';
-  return `
-    <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,${urgColor}18,${urgColor}08);border:1px solid ${urgColor}44;text-align:center;padding:20px 16px" id="lgsCountdownCard">
-      <div style="font-size:0.78rem;color:var(--text2);font-weight:700;letter-spacing:1px;margin-bottom:10px">📅 LGS SINAVI GERİ SAYIM</div>
-      <div style="display:flex;justify-content:center;gap:12px">
-        <div style="background:${urgColor}22;border-radius:12px;padding:10px 14px;min-width:52px">
+  return `<div id="lgsCountdownCard" class="card" style="margin-bottom:16px;text-align:center;padding:20px 16px"></div>`;
+}
+
+// Canlı geri sayım — setInterval ile her saniye günceller
+let _countdownTimer = null;
+function startCountdown() {
+  if (_countdownTimer) clearInterval(_countdownTimer);
+  function update() {
+    const card = document.getElementById('lgsCountdownCard');
+    if (!card) { clearInterval(_countdownTimer); _countdownTimer = null; return; }
+    const lgs = new Date('2026-06-14T09:30:00+03:00');
+    const now = new Date();
+    const diff = lgs - now;
+    if (diff <= 0) {
+      card.innerHTML = `<div style="font-size:1.5rem">🎉</div><div style="font-weight:800;color:var(--accent3);font-size:1.1rem">LGS Sınavı Gerçekleşti!</div>`;
+      card.style.background = 'linear-gradient(135deg,#43e97b22,#38f9d722)';
+      card.style.border = '1px solid #43e97b44';
+      clearInterval(_countdownTimer); _countdownTimer = null;
+      return;
+    }
+    const days  = Math.floor(diff / (1000*60*60*24));
+    const hours = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
+    const mins  = Math.floor((diff % (1000*60*60)) / (1000*60));
+    const secs  = Math.floor((diff % (1000*60)) / 1000);
+    const urgColor = days < 30 ? '#ff6584' : days < 60 ? '#f9ca24' : '#6c63ff';
+    card.style.background = `linear-gradient(135deg,${urgColor}18,${urgColor}08)`;
+    card.style.border = `1px solid ${urgColor}44`;
+    card.innerHTML = `
+      <div style="font-size:0.75rem;color:var(--text2);font-weight:700;letter-spacing:1px;margin-bottom:10px">📅 LGS SINAVI GERİ SAYIM</div>
+      <div style="display:flex;justify-content:center;gap:8px">
+        <div style="background:${urgColor}22;border-radius:12px;padding:10px 10px;min-width:52px">
           <div style="font-size:1.8rem;font-weight:900;color:${urgColor};line-height:1">${days}</div>
-          <div style="font-size:0.68rem;color:var(--text2);margin-top:4px">GÜN</div>
+          <div style="font-size:0.62rem;color:var(--text2);margin-top:4px">GÜN</div>
         </div>
-        <div style="background:${urgColor}22;border-radius:12px;padding:10px 14px;min-width:52px">
-          <div style="font-size:1.8rem;font-weight:900;color:${urgColor};line-height:1">${hours}</div>
-          <div style="font-size:0.68rem;color:var(--text2);margin-top:4px">SAAT</div>
+        <div style="background:${urgColor}22;border-radius:12px;padding:10px 10px;min-width:46px">
+          <div style="font-size:1.8rem;font-weight:900;color:${urgColor};line-height:1">${String(hours).padStart(2,'0')}</div>
+          <div style="font-size:0.62rem;color:var(--text2);margin-top:4px">SAAT</div>
         </div>
-        <div style="background:${urgColor}22;border-radius:12px;padding:10px 14px;min-width:52px">
-          <div style="font-size:1.8rem;font-weight:900;color:${urgColor};line-height:1">${mins}</div>
-          <div style="font-size:0.68rem;color:var(--text2);margin-top:4px">DAKİKA</div>
+        <div style="background:${urgColor}22;border-radius:12px;padding:10px 10px;min-width:46px">
+          <div style="font-size:1.8rem;font-weight:900;color:${urgColor};line-height:1">${String(mins).padStart(2,'0')}</div>
+          <div style="font-size:0.62rem;color:var(--text2);margin-top:4px">DAKİKA</div>
+        </div>
+        <div style="background:${urgColor}33;border-radius:12px;padding:10px 10px;min-width:46px;border:1px solid ${urgColor}44">
+          <div style="font-size:1.8rem;font-weight:900;color:${urgColor};line-height:1" id="lgsSecEl">${String(secs).padStart(2,'0')}</div>
+          <div style="font-size:0.62rem;color:var(--text2);margin-top:4px">SANİYE</div>
         </div>
       </div>
-      <div style="font-size:0.78rem;color:var(--text2);margin-top:10px">14 Haziran 2026 • Saat 09:30</div>
-    </div>`;
+      <div style="font-size:0.75rem;color:var(--text2);margin-top:10px">14 Haziran 2026 • Saat 09:30</div>`;
+  }
+  update();
+  _countdownTimer = setInterval(update, 1000);
 }
 
 function renderSidebar() {
@@ -1221,15 +1240,18 @@ function renderSidebar() {
 
 function showPage(id) {
   currentPage = id;
-  // Mesajlar sayfası açılınca TÜM mesaj bildirimlerini okundu yap
-  if (id === 'messages') {
-    clearAllMessageNotifs();
-  }
+  if (id === 'messages') { clearAllMessageNotifs(); }
+  // Geri sayım timer'ını temizle — yeni sayfada kart olmayabilir
+  if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
   renderSidebar();
   const content = document.getElementById('mainContent');
   if(currentRole==='teacher') renderTeacherPage(id, content);
   else renderStudentPage(id, content);
   window.scrollTo(0,0);
+  // Dashboard sayfalarında geri sayımı başlat
+  if (id === 'dashboard') {
+    requestAnimationFrame(()=>requestAnimationFrame(startCountdown));
+  }
 }
 
 // Mesajlar sayfası açıldığında Firestore'daki tüm message bildirimlerini temizle
