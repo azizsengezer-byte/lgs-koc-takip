@@ -2274,10 +2274,28 @@ function ts(v) {
 // ============================================================
 function pdfDownload(doc, fname) {
   try {
-    doc.save(fname);
-    showToast('📄', 'PDF indiriliyor...');
+    // Android Chrome için en güvenilir yöntem: yeni sekmede aç
+    const pdfOutput = doc.output('datauristring');
+    
+    // Yeni sekme aç — kullanıcı "..." → "İndir" diyebilir
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(
+        '<html><head><title>' + fname + '</title></head><body style="margin:0">' +
+        '<p style="font-family:sans-serif;padding:10px;background:#eee">PDF yüklendi. Sağ üstten <b>İndir</b> butonuna basın veya uzun basarak kaydedin.</p>' +
+        '<iframe src="' + pdfOutput + '" width="100%" height="95%" style="border:none"></iframe>' +
+        '</body></html>'
+      );
+      win.document.close();
+      showToast('📄', 'PDF yeni sekmede açıldı — indirmek için "..." menüsünü kullanın');
+    } else {
+      // Popup engellendiyse direkt doc.save dene
+      doc.save(fname);
+      showToast('📄', 'PDF indiriliyor...');
+    }
   } catch(e) {
-    showToast('❌', 'PDF hatasi: ' + e.message);
+    try { doc.save(fname); showToast('📄', 'PDF kaydedildi!'); }
+    catch(e2) { showToast('❌', 'Hata: ' + e2.message); }
   }
 }
 
