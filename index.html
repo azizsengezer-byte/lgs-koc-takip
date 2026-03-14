@@ -2541,11 +2541,11 @@ function exportStudentDetailPDF(sName) {
     if (studentAnalysisPeriod === 'weekly') {
       const mon = new Date(now); mon.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
       const sun = new Date(mon); sun.setDate(mon.getDate()+6);
-      return mon.toLocaleDateString('tr-TR',{day:'numeric',month:'long'}) + ' - ' + sun.toLocaleDateString('tr-TR',{day:'numeric',month:'long'}) + ' ' + now.getFullYear() + ' Haftalik Rapor';
+      return mon.toLocaleDateString('tr-TR',{day:'numeric',month:'long'}) + ' - ' + sun.toLocaleDateString('tr-TR',{day:'numeric',month:'long'}) + ' ' + now.getFullYear() + ' Haftalık Rapor';
     } else if (studentAnalysisPeriod === 'monthly') {
-      return now.toLocaleDateString('tr-TR',{month:'long',year:'numeric'}) + ' Aylik Rapor';
+      return now.toLocaleDateString('tr-TR',{month:'long',year:'numeric'}) + ' Aylık Rapor';
     }
-    return now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'}) + ' Gunluk Rapor';
+    return now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'}) + ' Günlük Rapor';
   }
 
   const periodTitle = getPeriodTitle();
@@ -4846,9 +4846,9 @@ function exportPDF(role) {
       function getPLabel() {
         if (period==='weekly') {
           const sun = new Date(monday); sun.setDate(monday.getDate()+6);
-          return monday.toLocaleDateString('tr-TR',{day:'numeric',month:'short'})+' - '+sun.toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'})+' Haftalik Rapor';
+          return monday.toLocaleDateString('tr-TR',{day:'numeric',month:'short'})+' - '+sun.toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'})+' Haftalık Rapor';
         }
-        if (period==='monthly') return now.toLocaleDateString('tr-TR',{month:'long',year:'numeric'})+' Aylik Rapor';
+        if (period==='monthly') return now.toLocaleDateString('tr-TR',{month:'long',year:'numeric'})+' Aylık Rapor';
         return 'Donem Raporu';
       }
 
