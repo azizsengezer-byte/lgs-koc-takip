@@ -3718,33 +3718,69 @@ function messagesPage(role) {
     </div>`;
   }).join('');
 
+
   // Aktif sohbet penceresi
   let chatWindowHTML = '';
   if (activeChat) {
     const partner = partners.find(p => p.uid === activeChat) || partners[0];
     const cId = convId(myUid, partner.uid);
     const msgs = chatMessages[cId] || [];
-    const msgsHTML = msgs.map((m) => {
+
+    // Mesajları tarihe göre grupla — tarih ayırıcıları ekle
+    function msgDateLabel(m) {
+      let ts = m.createdAt?.seconds ? new Date(m.createdAt.seconds*1000) : null;
+      if (!ts && m.dateKey) ts = new Date(m.dateKey);
+      if (!ts) return null;
+      const today = new Date(); today.setHours(0,0,0,0);
+      const yesterday = new Date(today); yesterday.setDate(today.getDate()-1);
+      const d = new Date(ts); d.setHours(0,0,0,0);
+      if (d.getTime()===today.getTime()) return 'Bugün';
+      if (d.getTime()===yesterday.getTime()) return 'Dün';
+      return ts.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+    }
+
+    let lastDateLabel = null;
+    const msgsHTML = msgs.map((m,i) => {
       const mine = m.senderUid === myUid;
-      const seenTick = mine ? ` <span style="font-size:0.62rem;color:${m.seen?'var(--accent3)':'var(--text2)'}">${m.seen?'✓✓':'✓'}</span>` : '';
-      return `<div class="msg ${mine?'mine':'theirs'}">
-        <div class="msg-bubble">${m.text}</div>
-        <div class="msg-time">${m.time||''}${seenTick}</div>
-      </div>`;
+      const dateLabel = msgDateLabel(m);
+      let separator = '';
+      if (dateLabel && dateLabel !== lastDateLabel) {
+        lastDateLabel = dateLabel;
+        separator = `<div style="text-align:center;margin:10px 0">
+          <span style="background:var(--surface2);color:var(--text2);font-size:0.7rem;padding:3px 12px;border-radius:99px;font-weight:600">${dateLabel}</span>
+        </div>`;
+      }
+
+      // Görüldü göstergesi: sadece benim gönderdiğim son mesajda göster
+      const isLastMine = mine && msgs.slice(i+1).every(x=>x.senderUid!==myUid);
+      const seenHTML = mine ? `<span style="font-size:0.65rem;color:${m.seen?'var(--accent3)':'rgba(255,255,255,0.5)'};margin-left:3px">${m.seen?'✓✓':'✓'}</span>` : '';
+      const seenLabel = (mine && isLastMine && m.seen)
+        ? `<div style="text-align:right;font-size:0.65rem;color:var(--accent3);margin-top:1px;margin-right:4px">Görüldü ✓✓</div>` : '';
+
+      return `${separator}<div class="msg ${mine?'mine':'theirs'}" id="msg_${m.id||i}">
+        <div class="msg-bubble">${m.text||''}</div>
+        <div class="msg-time">${m.time||''}${seenHTML}</div>
+      </div>${seenLabel}`;
     }).join('');
+
+    const partnerAvatar = partner.photo
+      ? `<img src="${partner.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;cursor:pointer" onclick="showUserProfile('${partner.uid}','${partner.name}','${partner.color}')">`
+      : `<div class="student-avatar" style="background:${partner.color}22;color:${partner.color};width:36px;height:36px;cursor:pointer" onclick="showUserProfile('${partner.uid}','${partner.name}','${partner.color}')">${partner.name[0]}</div>`;
+
     chatWindowHTML = `
       <div class="chat-header">
         <button class="mobile-chat-back" onclick="activeChat=null;showPage('messages')">← Geri</button>
-        ${partner.photo
-          ? `<img src="${partner.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;cursor:pointer" onclick="showUserProfile('${partner.uid}','${partner.name}','${partner.color}')">`
-          : `<div class="student-avatar" style="background:${partner.color}22;color:${partner.color};width:36px;height:36px;cursor:pointer" onclick="showUserProfile('${partner.uid}','${partner.name}','${partner.color}')">${partner.name[0]}</div>`}
-        <div style="cursor:pointer" onclick="showUserProfile('${partner.uid}','${partner.name}','${partner.color}')">
+        ${partnerAvatar}
+        <div style="flex:1;cursor:pointer" onclick="showUserProfile('${partner.uid}','${partner.name}','${partner.color}')">
           <div style="font-weight:800">${partner.name}</div>
-          <div style="font-size:0.75rem;color:var(--accent3)">● Aktif · profile tıkla</div>
+          <div style="font-size:0.72rem;color:var(--accent3)">● profil için tıkla</div>
         </div>
+        <button onclick="confirmDeleteConversation('${partner.uid}','${cId}')"
+          style="background:#ff658420;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:0.82rem;color:#ff6584;flex-shrink:0"
+          title="Sohbeti sil">🗑️</button>
       </div>
       <div class="chat-messages" id="chatMessages">
-        ${msgs.length===0?'<div class="msg-system">İlk mesajı sen gönder! 👋</div>':'<div class="msg-system">Konuşma geçmişi</div>'}
+        ${msgs.length===0?'<div class="msg-system">İlk mesajı sen gönder! 👋</div>':''}
         ${msgsHTML}
       </div>
       <div class="chat-input-row">
@@ -3818,28 +3854,45 @@ async function sendMessage(role) {
   const myData = window.currentUserData || {};
   const myUid = myData.uid || '';
   const cId = convId(myUid, activeChat);
-  const time = new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+  const now = new Date();
+  const time = now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+  const dateKey = now.toISOString().split('T')[0];
   const msgId = Date.now().toString();
-  const msg = { id: msgId, text, senderUid: myUid, senderName: myData.name||'', time,
-    seen: false, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+  const msg = {
+    id: msgId, text, senderUid: myUid, senderName: myData.name||'',
+    time, dateKey, seen: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
 
   if (!chatMessages[cId]) chatMessages[cId] = [];
-  chatMessages[cId].push({ ...msg, createdAt: { seconds: Date.now()/1000 } });
+  chatMessages[cId].push({ ...msg, createdAt: { seconds: now.getTime()/1000 } });
   input.value = '';
 
   // DOM'a ekle
   const msgEl = document.getElementById('chatMessages');
   if (msgEl) {
+    // Bugün tarihi ayırıcısı — eğer son mesaj farklı günden ise ekle
+    const allMsgs = chatMessages[cId];
+    if (allMsgs.length >= 2) {
+      const prev = allMsgs[allMsgs.length-2];
+      const prevDate = prev.dateKey || '';
+      if (prevDate !== dateKey) {
+        const sep = document.createElement('div');
+        sep.style.cssText = 'text-align:center;margin:10px 0';
+        sep.innerHTML = `<span style="background:var(--surface2);color:var(--text2);font-size:0.7rem;padding:3px 12px;border-radius:99px;font-weight:600">Bugün</span>`;
+        msgEl.appendChild(sep);
+      }
+    }
     const div = document.createElement('div');
     div.className = 'msg mine';
     div.id = 'msg_' + msgId;
-    div.innerHTML = `<div class="msg-bubble">${text}</div><div class="msg-time">${time} <span class="seen-status" style="font-size:0.65rem;color:var(--text2)">✓</span></div>`;
+    div.innerHTML = `<div class="msg-bubble">${text}</div><div class="msg-time">${time} <span class="seen-status" style="font-size:0.65rem;color:rgba(255,255,255,0.5)">✓</span></div>`;
     msgEl.appendChild(div);
     msgEl.scrollTop = msgEl.scrollHeight;
   }
 
   try {
-    await db.collection('messages').doc(cId).collection('msgs').add(msg);
+    const docRef = await db.collection('messages').doc(cId).collection('msgs').add(msg);
     // Karşı tarafa bildirim gönder
     await db.collection('notifications').add({
       toUid: activeChat,
@@ -3851,21 +3904,69 @@ async function sendMessage(role) {
   } catch(e) { console.log('Mesaj hatası:', e.message); }
 }
 
-// Mesajları okunan olarak işaretle (sohbet açıldığında)
+// Mesajları okunan olarak işaretle
 async function markMessagesAsSeen(partnerUid) {
   const myUid = (window.currentUserData||{}).uid || '';
   if (!myUid || !partnerUid) return;
   const cId = convId(myUid, partnerUid);
+  // 1. Notifications okundu
   try {
-    // Kendi notiflerindeki bu kişiden gelen mesajları okundu işaretle
     const snap = await db.collection('notifications')
       .where('toUid','==',myUid).where('fromUid','==',partnerUid).where('read','==',false).get();
     snap.forEach(d => d.ref.update({ read: true }));
-    // Local güncelle
     const notifs = currentRole==='teacher' ? teacherNotifs : studentNotifs;
     notifs.forEach(n => { if(n.fromUid===partnerUid) n.read=true; });
     updateNotifBadge();
   } catch(e) {}
+  // 2. Mesajları seen:true yap — karşı taraf ✓✓ görecek
+  try {
+    const msgSnap = await db.collection('messages').doc(cId).collection('msgs')
+      .where('senderUid','==',partnerUid).where('seen','==',false).get();
+    if (!msgSnap.empty) {
+      const batch = db.batch();
+      msgSnap.forEach(d => batch.update(d.ref, { seen: true }));
+      await batch.commit();
+      const cached = chatMessages[cId] || [];
+      cached.forEach(m => { if (m.senderUid === partnerUid) m.seen = true; });
+    }
+  } catch(e) {}
+}
+
+// Sohbeti sil onay
+function confirmDeleteConversation(partnerUid, cId) {
+  if (!confirm('Bu sohbeti silmek istediğinize emin misiniz?\nMesajlar kalıcı olarak silinecek.')) return;
+  deleteConversation(partnerUid, cId);
+}
+
+async function deleteConversation(partnerUid, cId) {
+  showToast('⏳','Sohbet siliniyor...');
+  try {
+    // Tüm mesajları sil
+    const snap = await db.collection('messages').doc(cId).collection('msgs').get();
+    if (!snap.empty) {
+      const batch = db.batch();
+      snap.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+    }
+    await db.collection('messages').doc(cId).delete().catch(()=>{});
+    // İlgili bildirimleri sil
+    const myUid = (window.currentUserData||{}).uid || '';
+    try {
+      const nSnap = await db.collection('notifications')
+        .where('type','==','message').where('toUid','==',myUid)
+        .where('fromUid','==',partnerUid).get();
+      const b2 = db.batch();
+      nSnap.forEach(d => b2.delete(d.ref));
+      await b2.commit();
+    } catch(e2) {}
+    // Local temizle
+    delete chatMessages[cId];
+    activeChat = null;
+    showToast('✅','Sohbet silindi!');
+    showPage('messages');
+  } catch(e) {
+    showToast('❌','Silme başarısız: '+e.message);
+  }
 }
 
 function profilePage() {
