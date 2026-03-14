@@ -2108,10 +2108,12 @@ function studentDetailAnalysis() {
     </div>
 
     <!-- PDF -->
-    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:0.95rem;margin-bottom:24px"
-      onclick="exportStudentDetailPDF('${sName}')">
-      📄 PDF Raporu İndir
-    </button>
+    <div id="pdfDownloadArea_${sName.replace(/\s/g,'_')}" style="margin-bottom:24px">
+      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:0.95rem"
+        onclick="preparePdfLink('${sName}', this)">
+        📄 PDF Raporu İndir
+      </button>
+    </div>
   `;
 }
 
@@ -2272,9 +2274,37 @@ function ts(v) {
 // ============================================================
 // PDF İNDİRME — sadece blob, datauristring büyük dosyalarda bozuluyor
 // ============================================================
+// PDF'i oluştur ve sayfada indirme linki göster
+function preparePdfLink(sName, btn) {
+  if (btn) { btn.textContent = '⏳ Hazirlaniyor...'; btn.disabled = true; }
+  try {
+    const doc = exportStudentDetailPDF(sName);
+    if (!doc) { if(btn){btn.textContent='📄 PDF Raporu Indir';btn.disabled=false;} return; }
+    const blob = doc.output('blob');
+    const url = URL.createObjectURL(blob);
+    const fname = ts(sName.replace(/\s+/g,'_')) + '_' + (studentAnalysisPeriod||'haftalik') + '_' + new Date().toISOString().split('T')[0] + '.pdf';
+    // Butonun yerine indirme linki koy
+    const container = btn ? btn.parentElement : document.createElement('div');
+    container.innerHTML = `
+      <a href="${url}" download="${fname}"
+         style="display:block;width:100%;padding:14px;text-align:center;background:var(--accent3);color:#111;
+                font-weight:900;font-size:0.95rem;border-radius:14px;text-decoration:none;box-sizing:border-box">
+        ✅ PDF Hazır — Buraya Dokun ve İndir
+      </a>
+      <div style="text-align:center;font-size:0.75rem;color:var(--text2);margin-top:8px">
+        Açılmazsa: linke uzun bas → "Bağlantıyı indir" seç
+      </div>
+    `;
+    showToast('📄', 'PDF hazır! Yeşil butona dokun.');
+  } catch(e) {
+    if(btn){btn.textContent='📄 PDF Raporu Indir';btn.disabled=false;}
+    showToast('❌','Hata: '+e.message);
+  }
+}
+
 function pdfDownload(doc, fname) {
-  doc.save(fname);
-  showToast('📄', 'PDF indiriliyor...');
+  // Artık preparePdfLink kullanılıyor, bu fallback olarak kalıyor
+  try { doc.save(fname); } catch(e) {}
 }
 
 // ============================================================
@@ -2837,11 +2867,10 @@ function exportStudentDetailPDF(sName) {
   Y+=23;
 
   // Footer
-  pdfFooter(doc, doc.internal.getNumberOfPages(), sName+' | '+periodTitle);
+  pdfFooter(doc, doc.internal.getNumberOfPages(), ts(sName)+' | '+ts(periodTitle));
 
-  // İndir
-  const fname = ts(sName.replace(/\s+/g,'_'))+'_'+pLabel+'_'+todayKey+'.pdf';
-  pdfDownload(doc, fname);
+  // preparePdfLink tarafından çağrılıyorsa doc döndür
+  return doc;
 }
 
 function teacherAnalysis() {
