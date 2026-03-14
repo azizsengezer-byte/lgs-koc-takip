@@ -2792,9 +2792,12 @@ function exportStudentDetailPDF(sName) {
   }
 
   // ================================================================
-  // BÖLÜM 5 — KOÇ DEĞERLENDİRMESİ
   // ================================================================
-  Y=pdfCheck(doc,Y,14); Y=pdfSecHeader(doc,'5. KOC DEGERLENDIRMESI',Y,43,180,123);
+  // BÖLÜM 5 — KOÇ DEĞERLENDİRMESİ
+  // Yeterli alan yoksa yeni sayfaya geç (başlık + en az 40mm içerik)
+  // ================================================================
+  if (Y > 220) { Y = pdfNewPage(doc); }
+  Y = pdfSecHeader(doc,'5. KOC DEGERLENDIRMESI',Y,43,180,123);
 
   // Tespit & Yorum
   const insights=[];
@@ -2810,8 +2813,15 @@ function exportStudentDetailPDF(sName) {
       doc.setDrawColor(200,160,0); doc.setLineWidth(0.3); doc.roundedRect(14,Y,182,7,1.5,1.5,'S');
       doc.setFillColor(220,120,0); doc.roundedRect(14,Y,2,7,1,1,'F');
       doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(80,60,20);
-      doc.text(ts(ins.substring(0,85)), 18, Y+4.5);
-      Y+=9;
+      // Uzun tespitleri iki satıra böl
+      const insLines = doc.splitTextToSize(ts(ins), 174);
+      const insH = insLines.length * 4.5 + 3;
+      Y=pdfCheck(doc,Y,insH);
+      doc.setFillColor(255,253,235); doc.roundedRect(14,Y,182,insH,1.5,1.5,'F');
+      doc.setDrawColor(200,160,0); doc.roundedRect(14,Y,182,insH,1.5,1.5,'S');
+      doc.setFillColor(220,120,0); doc.roundedRect(14,Y,2,insH,1,1,'F');
+      insLines.forEach((l,li)=>{ doc.text(ts(l), 18, Y+4+li*4.5); });
+      Y+=insH+2;
     });
     Y+=2;
   }
@@ -2823,13 +2833,11 @@ function exportStudentDetailPDF(sName) {
   if(strong.length>0||weak.length>0) {
     Y=pdfCheck(doc,Y,10);
     const colW=87;
-    // Güçlü
     if(strong.length>0) {
       doc.setFillColor(240,255,245); doc.roundedRect(14,Y,colW,6,1.5,1.5,'F');
       doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(38,140,80);
       doc.text('Guclu: '+strong.map(s=>ts(s.name)+' %'+s.pct).join(', '), 17, Y+4.2);
     }
-    // Zayıf
     if(weak.length>0) {
       doc.setFillColor(255,240,240); doc.roundedRect(14+colW+8,Y,colW,6,1.5,1.5,'F');
       doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(180,40,40);
@@ -2838,33 +2846,35 @@ function exportStudentDetailPDF(sName) {
     Y+=10;
   }
 
-  // Genel yorum — PDF için direkt ASCII metin (forPdf=true)
+  // Genel yorum — yeni sayfaya geç ve başlıkla birlikte tut
   const rawComment = generateStudentComment(sName,filtered,subStats,totalDur,totalQ,totalNet,activeDays,studentAnalysisPeriod,true);
-  Y=pdfCheck(doc,Y,10);
+  const commentLines = doc.splitTextToSize(ts(rawComment), 174);
+  const commentH = commentLines.length * 5 + 20; // başlık + içerik tahmini yükseklik
+  if (Y + commentH > 278) { Y = pdfNewPage(doc); }
   doc.setFillColor(240,248,255); doc.roundedRect(14,Y,182,6,2,2,'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(30,80,160);
   doc.text('Genel Degerlendirme', 105, Y+4.2, {align:'center'});
   Y+=9;
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(30,40,80);
-  const commentLines=doc.splitTextToSize(ts(rawComment),178);
   commentLines.forEach(l=>{ Y=pdfCheck(doc,Y,5); doc.text(ts(l),15,Y); Y+=5; });
   Y+=3;
 
-  // İmza alanı
-  Y=pdfCheck(doc,Y,22);
-  doc.setFillColor(245,243,255); doc.roundedRect(14,Y,182,20,2,2,'F');
+  // İmza alanı — her zaman içerikle aynı sayfada
+  Y=pdfCheck(doc,Y,26);
+  doc.setFillColor(245,243,255); doc.roundedRect(14,Y,182,22,2,2,'F');
+  doc.setDrawColor(210,204,242); doc.setLineWidth(0.3); doc.roundedRect(14,Y,182,22,2,2,'S');
   doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(72,52,212);
   doc.text('Egitim Koc:', 18, Y+6);
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(50,40,100);
   const teacherName=ts((window.currentUserData||{}).name||'');
   doc.text(teacherName, 18, Y+12);
-  doc.text('Tarih: '+ts(dateStr), 18, Y+17);
+  doc.text('Tarih: '+ts(dateStr), 18, Y+18);
   doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(72,52,212);
   doc.text('Ogrenci:', 120, Y+6);
   doc.setFont('helvetica','normal'); doc.setTextColor(50,40,100);
   doc.text(ts(sName), 120, Y+12);
-  doc.text('LGSKoc Performans Raporu', 120, Y+17);
-  Y+=23;
+  doc.text('LGSKoc Performans Raporu', 120, Y+18);
+  Y+=25;
 
   // Footer
   pdfFooter(doc, doc.internal.getNumberOfPages(), ts(sName)+' | '+ts(periodTitle));
