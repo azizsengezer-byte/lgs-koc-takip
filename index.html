@@ -2116,42 +2116,84 @@ function studentDetailAnalysis() {
 
 function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, totalNet, activeDays, period) {
   if (filtered.length===0) {
-    return `<b>${sName}</b> bu dönem için henüz çalışma girişi bulunmuyor. Öğrenciye hatırlatma yapmayı ve düzenli giriş yapmasını teşvik etmeyi deneyebilirsiniz. 📌`;
+    return `<b>${sName}</b> bu dönem için henüz çalışma girişi bulunmuyor. Öğrenciye hatırlatma yapılması ve düzenli giriş alışkanlığı kazandırılması önerilir.`;
   }
   const firstName = sName.split(' ')[0];
-  const netRate = totalQ>0 ? (totalNet/totalQ*100).toFixed(0) : 0;
+  const netRate = totalQ>0 ? Math.round(totalNet/totalQ*100) : 0;
   const withQ = subStats.filter(s=>s.q>0).sort((a,b)=>b.pct-a.pct);
-  const best = withQ[0], worst = [...withQ].reverse()[0];
+  const best = withQ[0];
+  const worst = withQ.length>1 ? [...withQ].sort((a,b)=>a.pct-b.pct)[0] : null;
   const lgs = new Date('2026-06-14T09:30:00+03:00');
   const daysLeft = Math.floor((lgs-new Date())/(1000*60*60*24));
+  const avgDurDay = activeDays>0 ? Math.round(totalDur/activeDays) : 0;
+  const avgQDay = activeDays>0 ? Math.round(totalQ/activeDays) : 0;
   let parts = [];
 
-  if (period==='daily') {
-    if (totalDur>=120) parts.push(`<b>${firstName}</b> bugün <b>${totalDur} dakika</b> çalışmış — harika bir gün! 🏆`);
-    else if (totalDur>=60) parts.push(`<b>${firstName}</b> bugün <b>${totalDur} dakika</b> çalışmış. Biraz daha süreyi artırmayı hedefleyebilir.`);
-    else parts.push(`<b>${firstName}</b> bugün yalnızca <b>${totalDur} dakika</b> çalışmış. Günlük en az 90 dakika hedeflenmeli. ⏰`);
-  } else if (period==='weekly') {
-    if (activeDays>=5) parts.push(`<b>${firstName}</b> bu hafta <b>${activeDays} gün</b> çalışmış — harika bir süreklilik! 🌟`);
-    else if (activeDays>=3) parts.push(`<b>${firstName}</b> bu hafta <b>${activeDays} gün</b> aktif olmuş. Haftada en az 5 güne çıkabilir.`);
-    else parts.push(`<b>${firstName}</b> bu hafta yalnızca <b>${activeDays} gün</b> çalışmış. Düzenlilik konusunda acil önlem alınmalı! ⚠️`);
-    const avgDurDay = activeDays>0?Math.round(totalDur/activeDays):0;
-    parts.push(`Günlük ortalama <b>${avgDurDay} dakika</b> ve toplam <b>${totalQ} soru</b> çözmüş.`);
+  // 1. GENEL PERFORMANS DEĞERLENDİRMESİ
+  const periodLabel = period==='daily'?'bugün':period==='weekly'?'bu hafta':'bu ay';
+  let genelPart = `${firstName} ${periodLabel} toplam ${totalDur} dakika calisma suresi, ${totalQ} soru cozmesi ve ${activeDays} gun aktif olmasi ile `;
+  if (activeDays >= (period==='weekly'?5:period==='monthly'?20:1)) {
+    genelPart += `duzenliligi oldukca iyi bir seviyede. Sureklilik bakimindan olumlu bir tablo sergileniyor.`;
+  } else if (activeDays >= (period==='weekly'?3:period==='monthly'?12:1)) {
+    genelPart += `orta duzey bir duzenliligi yansitmaktadir. Calisma gunlerinin arttirilmasi onerilir.`;
   } else {
-    parts.push(`Bu ay toplam <b>${activeDays} gün</b> aktif olmuş ve <b>${totalQ} soru</b> çözmüş. Toplam çalışma süresi: <b>${totalDur} dakika</b>.`);
-    if (activeDays<15) parts.push(`Aylık en az 20 gün aktif olması hedeflenmeli.`);
-    else parts.push(`Aylık devam oranı oldukça iyi görünüyor.`);
+    genelPart += `duzensiz bir calisma ritmi icinde oldugu goruluyor. Bu konuda ivedi onlem alinmalidir.`;
   }
+  parts.push(genelPart);
 
+  // 2. SORU ÇÖZÜMEFİLİĞİ
   if (totalQ>0) {
-    if (netRate>=70) parts.push(`<b>%${netRate}</b> isabet oranıyla sorulara isabetli yaklaşıyor — bu güçlü bir göstergedir. ✨`);
-    else if (netRate>=50) parts.push(`İsabet oranı <b>%${netRate}</b>. Yanlışları tekrar gözden geçirirse bu oran artacaktır.`);
-    else parts.push(`İsabet oranı <b>%${netRate}</b> — hız yerine anlayarak çözmeye odaklanması gerekiyor. 🔍`);
+    let qPart = `Soru cozum verilerine bakildiginda gunluk ortalama ${avgQDay} soru ile `;
+    if (netRate>=75) qPart += `%${netRate} isabet orani son derece guclu bir performansin gostergesidir. Anlayarak ve dikkatli okuyarak cozum yapmasi bu basariyi getiriyor.`;
+    else if (netRate>=55) qPart += `%${netRate} isabet orani kabul edilebilir bir seviyede, ancak gelistirilmesi gereken noktalar bulunuyor. Yanlis yapilan sorularin analizi yapilmali.`;
+    else qPart += `%${netRate} isabet orani dusuk bir seviyededir. Hiz yerine dogru anlayis onceliklendirilmeli; sorular once anlasilmadan cevaplanmamalidir.`;
+    parts.push(qPart);
   }
 
-  if (best) parts.push(`<b>${best.name}</b> dersinde en güçlü (%${best.pct} isabet). Bu başarı sürdürülmeli.`);
-  if (worst && worst.name!==best?.name) parts.push(`<b>${worst.name}</b> dersine ek çalışma ayrılmalı (%${worst.pct} isabet).`);
+  // 3. DERS BAZLI DEĞERLENDİRME
+  if (best) {
+    parts.push(`Guclu Alan: ${best.name} dersinde %${best.pct} isabet orani ile en guclu performansi sergiliyor. Bu dersteki basari stratejisi diger derslere model olabilir.`);
+  }
+  if (worst && worst.name !== best?.name) {
+    let worstPart = `Gelistirilmesi Gereken Alan: ${worst.name} dersinde %${worst.pct} isabet orani ile en dusuk performans gorulmuyor. `;
+    if (worst.pct < 40) worstPart += `Temel kavramlarda ciddi bosluklar var; bu ders icin ozgun, yoğun ve tekrar odakli bir calisma programi hazirlanmali.`;
+    else if (worst.pct < 60) worstPart += `Orta duzey bir performans. Yanlis analizi yapilarak eksik konular tespit edilmeli ve hedefli calisma yapilmali.`;
+    else worstPart += `Nispeten dusuk kalan bu oran, dikkat edilirse kisa surede gelistirilebilir.`;
+    parts.push(worstPart);
+  }
 
-  parts.push(`LGS'ye <b>${daysLeft} gün</b> kaldı — ${firstName}'in düzenli ve kaliteli çalışması bu süreçte kritik öneme sahip. 🚀`);
+  // 4. KONU BAZLI TESPİTLER
+  const topicInsights = [];
+  subStats.filter(s=>s.q>0&&s.topics&&s.topics.length>0).forEach(s=>{
+    const weakT = s.topics.filter(t=>t.q>=2&&t.pct<60).sort((a,b)=>a.pct-b.pct)[0];
+    if (weakT) {
+      const tName = ts(weakT.name);
+      let tip = '';
+      if (s.name==='Türkçe') tip = `"${tName}" konusunda %${weakT.pct} isabet — uzun sorularda odaklanma sorunu olabilir, dikkatli okuma pratigi arttirilmali.`;
+      else if (s.name==='Matematik') tip = `"${tName}" konusunda %${weakT.pct} isabet — gorsel okuma veya islem hatasi soz konusu olabilir, adim adim cozum teknigi onerilir.`;
+      else if (s.name==='Fen Bilimleri') tip = `"${tName}" konusunda %${weakT.pct} isabet — kavramsal yanlis anlamalar var, deney ve gorselle destekli tekrar yapilmali.`;
+      else if (s.name==='İnkılap Tarihi') tip = `"${tName}" konusunda %${weakT.pct} isabet — kronolojik siralama ve neden-sonuc iliskisi uzerinde calisilmali.`;
+      else if (s.name==='Din Kültürü') tip = `"${tName}" konusunda %${weakT.pct} isabet — tanim ve kavram bilgisi guclendirilmeli.`;
+      else if (s.name==='İngilizce') tip = `"${tName}" konusunda %${weakT.pct} isabet — kelime bilgisi ve yapi pratigi arttirilmali.`;
+      if (tip) topicInsights.push(`${ts(s.name)}: ${tip}`);
+    }
+  });
+  if (topicInsights.length > 0) {
+    parts.push(`Konu Bazli Tespitler:\n${topicInsights.join('\n')}`);
+  }
+
+  // 5. STRATEJİK ÖNERİLER
+  let stratejik = `Strateji Onerisi: `;
+  if (avgDurDay < 90) stratejik += `Gunluk calisma suresi ${avgDurDay} dakika ile yetersiz kalıyor; en az 120-150 dakika hedeflenmeli. `;
+  if (netRate < 60 && totalQ > 0) stratejik += `Soru sayisindan once kalite onemsenmeli; az ama dogru cozum netlerini arttirir. `;
+  if (activeDays < (period==='weekly'?5:period==='monthly'?20:1)) stratejik += `Duzenliligin arttirilmasi en kritik adimdir. Her gun en az bir ders girisinin yapilmasi hedeflenmeli. `;
+  if (best) stratejik += `${ts(best.name)} dersindeki basarinin korunmasi saglanirken `;
+  if (worst) stratejik += `${ts(worst.name)} dersine ek agirlik verilmeli. `;
+  parts.push(stratejik);
+
+  // 6. LGS HEDEF
+  parts.push(`LGS'ye ${daysLeft} gun kaliyor. ${firstName}'in her geçen gun daha nitelikli calisma yapmasinın önemi artmaktadir. Duzenli takip, motivasyon destegi ve hedef belirleme bu surecte belirleyici rol oynayacaktir.`);
+
   return parts.join('<br><br>');
 }
 
@@ -2199,31 +2241,25 @@ function calcLGSScore(subStats) {
 // ============================================================
 // ts() - Tüm Türkçe karakterleri ASCII'ye çevir (jsPDF font uyumu)
 // ============================================================
+// ts() — PDF için: Türkçe→ASCII + emoji/özel karakter temizle
 function ts(v) {
   if (v == null) return '';
   return String(v)
+    // Türkçe karakterler
     .replace(/Ğ/g,'G').replace(/ğ/g,'g')
     .replace(/Ü/g,'U').replace(/ü/g,'u')
     .replace(/Ş/g,'S').replace(/ş/g,'s')
     .replace(/İ/g,'I').replace(/ı/g,'i')
     .replace(/Ö/g,'O').replace(/ö/g,'o')
-    .replace(/Ç/g,'C').replace(/ç/g,'c');
+    .replace(/Ç/g,'C').replace(/ç/g,'c')
+    // Emoji ve Unicode özel karakterler (jsPDF Latin-1 dışı)
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu,'')
+    .replace(/[\u{2600}-\u{27BF}]/gu,'')
+    .replace(/[\u{FE00}-\u{FEFF}]/gu,'')
+    .replace(/[^\x00-\xFF]/g,'')
+    .trim();
 }
 
-
-// ============================================================
-// ts() - Türkçe → ASCII (jsPDF Latin-1 font uyumu)
-// ============================================================
-function ts(v) {
-  if (v == null) return '';
-  return String(v)
-    .replace(/Ğ/g,'G').replace(/ğ/g,'g')
-    .replace(/Ü/g,'U').replace(/ü/g,'u')
-    .replace(/Ş/g,'S').replace(/ş/g,'s')
-    .replace(/İ/g,'I').replace(/ı/g,'i')
-    .replace(/Ö/g,'O').replace(/ö/g,'o')
-    .replace(/Ç/g,'C').replace(/ç/g,'c');
-}
 
 // ============================================================
 // PDF İNDİRME — mobil uyumlu
@@ -2248,56 +2284,60 @@ function pdfNewPage(doc) { doc.addPage(); return 20; }
 function pdfCheck(doc, Y, needed) { return Y + needed > 278 ? pdfNewPage(doc) : Y; }
 
 function pdfHeader(doc, title, subtitle, dateStr) {
-  // Beyaz arka plan — koyu değil!
+  // Beyaz sayfa
   doc.setFillColor(255,255,255); doc.rect(0,0,210,297,'F');
-  // Üst şerit
-  doc.setFillColor(72,52,212); doc.rect(0,0,210,32,'F');
-  doc.setFillColor(67,233,123); doc.rect(0,30,210,3,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(255,255,255);
-  doc.text('LGS', 14, 14);
-  doc.setTextColor(147,210,255);
-  doc.text('Koc', 30, 14);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(200,200,255);
-  doc.text(ts('Ogrenci Takip ve Kocluk Sistemi'), 14, 21);
-  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(255,255,255);
-  doc.text(ts(title), 210/2, 14, {align:'center'});
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(200,200,255);
-  doc.text(ts(subtitle), 210/2, 22, {align:'center'});
-  doc.setTextColor(200,200,255); doc.setFontSize(8);
-  doc.text(ts(dateStr), 196, 14, {align:'right'});
-  return 40;
+  // Üst şerit — yumuşak mavi-mor
+  doc.setFillColor(90,72,200); doc.rect(0,0,210,30,'F');
+  doc.setFillColor(72,200,130); doc.rect(0,28,210,2.5,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(255,255,255);
+  doc.text('LGS', 14, 13);
+  doc.setTextColor(180,230,255);
+  doc.text('Koc', 28, 13);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(210,205,255);
+  doc.text(ts('Ogrenci Takip ve Kocluk Sistemi'), 14, 20);
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(255,255,255);
+  doc.text(ts(title), 210/2, 12, {align:'center'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(210,205,255);
+  doc.text(ts(subtitle), 210/2, 20, {align:'center'});
+  doc.setTextColor(210,205,255); doc.setFontSize(7.5);
+  doc.text(ts(dateStr), 196, 12, {align:'right'});
+  return 38;
 }
 
 function pdfFooter(doc, totalPages, subtitle) {
   for (let p = 1; p <= totalPages; p++) {
     doc.setPage(p);
-    doc.setFillColor(72,52,212); doc.rect(0,287,210,10,'F');
-    doc.setFillColor(67,233,123); doc.rect(0,287,210,1.5,'F');
-    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(200,200,255);
+    doc.setFillColor(90,72,200); doc.rect(0,287,210,10,'F');
+    doc.setFillColor(72,200,130); doc.rect(0,287,210,1.2,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(210,205,255);
     doc.text('LGSKoc — ' + ts(subtitle), 14, 293);
     doc.text('Sayfa ' + p + ' / ' + totalPages, 196, 293, {align:'right'});
   }
 }
 
-function pdfSecHeader(doc, title, Y, r=72, g=52, b=212) {
+function pdfSecHeader(doc, title, Y, r=90, g=72, b=200) {
   Y = pdfCheck(doc, Y, 12);
-  doc.setFillColor(r,g,b); doc.roundedRect(14,Y,182,8,1.5,1.5,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(255,255,255);
-  doc.text(ts(title), 18, Y+5.6);
+  // Yumuşak renk + sol çizgi aksanı
+  doc.setFillColor(r,g,b,0.12); doc.roundedRect(14,Y,182,8,1.5,1.5,'F');
+  doc.setFillColor(r,g,b); doc.roundedRect(14,Y,3,8,1,1,'F');
+  doc.setDrawColor(r,g,b,0.4); doc.setLineWidth(0.3); doc.roundedRect(14,Y,182,8,1.5,1.5,'S');
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(r,g,b);
+  doc.text(ts(title), 20, Y+5.6);
   return Y+12;
 }
 
 function pdfSubHeader(doc, text, Y) {
   Y = pdfCheck(doc, Y, 8);
-  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(50,40,140);
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(80,65,180);
   doc.text(ts(text), 14, Y); return Y+6;
 }
 
-function pdfTable(doc, headers, colWidths, rows, Y, hdrColor=[72,52,212], altRow=true) {
+function pdfTable(doc, headers, colWidths, rows, Y, hdrColor=[90,72,200], altRow=true) {
   Y = pdfCheck(doc, Y, 10);
   let cx = 14;
-  doc.setFillColor(...hdrColor);
-  headers.forEach((h,i) => { doc.rect(cx,Y,colWidths[i],6.5,'F'); cx+=colWidths[i]; });
+  // Header — orta yoğunluk (yazıcıya uygun)
+  const [hr,hg,hb] = hdrColor;
+  doc.setFillColor(hr,hg,hb); doc.rect(cx,Y,colWidths.reduce((a,w)=>a+w,0),6.5,'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(255,255,255);
   cx=14;
   headers.forEach((h,i) => { doc.text(ts(h), cx+colWidths[i]/2, Y+4.5, {align:'center'}); cx+=colWidths[i]; });
@@ -2305,18 +2345,15 @@ function pdfTable(doc, headers, colWidths, rows, Y, hdrColor=[72,52,212], altRow
   rows.forEach((row,ri) => {
     Y = pdfCheck(doc, Y, 5.5);
     cx=14;
-    if (altRow) {
-      doc.setFillColor(ri%2===0?248:255, ri%2===0?247:255, ri%2===0?254:255);
-    } else { doc.setFillColor(255,255,255); }
-    colWidths.forEach(w => { doc.rect(cx,Y,w,5.5,'F'); cx+=w; });
-    // Kenarlık
-    doc.setDrawColor(230,228,248); doc.setLineWidth(0.15);
-    cx=14; let totalW=0; colWidths.forEach(w=>totalW+=w);
+    // Çok açık alternatif satır
+    doc.setFillColor(ri%2===0?250:255, ri%2===0?249:255, ri%2===0?255:255);
+    const totalW = colWidths.reduce((a,w)=>a+w,0);
+    doc.rect(14,Y,totalW,5.5,'F');
+    doc.setDrawColor(220,215,245); doc.setLineWidth(0.15);
     doc.rect(14,Y,totalW,5.5,'S');
-    doc.setTextColor(30,25,70); doc.setFont('helvetica','normal'); doc.setFontSize(7); cx=14;
+    doc.setTextColor(35,30,75); doc.setFont('helvetica','normal'); doc.setFontSize(7); cx=14;
     row.forEach((v,i) => {
-      const str = ts(String(v??''));
-      doc.text(str, cx+colWidths[i]/2, Y+4, {align:'center'});
+      doc.text(ts(String(v??'')), cx+colWidths[i]/2, Y+4, {align:'center'});
       cx+=colWidths[i];
     });
     Y+=5.5;
@@ -2328,20 +2365,19 @@ function pdfBarChart(doc, values, labels, Y, chartH, colors, title) {
   Y = pdfCheck(doc, Y, chartH+16);
   if (title) { Y = pdfSubHeader(doc, title, Y); }
   const maxV = Math.max(...values.map(v=>Math.abs(v)), 1);
-  const startX = 18, W = 176;
+  const startX = 22, W = 172;
   const n = values.length;
   const barW = Math.min(Math.floor(W/n)-2, 14);
   const gap = (W - barW*n) / (n+1);
   const baseY = Y + chartH - 8;
-  // Axes
-  doc.setDrawColor(200,196,240); doc.setLineWidth(0.2);
+  // Hafif grid
+  doc.setDrawColor(220,215,240); doc.setLineWidth(0.15);
   doc.line(startX, Y, startX, Y+chartH-8);
   doc.line(startX, Y+chartH-8, startX+W, Y+chartH-8);
-  // Grid + y labels
   [0.25,0.5,0.75,1].forEach(f => {
     const gy = Y+(chartH-8)*(1-f);
-    doc.setDrawColor(235,232,252); doc.line(startX,gy,startX+W,gy);
-    doc.setFontSize(5); doc.setTextColor(140,130,180);
+    doc.setDrawColor(235,230,248); doc.line(startX,gy,startX+W,gy);
+    doc.setFontSize(5); doc.setTextColor(160,150,190);
     doc.text(String(Math.round(maxV*f)), startX-1, gy+1.5, {align:'right'});
   });
   values.forEach((v,i) => {
@@ -2350,22 +2386,23 @@ function pdfBarChart(doc, values, labels, Y, chartH, colors, title) {
     const by = baseY - bh;
     const col = typeof colors[i%colors.length] === 'function' ? colors[i%colors.length](v) : colors[i%colors.length];
     const [r,g,b] = col;
-    doc.setFillColor(r,g,b,0.2); doc.roundedRect(x+0.4,by+0.4,barW,bh,0.8,0.8,'F');
-    doc.setFillColor(r,g,b); doc.roundedRect(x,by,barW,bh,0.8,0.8,'F');
+    // Yumuşak gölge efekti
+    doc.setFillColor(r,g,b,0.15); doc.roundedRect(x+0.5,by+0.5,barW,bh,0.8,0.8,'F');
+    doc.setFillColor(r,g,b,0.75); doc.roundedRect(x,by,barW,bh,0.8,0.8,'F');
     doc.setFontSize(5); doc.setFont('helvetica','bold'); doc.setTextColor(r,g,b);
     if(v!==0) doc.text(String(v), x+barW/2, Math.max(by-1,Y+1.5), {align:'center'});
-    doc.setFontSize(5); doc.setTextColor(80,70,120); doc.setFont('helvetica','normal');
+    doc.setFontSize(5); doc.setTextColor(110,100,150); doc.setFont('helvetica','normal');
     doc.text(ts(String(labels[i]||'').substring(0,7)), x+barW/2, Y+chartH-2, {align:'center'});
   });
-  // Trend çizgisi
+  // Trend çizgisi — kırmızı yerine turuncu, daha yumuşak
   if (values.length > 1) {
-    doc.setDrawColor(220,60,60); doc.setLineWidth(0.5);
+    doc.setDrawColor(200,80,40); doc.setLineWidth(0.45);
     const pts = values.map((v,i) => ({
       x: startX + gap + i*(barW+gap) + barW/2,
       y: baseY - Math.max((Math.abs(v)/maxV)*(chartH-10),1.5)
     }));
     for(let i=0;i<pts.length-1;i++) doc.line(pts[i].x,pts[i].y,pts[i+1].x,pts[i+1].y);
-    pts.forEach(p => { doc.setFillColor(220,60,60); doc.circle(p.x,p.y,0.9,'F'); });
+    pts.forEach(p => { doc.setFillColor(200,80,40); doc.circle(p.x,p.y,0.9,'F'); });
   }
   return Y + chartH + 3;
 }
@@ -2374,37 +2411,29 @@ function pdfLineChart(doc, values, labels, Y, chartH, color, title) {
   Y = pdfCheck(doc, Y, chartH+16);
   if (title) { Y = pdfSubHeader(doc, title, Y); }
   const maxV = Math.max(...values.map(Math.abs), 1);
-  const startX = 18, W = 176;
+  const startX = 22, W = 172;
   const n = values.length;
   const stepX = n>1 ? W/(n-1) : W;
   const baseY = Y + chartH - 8;
   const [cr,cg,cb] = color;
-  doc.setDrawColor(200,196,240); doc.setLineWidth(0.2);
+  doc.setDrawColor(220,215,240); doc.setLineWidth(0.15);
   doc.line(startX,Y,startX,Y+chartH-8); doc.line(startX,Y+chartH-8,startX+W,Y+chartH-8);
   [0.25,0.5,0.75,1].forEach(f => {
     const gy=Y+(chartH-8)*(1-f);
-    doc.setDrawColor(235,232,252); doc.line(startX,gy,startX+W,gy);
-    doc.setFontSize(5); doc.setTextColor(140,130,180);
+    doc.setDrawColor(235,230,248); doc.line(startX,gy,startX+W,gy);
+    doc.setFontSize(5); doc.setTextColor(160,150,190);
     doc.text(String(Math.round(maxV*f)), startX-1, gy+1.5, {align:'right'});
   });
   const pts = values.map((v,i) => ({x:startX+i*stepX, y:baseY-(Math.abs(v)/maxV)*(chartH-10)}));
-  // Alan doldur
   if(pts.length>1) {
-    doc.setFillColor(cr,cg,cb,0.07);
-    doc.moveTo(pts[0].x,baseY);
-    pts.forEach(p=>doc.lineTo(p.x,p.y));
-    doc.lineTo(pts[pts.length-1].x,baseY);
-    doc.fill();
-  }
-  if(pts.length>1) {
-    doc.setDrawColor(cr,cg,cb); doc.setLineWidth(0.7);
+    doc.setDrawColor(cr,cg,cb,0.8); doc.setLineWidth(0.7);
     for(let i=0;i<pts.length-1;i++) doc.line(pts[i].x,pts[i].y,pts[i+1].x,pts[i+1].y);
   }
   pts.forEach((p,i) => {
     doc.setFillColor(cr,cg,cb); doc.circle(p.x,p.y,1,'F');
     doc.setFontSize(5); doc.setFont('helvetica','bold'); doc.setTextColor(cr,cg,cb);
     if(values[i]!==0) doc.text(String(values[i]),p.x,p.y-1.8,{align:'center'});
-    doc.setFontSize(4.5); doc.setTextColor(80,70,120); doc.setFont('helvetica','normal');
+    doc.setFontSize(4.5); doc.setTextColor(110,100,150); doc.setFont('helvetica','normal');
     doc.text(ts(String(labels[i]||'').substring(0,7)),p.x,Y+chartH-1.5,{align:'center'});
   });
   return Y+chartH+3;
@@ -2626,7 +2655,7 @@ async function exportStudentDetailPDF(sName) {
     subStats.filter(s=>s.topics&&s.topics.length>0).forEach(s=>{
       Y=pdfCheck(doc,Y,8);
       doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(72,52,212);
-      doc.text(ts(s.icon+' '+s.name),14,Y); Y+=5;
+      doc.text(ts(s.name),14,Y); Y+=5;
       const tH=['Konu','Soru','D','Y','Net','%Isabet','Sure(dk)'];
       const tW=[52,18,12,12,16,22,20];
       const tR=s.topics.slice(0,6).map(t=>[t.name.substring(0,22),t.q,t.d,t.y,(t.d-t.y/3).toFixed(1),'%'+t.pct,t.dur]);
@@ -2724,7 +2753,7 @@ async function exportStudentDetailPDF(sName) {
       subjects.forEach((subj,si)=>{
         const nets=denemeler.map(d=>{ const sr=d.subR.find(r=>r.name===subj.name); return sr?parseFloat(sr.net.toFixed(1)):0; });
         if(nets.some(v=>v!==0)) {
-          Y=pdfLineChart(doc,nets,denemeler.map(d=>'D'+d.di),Y,36,COLORS6[si%6],ts(subj.icon+' '+subj.name)+' — Net Gelisimi');
+          Y=pdfLineChart(doc,nets,denemeler.map(d=>'D'+d.di),Y,36,COLORS6[si%6],ts(subj.name)+' — Net Gelisimi');
         }
       });
     }
@@ -2739,7 +2768,7 @@ async function exportStudentDetailPDF(sName) {
   const insights=[];
   subStats.filter(s=>s.q>0).forEach(s=>{
     const tip=topicInsight(s.name,s.topics);
-    if(tip) insights.push(ts(s.icon+' '+s.name+': '+tip));
+    if(tip) insights.push(ts(s.name+': '+tip));
   });
   if(insights.length>0) {
     Y=pdfCheck(doc,Y,10); Y=pdfSubHeader(doc,'Konu Bazli Tespitler',Y);
