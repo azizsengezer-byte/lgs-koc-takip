@@ -2274,41 +2274,10 @@ function ts(v) {
 // ============================================================
 function pdfDownload(doc, fname) {
   try {
-    const blob = doc.output('blob');
-
-    // 1. FileSaver.js — Android Chrome dahil en güvenilir yöntem
-    if (typeof saveAs !== 'undefined') {
-      saveAs(blob, fname);
-      showToast('📄', fname + ' indiriliyor...');
-      return;
-    }
-
-    // 2. msSaveBlob — eski IE/Edge için
-    if (navigator.msSaveBlob) {
-      navigator.msSaveBlob(blob, fname);
-      showToast('📄', 'PDF kaydedildi!');
-      return;
-    }
-
-    // 3. Blob URL — masaüstü Chrome/Firefox
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fname;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 5000);
-    showToast('📄', fname + ' indiriliyor...');
-
+    doc.save(fname);
+    showToast('📄', 'PDF indiriliyor...');
   } catch(e) {
-    // 4. Son çare: jsPDF kendi save()
-    try {
-      doc.save(fname);
-      showToast('📄', 'PDF kaydedildi!');
-    } catch(e2) {
-      showToast('❌', 'PDF hatasi: ' + e2.message);
-    }
+    showToast('❌', 'PDF hatasi: ' + e.message);
   }
 }
 
