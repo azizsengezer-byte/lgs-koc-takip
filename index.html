@@ -2642,7 +2642,7 @@ function exportStudentDetailPDF(sName) {
   boxes.forEach((b,i)=>{
     const x=14+i*(bw+bgap);
     const [r,g,b2]=b[2];
-    doc.setFillColor(Math.min(255,Math.round(r*0.08+255*0.92)),Math.min(255,Math.round(g2*0.08+255*0.92)),Math.min(255,Math.round(b2*0.08+255*0.92))); doc.roundedRect(x,Y,bw,bh,2,2,'F');
+    doc.setFillColor(Math.min(255,Math.round(r*0.08+255*0.92)),Math.min(255,Math.round(g*0.08+255*0.92)),Math.min(255,Math.round(b2*0.08+255*0.92))); doc.roundedRect(x,Y,bw,bh,2,2,'F');
     doc.setDrawColor(Math.min(255,Math.round(r*0.25+191)),Math.min(255,Math.round(g*0.25+191)),Math.min(255,Math.round(b2*0.25+191))); doc.setLineWidth(0.3); doc.roundedRect(x,Y,bw,bh,2,2,'S');
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(r,g,b2);
     doc.text(ts(String(b[1])),x+bw/2,Y+9,{align:'center'});
