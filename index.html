@@ -2490,19 +2490,21 @@ function dpSelectMonth(monthIdx, btn) {
   // Ayın ilk Pazartesisi'ni bul
   const firstDay = new Date(year, monthIdx, 1);
   const dayOfWeek = firstDay.getDay();
-  let mon = new Date(firstDay);
+  let mon = new Date(year, monthIdx, 1);
   mon.setDate(firstDay.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
   // O aya ait haftaları listele
-  while (mon.getMonth() <= monthIdx && mon.getFullYear() <= year) {
+  while (true) {
     const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    if (mon.getFullYear() > year || (mon.getFullYear() === year && mon.getMonth() > monthIdx)) break;
     // Sadece gelecekteki haftaları gösterme
     if (mon <= now) {
-      const monKey = mon.toISOString().split('T')[0];
+      // Timezone güvenli key: yerel tarihten yap
+      const pad = n => String(n).padStart(2,'0');
+      const monKey = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
       const label = mon.toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) + ' - ' + sun.toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
       weeks.push({key: monKey, label});
     }
     mon.setDate(mon.getDate()+7);
-    if (mon.getMonth() > monthIdx && mon.getFullYear() >= year) break;
   }
   weeks.reverse(); // En yeni hafta üstte
   document.getElementById('dpWeekChips').innerHTML = weeks.map(w =>
@@ -2533,7 +2535,8 @@ function dpConfirm() {
     const monKey = _dpSelected.weekStart;
     const mon = new Date(monKey+'T12:00:00');
     const sun = new Date(mon); sun.setDate(mon.getDate()+6);
-    const endKey = sun.toISOString().split('T')[0];
+    const pad = n => String(n).padStart(2,'0');
+    const endKey = `${sun.getFullYear()}-${pad(sun.getMonth()+1)}-${pad(sun.getDate())}`;
     const rangeLabel = mon.toLocaleDateString('tr-TR',{day:'numeric',month:'long'}) + ' - ' + sun.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
     window._pdfDateOverride = { mode:'weekly', startKey: monKey, endKey, label:'Haftalık', title: rangeLabel + ' Haftalık Rapor' };
   }
@@ -2882,7 +2885,11 @@ function pdfHeader(doc, title, subtitle, dateStr) {
   //            ya: "Test Öğrenci — Mart 2026 Aylık Rapor"
   const tRaw = tx(title);
   const dashIdx = tRaw.indexOf(' \u2014 ');
-  const studentName = (dashIdx > -1 ? tRaw.substring(0, dashIdx) : tRaw).toUpperCase();
+  // Öğrenci adını önce orijinalden al (tx öncesi), büyük harfe çevir, sonra tx uygula
+  const titleOrig = String(title);
+  const dashIdxOrig = titleOrig.indexOf(' \u2014 ');
+  const studentNameOrig = dashIdxOrig > -1 ? titleOrig.substring(0, dashIdxOrig) : titleOrig;
+  const studentName = tx(studentNameOrig.toLocaleUpperCase('tr-TR'));
   const afterDash = dashIdx > -1 ? tRaw.substring(dashIdx + 3) : '';
 
   // Rapor tipini bul
@@ -2895,7 +2902,7 @@ function pdfHeader(doc, title, subtitle, dateStr) {
   if (reportType === 'Aylık') {
     // "Mart 2026 Aylık Rapor" → "MART AYLIK RAPORU" tek satır, 3. satır boş
     const monthMatch = afterDash.match(/^([A-Za-zığüşöçİĞÜŞÖÇ]+)\s+\d{4}/);
-    const monthName = monthMatch ? monthMatch[1].toUpperCase() : '';
+    const monthName = monthMatch ? monthMatch[1].toLocaleUpperCase('tr-TR') : '';
     line2 = monthName ? monthName + ' AYLIK RAPORU' : 'AYLIK RAPOR';
     line3 = '';
   } else if (reportType === 'Günlük') {
