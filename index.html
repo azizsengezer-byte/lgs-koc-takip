@@ -644,7 +644,7 @@
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <!-- Bildirim -->
-      <div style="position:relative;cursor:pointer;padding:6px;" onclick="showPage('notifs')">
+      <div style="position:relative;cursor:pointer;padding:6px;" onclick="toggleNotifsPage()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
           <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -893,41 +893,35 @@ const subjectProgressT = [0, 0, 0, 0, 0, 0];
 
 const kazanimlar = {
   'Türkçe': [
-    'Sözcük Türleri', 'İsim Tamlamaları', 'Sıfat Tamlamaları', 'Zamirler',
-    'Fiiller ve Çekimi', 'Cümle Türleri', 'Cümle Ögesi', 'Paragraf Analizi',
-    'Ana Fikir ve Yardımcı Fikir', 'Anlatım Bozukluğu', 'Noktalama İşaretleri',
-    'Yazım Kuralları', 'Söz Sanatları', 'Metin Türleri', 'Şiir Bilgisi',
+    'Fiilimsiler', 'Cümlenin Ögeleri', 'Fiil Çatısı', 'Sözcükte Anlam',
+    'Cümlede Anlam', 'Deyimler ve Atasözü', 'Cümle Çeşitleri',
+    'Yazım Kuralları', 'Paragraf', 'Sözel Muhakeme/Görsel Okuma',
+    'Noktalama İşaretleri', 'Anlatım Bozuklukları', 'Söz Sanatları', 'Metin Türleri',
   ],
   'Matematik': [
-    'Çarpanlara Ayırma', 'Özdeşlikler', 'Üslü Sayılar', 'Kök İfadeler',
-    'Birinci Dereceden Denklemler', 'Birinci Dereceden Eşitsizlikler',
-    'Doğrusal Denklem Sistemleri', 'Üçgenler', 'Dörtgenler',
-    'Dönüşüm Geometrisi', 'Veri Analizi', 'Olasılık',
-    'Eğim ve Doğru', 'Fonksiyonlar',
+    'Çarpanlar ve Katlar', 'Üslü İfadeler', 'Kareköklü İfadeler', 'Veri Analizi',
+    'Basit Olayların Olma Olasılığı', 'Cebirsel İfadeler ve Özdeşlikler',
+    'Doğrusal Denklemler', 'Eşitsizlikler', 'Üçgenler',
+    'Eşlik ve Benzerlik', 'Dönüşüm Geometrisi', 'Geometrik Cisimler',
   ],
   'Fen Bilimleri': [
-    'Mevsimler ve İklim', 'DNA ve Genetik Kod', 'Basit Makineler',
-    'Basınç', 'Madde ve Endüstri', 'Kimyasal Tepkimeler',
-    'Asit-Baz ve Tuzlar', 'Optik', 'Elektrik Yükleri',
-    'Elektrik Devreleri', 'Canlılar Alemi', 'Ekosistem',
+    'Mevsimler ve İklim', 'DNA ve Genetik Kod', 'Basınç',
+    'Madde ve Endüstri', 'Basit Makineler', 'Enerji Dönüşümleri ve Çevre Bilimi',
+    'Elektrik Yükleri ve Elektrik Enerjisi',
   ],
   'İnkılap Tarihi': [
-    'Osmanlı Devletinin Çöküşü', 'I. Dünya Savaşı', 'Kurtuluş Savaşı Hazırlık Dönemi',
-    'Kurtuluş Savaşı Muharebeler', 'Lozan Antlaşması', 'Cumhuriyetin İlanı',
-    'Hukuk Alanındaki İnkılaplar', 'Eğitim Alanındaki İnkılaplar',
-    'Ekonomi Alanındaki İnkılaplar', 'Atatürk İlkeleri', 'Türk Dış Politikası',
+    'Bir Kahraman Doğuyor', 'Milli Uyanış - Bağımsızlık Yolunda Atılan Adımlar',
+    'Milli Bir Destan - Ya İstiklal Ya Ölüm', 'Atatürkçülük ve Çağdaşlaşan Türkiye',
+    'Demokratikleşme Çabaları', 'Atatürk Dönemi Türk Dış Politikası',
+    'Atatürk\'ün Ölümü ve Sonrası',
   ],
   'Din Kültürü': [
-    'Hz. Muhammed\'in Hayatı', 'Kur\'an-ı Kerim', 'Temel İbadetler',
-    'İslam\'ın Şartları', 'İmanın Şartları', 'İslam Tarihi',
-    'Ahlak ve Değerler', 'Diğer Dinler', 'Peygamberler Tarihi',
+    'Kader İnancı', 'Zekat ve Sadaka', 'Din ve Hayat',
+    'Hz. Muhammed\'in Örnekliği', 'Kur\'an-ı Kerim ve Özellikleri',
   ],
   'İngilizce': [
-    'Simple Present Tense', 'Present Continuous Tense', 'Simple Past Tense',
-    'Past Continuous Tense', 'Future Tense (will/going to)', 'Present Perfect Tense',
-    'Passive Voice', 'Reported Speech', 'Conditionals (Type 1-2)',
-    'Modals', 'Relative Clauses', 'Vocabulary & Expressions',
-    'Reading Comprehension', 'Listening Skills',
+    'Friendship', 'Teen Life', 'In The Kitchen', 'On The Phone',
+    'The Internet', 'Adventures', 'Tourism', 'Chores', 'Science', 'Natural Forces',
   ],
 };
 
@@ -1309,6 +1303,18 @@ function renderSidebar() {
   `).join('');
   renderMobileNav();
 }
+
+function toggleNotifsPage() {
+  if (currentPage === 'notifs') {
+    // Zaten açıksa önceki sayfaya dön
+    const prev = _prevPage || 'dashboard';
+    showPage(prev);
+  } else {
+    _prevPage = currentPage;
+    showPage('notifs');
+  }
+}
+let _prevPage = 'dashboard';
 
 function showPage(id) {
   currentPage = id;
@@ -2407,72 +2413,68 @@ function pdfNewPage(doc) { doc.addPage(); return 20; }
 function pdfCheck(doc, Y, needed) { return Y + needed > 278 ? pdfNewPage(doc) : Y; }
 
 function pdfDrawLogo(doc, x, y, size) {
-  // size = ikon kare boyutu (mm)
-  const r = size * 0.28; // köşe yarıçapı
-  // Gradient efekti için iki katmanlı arka plan (jsPDF gradient desteklemiyor, renk geçişi simüle)
+  const r = size * 0.26;
+  // Arka plan — gradient simülasyonu: mor → turkuaz
   doc.setFillColor(108,99,255); doc.roundedRect(x, y, size, size, r, r, 'F');
-  doc.setFillColor(76,201,240); doc.roundedRect(x + size*0.45, y, size*0.55, size, r, r, 'F');
-  doc.setFillColor(108,99,255); doc.roundedRect(x, y, size*0.65, size, r, r, 'F');
-  // Glow — hafif dış parıltı
-  doc.setDrawColor(108,99,255); doc.setLineWidth(0.6);
-  doc.roundedRect(x-0.4, y-0.4, size+0.8, size+0.8, r+0.3, r+0.3, 'S');
+  doc.setFillColor(76,180,240); doc.roundedRect(x+size*0.5, y, size*0.5, size, r, r, 'F');
+  doc.setFillColor(92,90,255); doc.roundedRect(x, y, size*0.6, size, r, r, 'F');
 
-  // Bar chart — 3 sütun yükselen
-  const bw = size * 0.16;  // bar genişliği
-  const bx1 = x + size * 0.15;
-  const bx2 = x + size * 0.38;
-  const bx3 = x + size * 0.61;
-  const bottom = y + size * 0.88;
-  const h1 = size * 0.32, h2 = size * 0.52, h3 = size * 0.72;
-  doc.setFillColor(255,255,255);
-  doc.setGState && doc.setGState(doc.GState({opacity:0.45}));
-  doc.roundedRect(bx1, bottom-h1, bw, h1, 0.8, 0.8, 'F');
-  doc.setGState && doc.setGState(doc.GState({opacity:0.7}));
-  doc.roundedRect(bx2, bottom-h2, bw, h2, 0.8, 0.8, 'F');
-  doc.setGState && doc.setGState(doc.GState({opacity:1}));
-  doc.roundedRect(bx3, bottom-h3, bw, h3, 0.8, 0.8, 'F');
+  // Bar chart — 3 yükselen sütun (opasite yok, doğrudan renk)
+  const bw = size * 0.15;
+  const bottom = y + size * 0.87;
+  const bx1 = x + size * 0.14, h1 = size * 0.30;
+  const bx2 = x + size * 0.36, h2 = size * 0.50;
+  const bx3 = x + size * 0.58, h3 = size * 0.70;
+  const br = 0.7;
+  // Bar 1 — koyu beyaz
+  doc.setFillColor(200,195,255); doc.roundedRect(bx1, bottom-h1, bw, h1, br, br, 'F');
+  // Bar 2 — orta beyaz
+  doc.setFillColor(225,222,255); doc.roundedRect(bx2, bottom-h2, bw, h2, br, br, 'F');
+  // Bar 3 — tam beyaz
+  doc.setFillColor(255,255,255); doc.roundedRect(bx3, bottom-h3, bw, h3, br, br, 'F');
   // Ok — sağ üst
-  const ax = x + size * 0.82, ay = y + size * 0.18;
-  doc.setDrawColor(255,255,255); doc.setLineWidth(0.7);
-  doc.line(ax, ay+size*0.14, ax, ay);       // dikey
-  doc.line(ax-size*0.1, ay+size*0.1, ax, ay); // sol kanat
-  doc.line(ax+size*0.1, ay+size*0.1, ax, ay); // sağ kanat
+  const ax = x + size*0.83, ay = y + size*0.17;
+  doc.setDrawColor(255,255,255); doc.setLineWidth(0.65);
+  doc.line(ax, ay+size*0.13, ax, ay);
+  doc.line(ax-size*0.09, ay+size*0.09, ax, ay);
+  doc.line(ax+size*0.09, ay+size*0.09, ax, ay);
   doc.setLineWidth(0.3);
 }
 
 function pdfHeader(doc, title, subtitle, dateStr) {
-  // Beyaz sayfa
   doc.setFillColor(255,255,255); doc.rect(0,0,210,297,'F');
-  // Üst şerit
-  doc.setFillColor(90,72,200); doc.rect(0,0,210,28,'F');
-  doc.setFillColor(72,200,130); doc.rect(0,26.5,210,1.8,'F');
+  // Üst şerit (28mm yükseklik)
+  doc.setFillColor(72,58,180); doc.rect(0,0,210,28,'F');
+  doc.setFillColor(72,200,130); doc.rect(0,26.2,210,1.8,'F');
 
-  // Logo ikonu — küçük, sol köşe
-  pdfDrawLogo(doc, 8, 3, 22);
+  // Sol: Logo ikonu (8,3) boyut 22mm
+  pdfDrawLogo(doc, 7, 3, 22);
 
-  // LGSKoç yazısı — logonun hemen sağında
-  doc.setFont(_PF,'bold'); doc.setFontSize(12); doc.setTextColor(255,255,255);
-  doc.text('LGS', 33, 11.5);
-  doc.setTextColor(180,230,255);
-  doc.text('Koç', 45, 11.5);
-  doc.setFont(_PF,'normal'); doc.setFontSize(6); doc.setTextColor(76,201,240);
-  doc.text(tx('Öğrenci Takip'), 33, 18);
+  // Sol: LGSKoç yazısı — ikon sağında x=32
+  doc.setFont(_PF,'bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
+  doc.text('LGS', 32, 12);
+  doc.setTextColor(180,225,255);
+  doc.text('Ko\u00e7', 43, 12);
+  doc.setFont(_PF,'normal'); doc.setFontSize(5.5); doc.setTextColor(76,201,240);
+  doc.text('O\u011frenci Takip', 32, 18);
 
-  // Orta — rapor başlığı (logo alanı 63mm, sağda tarih ~30mm → merkez 63-180 arası)
-  const midX = (63 + 180) / 2; // 121.5
-  doc.setFont(_PF,'bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
-  // Uzun başlıkları kes
-  const titleShort = tx(title).length > 40 ? tx(title).substring(0,38)+'…' : tx(title);
-  doc.text(titleShort, midX, 11.5, {align:'center'});
-  doc.setFont(_PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(210,205,255);
-  const subShort = tx(subtitle).length > 45 ? tx(subtitle).substring(0,43)+'…' : tx(subtitle);
-  doc.text(subShort, midX, 18, {align:'center'});
+  // Orta: başlık ve alt başlık — logo bölgesi 32+20=52mm bitiyor, tarih 170mm'den başlıyor
+  // Merkez: (52+170)/2 = 111
+  const cx = 111;
+  doc.setFont(_PF,'bold'); doc.setFontSize(8); doc.setTextColor(255,255,255);
+  const t = tx(title); 
+  const tCut = t.length > 38 ? t.substring(0,36)+'..' : t;
+  doc.text(tCut, cx, 11, {align:'center'});
+  doc.setFont(_PF,'normal'); doc.setFontSize(6); doc.setTextColor(210,205,255);
+  const s = tx(subtitle);
+  const sCut = s.length > 44 ? s.substring(0,42)+'..' : s;
+  doc.text(sCut, cx, 18, {align:'center'});
 
-  // Sağ — tarih
-  doc.setFont(_PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(210,205,255);
-  doc.text(tx(dateStr), 202, 14, {align:'right'});
+  // Sağ: tarih
+  doc.setFont(_PF,'normal'); doc.setFontSize(6); doc.setTextColor(200,195,240);
+  doc.text(tx(dateStr), 203, 14, {align:'right'});
 
-  return 36;
+  return 35;
 }
 
 function pdfFooter(doc, totalPages, subtitle) {
