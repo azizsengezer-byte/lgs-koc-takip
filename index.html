@@ -2436,10 +2436,10 @@ let _dpSelected = { year: null, month: null, weekStart: null };
 function openDatePicker(sName, mode) {
   _dpSName = sName;
   _dpMode = mode;
-  _dpSelected = { year: new Date().getFullYear(), month: null, weekStart: null };
   const now = new Date();
+  _dpSelected = { year: now.getFullYear(), month: now.getMonth(), weekStart: null };
 
-  // Yılları oluştur (bu yıl + önceki 2 yıl)
+  // Yılları oluştur
   const years = [now.getFullYear(), now.getFullYear()-1];
   document.getElementById('dpYearChips').innerHTML = years.map(y =>
     `<button class="dp-chip${y===now.getFullYear()?' active':''}" onclick="dpSelectYear(${y},this)">${y}</button>`
@@ -2451,12 +2451,12 @@ function openDatePicker(sName, mode) {
   document.getElementById('dpWeekSection').style.display = 'none';
   document.getElementById('dpConfirmBtn').style.display = 'none';
 
-  // Varsayılan olarak bu yılı seç ve ayları göster
-  dpSelectYear(now.getFullYear(), document.querySelector('#dpYearChips .dp-chip'));
+  // Bu yılı seç → ayları render et → bu ayı otomatik seç
+  dpSelectYear(now.getFullYear(), document.querySelector('#dpYearChips .dp-chip'), true);
   document.getElementById('datePickerModal').classList.add('open');
 }
 
-function dpSelectYear(year, btn) {
+function dpSelectYear(year, btn, autoSelect=false) {
   _dpSelected.year = year; _dpSelected.month = null; _dpSelected.weekStart = null;
   document.querySelectorAll('#dpYearChips .dp-chip').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
@@ -2465,14 +2465,24 @@ function dpSelectYear(year, btn) {
   const months = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
   const maxMonth = year === now.getFullYear() ? now.getMonth() : 11;
   document.getElementById('dpMonthChips').innerHTML = months.slice(0, maxMonth+1).map((m,i) =>
-    `<button class="dp-chip" onclick="dpSelectMonth(${i},this)">${m}</button>`
+    `<button class="dp-chip${(autoSelect && year===now.getFullYear() && i===now.getMonth())?' active':''}" onclick="dpSelectMonth(${i},this)">${m}</button>`
   ).join('');
   document.getElementById('dpMonthSection').style.display = '';
+
+  // Bu yıl seçiliyse ve autoSelect açıksa bu ayı da otomatik seç
+  if (autoSelect && year === now.getFullYear()) {
+    const monthBtn = document.querySelectorAll('#dpMonthChips .dp-chip')[now.getMonth()];
+    if (monthBtn) dpSelectMonth(now.getMonth(), monthBtn, true);
+  } else {
+    document.getElementById('dpWeekSection').style.display = 'none';
+    document.getElementById('dpConfirmBtn').style.display = 'none';
+  }
+}
   document.getElementById('dpWeekSection').style.display = 'none';
   document.getElementById('dpConfirmBtn').style.display = 'none';
 }
 
-function dpSelectMonth(monthIdx, btn) {
+function dpSelectMonth(monthIdx, btn, autoSelect=false) {
   _dpSelected.month = monthIdx; _dpSelected.weekStart = null;
   document.querySelectorAll('#dpMonthChips .dp-chip').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -2483,35 +2493,48 @@ function dpSelectMonth(monthIdx, btn) {
     return;
   }
 
-  // Haftalık: o aydaki haftaları listele
-  const year = _dpSelected.year;
+  // Bu haftanın Pazartesi key'ini hesapla
   const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const todayMon = new Date(now);
+  todayMon.setDate(now.getDate() - (now.getDay()===0?6:now.getDay()-1));
+  const currentWeekKey = `${todayMon.getFullYear()}-${pad(todayMon.getMonth()+1)}-${pad(todayMon.getDate())}`;
+
+  const year = _dpSelected.year;
   const weeks = [];
-  // Ayın ilk Pazartesisi'ni bul
   const firstDay = new Date(year, monthIdx, 1);
   const dayOfWeek = firstDay.getDay();
   let mon = new Date(year, monthIdx, 1);
   mon.setDate(firstDay.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-  // O aya ait haftaları listele
   while (true) {
     const sun = new Date(mon); sun.setDate(mon.getDate()+6);
     if (mon.getFullYear() > year || (mon.getFullYear() === year && mon.getMonth() > monthIdx)) break;
-    // Sadece gelecekteki haftaları gösterme
     if (mon <= now) {
-      // Timezone güvenli key: yerel tarihten yap
-      const pad = n => String(n).padStart(2,'0');
       const monKey = `${mon.getFullYear()}-${pad(mon.getMonth()+1)}-${pad(mon.getDate())}`;
       const label = mon.toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) + ' - ' + sun.toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
       weeks.push({key: monKey, label});
     }
     mon.setDate(mon.getDate()+7);
   }
-  weeks.reverse(); // En yeni hafta üstte
+  weeks.reverse();
+
   document.getElementById('dpWeekChips').innerHTML = weeks.map(w =>
-    `<button class="dp-chip" style="flex:1;min-width:140px" onclick="dpSelectWeek('${w.key}',this)">${w.label}</button>`
+    `<button class="dp-chip${(autoSelect && w.key===currentWeekKey)?' active':''}" style="flex:1;min-width:140px" onclick="dpSelectWeek('${w.key}',this)">${w.label}</button>`
   ).join('');
   document.getElementById('dpWeekSection').style.display = '';
-  document.getElementById('dpConfirmBtn').style.display = 'none';
+
+  // Bu haftayı otomatik seç
+  if (autoSelect) {
+    const matchingWeek = weeks.find(w => w.key === currentWeekKey);
+    if (matchingWeek) {
+      _dpSelected.weekStart = currentWeekKey;
+      document.getElementById('dpConfirmBtn').style.display = 'block';
+    } else {
+      document.getElementById('dpConfirmBtn').style.display = 'none';
+    }
+  } else {
+    document.getElementById('dpConfirmBtn').style.display = 'none';
+  }
 }
 
 function dpSelectWeek(monKey, btn) {
