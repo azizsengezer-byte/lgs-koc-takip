@@ -2443,38 +2443,44 @@ function pdfDrawLogo(doc, x, y, size) {
 
 function pdfHeader(doc, title, subtitle, dateStr) {
   doc.setFillColor(255,255,255); doc.rect(0,0,210,297,'F');
-  // Üst şerit (28mm yükseklik)
-  doc.setFillColor(72,58,180); doc.rect(0,0,210,28,'F');
-  doc.setFillColor(72,200,130); doc.rect(0,26.2,210,1.8,'F');
+  // Üst şerit (32mm)
+  doc.setFillColor(72,58,180); doc.rect(0,0,210,32,'F');
+  doc.setFillColor(72,200,130); doc.rect(0,30.2,210,1.8,'F');
 
-  // Sol: Logo ikonu (8,3) boyut 22mm
-  pdfDrawLogo(doc, 7, 3, 22);
+  // Sol: Logo ikonu
+  pdfDrawLogo(doc, 7, 4, 22);
 
-  // Sol: LGSKoç yazısı — ikon sağında x=32
+  // Sol: LGSKoç yazısı
   doc.setFont(_PF,'bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
-  doc.text('LGS', 32, 12);
+  doc.text('LGS', 32, 13);
   doc.setTextColor(180,225,255);
-  doc.text('Ko\u00e7', 43, 12);
+  doc.text('Ko\u00e7', 43, 13);
   doc.setFont(_PF,'normal'); doc.setFontSize(5.5); doc.setTextColor(76,201,240);
-  doc.text('O\u011frenci Takip', 32, 18);
+  doc.text('O\u011frenci Takip', 32, 19);
 
-  // Orta: başlık ve alt başlık — logo bölgesi 32+20=52mm bitiyor, tarih 170mm'den başlıyor
-  // Merkez: (52+170)/2 = 111
-  const cx = 111;
-  doc.setFont(_PF,'bold'); doc.setFontSize(8); doc.setTextColor(255,255,255);
-  const t = tx(title); 
-  const tCut = t.length > 38 ? t.substring(0,36)+'..' : t;
-  doc.text(tCut, cx, 11, {align:'center'});
-  doc.setFont(_PF,'normal'); doc.setFontSize(6); doc.setTextColor(210,205,255);
-  const s = tx(subtitle);
-  const sCut = s.length > 44 ? s.substring(0,42)+'..' : s;
-  doc.text(sCut, cx, 18, {align:'center'});
+  // Orta: 3 satır — öğrenci adı / rapor türü / tarih
+  // title = "Öğrenci Adı — 9 Mart - 15 Mart 2026 Haftalık Rapor"
+  // subtitle = "Öğrenci Bireysel Performans Raporu"
+  // dateStr = "15 Mart 2026"
+  // Bunu parçalayıp 3 satır olarak göster
+  const tRaw = tx(title);
+  const dashIdx = tRaw.indexOf(' \u2014 ');
+  const studentName = dashIdx > -1 ? tRaw.substring(0, dashIdx) : tRaw;
+  const reportPeriod = dashIdx > -1 ? tRaw.substring(dashIdx + 3) : tx(subtitle);
 
-  // Sağ: tarih
-  doc.setFont(_PF,'normal'); doc.setFontSize(6); doc.setTextColor(200,195,240);
-  doc.text(tx(dateStr), 203, 14, {align:'right'});
+  const cx = 130; // merkez x
+  // Satır 1: Öğrenci adı — büyük, beyaz
+  doc.setFont(_PF,'bold'); doc.setFontSize(10); doc.setTextColor(255,255,255);
+  doc.text(studentName, cx, 10, {align:'center'});
+  // Satır 2: Rapor türü (Haftalık/Aylık Rapor) — orta, açık mor
+  doc.setFont(_PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(210,205,255);
+  const pShort = reportPeriod.length > 42 ? reportPeriod.substring(0,40)+'..' : reportPeriod;
+  doc.text(pShort, cx, 18, {align:'center'});
+  // Satır 3: Tarih — küçük, soluk
+  doc.setFont(_PF,'normal'); doc.setFontSize(6); doc.setTextColor(160,155,210);
+  doc.text(tx(dateStr), cx, 25, {align:'center'});
 
-  return 35;
+  return 38;
 }
 
 function pdfFooter(doc, totalPages, subtitle) {
@@ -2718,26 +2724,47 @@ function exportStudentDetailPDF(sName) {
   // Gün bazlı veriler
   function buildDayList(days) {
     const list=[];
-    for(let i=days-1;i>=0;i--) {
-      const d=new Date(now); d.setDate(now.getDate()-i);
-      const dk=d.toISOString().split('T')[0];
-      const dayE=allEntries.filter(e=>e.dateKey===dk);
-      const soruE=dayE.filter(e=>e.type==='soru');
-      const konuE=dayE.filter(e=>e.type==='konu');
-      const tekE=dayE.filter(e=>e.type==='tekrar');
-      list.push({
-        label:d.toLocaleDateString('tr-TR',{weekday:'short',day:'numeric',month:'short'}),
-        dk,
-        q:soruE.reduce((a,e)=>a+(e.questions||0),0),
-        net:Math.round(soruE.reduce((a,e)=>a+(e.net||0),0)*10)/10,
-        dur:dayE.reduce((a,e)=>a+(e.duration||0),0),
-        konuDur:konuE.reduce((a,e)=>a+(e.duration||0),0),
-        tekDur:tekE.reduce((a,e)=>a+(e.duration||0),0),
-      });
+    if (studentAnalysisPeriod === 'monthly') {
+      // Aylık: sadece o aya ait günler (1'inden bugüne)
+      const year = now.getFullYear(), month = now.getMonth();
+      const lastDay = now.getDate();
+      for (let day = 1; day <= lastDay; day++) {
+        const d = new Date(year, month, day);
+        const dk = d.toISOString().split('T')[0];
+        const dayE = allEntries.filter(e=>e.dateKey===dk);
+        const soruE = dayE.filter(e=>e.type==='soru');
+        const konuE = dayE.filter(e=>e.type==='konu');
+        const tekE = dayE.filter(e=>e.type==='tekrar');
+        list.push({
+          label: d.toLocaleDateString('tr-TR',{day:'numeric',month:'short'}),
+          dk, q: soruE.reduce((a,e)=>a+(e.questions||0),0),
+          net: Math.round(soruE.reduce((a,e)=>a+(e.net||0),0)*10)/10,
+          dur: dayE.reduce((a,e)=>a+(e.duration||0),0),
+          konuDur: konuE.reduce((a,e)=>a+(e.duration||0),0),
+          tekDur: tekE.reduce((a,e)=>a+(e.duration||0),0),
+        });
+      }
+    } else {
+      for(let i=days-1;i>=0;i--) {
+        const d=new Date(now); d.setDate(now.getDate()-i);
+        const dk=d.toISOString().split('T')[0];
+        const dayE=allEntries.filter(e=>e.dateKey===dk);
+        const soruE=dayE.filter(e=>e.type==='soru');
+        const konuE=dayE.filter(e=>e.type==='konu');
+        const tekE=dayE.filter(e=>e.type==='tekrar');
+        list.push({
+          label:d.toLocaleDateString('tr-TR',{weekday:'short',day:'numeric',month:'short'}),
+          dk, q:soruE.reduce((a,e)=>a+(e.questions||0),0),
+          net:Math.round(soruE.reduce((a,e)=>a+(e.net||0),0)*10)/10,
+          dur:dayE.reduce((a,e)=>a+(e.duration||0),0),
+          konuDur:konuE.reduce((a,e)=>a+(e.duration||0),0),
+          tekDur:tekE.reduce((a,e)=>a+(e.duration||0),0),
+        });
+      }
     }
     return list;
   }
-  const trendDays = studentAnalysisPeriod==='monthly'?30:studentAnalysisPeriod==='weekly'?7:1;
+  const trendDays = studentAnalysisPeriod==='weekly'?7:1;
   const dayList = buildDayList(trendDays);
 
   // Deneme verileri
@@ -2832,15 +2859,20 @@ function exportStudentDetailPDF(sName) {
   if(hasTopics) {
     Y=pdfCheck(doc,Y,14); Y=pdfSubHeader(doc,'Konu Bazlı Soru Detayı',Y);
     subStats.filter(s=>s.topics&&s.topics.length>0).forEach(s=>{
-      Y=pdfCheck(doc,Y,8);
+      Y=pdfCheck(doc,Y,22); // ders adı + tablo için yeterli alan
+      // Ders adı — belirgin ayraç şeklinde
+      doc.setFillColor(235,232,255); doc.roundedRect(14,Y,182,7,1.5,1.5,'F');
+      doc.setFillColor(72,52,212); doc.roundedRect(14,Y,3,7,1,1,'F');
       doc.setFont(_PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(72,52,212);
-      doc.text(tx(s.name),14,Y); Y+=5;
+      doc.text(tx(s.name), 20, Y+4.8);
+      Y+=10; // ders adı sonrası boşluk
       const tH=['Konu','Soru','D','Y','Net','%İsabet','Süre(dk)'];
       const tW=[52,18,12,12,16,22,20];
       const tR=s.topics.slice(0,6).map(t=>[t.name.substring(0,22),t.q,t.d,t.y,(t.d-t.y/3).toFixed(1),'%'+t.pct,t.dur]);
       Y=pdfTable(doc,tH,tW,tR,Y,[100,85,220]);
+      Y+=4; // tablolar arası boşluk
     });
-    Y+=3;
+    Y+=2;
   }
 
   // ================================================================
@@ -2941,9 +2973,8 @@ function exportStudentDetailPDF(sName) {
   // ================================================================
   // ================================================================
   // BÖLÜM 5 — KOÇ DEĞERLENDİRMESİ
-  // Yeterli alan yoksa yeni sayfaya geç (başlık + en az 40mm içerik)
-  // ================================================================
-  if (Y > 220) { Y = pdfNewPage(doc); }
+  // Her zaman yeni sayfada başlasın — hem başlık hem içerik birlikte
+  Y = pdfNewPage(doc);
   Y = pdfSecHeader(doc,'5. KOÇ DEĞERLENDİRMESİ',Y,43,180,123);
 
   // Tespit & Yorum
