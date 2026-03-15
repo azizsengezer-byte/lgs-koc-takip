@@ -330,8 +330,35 @@
     .chat-layout { grid-template-columns:1fr; height:auto; border:none; border-radius:0; background:transparent; }
     .chat-list { border-right:none; border-radius:16px; overflow:hidden; border:1px solid var(--border); }
     .chat-list.mobile-hidden { display:none; }
-    .chat-window { display:none; border-radius:16px; overflow:hidden; border:1px solid var(--border); }
-    .chat-window.mobile-show { display:flex; height:calc(100vh - 160px); }
+    .chat-window { display:none; }
+    .chat-window.mobile-show {
+      display:flex;
+      position:fixed;
+      top:0; left:0; right:0; bottom:0;
+      height:100dvh;
+      z-index:500;
+      border-radius:0;
+      border:none;
+      background:var(--bg);
+      flex-direction:column;
+    }
+    .chat-window.mobile-show .chat-header {
+      padding-top:max(14px, env(safe-area-inset-top));
+      background:var(--surface);
+      border-bottom:1px solid var(--border);
+      flex-shrink:0;
+    }
+    .chat-window.mobile-show .chat-messages {
+      flex:1;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    .chat-window.mobile-show .chat-input-row {
+      flex-shrink:0;
+      padding-bottom:max(12px, env(safe-area-inset-bottom));
+      background:var(--surface);
+      border-top:1px solid var(--border);
+    }
     .mobile-chat-back { display:inline-flex !important; }
   }
   .mobile-chat-back { display:none; align-items:center; gap:6px; padding:8px 14px; background:var(--surface2); border:none; border-radius:10px; color:var(--text); cursor:pointer; font-weight:700; font-size:0.85rem; margin-bottom:10px; }
@@ -414,7 +441,29 @@
     .msg-layout { grid-template-columns:1fr; height:auto; }
     .msg-list { display:none; }
     .msg-list.show { display:block; }
-    .msg-chat { min-height:500px; }
+    /* Sohbet açıkken tam ekran */
+    .msg-chat-fullscreen {
+      position:fixed !important;
+      top:0; left:0; right:0; bottom:0;
+      z-index:1000;
+      background:var(--bg) !important;
+      border-radius:0 !important;
+      height:100dvh !important;
+      min-height:unset !important;
+      display:flex; flex-direction:column;
+    }
+    .msg-chat-fullscreen .msg-chat-header {
+      padding-top:max(14px, env(safe-area-inset-top));
+      flex-shrink:0;
+    }
+    .msg-chat-fullscreen .msg-body {
+      flex:1;
+      overflow-y:auto;
+    }
+    .msg-chat-fullscreen .msg-input-area {
+      flex-shrink:0;
+      padding-bottom:max(12px, env(safe-area-inset-bottom));
+    }
   }
 
   /* MOBILE NAV */
