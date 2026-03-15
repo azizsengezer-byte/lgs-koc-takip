@@ -1353,6 +1353,21 @@ function renderSidebar() {
   renderMobileNav();
 }
 
+function updateTeacherDatePicker() {
+  const type = document.getElementById('pdfPeriodType')?.value;
+  const sel = document.getElementById('pdfDateRange');
+  if (!sel) return;
+  if (type === 'weekly') {
+    sel.innerHTML = generateWeekOptions();
+    sel.style.display = '';
+  } else if (type === 'monthly') {
+    sel.innerHTML = generateMonthOptions();
+    sel.style.display = '';
+  } else {
+    sel.style.display = 'none';
+  }
+}
+
 function toggleNotifsPage() {
   if (currentPage === 'notifs') {
     // Zaten açıksa önceki sayfaya dön
@@ -2235,12 +2250,125 @@ function studentDetailAnalysis() {
 
     <!-- PDF -->
     <div id="pdfDownloadArea_${sName.replace(/\s/g,'_')}" style="margin-bottom:24px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
+        <div style="font-size:0.82rem;font-weight:700;color:var(--text2);margin-bottom:10px">📅 Rapor Dönemi Seç</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <button onclick="setPdfMode('${sName}','weekly',this)" class="pdf-mode-btn active-mode" style="flex:1;padding:8px;border-radius:9px;border:2px solid var(--accent);background:var(--accent)22;color:var(--accent);font-weight:700;font-size:0.8rem;cursor:pointer">Haftalık</button>
+          <button onclick="setPdfMode('${sName}','monthly',this)" class="pdf-mode-btn" style="flex:1;padding:8px;border-radius:9px;border:2px solid var(--border);background:transparent;color:var(--text2);font-weight:700;font-size:0.8rem;cursor:pointer">Aylık</button>
+        </div>
+        <!-- Haftalık seçici -->
+        <div id="weekPicker_${sName.replace(/\s/g,'_')}" style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:0.75rem;color:var(--text2);font-weight:600">Hafta seç:</div>
+          <select id="weekSelect_${sName.replace(/\s/g,'_')}" style="width:100%;padding:8px 12px;border-radius:9px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.85rem">
+            ${generateWeekOptions()}
+          </select>
+        </div>
+        <!-- Aylık seçici -->
+        <div id="monthPicker_${sName.replace(/\s/g,'_')}" style="display:none;flex-direction:column;gap:6px">
+          <div style="font-size:0.75rem;color:var(--text2);font-weight:600">Ay seç:</div>
+          <select id="monthSelect_${sName.replace(/\s/g,'_')}" style="width:100%;padding:8px 12px;border-radius:9px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.85rem">
+            ${generateMonthOptions()}
+          </select>
+        </div>
+      </div>
       <button class="btn btn-primary" style="width:100%;padding:14px;font-size:0.95rem"
-        onclick="preparePdfLink('${sName}', this)">
+        onclick="preparePdfLinkWithDate('${sName}', this)">
         📄 PDF Raporu İndir
       </button>
     </div>
   `;
+}
+
+function generateWeekOptions() {
+  const opts = [];
+  const now = new Date();
+  // Son 12 haftayı listele
+  for (let w = 0; w < 12; w++) {
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - (now.getDay()===0?6:now.getDay()-1) - w*7);
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    const monStr = mon.toISOString().split('T')[0];
+    const label = mon.toLocaleDateString('tr-TR',{day:'numeric',month:'long'}) + ' - ' + sun.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+    opts.push(`<option value="${monStr}"${w===0?' selected':''}>${label}</option>`);
+  }
+  return opts.join('');
+}
+
+function generateMonthOptions() {
+  const opts = [];
+  const now = new Date();
+  // Son 12 ayı listele
+  for (let m = 0; m < 12; m++) {
+    const d = new Date(now.getFullYear(), now.getMonth()-m, 1);
+    const val = d.toISOString().split('T')[0].substring(0,7); // "2026-03"
+    const label = d.toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
+    opts.push(`<option value="${val}"${m===0?' selected':''}>${label}</option>`);
+  }
+  return opts.join('');
+}
+
+function setPdfMode(sName, mode, btn) {
+  const key = sName.replace(/\s/g,'_');
+  const weekPicker = document.getElementById('weekPicker_'+key);
+  const monthPicker = document.getElementById('monthPicker_'+key);
+  const allBtns = btn.parentElement.querySelectorAll('.pdf-mode-btn');
+  allBtns.forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background = 'transparent';
+    b.style.color = 'var(--text2)';
+  });
+  btn.style.borderColor = 'var(--accent)';
+  btn.style.background = 'var(--accent)22';
+  btn.style.color = 'var(--accent)';
+  if (mode === 'weekly') {
+    weekPicker.style.display = 'flex';
+    monthPicker.style.display = 'none';
+  } else {
+    weekPicker.style.display = 'none';
+    monthPicker.style.display = 'flex';
+  }
+  btn.parentElement.dataset.mode = mode;
+}
+
+async function preparePdfLinkWithDate(sName, btn) {
+  const key = sName.replace(/\s/g,'_');
+  const modeBtns = btn.previousElementSibling;
+  const mode = modeBtns?.querySelector('.active-mode')?.textContent?.includes('Aylık') ? 'monthly' : 
+               (modeBtns?.dataset?.mode || 'weekly');
+  
+  // Seçilen tarihi al
+  let startKey, endKey, periodLabel, periodTitle;
+  const now = new Date();
+
+  if (mode === 'monthly') {
+    const sel = document.getElementById('monthSelect_'+key);
+    const val = sel ? sel.value : now.toISOString().substring(0,7);
+    const [yr, mo] = val.split('-').map(Number);
+    startKey = val + '-01';
+    const lastDay = new Date(yr, mo, 0).getDate();
+    endKey = val + '-' + String(lastDay).padStart(2,'0');
+    const monthName = new Date(yr, mo-1, 1).toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
+    periodLabel = 'Aylık';
+    periodTitle = monthName.split(' ')[0].toUpperCase() + ' AYLIK RAPORU';
+    // exportStudentDetailPDF'e geçilebilmesi için geçici override
+    window._pdfDateOverride = { mode:'monthly', startKey, endKey, label:periodLabel, title: new Date(yr,mo-1,1).toLocaleDateString('tr-TR',{month:'long',year:'numeric'})+' Aylık Rapor' };
+  } else {
+    const sel = document.getElementById('weekSelect_'+key);
+    const monKey = sel ? sel.value : (() => {
+      const m = new Date(now); m.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1)); return m.toISOString().split('T')[0];
+    })();
+    const mon = new Date(monKey+'T12:00:00');
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    startKey = monKey;
+    endKey = sun.toISOString().split('T')[0];
+    const rangeLabel = mon.toLocaleDateString('tr-TR',{day:'numeric',month:'long'}) + ' - ' + sun.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+    periodLabel = 'Haftalık';
+    periodTitle = rangeLabel + ' Haftalık Rapor';
+    window._pdfDateOverride = { mode:'weekly', startKey, endKey, label:periodLabel, title: periodTitle };
+  }
+
+  await preparePdfLink(sName, btn);
+  window._pdfDateOverride = null;
 }
 
 function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, totalNet, activeDays, period, forPdf=false) {
@@ -2754,7 +2882,10 @@ function exportStudentDetailPDF(sName) {
     return now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'}) + ' Günlük Rapor';
   }
 
-  const periodTitle = getPeriodTitle();
+  // Tarih override varsa (geçmişe dönük rapor) onu kullan
+  const _override = window._pdfDateOverride;
+  const _overridePeriodTitle = _override ? _override.title : null;
+  const periodTitle = _overridePeriodTitle || getPeriodTitle();
   const dateStr = now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
 
   // Dönem filtresi
@@ -2765,9 +2896,16 @@ function exportStudentDetailPDF(sName) {
   const sUid = sObj.uid || '';
   const matchE = e => e.studentName===sName || (sUid && e.userId===sUid);
   let filtered = [];
-  if (studentAnalysisPeriod==='daily') filtered = studyEntries.filter(e=>matchE(e)&&e.dateKey===todayKey);
-  else if (studentAnalysisPeriod==='weekly') filtered = studyEntries.filter(e=>matchE(e)&&e.dateKey>=mondayKey);
-  else filtered = studyEntries.filter(e=>matchE(e)&&e.dateKey>=monthStart);
+  if (_override) {
+    // Geçmişe dönük: seçilen tarih aralığı
+    filtered = studyEntries.filter(e=>matchE(e) && e.dateKey>=_override.startKey && e.dateKey<=_override.endKey);
+  } else if (studentAnalysisPeriod==='daily') {
+    filtered = studyEntries.filter(e=>matchE(e)&&e.dateKey===todayKey);
+  } else if (studentAnalysisPeriod==='weekly') {
+    filtered = studyEntries.filter(e=>matchE(e)&&e.dateKey>=mondayKey);
+  } else {
+    filtered = studyEntries.filter(e=>matchE(e)&&e.dateKey>=monthStart);
+  }
   const allEntries = studyEntries.filter(e=>matchE(e));
 
   // Veri hesapla
@@ -2803,6 +2941,28 @@ function exportStudentDetailPDF(sName) {
   // Gün bazlı veriler
   function buildDayList(days) {
     const list=[];
+    const ov = window._pdfDateOverride;
+    if (ov) {
+      // Geçmişe dönük: override tarih aralığındaki günleri listele
+      const start = new Date(ov.startKey+'T12:00:00');
+      const end = new Date(ov.endKey+'T12:00:00');
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate()+1)) {
+        const dk = d.toISOString().split('T')[0];
+        const dayE = allEntries.filter(e=>e.dateKey===dk);
+        const soruE = dayE.filter(e=>e.type==='soru');
+        const konuE = dayE.filter(e=>e.type==='konu');
+        const tekE = dayE.filter(e=>e.type==='tekrar');
+        list.push({
+          label: new Date(dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}),
+          dk, q: soruE.reduce((a,e)=>a+(e.questions||0),0),
+          net: Math.round(soruE.reduce((a,e)=>a+(e.net||0),0)*10)/10,
+          dur: dayE.reduce((a,e)=>a+(e.duration||0),0),
+          konuDur: konuE.reduce((a,e)=>a+(e.duration||0),0),
+          tekDur: tekE.reduce((a,e)=>a+(e.duration||0),0),
+        });
+      }
+      return list;
+    }
     if (studentAnalysisPeriod === 'monthly') {
       // Aylık: sadece o aya ait günler (1'inden bugüne)
       const year = now.getFullYear(), month = now.getMonth();
@@ -3145,21 +3305,24 @@ function teacherAnalysis() {
     <div class="page-title">📈 Analizler</div>
     <div class="page-sub">Öğrenci çalışma raporları</div>
 
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title">📄 PDF Rapor İndir</div>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">
-        <select class="pdf-period-select" id="pdfPeriod" style="flex:1;min-width:120px">
-          <option value="weekly">Bu Hafta</option>
-          <option value="monthly" selected>Bu Ay</option>
-          <option value="all">Tüm Dönem</option>
-        </select>
-        <select class="pdf-period-select" id="pdfStudent" style="flex:1;min-width:120px">
-          <option value="all">Tüm Öğrenciler</option>
-          ${students.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')}
-        </select>
-        <button class="pdf-btn" onclick="exportPDF('teacher')" style="flex:1;min-width:140px">📄 PDF İndir</button>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">📄 PDF Rapor İndir</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">
+          <select class="pdf-period-select" id="pdfPeriodType" style="flex:1;min-width:120px" onchange="updateTeacherDatePicker()">
+            <option value="weekly">Haftalık</option>
+            <option value="monthly" selected>Aylık</option>
+            <option value="all">Tüm Dönem</option>
+          </select>
+          <select class="pdf-period-select" id="pdfDateRange" style="flex:1;min-width:160px">
+            ${generateMonthOptions()}
+          </select>
+          <select class="pdf-period-select" id="pdfStudent" style="flex:1;min-width:120px">
+            <option value="all">Tüm Öğrenciler</option>
+            ${students.map(s=>`<option value="${s.name}">${s.name}</option>`).join('')}
+          </select>
+          <button class="pdf-btn" onclick="exportPDF('teacher')" style="flex:1;min-width:140px">📄 PDF İndir</button>
+        </div>
       </div>
-    </div>
 
     ${students.length === 0 ? `
       <div class="card" style="text-align:center;padding:40px;color:var(--text2)">
@@ -5047,17 +5210,31 @@ function exportPDF(role) {
       const nowStr = now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
 
       const period = role==='teacher'
-        ? (document.getElementById('pdfPeriod')?.value || 'monthly')
+        ? (document.getElementById('pdfPeriodType')?.value || 'monthly')
         : (document.getElementById('pdfPeriodS')?.value || 'monthly');
       const pLabel = period==='weekly'?'Haftalık':period==='monthly'?'Aylık':'Dönem';
 
+      // Seçilen tarih aralığını al
+      const dateRangeVal = document.getElementById('pdfDateRange')?.value || '';
+      let startKey, endKey;
+      if (period==='weekly' && dateRangeVal) {
+        startKey = dateRangeVal;
+        const mon = new Date(dateRangeVal+'T12:00:00');
+        const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+        endKey = sun.toISOString().split('T')[0];
+      } else if (period==='monthly' && dateRangeVal) {
+        const [yr, mo] = dateRangeVal.split('-').map(Number);
+        startKey = dateRangeVal + '-01';
+        endKey = new Date(yr, mo, 0).toISOString().split('T')[0];
+      }
+
       // Dönem filtresi
-      const monday = new Date(now); monday.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
+      const monday = startKey ? new Date(startKey+'T12:00:00') : (() => { const m=new Date(now); m.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1)); return m; })();
       const mondayKey = monday.toISOString().split('T')[0];
-      const monthStart = todayKey.substring(0,7)+'-01';
+      const monthStart = startKey || todayKey.substring(0,7)+'-01';
       const filterE = (arr) => {
-        if (period==='weekly') return arr.filter(e=>e.dateKey>=mondayKey);
-        if (period==='monthly') return arr.filter(e=>e.dateKey>=monthStart);
+        if (period==='weekly') return arr.filter(e=>e.dateKey>=mondayKey && (!endKey||e.dateKey<=endKey));
+        if (period==='monthly') return arr.filter(e=>e.dateKey>=monthStart && (!endKey||e.dateKey<=endKey));
         return arr;
       };
 
@@ -5086,8 +5263,11 @@ function exportPDF(role) {
           const sun = new Date(monday); sun.setDate(monday.getDate()+6);
           return monday.toLocaleDateString('tr-TR',{day:'numeric',month:'short'})+' - '+sun.toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'})+' Haftalık Rapor';
         }
-        if (period==='monthly') return now.toLocaleDateString('tr-TR',{month:'long',year:'numeric'})+' Aylık Rapor';
-        return 'Donem Raporu';
+        if (period==='monthly') {
+          const d = new Date(monthStart+'T12:00:00');
+          return d.toLocaleDateString('tr-TR',{month:'long',year:'numeric'})+' Aylık Rapor';
+        }
+        return 'Dönem Raporu';
       }
 
       let Y = pdfHeader(doc, ts(title), ts(getPLabel()), ts(nowStr));
