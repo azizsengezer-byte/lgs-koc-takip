@@ -1441,6 +1441,15 @@ function renderSidebar() {
   renderMobileNav();
 }
 
+function filterStudentList(query) {
+  const q = query.toLowerCase().trim();
+  const cards = document.querySelectorAll('#studentListCard .student-card-item');
+  cards.forEach(card => {
+    const name = (card.dataset.name || '').toLowerCase();
+    card.style.display = (!q || name.includes(q)) ? '' : 'none';
+  });
+}
+
 function updateTeacherDatePicker() {
   const type = document.getElementById('pdfPeriodType')?.value;
   const sel = document.getElementById('pdfDateRange');
@@ -1628,11 +1637,18 @@ function teacherStudents() {
   return `
     <div class="page-title">👥 Öğrencilerim</div>
     <div class="page-sub">Koçluk takibindeki öğrenciler</div>
-    <div style="display:flex;gap:10px;margin-bottom:20px">
+    <div style="display:flex;gap:10px;margin-bottom:12px">
       <button class="btn btn-primary" onclick="openModal('addStudentModal')">+ Öğrenci Ekle</button>
       <button class="btn btn-outline" onclick="openTaskModal()">📋 Görev Ata</button>
     </div>
-    <div class="card">
+    <!-- Arama -->
+    <div style="position:relative;margin-bottom:16px">
+      <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:1rem">🔍</span>
+      <input type="text" id="studentSearchInput" placeholder="Öğrenci ara..."
+        oninput="filterStudentList(this.value)"
+        style="width:100%;padding:10px 12px 10px 36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.92rem;outline:none;box-sizing:border-box">
+    </div>
+    <div class="card" id="studentListCard">
       ${students.length === 0 ? `
         <div style="text-align:center;padding:40px 20px;color:var(--text2)">
           <div style="font-size:3rem;margin-bottom:12px">👥</div>
@@ -1658,7 +1674,7 @@ function teacherStudents() {
           ? `<span class="badge badge-yellow">📊 Normal</span>`
           : `<span class="badge badge-red">⚠️ Dikkat!</span>`;
         return `
-        <div class="student-row" onclick="openStudentAnalysis('${s.name}')" style="cursor:pointer">
+        <div class="student-row student-card-item" data-name="${s.name.toLowerCase()}" onclick="openStudentAnalysis('${s.name}')" style="cursor:pointer">
           ${s.photo
             ? `<img src="${s.photo}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">`
             : `<div class="student-avatar" style="background:${s.color}20;color:${s.color};font-size:1.1rem;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">${s.name[0]}</div>`}
@@ -2424,7 +2440,7 @@ function openDatePicker(sName, mode) {
   const now = new Date();
 
   // Yılları oluştur (bu yıl + önceki 2 yıl)
-  const years = [now.getFullYear(), now.getFullYear()-1, now.getFullYear()-2];
+  const years = [now.getFullYear(), now.getFullYear()-1];
   document.getElementById('dpYearChips').innerHTML = years.map(y =>
     `<button class="dp-chip${y===now.getFullYear()?' active':''}" onclick="dpSelectYear(${y},this)">${y}</button>`
   ).join('');
