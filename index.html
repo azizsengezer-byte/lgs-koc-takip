@@ -4404,80 +4404,102 @@ function exportStudentPDF() {
 const lgsDagilimData = {
   'Türkçe': {
     color: '#ff6b6b', icon: '📖', totalSoru: 20,
-    yillar: ['2023*','2024','2025'],
+    yillar: ['2018','2019','2020','2021','2022','2023','2024','2025'],
     konular: [
-      { ad: 'Sözcükte/Cümlede Anlam', sorular: [5,4,4] },
-      { ad: 'Parçada Anlam (Paragraf)', sorular: [5,4,4] },
-      { ad: 'Sözel Mantık / Görsel Okuma', sorular: [5,4,4] },
-      { ad: 'Yazım / Noktalama', sorular: [5,4,4] },
-      { ad: 'Dil Bilgisi (Fiilimsi, Öge vb.)', sorular: [5,4,4] },
-      { ad: 'Metin Türleri / Söz Sanatları', sorular: [5,4,4] },
+      { ad: 'Sözcükte Anlam',         sorular: [2,2,1,2,2,1,1,2] },
+      { ad: 'Deyimler ve Atasözleri', sorular: [1,0,0,2,0,0,1,0] },
+      { ad: 'Cümlede Anlam',          sorular: [2,2,2,2,1,3,3,2] },
+      { ad: 'Sözel Mantık / Görsel Okuma', sorular: [1,7,6,4,5,5,3,3] },
+      { ad: 'Parçada Anlam',          sorular: [8,3,3,10,6,5,6,6] },
+      { ad: 'Söz Sanatları',          sorular: [0,0,1,0,0,0,0,1] },
+      { ad: 'Metin Türleri',          sorular: [1,1,2,0,1,1,1,0] },
+      { ad: 'Noktalama İşaretleri',   sorular: [1,1,1,0,1,1,1,1] },
+      { ad: 'Yazım Kuralları',        sorular: [1,1,1,0,1,1,1,1] },
+      { ad: 'Fiilimsiler',            sorular: [1,1,1,0,0,1,1,0] },
+      { ad: 'Cümlenin Öğeleri',       sorular: [0,0,1,0,1,1,0,0] },
+      { ad: 'Cümle Türleri',          sorular: [1,1,1,0,0,1,1,1] },
+      { ad: 'Anlatım Bozukluğu',      sorular: [1,1,0,0,2,0,1,1] },
+      { ad: 'Fiilde Çatı',            sorular: [0,0,0,0,0,0,0,1] },
+      { ad: 'Düşünceyi Geliştirme',   sorular: [0,0,0,0,0,0,0,1] },
     ]
   },
   'Matematik': {
     color: '#4ecdc4', icon: '📐', totalSoru: 20,
-    yillar: ['2021','2022','2023*','2024','2025'],
+    yillar: ['2018','2019','2020','2021','2022','2023','2024','2025'],
     konular: [
-      { ad: 'Çarpanlar ve Katlar', sorular: [3,1,3,2,2] },
-      { ad: 'Üslü İfadeler', sorular: [3,1,3,2,2] },
-      { ad: 'Kareköklü İfadeler', sorular: [3,1,3,2,2] },
-      { ad: 'Veri Analizi', sorular: [3,1,3,2,2] },
-      { ad: 'Olasılık', sorular: [2,1,3,2,2] },
-      { ad: 'Cebirsel İfadeler', sorular: [3,1,3,2,2] },
-      { ad: 'Doğrusal Denklemler', sorular: [3,1,3,2,2] },
-      { ad: 'Eşitsizlikler', sorular: [1,1,3,1,2] },
-      { ad: 'Üçgenler', sorular: [2,1,3,2,2] },
-      { ad: 'Eşlik ve Benzerlik', sorular: [1,1,3,2,2] },
-      { ad: 'Dönüşüm Geometrisi', sorular: [1,2,2,1,1] },
+      { ad: 'Üslü Sayılar',                    sorular: [2,2,4,3,2,4,2,2] },
+      { ad: 'Köklü Sayılar',                   sorular: [3,3,3,2,3,5,3,3] },
+      { ad: 'Çarpanlar ve Katlar',             sorular: [1,1,3,3,1,3,1,1] },
+      { ad: 'Olasılık',                         sorular: [1,1,3,1,1,2,1,1] },
+      { ad: 'Veri Analizi',                     sorular: [0,1,3,2,1,2,1,1] },
+      { ad: 'Eşitsizlikler',                    sorular: [2,1,0,2,2,0,2,2] },
+      { ad: 'Cebirsel İfadeler ve Özdeşlikler', sorular: [3,3,4,2,2,4,2,2] },
+      { ad: 'Doğrusal Denklemler ve Eğim',     sorular: [3,4,0,2,4,0,3,3] },
+      { ad: 'Dönüşüm Geometrisi',              sorular: [1,1,0,0,1,0,1,1] },
+      { ad: 'Geometrik Cisimler',              sorular: [3,1,0,0,1,0,1,1] },
+      { ad: 'Üçgenler',                         sorular: [1,2,0,2,2,0,3,3] },
+      { ad: 'Eşlik ve Benzerlik',              sorular: [1,1,0,2,2,0,1,1] },
     ]
   },
   'Fen Bilimleri': {
     color: '#45b7d1', icon: '🔬', totalSoru: 20,
-    yillar: ['2022','2023*','2024','2025'],
+    yillar: ['2018','2019','2020','2021','2022','2023','2024','2025'],
     konular: [
-      { ad: 'Mevsimler ve İklim', sorular: [1,3,1,1] },
-      { ad: 'DNA ve Genetik Kod', sorular: [1,3,1,1] },
-      { ad: 'Basınç', sorular: [1,3,1,1] },
-      { ad: 'Madde ve Endüstri', sorular: [1,3,1,1] },
-      { ad: 'Basit Makineler', sorular: [1,3,1,1] },
-      { ad: 'Enerji Dönüşümleri', sorular: [1,3,1,1] },
-      { ad: 'Elektrik Yükleri', sorular: [1,3,1,1] },
+      { ad: 'Mevsimler ve İklim',            sorular: [1,1,3,2,1,3,1,1] },
+      { ad: 'DNA ve Genetik Kod',            sorular: [2,3,8,5,4,8,4,3] },
+      { ad: 'Basınç',                         sorular: [0,2,5,2,2,5,2,2] },
+      { ad: 'Madde ve Endüstri',             sorular: [6,6,4,5,5,4,5,5] },
+      { ad: 'Basit Makineler',               sorular: [2,2,0,2,2,0,2,2] },
+      { ad: 'Enerji Dönüşümleri ve Çevre Bilimi', sorular: [3,4,0,4,4,0,4,4] },
+      { ad: 'Elektrik Yükleri ve Enerjisi',  sorular: [3,3,0,0,2,0,2,3] },
+      { ad: 'Hücre Bölünmesi ve Kalıtım',   sorular: [1,0,0,0,0,0,0,0] },
+      { ad: 'Işığın Kırılması',              sorular: [1,0,0,0,0,0,0,0] },
+      { ad: 'Ses',                            sorular: [1,0,0,0,0,0,0,0] },
     ]
   },
   'İnkılap Tarihi': {
     color: '#f9ca24', icon: '🏛️', totalSoru: 10,
-    yillar: ['2022','2023*','2024','2025'],
+    yillar: ['2018','2019','2020','2021','2022','2023','2024','2025'],
     konular: [
-      { ad: 'Bir Kahraman Doğuyor', sorular: [1,2,1,1] },
-      { ad: 'Milli Uyanış', sorular: [1,2,1,1] },
-      { ad: 'Ya İstiklal Ya Ölüm!', sorular: [1,2,1,1] },
-      { ad: 'Atatürkçülük ve Çağdaşlaşan Türkiye', sorular: [1,2,1,1] },
-      { ad: 'Demokratikleşme Çabaları', sorular: [1,2,1,1] },
-      { ad: 'Atatürk Dönemi Türk Dış Politikası', sorular: [1,2,1,1] },
-      { ad: 'Atatürk\'ün Ölümü ve Sonrası', sorular: [1,2,1,1] },
+      { ad: 'Bir Kahraman Doğuyor',              sorular: [1,1,3,1,1,5,1,0] },
+      { ad: 'Milli Uyanış: Bağımsızlık Yolunda', sorular: [1,2,4,2,2,2,2,5] },
+      { ad: 'Milli Bir Destan: Ya İstiklal Ya Ölüm', sorular: [1,2,3,2,2,3,2,2] },
+      { ad: 'Atatürkçülük ve Çağdaşlaşan Türkiye', sorular: [5,4,0,3,0,0,4,2] },
+      { ad: 'Demokratikleşme Çabaları',          sorular: [0,0,0,1,1,0,1,1] },
+      { ad: 'Atatürk Dönemi Türk Dış Politikası', sorular: [1,1,0,1,1,0,0,0] },
+      { ad: 'Atatürk\'ün Ölümü ve Sonrası',       sorular: [1,0,0,0,0,0,0,0] },
     ]
   },
   'Din Kültürü': {
     color: '#a29bfe', icon: '☪️', totalSoru: 10,
-    yillar: ['2022','2023*','2024','2025'],
+    yillar: ['2018','2019','2020','2021','2022','2023','2024','2025'],
     konular: [
-      { ad: 'Kader İnancı', sorular: [2,4,2,2] },
-      { ad: 'Zekat ve Sadaka', sorular: [2,4,2,2] },
-      { ad: 'Din ve Hayat', sorular: [2,4,2,2] },
-      { ad: 'Hz. Muhammed\'in Örnekliği', sorular: [2,4,2,2] },
-      { ad: 'Kur\'an-ı Kerim ve Özellikleri', sorular: [2,4,2,2] },
+      { ad: 'Kader İnancı',                sorular: [2,1,1,1,3,4,2,3] },
+      { ad: 'Hz. Musa',                    sorular: [0,1,3,2,0,0,0,0] },
+      { ad: 'Zekat ve Sadaka',             sorular: [1,3,3,3,2,3,2,2] },
+      { ad: 'Din ve Hayat',                sorular: [2,0,3,3,4,3,2,2] },
+      { ad: 'Hz. Muhammed\'in Örnekliği',  sorular: [1,3,0,0,1,0,2,2] },
+      { ad: 'Kur\'an-ı Kerim ve Özellikleri', sorular: [2,2,1,1,0,0,2,1] },
+      { ad: 'İslam\'ın Paylaşma Değeri',   sorular: [1,0,0,0,0,0,0,0] },
+      { ad: 'İslam\'da Kötü Davranışlar',  sorular: [1,0,0,0,0,0,0,0] },
+      { ad: 'Tevekkül',                    sorular: [0,1,0,0,0,0,0,0] },
+      { ad: 'Hac İbadeti',                 sorular: [1,0,0,0,0,0,0,0] },
     ]
   },
   'İngilizce': {
     color: '#fd79a8', icon: '🌍', totalSoru: 10,
-    yillar: ['2022','2023*','2024','2025'],
+    yillar: ['2018','2019','2020','2021','2022','2023','2024','2025'],
     konular: [
-      { ad: 'The Internet', sorular: [1,2,1,1] },
-      { ad: 'Adventures', sorular: [1,2,1,1] },
-      { ad: 'Tourism', sorular: [1,2,1,1] },
-      { ad: 'Chores', sorular: [1,2,1,1] },
-      { ad: 'Science', sorular: [1,2,1,1] },
-      { ad: 'Natural Forces', sorular: [1,2,1,1] },
+      { ad: 'Friendship',     sorular: [2,1,1,1,2,4,2,2] },
+      { ad: 'Teen Life',      sorular: [1,3,3,1,1,0,1,1] },
+      { ad: 'In The Kitchen', sorular: [1,1,1,2,1,2,1,1] },
+      { ad: 'On The Phone',   sorular: [0,1,1,1,1,2,1,1] },
+      { ad: 'The Internet',   sorular: [1,1,1,1,1,2,2,1] },
+      { ad: 'Adventures',     sorular: [1,1,1,1,1,0,2,1] },
+      { ad: 'Tourism',        sorular: [3,0,0,1,1,0,0,1] },
+      { ad: 'Chores',         sorular: [1,1,1,1,1,0,0,1] },
+      { ad: 'Science',        sorular: [0,1,1,1,1,0,1,1] },
+      { ad: 'Natural Forces', sorular: [0,0,0,0,0,0,0,1] },
     ]
   }
 };
@@ -4490,7 +4512,10 @@ let _dagilimSelected = null;
 function lgsDagilimPage() {
   const dersler = Object.keys(lgsDagilimData);
   return `
-    <div class="page-title">📊 LGS Soru Dağılımı</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+      <button onclick="history.back()||showPage('dashboard')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
+      <div class="page-title" style="margin:0">📊 LGS Soru Dağılımı</div>
+    </div>
     <div class="page-sub">Yıllara göre konu bazlı soru dağılımı</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px">
       ${dersler.map(d => {
@@ -4592,7 +4617,10 @@ function wellnessPage() {
   }).reverse();
 
   return `
-    <div class="page-title">💙 Nasıl Hissediyorum</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+      <button onclick="history.back()||showPage('dashboard')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
+      <div class="page-title" style="margin:0">💙 Nasıl Hissediyorum</div>
+    </div>
     <div class="page-sub">Hedeflerim ve psikolojik takip</div>
 
     <!-- Geri sayım -->
