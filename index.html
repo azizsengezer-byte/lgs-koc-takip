@@ -1429,6 +1429,8 @@ function renderSidebar() {
     { id:'my-analysis', icon:'📈', label:'Analizlerim' },
     { id:'kazanimlar', icon:'🎯', label:'Kazanımlarım' },
     { id:'my-tasks', icon:'📋', label:'Ödevlerim' },
+    { id:'wellness', icon:'💙', label:'Nasıl Hissediyorum' },
+    { id:'lgs-dagilim', icon:'📊', label:'LGS Soru Dağılımı' },
     { id:'messages', icon:'💬', label:'Koçumla Mesaj' },
     { id:'notifs', icon:'🔔', label:'Bildirimler' },
   ];
@@ -3690,8 +3692,9 @@ function renderStudentPage(id, el) {
   else if(id==='my-analysis') el.innerHTML = studentAnalysis();
   else if(id==='kazanimlar') el.innerHTML = studentKazanimlar();
   else if(id==='my-tasks') el.innerHTML = studentTasks();
+  else if(id==='wellness') el.innerHTML = wellnessPage();
+  else if(id==='lgs-dagilim') el.innerHTML = lgsDagilimPage();
   else if(id==='messages') {
-    // Öğrencinin tek koçu var, ama yine de tutarlı olsun
     el.innerHTML = messagesPage('student');
   }
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
@@ -4375,6 +4378,327 @@ function exportStudentPDF() {
 
   const fname2 = ts(name.replace(/\s+/g,'_'))+'_'+pLabel+'_analiz_'+todayKey+'.pdf';
   pdfDownload(doc, fname2);
+}
+
+// ============================================================
+// LGS SORU DAĞILIM VERİSİ (2021-2025)
+// ============================================================
+const lgsDagilimData = {
+  'Türkçe': {
+    color: '#ff6b6b', icon: '📖', totalSoru: 20,
+    yillar: ['2023*','2024','2025'],
+    konular: [
+      { ad: 'Sözcükte/Cümlede Anlam', sorular: [5,4,4] },
+      { ad: 'Parçada Anlam (Paragraf)', sorular: [5,4,4] },
+      { ad: 'Sözel Mantık / Görsel Okuma', sorular: [5,4,4] },
+      { ad: 'Yazım / Noktalama', sorular: [5,4,4] },
+      { ad: 'Dil Bilgisi (Fiilimsi, Öge vb.)', sorular: [5,4,4] },
+      { ad: 'Metin Türleri / Söz Sanatları', sorular: [5,4,4] },
+    ]
+  },
+  'Matematik': {
+    color: '#4ecdc4', icon: '📐', totalSoru: 20,
+    yillar: ['2021','2022','2023*','2024','2025'],
+    konular: [
+      { ad: 'Çarpanlar ve Katlar', sorular: [3,1,3,2,2] },
+      { ad: 'Üslü İfadeler', sorular: [3,1,3,2,2] },
+      { ad: 'Kareköklü İfadeler', sorular: [3,1,3,2,2] },
+      { ad: 'Veri Analizi', sorular: [3,1,3,2,2] },
+      { ad: 'Olasılık', sorular: [2,1,3,2,2] },
+      { ad: 'Cebirsel İfadeler', sorular: [3,1,3,2,2] },
+      { ad: 'Doğrusal Denklemler', sorular: [3,1,3,2,2] },
+      { ad: 'Eşitsizlikler', sorular: [1,1,3,1,2] },
+      { ad: 'Üçgenler', sorular: [2,1,3,2,2] },
+      { ad: 'Eşlik ve Benzerlik', sorular: [1,1,3,2,2] },
+      { ad: 'Dönüşüm Geometrisi', sorular: [1,2,2,1,1] },
+    ]
+  },
+  'Fen Bilimleri': {
+    color: '#45b7d1', icon: '🔬', totalSoru: 20,
+    yillar: ['2022','2023*','2024','2025'],
+    konular: [
+      { ad: 'Mevsimler ve İklim', sorular: [1,3,1,1] },
+      { ad: 'DNA ve Genetik Kod', sorular: [1,3,1,1] },
+      { ad: 'Basınç', sorular: [1,3,1,1] },
+      { ad: 'Madde ve Endüstri', sorular: [1,3,1,1] },
+      { ad: 'Basit Makineler', sorular: [1,3,1,1] },
+      { ad: 'Enerji Dönüşümleri', sorular: [1,3,1,1] },
+      { ad: 'Elektrik Yükleri', sorular: [1,3,1,1] },
+    ]
+  },
+  'İnkılap Tarihi': {
+    color: '#f9ca24', icon: '🏛️', totalSoru: 10,
+    yillar: ['2022','2023*','2024','2025'],
+    konular: [
+      { ad: 'Bir Kahraman Doğuyor', sorular: [1,2,1,1] },
+      { ad: 'Milli Uyanış', sorular: [1,2,1,1] },
+      { ad: 'Ya İstiklal Ya Ölüm!', sorular: [1,2,1,1] },
+      { ad: 'Atatürkçülük ve Çağdaşlaşan Türkiye', sorular: [1,2,1,1] },
+      { ad: 'Demokratikleşme Çabaları', sorular: [1,2,1,1] },
+      { ad: 'Atatürk Dönemi Türk Dış Politikası', sorular: [1,2,1,1] },
+      { ad: 'Atatürk\'ün Ölümü ve Sonrası', sorular: [1,2,1,1] },
+    ]
+  },
+  'Din Kültürü': {
+    color: '#a29bfe', icon: '☪️', totalSoru: 10,
+    yillar: ['2022','2023*','2024','2025'],
+    konular: [
+      { ad: 'Kader İnancı', sorular: [2,4,2,2] },
+      { ad: 'Zekat ve Sadaka', sorular: [2,4,2,2] },
+      { ad: 'Din ve Hayat', sorular: [2,4,2,2] },
+      { ad: 'Hz. Muhammed\'in Örnekliği', sorular: [2,4,2,2] },
+      { ad: 'Kur\'an-ı Kerim ve Özellikleri', sorular: [2,4,2,2] },
+    ]
+  },
+  'İngilizce': {
+    color: '#fd79a8', icon: '🌍', totalSoru: 10,
+    yillar: ['2022','2023*','2024','2025'],
+    konular: [
+      { ad: 'The Internet', sorular: [1,2,1,1] },
+      { ad: 'Adventures', sorular: [1,2,1,1] },
+      { ad: 'Tourism', sorular: [1,2,1,1] },
+      { ad: 'Chores', sorular: [1,2,1,1] },
+      { ad: 'Science', sorular: [1,2,1,1] },
+      { ad: 'Natural Forces', sorular: [1,2,1,1] },
+    ]
+  }
+};
+
+// ============================================================
+// LGS SORU DAĞILIM SAYFASI
+// ============================================================
+let _dagilimSelected = null;
+
+function lgsDagilimPage() {
+  const dersler = Object.keys(lgsDagilimData);
+  return `
+    <div class="page-title">📊 LGS Soru Dağılımı</div>
+    <div class="page-sub">Yıllara göre konu bazlı soru dağılımı</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px">
+      ${dersler.map(d => {
+        const info = lgsDagilimData[d];
+        return `
+          <button onclick="showDagilimDetail('${d}')"
+            style="background:${info.color}18;border:1.5px solid ${info.color}44;border-radius:14px;
+                   padding:18px 14px;text-align:left;cursor:pointer;transition:.15s;color:var(--text)">
+            <div style="font-size:1.6rem;margin-bottom:8px">${info.icon}</div>
+            <div style="font-weight:800;font-size:0.95rem;margin-bottom:4px">${d}</div>
+            <div style="font-size:0.75rem;color:var(--text2)">${info.totalSoru} Soru</div>
+            <div style="margin-top:10px;height:3px;border-radius:2px;background:${info.color};opacity:.5"></div>
+          </button>`;
+      }).join('')}
+    </div>
+    <div style="font-size:0.72rem;color:var(--text2);text-align:center;margin-top:8px">
+      * 2023 yılı deprem nedeniyle sadece 1. dönem konularını kapsar
+    </div>
+
+    <!-- Detay Modal -->
+    <div id="dagilimModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:600;overflow-y:auto;padding:16px">
+      <div id="dagilimBox" style="background:var(--surface);border-radius:18px;padding:20px;max-width:600px;margin:0 auto"></div>
+    </div>`;
+}
+
+function showDagilimDetail(ders) {
+  const info = lgsDagilimData[ders];
+  const yillar = info.yillar;
+  const maxSoru = Math.max(...info.konular.flatMap(k => k.sorular));
+
+  const rows = info.konular.map(k => {
+    const bars = k.sorular.map((s, i) => {
+      const pct = maxSoru > 0 ? (s / maxSoru * 100) : 0;
+      return `
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <div style="font-size:0.75rem;font-weight:700;color:${info.color}">${s}</div>
+          <div style="width:100%;height:${Math.max(pct*0.5,4)}px;background:${info.color};border-radius:3px 3px 0 0;min-height:4px;opacity:${s>0?'1':'0.2'}"></div>
+          <div style="font-size:0.6rem;color:var(--text2)">${yillar[i]}</div>
+        </div>`;
+    }).join('');
+    return `
+      <div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="font-weight:700;font-size:0.88rem;margin-bottom:10px;color:var(--text)">${k.ad}</div>
+        <div style="display:flex;gap:6px;align-items:flex-end;height:70px">${bars}</div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('dagilimBox').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:1.8rem">${info.icon}</span>
+        <div>
+          <div style="font-weight:800;font-size:1.1rem">${ders}</div>
+          <div style="font-size:0.75rem;color:${info.color}">${info.totalSoru} soru • Son ${yillar.length} yıl</div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('dagilimModal').style.display='none'"
+        style="background:var(--surface2);border:none;border-radius:10px;padding:8px 14px;color:var(--text);cursor:pointer;font-weight:700">✕ Kapat</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      ${yillar.map(y => `<span style="padding:4px 10px;background:${info.color}22;border:1px solid ${info.color}44;border-radius:8px;font-size:0.72rem;font-weight:700;color:${info.color}">${y}</span>`).join('')}
+    </div>
+    ${rows}
+    <div style="font-size:0.7rem;color:var(--text2);margin-top:8px">* 2023 yılı deprem nedeniyle sadece 1. dönem konularını kapsar</div>`;
+  document.getElementById('dagilimModal').style.display = 'block';
+}
+
+// ============================================================
+// PSİKOLOJİK REHBERLİK & HEDEFLER SAYFASI
+// ============================================================
+const moodOptions = [
+  { emoji:'🔥', label:'Süper Motive', value:'super', color:'#f9ca24' },
+  { emoji:'😊', label:'İyiyim', value:'good', color:'#45b7d1' },
+  { emoji:'😐', label:'İdare Eder', value:'ok', color:'#a29bfe' },
+  { emoji:'😔', label:'Yorgunum', value:'tired', color:'#fd79a8' },
+  { emoji:'😰', label:'Stresli', value:'stress', color:'#ff6b6b' },
+];
+
+function wellnessPage() {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  const key = 'wellness_' + myUid;
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem(key)||'{}'); } catch(e){}
+
+  const todayKey = new Date().toISOString().split('T')[0];
+  const todayMood = data.moods?.[todayKey] || null;
+  const todayNote = data.notes?.[todayKey] || '';
+  const hedef = data.hedef || '';
+  const hedefOkul = data.hedefOkul || '';
+  const daysLeft = Math.max(0, Math.ceil((new Date('2026-06-07') - new Date()) / 86400000));
+
+  // Son 7 gün mood geçmişi
+  const last7 = Array.from({length:7},(_,i)=>{
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const dk = d.toISOString().split('T')[0];
+    const m = data.moods?.[dk];
+    const mInfo = moodOptions.find(x=>x.value===m);
+    return { dk, label: d.toLocaleDateString('tr-TR',{weekday:'short'}), emoji: mInfo?.emoji||'·', color: mInfo?.color||'var(--border)' };
+  }).reverse();
+
+  return `
+    <div class="page-title">💙 Nasıl Hissediyorum</div>
+    <div class="page-sub">Hedeflerim ve psikolojik takip</div>
+
+    <!-- Geri sayım -->
+    <div style="background:linear-gradient(135deg,#6c63ff22,#4cc9f022);border:1px solid #6c63ff44;border-radius:16px;padding:18px;margin-bottom:16px;text-align:center">
+      <div style="font-size:2.5rem;font-weight:900;font-family:'Sora',sans-serif;color:var(--accent)">${daysLeft}</div>
+      <div style="font-size:0.85rem;color:var(--text2);font-weight:600">gün kaldı — LGS 2026</div>
+    </div>
+
+    <!-- Hedefler -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">🎯 Hedeflerim</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div>
+          <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Hedef LGS Puanı</div>
+          <input type="number" id="wellnessHedef" placeholder="örn: 480" min="100" max="500"
+            value="${hedef}"
+            onchange="saveWellness('hedef',this.value)"
+            style="width:100%;padding:10px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:1rem;font-weight:700;outline:none">
+        </div>
+        <div>
+          <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Hedef Okul / Lise</div>
+          <input type="text" id="wellnessHedefOkul" placeholder="örn: Çankaya Anadolu Lisesi"
+            value="${hedefOkul}"
+            onchange="saveWellness('hedefOkul',this.value)"
+            style="width:100%;padding:10px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none">
+        </div>
+      </div>
+    </div>
+
+    <!-- Bugün nasıl hissediyorum -->
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-title">😊 Bugün Nasılsın?</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+        ${moodOptions.map(m => `
+          <button onclick="saveMood('${m.value}', this)"
+            style="flex:1;min-width:56px;padding:10px 6px;border-radius:12px;
+                   border:2px solid ${todayMood===m.value ? m.color : 'var(--border)'};
+                   background:${todayMood===m.value ? m.color+'22' : 'transparent'};
+                   cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <span style="font-size:1.6rem">${m.emoji}</span>
+            <span style="font-size:0.62rem;font-weight:700;color:${todayMood===m.value ? m.color : 'var(--text2)'}">${m.label}</span>
+          </button>`).join('')}
+      </div>
+
+      <!-- Son 7 gün -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:8px">Son 7 Gün</div>
+        <div style="display:flex;gap:6px">
+          ${last7.map(d=>`
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+              <div style="width:32px;height:32px;border-radius:50%;background:${d.color}33;border:2px solid ${d.color};
+                          display:flex;align-items:center;justify-content:center;font-size:1rem">${d.emoji}</div>
+              <div style="font-size:0.58rem;color:var(--text2)">${d.label}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <!-- Günlük not -->
+      <div>
+        <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">📝 Bugünkü Notum (sadece sana özel)</div>
+        <textarea id="wellnessNote" rows="3" placeholder="Bugün ne düşündüm, ne hissettim..."
+          onchange="saveWellness('note',this.value)"
+          style="width:100%;padding:10px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);
+                 color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box">${todayNote}</textarea>
+      </div>
+    </div>
+
+    <!-- Motivasyon -->
+    <div style="background:linear-gradient(135deg,#fd79a822,#f9ca2422);border:1px solid #fd79a844;border-radius:16px;padding:18px;text-align:center">
+      <div style="font-size:1.4rem;margin-bottom:8px" id="motivasyonEmoji">💪</div>
+      <div id="motivasyonText" style="font-size:0.88rem;font-weight:600;color:var(--text);line-height:1.5"></div>
+      <button onclick="newMotivation()" style="margin-top:12px;background:none;border:none;color:var(--accent);font-size:0.8rem;cursor:pointer;font-weight:700">🔄 Yeni söz</button>
+    </div>`;
+  setTimeout(()=>newMotivation(), 50);
+  return result;
+}
+
+const motivasyonSozleri = [
+  { emoji:'🌟', text:'Her büyük başarı, küçük adımların birikmesiyle gelir. Bugün de bir adım attın.' },
+  { emoji:'🎯', text:'Hedeflerin sana uzak görünebilir, ama her gün biraz daha yaklaşıyorsun.' },
+  { emoji:'💡', text:'Zorluk, gelişimin işaretidir. Eğer kolaysa büyümüyorsun demektir.' },
+  { emoji:'🔥', text:'Motivasyon seni başlatır, alışkanlık seni götürür. Bugün alışkanlık kazan.' },
+  { emoji:'🌈', text:'Dün geçti, yarın henüz gelmedi. Bugün elimden gelenin en iyisini yapıyorum.' },
+  { emoji:'🏆', text:'Sınav günü sahaya çıktığında, bugün yaptığın çalışma konuşacak.' },
+  { emoji:'💎', text:'Elmas, basınç altında şekillenir. Sen de şekilleniyorsun.' },
+  { emoji:'🚀', text:'Küçük ilerlemeler, büyük değişimlere yol açar. Devam et!' },
+  { emoji:'⭐', text:'Başkalarıyla değil, dünkü kendinle yarış. Daha iyi biri oluyorsun.' },
+  { emoji:'🌱', text:'Bugün ektiğin tohumlar, gelecekte meyve verecek. Ekmeye devam!' },
+];
+
+function newMotivation() {
+  const s = motivasyonSozleri[Math.floor(Math.random()*motivasyonSozleri.length)];
+  const el = document.getElementById('motivasyonText');
+  const em = document.getElementById('motivasyonEmoji');
+  if(el) el.textContent = s.text;
+  if(em) em.textContent = s.emoji;
+}
+
+function saveWellness(field, value) {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  const key = 'wellness_' + myUid;
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem(key)||'{}'); } catch(e){}
+  const todayKey = new Date().toISOString().split('T')[0];
+  if (field === 'hedef') data.hedef = value;
+  else if (field === 'hedefOkul') data.hedefOkul = value;
+  else if (field === 'note') {
+    if (!data.notes) data.notes = {};
+    data.notes[todayKey] = value;
+  }
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function saveMood(moodValue, btn) {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  const key = 'wellness_' + myUid;
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem(key)||'{}'); } catch(e){}
+  const todayKey = new Date().toISOString().split('T')[0];
+  if (!data.moods) data.moods = {};
+  data.moods[todayKey] = moodValue;
+  localStorage.setItem(key, JSON.stringify(data));
+  // Sayfayı yenile
+  showPage('wellness');
 }
 
 function studentKazanimlar() {
