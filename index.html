@@ -5281,7 +5281,7 @@ async function saveNewStudent() {
   errEl.style.display = 'none';
   if (!name || !email || !pass) { errEl.textContent = 'Tüm alanları doldurunuz.'; errEl.style.display='block'; return; }
   if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
-  if (students.length >= 6) { errEl.textContent = 'En fazla 6 öğrenci eklenebilir.'; errEl.style.display='block'; return; }
+  if (students.length >= 30) { errEl.textContent = 'En fazla 30 öğrenci eklenebilir.'; errEl.style.display='block'; return; }
 
   const errBtn = document.querySelector('#addStudentModal .btn-primary');
   if (errBtn) { errBtn.textContent = 'Ekleniyor...'; errBtn.disabled = true; }
