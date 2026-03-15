@@ -1521,6 +1521,7 @@ function renderTeacherPage(id, el) {
   if(id==='dashboard') el.innerHTML = teacherDashboard();
   else if(id==='students') el.innerHTML = teacherStudents();
   else if(id==='student-detail') el.innerHTML = studentDetailAnalysis();
+  else if(id==='psych-report') el.innerHTML = psychReportPage();
   else if(id==='analysis') el.innerHTML = teacherAnalysis();
   else if(id==='tasks-teacher') el.innerHTML = teacherTasks();
   else if(id==='messages') {
@@ -2034,9 +2035,267 @@ function toggleDenemeAcc(id) {
 }
 
 function openStudentAnalysis(name) {
+  // İki seçenek sun: Bireysel Analiz veya Psikolojik Takip
   selectedStudentName = name;
-  studentAnalysisPeriod = 'weekly';
-  showPage('student-detail');
+  const sObj = students.find(s=>s.name===name) || {};
+  const initials = name[0];
+  const color = sObj.color || '#6c63ff';
+
+  // Basit seçim modalı
+  const existing = document.getElementById('_studentChoiceModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = '_studentChoiceModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:0';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:22px 18px 36px;width:100%;max-width:480px;animation:slideUp .2s ease">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        <div style="width:42px;height:42px;border-radius:50%;background:${color}22;color:${color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem">${initials}</div>
+        <div>
+          <div style="font-weight:800;font-size:1rem">${name}</div>
+          <div style="font-size:0.72rem;color:var(--text2)">Hangi raporu görmek istiyorsun?</div>
+        </div>
+        <button onclick="document.getElementById('_studentChoiceModal').remove()" style="margin-left:auto;background:none;border:none;color:var(--text2);font-size:1.3rem;cursor:pointer">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button onclick="document.getElementById('_studentChoiceModal').remove();studentAnalysisPeriod='weekly';showPage('student-detail')"
+          style="padding:16px;border-radius:14px;background:var(--accent)18;border:1.5px solid var(--accent)44;color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
+          <span style="font-size:1.6rem">📊</span>
+          <div>
+            <div style="font-weight:800;font-size:0.95rem">Bireysel Analiz Raporu</div>
+            <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Soru çözümü, deneme sonuçları, performans grafikleri</div>
+          </div>
+        </button>
+        <button onclick="document.getElementById('_studentChoiceModal').remove();showPsychReport('${name}')"
+          style="padding:16px;border-radius:14px;background:#fd79a818;border:1.5px solid #fd79a844;color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
+          <span style="font-size:1.6rem">💙</span>
+          <div>
+            <div style="font-weight:800;font-size:0.95rem">Psikolojik Takip Raporu</div>
+            <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Duygu durumu, enerji, kaygı ve uyku takibi</div>
+          </div>
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+}
+
+function showPsychReport(sName) {
+  selectedStudentName = sName;
+  showPage('psych-report');
+}
+
+function psychReportPage() {
+  const sName = selectedStudentName;
+  const sObj = students.find(s=>s.name===sName) || {};
+  const sUid = sObj.uid || '';
+  const data = getWellnessData(sUid || sName);
+  const days = data.days || {};
+  const sortedDays = Object.keys(days).sort().reverse().slice(0, 14); // son 14 gün
+
+  const moodLabels = { excited:'Heyecanlı', good:'İyiyim', focused:'Odaklı', ok:'İdare Eder', tired:'Yorgunum', anxious:'Kaygılı', sad:'Mutsuzum' };
+  const moodEmojis = { excited:'🔥', good:'😊', focused:'🎯', ok:'😐', tired:'😔', anxious:'😰', sad:'😢' };
+  const moodColors = { excited:'#f9ca24', good:'#45b7d1', focused:'#6c63ff', ok:'#a29bfe', tired:'#fd79a8', anxious:'#ff6b6b', sad:'#778ca3' };
+
+  // Isı haritası analizi
+  const last7Keys = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.toISOString().split('T')[0]; }).reverse();
+  const alertMoods = ['tired','anxious','sad'];
+  const alertDays = last7Keys.filter(k => days[k] && alertMoods.includes(days[k].mood)).length;
+  const avgEnerji = sortedDays.length ? (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].enerji)||0),0)/sortedDays.length).toFixed(1) : '-';
+  const avgKaygi = sortedDays.length ? (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].kaygi)||0),0)/sortedDays.length).toFixed(1) : '-';
+  const avgOdak = sortedDays.length ? (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].odak)||0),0)/sortedDays.length).toFixed(1) : '-';
+  const avgUyku = sortedDays.length ? (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].uyku)||0),0)/sortedDays.filter(k=>days[k].uyku).length||0).toFixed(1) : '-';
+
+  // Uyarı
+  const alertHtml = alertDays >= 3 ? `
+    <div style="background:#ff6b6b22;border:1.5px solid #ff6b6b66;border-radius:12px;padding:14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">
+      <span style="font-size:1.4rem">⚠️</span>
+      <div>
+        <div style="font-weight:800;color:#ff6b6b;margin-bottom:4px">Psikolojik Uyarı</div>
+        <div style="font-size:0.82rem;color:var(--text)">${sName.split(' ')[0]} son 7 günde ${alertDays} kez yorgun/kaygılı/mutsuz hissetti. Bir motivasyon görüşmesi planlanması önerilir.</div>
+      </div>
+    </div>` : alertDays >= 2 ? `
+    <div style="background:#f9ca2422;border:1.5px solid #f9ca2466;border-radius:12px;padding:14px;margin-bottom:14px;display:flex;gap:10px">
+      <span style="font-size:1.4rem">💛</span>
+      <div style="font-size:0.82rem;color:var(--text)">${sName.split(' ')[0]} bu hafta ${alertDays} gün düşük duygu durumu bildirdi. Takipte kalınması önerilir.</div>
+    </div>` : `
+    <div style="background:#45b7d122;border:1.5px solid #45b7d144;border-radius:12px;padding:14px;margin-bottom:14px;display:flex;gap:10px">
+      <span style="font-size:1.4rem">✅</span>
+      <div style="font-size:0.82rem;color:var(--text)">${sName.split(' ')[0]}'in psikolojik durumu bu hafta iyi görünüyor.</div>
+    </div>`;
+
+  // Özet kartlar
+  const summaryCards = [
+    { label:'Ort. Enerji', value:avgEnerji+'/10', color:'#f9ca24', icon:'⚡' },
+    { label:'Ort. Odak', value:avgOdak+'/10', color:'#45b7d1', icon:'🎯' },
+    { label:'Ort. Kaygı', value:avgKaygi+'/10', color:'#ff6b6b', icon:'😰' },
+    { label:'Ort. Uyku', value:avgUyku+'sa', color:'#a29bfe', icon:'🌙' },
+  ];
+
+  // Günlük detay tablosu
+  const tableRows = sortedDays.map(k => {
+    const d = days[k];
+    const dateStr = new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',weekday:'short'});
+    const moodE = moodEmojis[d.mood] || '·';
+    const moodC = moodColors[d.mood] || 'var(--text2)';
+    return `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:10px 8px;font-size:0.78rem;color:var(--text2)">${dateStr}</td>
+        <td style="padding:10px 8px;text-align:center">
+          <span style="background:${moodC}22;border:1px solid ${moodC}66;border-radius:8px;padding:3px 7px;font-size:0.72rem;font-weight:700;color:${moodC}">${moodE} ${moodLabels[d.mood]||'-'}</span>
+        </td>
+        <td style="padding:10px 8px;text-align:center;font-size:0.85rem;font-weight:700;color:#f9ca24">${d.enerji||'-'}</td>
+        <td style="padding:10px 8px;text-align:center;font-size:0.85rem;font-weight:700;color:#ff6b6b">${d.kaygi||'-'}</td>
+        <td style="padding:10px 8px;text-align:center;font-size:0.85rem;font-weight:700;color:#a29bfe">${d.uyku||'-'}sa</td>
+        <td style="padding:10px 8px;font-size:0.75rem;color:var(--text2);max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.pozitif||d.gurur||''}</td>
+      </tr>`;
+  }).join('');
+
+  // Hedefler
+  const hedefHtml = (data.hedef || data.hedefOkul) ? `
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">🎯 Öğrencinin Hedefleri</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        ${data.hedef ? `<div><div style="font-size:0.72rem;color:var(--text2)">Hedef Puan</div><div style="font-weight:800;font-size:1.3rem;color:var(--accent)">${data.hedef}</div></div>` : ''}
+        ${data.hedefOkul ? `<div><div style="font-size:0.72rem;color:var(--text2)">Hedef Okul</div><div style="font-weight:700;font-size:0.92rem">${data.hedefOkul}</div></div>` : ''}
+      </div>
+    </div>` : '';
+
+  return `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+      <button onclick="openStudentAnalysis('${sName}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
+      <div class="page-title" style="margin:0">💙 ${sName}</div>
+    </div>
+    <div class="page-sub">Psikolojik Takip Raporu</div>
+
+    ${sortedDays.length === 0 ? `
+      <div class="card" style="text-align:center;padding:40px;color:var(--text2)">
+        <div style="font-size:3rem;margin-bottom:12px">💙</div>
+        <div style="font-weight:700;margin-bottom:8px">Henüz veri yok</div>
+        <div style="font-size:0.85rem">Öğrenci "Nasıl Hissediyorum" bölümünden veri girişi yaptıkça burada görünecek.</div>
+      </div>
+    ` : `
+      ${alertHtml}
+      ${hedefHtml}
+
+      <div class="grid-4" style="margin-bottom:14px">
+        ${summaryCards.map(c=>`
+          <div class="stat-card">
+            <div class="stat-label">${c.icon} ${c.label}</div>
+            <div class="stat-value" style="color:${c.color}">${c.value}</div>
+          </div>`).join('')}
+      </div>
+
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">📅 Son 14 Gün Detayı</div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="border-bottom:2px solid var(--border)">
+                <th style="padding:8px;text-align:left;font-size:0.72rem;color:var(--text2)">Tarih</th>
+                <th style="padding:8px;font-size:0.72rem;color:var(--text2)">Duygu</th>
+                <th style="padding:8px;font-size:0.72rem;color:var(--text2)">Enerji</th>
+                <th style="padding:8px;font-size:0.72rem;color:var(--text2)">Kaygı</th>
+                <th style="padding:8px;font-size:0.72rem;color:var(--text2)">Uyku</th>
+                <th style="padding:8px;font-size:0.72rem;color:var(--text2)">Pozitif</th>
+              </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <button onclick="exportPsychPDF('${sName}')"
+        style="width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,#6c63ff,#fd79a8);color:#fff;border:none;font-weight:800;font-size:0.95rem;cursor:pointer;margin-bottom:24px">
+        📄 PDF Rapor İndir
+      </button>
+    `}`;
+}
+
+function exportPsychPDF(sName) {
+  const sObj = students.find(s=>s.name===sName) || {};
+  const sUid = sObj.uid || '';
+  const data = getWellnessData(sUid || sName);
+  const days = data.days || {};
+  const sortedDays = Object.keys(days).sort().reverse().slice(0, 14);
+
+  const moodLabels = { excited:'Heyecanlı', good:'İyiyim', focused:'Odaklı', ok:'İdare Eder', tired:'Yorgunum', anxious:'Kaygılı', sad:'Mutsuzum' };
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'p', unit:'mm', format:'a4' });
+  const PF = registerFontIfAvailable(doc);
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+  const title = tx(sName) + ' \u2014 Psikolojik Takip Raporu';
+  let Y = pdfHeader(doc, title, tx('Psikolojik Takip Raporu'), tx(dateStr));
+
+  // Hedefler
+  if (data.hedef || data.hedefOkul) {
+    Y = pdfSecHeader(doc, tx('HEDEFLER'), Y, 108, 99, 255);
+    if (data.hedef) { doc.setFont(PF,'normal'); doc.setFontSize(9); doc.setTextColor(60,60,80); doc.text(tx('Hedef Puan: ') + data.hedef, 16, Y); Y+=6; }
+    if (data.hedefOkul) { doc.text(tx('Hedef Okul: ') + tx(data.hedefOkul), 16, Y); Y+=8; }
+  }
+
+  // Özet istatistikler
+  if (sortedDays.length > 0) {
+    const avgEnerji = (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].enerji)||0),0)/sortedDays.length).toFixed(1);
+    const avgKaygi = (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].kaygi)||0),0)/sortedDays.length).toFixed(1);
+    const avgOdak = (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].odak)||0),0)/sortedDays.length).toFixed(1);
+
+    Y = pdfSecHeader(doc, tx('ÖZET İSTATİSTİKLER'), Y, 108, 99, 255);
+    const statBoxes = [[tx('Ort. Enerji'),avgEnerji+'/10',[249,202,36]],[tx('Ort. Odak'),avgOdak+'/10',[69,183,209]],[tx('Ort. Kaygı'),avgKaygi+'/10',[255,107,107]]];
+    statBoxes.forEach((b,i)=>{
+      const bx = 16+i*62;
+      doc.setFillColor(b[2][0],b[2][1],b[2][2]); doc.roundedRect(bx,Y,56,18,3,3,'F');
+      doc.setFont(PF,'bold'); doc.setFontSize(14); doc.setTextColor(255,255,255);
+      doc.text(b[1], bx+28, Y+11, {align:'center'});
+      doc.setFont(PF,'normal'); doc.setFontSize(7);
+      doc.text(b[0], bx+28, Y+16, {align:'center'});
+    });
+    Y += 24;
+
+    // Günlük tablo
+    Y = pdfSecHeader(doc, tx('GÜNLÜK VERİLER'), Y, 108, 99, 255);
+    const tH = [tx('Tarih'), tx('Duygu'), tx('Enerji'), tx('Kaygı'), tx('Uyku'), tx('Pozitif/Not')];
+    const tW = [30, 30, 20, 20, 20, 66];
+    const tR = sortedDays.map(k => {
+      const d = days[k];
+      const dateL = new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
+      return [tx(dateL), tx(moodLabels[d.mood]||'-'), d.enerji||'-', d.kaygi||'-', (d.uyku||'-')+'sa', tx((d.pozitif||d.gurur||d.not||'').substring(0,25))];
+    });
+    Y = pdfTable(doc, tH, tW, tR, Y, [108,99,255]);
+
+    // Negatif düşünceler & pozitif anlar
+    const negatifler = sortedDays.filter(k=>days[k].negatif).map(k=>({ tarih:k, text:days[k].negatif }));
+    const pozitifler = sortedDays.filter(k=>days[k].pozitif||days[k].gurur).map(k=>({ tarih:k, text:days[k].pozitif||days[k].gurur }));
+
+    if (negatifler.length > 0) {
+      Y = pdfCheck(doc, Y, 14); Y = pdfSecHeader(doc, tx('OLUMSUZ DÜŞÜNCELER'), Y, 255, 107, 107);
+      negatifler.slice(0,5).forEach(n => {
+        const lines = doc.splitTextToSize(tx(new Date(n.tarih+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}))+': '+tx(n.text), 174);
+        Y = pdfCheck(doc,Y,8); doc.setFont(PF,'normal'); doc.setFontSize(8); doc.setTextColor(60,60,80);
+        lines.forEach(l=>{ doc.text(l, 16, Y); Y+=5; });
+      });
+    }
+    if (pozitifler.length > 0) {
+      Y = pdfCheck(doc, Y, 14); Y = pdfSecHeader(doc, tx('OLUMLU ANLAR'), Y, 69, 183, 209);
+      pozitifler.slice(0,5).forEach(p => {
+        const lines = doc.splitTextToSize(tx(new Date(p.tarih+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}))+': '+tx(p.text), 174);
+        Y = pdfCheck(doc,Y,8); doc.setFont(PF,'normal'); doc.setFontSize(8); doc.setTextColor(60,60,80);
+        lines.forEach(l=>{ doc.text(l, 16, Y); Y+=5; });
+      });
+    }
+  } else {
+    doc.setFont(PF,'normal'); doc.setFontSize(10); doc.setTextColor(120,120,140);
+    doc.text(tx('Bu öğrenci için henüz psikolojik takip verisi bulunmuyor.'), 16, Y);
+  }
+
+  pdfFooter(doc, doc.internal.getNumberOfPages(), tx(sName)+' | Psikolojik Takip');
+  const fname = ts(sName.replace(/\s+/g,'_'))+'_Psikolojik_'+now.toISOString().split('T')[0]+'.pdf';
+  doc.save(fname);
+  showToast('📄','PDF indiriliyor!');
 }
 
 function studentDetailAnalysis() {
@@ -4513,7 +4772,7 @@ function lgsDagilimPage() {
   const dersler = Object.keys(lgsDagilimData);
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-      <button onclick="history.back()||showPage('dashboard')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
+      <button onclick="showPage('dashboard')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
       <div class="page-title" style="margin:0">📊 LGS Soru Dağılımı</div>
     </div>
     <div class="page-sub">Yıllara göre konu bazlı soru dağılımı</div>
@@ -4587,112 +4846,217 @@ function showDagilimDetail(ders) {
 // PSİKOLOJİK REHBERLİK & HEDEFLER SAYFASI
 // ============================================================
 const moodOptions = [
-  { emoji:'🔥', label:'Süper Motive', value:'super', color:'#f9ca24' },
+  { emoji:'🔥', label:'Heyecanlı', value:'excited', color:'#f9ca24' },
   { emoji:'😊', label:'İyiyim', value:'good', color:'#45b7d1' },
+  { emoji:'🎯', label:'Odaklı', value:'focused', color:'#6c63ff' },
   { emoji:'😐', label:'İdare Eder', value:'ok', color:'#a29bfe' },
   { emoji:'😔', label:'Yorgunum', value:'tired', color:'#fd79a8' },
-  { emoji:'😰', label:'Stresli', value:'stress', color:'#ff6b6b' },
+  { emoji:'😰', label:'Kaygılı', value:'anxious', color:'#ff6b6b' },
+  { emoji:'😢', label:'Mutsuzum', value:'sad', color:'#778ca3' },
 ];
 
 function wellnessPage() {
   const myUid = (window.currentUserData||{}).uid || 'local';
-  const key = 'wellness_' + myUid;
+  const storageKey = 'wellness_' + myUid;
   let data = {};
-  try { data = JSON.parse(localStorage.getItem(key)||'{}'); } catch(e){}
+  try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
 
   const todayKey = new Date().toISOString().split('T')[0];
-  const todayMood = data.moods?.[todayKey] || null;
-  const todayNote = data.notes?.[todayKey] || '';
-  const hedef = data.hedef || '';
-  const hedefOkul = data.hedefOkul || '';
+  const today = data.days?.[todayKey] || {};
   const daysLeft = Math.max(0, Math.ceil((new Date('2026-06-07') - new Date()) / 86400000));
 
   // Son 7 gün mood geçmişi
   const last7 = Array.from({length:7},(_,i)=>{
     const d = new Date(); d.setDate(d.getDate()-i);
     const dk = d.toISOString().split('T')[0];
-    const m = data.moods?.[dk];
-    const mInfo = moodOptions.find(x=>x.value===m);
-    return { dk, label: d.toLocaleDateString('tr-TR',{weekday:'short'}), emoji: mInfo?.emoji||'·', color: mInfo?.color||'var(--border)' };
+    const dayData = data.days?.[dk] || {};
+    const mInfo = moodOptions.find(x=>x.value===dayData.mood);
+    return { dk, label: d.toLocaleDateString('tr-TR',{weekday:'short'}), emoji: mInfo?.emoji||'·', color: mInfo?.color||'var(--border)', mood: dayData.mood };
   }).reverse();
+
+  const subjects = ['Türkçe','Matematik','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce'];
 
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-      <button onclick="history.back()||showPage('dashboard')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
+      <button onclick="showPage('dashboard')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
       <div class="page-title" style="margin:0">💙 Nasıl Hissediyorum</div>
     </div>
-    <div class="page-sub">Hedeflerim ve psikolojik takip</div>
+    <div class="page-sub">Günlük psikolojik takip ve hedeflerim</div>
 
-    <!-- Geri sayım -->
-    <div style="background:linear-gradient(135deg,#6c63ff22,#4cc9f022);border:1px solid #6c63ff44;border-radius:16px;padding:18px;margin-bottom:16px;text-align:center">
-      <div style="font-size:2.5rem;font-weight:900;font-family:'Sora',sans-serif;color:var(--accent)">${daysLeft}</div>
-      <div style="font-size:0.85rem;color:var(--text2);font-weight:600">gün kaldı — LGS 2026</div>
+    <!-- LGS Geri sayım -->
+    <div style="background:linear-gradient(135deg,#6c63ff22,#4cc9f022);border:1px solid #6c63ff44;border-radius:16px;padding:16px;margin-bottom:14px;text-align:center">
+      <div style="font-size:2.2rem;font-weight:900;font-family:'Sora',sans-serif;color:var(--accent)">${daysLeft}</div>
+      <div style="font-size:0.82rem;color:var(--text2);font-weight:600">gün kaldı — LGS 2026</div>
     </div>
 
     <!-- Hedefler -->
-    <div class="card" style="margin-bottom:16px">
+    <div class="card" style="margin-bottom:14px">
       <div class="card-title">🎯 Hedeflerim</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <div>
-          <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Hedef LGS Puanı</div>
-          <input type="number" id="wellnessHedef" placeholder="örn: 480" min="100" max="500"
-            value="${hedef}"
-            onchange="saveWellness('hedef',this.value)"
-            style="width:100%;padding:10px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:1rem;font-weight:700;outline:none">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:120px">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:5px">Hedef Puan</div>
+          <input type="number" placeholder="örn: 480" min="100" max="500"
+            value="${data.hedef||''}"
+            onchange="saveWellnessField('hedef',this.value)"
+            style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.95rem;font-weight:700;outline:none;box-sizing:border-box">
         </div>
-        <div>
-          <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Hedef Okul / Lise</div>
-          <input type="text" id="wellnessHedefOkul" placeholder="örn: Çankaya Anadolu Lisesi"
-            value="${hedefOkul}"
-            onchange="saveWellness('hedefOkul',this.value)"
-            style="width:100%;padding:10px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none">
+        <div style="flex:2;min-width:160px">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:5px">Hedef Okul</div>
+          <input type="text" placeholder="örn: Çankaya Anadolu Lisesi"
+            value="${data.hedefOkul||''}"
+            onchange="saveWellnessField('hedefOkul',this.value)"
+            style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box">
         </div>
       </div>
     </div>
 
-    <!-- Bugün nasıl hissediyorum -->
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title">😊 Bugün Nasılsın?</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+    <!-- BÖLÜM 1: Duygu & Enerji -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">😊 Duygu Durum & Enerji</div>
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">Bugün nasıl hissediyorsun?</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
         ${moodOptions.map(m => `
-          <button onclick="saveMood('${m.value}', this)"
-            style="flex:1;min-width:56px;padding:10px 6px;border-radius:12px;
-                   border:2px solid ${todayMood===m.value ? m.color : 'var(--border)'};
-                   background:${todayMood===m.value ? m.color+'22' : 'transparent'};
-                   cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:4px">
-            <span style="font-size:1.6rem">${m.emoji}</span>
-            <span style="font-size:0.62rem;font-weight:700;color:${todayMood===m.value ? m.color : 'var(--text2)'}">${m.label}</span>
+          <button onclick="saveWellnessDay('mood','${m.value}',this)"
+            style="flex:1;min-width:50px;padding:8px 4px;border-radius:10px;
+                   border:2px solid ${today.mood===m.value ? m.color : 'var(--border)'};
+                   background:${today.mood===m.value ? m.color+'22' : 'transparent'};
+                   cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span style="font-size:1.4rem">${m.emoji}</span>
+            <span style="font-size:0.58rem;font-weight:700;color:${today.mood===m.value ? m.color : 'var(--text2)'}">${m.label}</span>
           </button>`).join('')}
       </div>
 
-      <!-- Son 7 gün -->
-      <div style="margin-bottom:16px">
-        <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:8px">Son 7 Gün</div>
-        <div style="display:flex;gap:6px">
-          ${last7.map(d=>`
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
-              <div style="width:32px;height:32px;border-radius:50%;background:${d.color}33;border:2px solid ${d.color};
-                          display:flex;align-items:center;justify-content:center;font-size:1rem">${d.emoji}</div>
-              <div style="font-size:0.58rem;color:var(--text2)">${d.label}</div>
-            </div>`).join('')}
-        </div>
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Enerji Seviyesi (1-10)</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <input type="range" min="1" max="10" value="${today.enerji||5}"
+          oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('enerji',this.value)"
+          style="flex:1;accent-color:var(--accent)">
+        <span style="font-weight:900;font-size:1.1rem;color:var(--accent);min-width:24px;text-align:center">${today.enerji||5}</span>
       </div>
 
-      <!-- Günlük not -->
-      <div>
-        <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">📝 Bugünkü Notum (sadece sana özel)</div>
-        <textarea id="wellnessNote" rows="3" placeholder="Bugün ne düşündüm, ne hissettim..."
-          onchange="saveWellness('note',this.value)"
-          style="width:100%;padding:10px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);
-                 color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box">${todayNote}</textarea>
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Günün Kelimesi</div>
+      <input type="text" placeholder="Bugünü tek kelimeyle özetle... (örn: 'kararlı', 'dağınık')"
+        value="${today.kelime||''}"
+        onchange="saveWellnessDay('kelime',this.value)"
+        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box;margin-bottom:10px">
+
+      <!-- Son 7 gün -->
+      <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:6px">Son 7 Gün</div>
+      <div style="display:flex;gap:4px">
+        ${last7.map(d=>`
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+            <div style="width:30px;height:30px;border-radius:50%;background:${d.color}33;border:2px solid ${d.color};
+                        display:flex;align-items:center;justify-content:center;font-size:0.9rem">${d.emoji}</div>
+            <div style="font-size:0.56rem;color:var(--text2)">${d.label}</div>
+          </div>`).join('')}
       </div>
     </div>
 
+    <!-- BÖLÜM 2: Akademik Özgüven -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">📚 Akademik Özgüven</div>
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Bugün hangi derste en çok zorlandın?</div>
+      <select onchange="saveWellnessDay('zorDers',this.value)"
+        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;margin-bottom:12px;outline:none">
+        <option value="">— Ders seç —</option>
+        ${subjects.map(s=>`<option value="${s}" ${today.zorDers===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Odaklanma Puanı (1-10)</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <input type="range" min="1" max="10" value="${today.odak||5}"
+          oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('odak',this.value)"
+          style="flex:1;accent-color:#45b7d1">
+        <span style="font-weight:900;font-size:1.1rem;color:#45b7d1;min-width:24px;text-align:center">${today.odak||5}</span>
+      </div>
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">💪 Bugün seni gururlandıran küçük bir an?</div>
+      <input type="text" placeholder="örn: Matematik problemini tek başıma çözdüm"
+        value="${today.gurur||''}"
+        onchange="saveWellnessDay('gurur',this.value)"
+        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box">
+    </div>
+
+    <!-- BÖLÜM 3: Fizyolojik İyi Oluş -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">🌙 Fizyolojik İyi Oluş</div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div style="flex:1;min-width:120px">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:5px">🛌 Kaç saat uyudun?</div>
+          <input type="number" min="2" max="12" step="0.5" placeholder="örn: 7"
+            value="${today.uyku||''}"
+            onchange="saveWellnessDay('uyku',this.value)"
+            style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.95rem;outline:none;box-sizing:border-box">
+        </div>
+        <div style="flex:1;min-width:120px">
+          <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:5px">📱 Ekran süresi (saat)</div>
+          <input type="number" min="0" max="12" step="0.5" placeholder="örn: 2"
+            value="${today.ekran||''}"
+            onchange="saveWellnessDay('ekran',this.value)"
+            style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.95rem;outline:none;box-sizing:border-box">
+        </div>
+      </div>
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">Sabah dinç uyandın mı?</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        ${[{v:'evet',l:'😄 Evet, dinçtim'},{v:'orta',l:'😐 Orta'},{v:'hayir',l:'😴 Hayır, yorgundum'}].map(o=>`
+          <button onclick="saveWellnessDay('uykuKalite','${o.v}',this)"
+            style="flex:1;padding:8px 6px;border-radius:9px;font-size:0.75rem;font-weight:700;cursor:pointer;
+                   border:2px solid ${today.uykuKalite===o.v?'var(--accent)':'var(--border)'};
+                   background:${today.uykuKalite===o.v?'var(--accent)22':'transparent'};
+                   color:${today.uykuKalite===o.v?'var(--accent)':'var(--text2)'}">${o.l}</button>`).join('')}
+      </div>
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">💧 Yeterli su içtin mi?</div>
+      <div style="display:flex;gap:8px">
+        ${[{v:'evet',l:'✅ Evet'},{v:'orta',l:'🤔 Biraz'},{v:'hayir',l:'❌ Hayır'}].map(o=>`
+          <button onclick="saveWellnessDay('su','${o.v}',this)"
+            style="flex:1;padding:8px 6px;border-radius:9px;font-size:0.78rem;font-weight:700;cursor:pointer;
+                   border:2px solid ${today.su===o.v?'#45b7d1':'var(--border)'};
+                   background:${today.su===o.v?'#45b7d122':'transparent'};
+                   color:${today.su===o.v?'#45b7d1':'var(--text2)'}">${o.l}</button>`).join('')}
+      </div>
+    </div>
+
+    <!-- BÖLÜM 4: Kaygı & Stres -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">🧠 Kaygı & Stres Takibi</div>
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Kaygı Skoru (1-10)</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <input type="range" min="1" max="10" value="${today.kaygi||3}"
+          oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('kaygi',this.value)"
+          style="flex:1;accent-color:#ff6b6b">
+        <span style="font-weight:900;font-size:1.1rem;color:#ff6b6b;min-width:24px;text-align:center">${today.kaygi||3}</span>
+      </div>
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">😟 Aklına gelen en olumsuz düşünce?</div>
+      <input type="text" placeholder="örn: Asla başaramayacağım, çok geç kaldım..."
+        value="${today.negatif||''}"
+        onchange="saveWellnessDay('negatif',this.value)"
+        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box;margin-bottom:12px">
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">🌟 Her şeye rağmen bugün iyi giden bir şey?</div>
+      <input type="text" placeholder="örn: Bugün 50 soru çözdüm, küçük ama güzel..."
+        value="${today.pozitif||''}"
+        onchange="saveWellnessDay('pozitif',this.value)"
+        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box;margin-bottom:12px">
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">📝 Günlük not (sadece sana özel)</div>
+      <textarea rows="3" placeholder="Bugün ne düşündüm, ne hissettim..."
+        onchange="saveWellnessDay('not',this.value)"
+        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);
+               color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box">${today.not||''}</textarea>
+    </div>
+
     <!-- Motivasyon -->
-    <div style="background:linear-gradient(135deg,#fd79a822,#f9ca2422);border:1px solid #fd79a844;border-radius:16px;padding:18px;text-align:center">
-      <div style="font-size:1.4rem;margin-bottom:8px" id="motivasyonEmoji">💪</div>
-      <div id="motivasyonText" style="font-size:0.88rem;font-weight:600;color:var(--text);line-height:1.5"></div>
-      <button onclick="newMotivation()" style="margin-top:12px;background:none;border:none;color:var(--accent);font-size:0.8rem;cursor:pointer;font-weight:700">🔄 Yeni söz</button>
+    <div style="background:linear-gradient(135deg,#fd79a822,#f9ca2422);border:1px solid #fd79a844;border-radius:16px;padding:16px;text-align:center;margin-bottom:24px">
+      <div style="font-size:1.3rem;margin-bottom:6px" id="motivasyonEmoji">💪</div>
+      <div id="motivasyonText" style="font-size:0.85rem;font-weight:600;color:var(--text);line-height:1.6"></div>
+      <button onclick="newMotivation()" style="margin-top:10px;background:none;border:none;color:var(--accent);font-size:0.78rem;cursor:pointer;font-weight:700">🔄 Yeni söz</button>
     </div>`;
   setTimeout(()=>newMotivation(), 50);
   return result;
@@ -4719,33 +5083,34 @@ function newMotivation() {
   if(em) em.textContent = s.emoji;
 }
 
-function saveWellness(field, value) {
+function saveWellnessField(field, value) {
   const myUid = (window.currentUserData||{}).uid || 'local';
-  const key = 'wellness_' + myUid;
+  const storageKey = 'wellness_' + myUid;
   let data = {};
-  try { data = JSON.parse(localStorage.getItem(key)||'{}'); } catch(e){}
-  const todayKey = new Date().toISOString().split('T')[0];
-  if (field === 'hedef') data.hedef = value;
-  else if (field === 'hedefOkul') data.hedefOkul = value;
-  else if (field === 'note') {
-    if (!data.notes) data.notes = {};
-    data.notes[todayKey] = value;
-  }
-  localStorage.setItem(key, JSON.stringify(data));
+  try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
+  data[field] = value;
+  localStorage.setItem(storageKey, JSON.stringify(data));
 }
 
-function saveMood(moodValue, btn) {
+function saveWellnessDay(field, value, btn) {
   const myUid = (window.currentUserData||{}).uid || 'local';
-  const key = 'wellness_' + myUid;
+  const storageKey = 'wellness_' + myUid;
   let data = {};
-  try { data = JSON.parse(localStorage.getItem(key)||'{}'); } catch(e){}
+  try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
   const todayKey = new Date().toISOString().split('T')[0];
-  if (!data.moods) data.moods = {};
-  data.moods[todayKey] = moodValue;
-  localStorage.setItem(key, JSON.stringify(data));
-  // Sayfayı yenile
-  showPage('wellness');
+  if (!data.days) data.days = {};
+  if (!data.days[todayKey]) data.days[todayKey] = {};
+  data.days[todayKey][field] = value;
+  localStorage.setItem(storageKey, JSON.stringify(data));
+  // Mood seçimi — buton stillerini güncelle
+  if (btn && ['mood','uykuKalite','su'].includes(field)) showPage('wellness');
 }
+
+// Wellness verilerini dışarıdan okumak için (öğretmen tarafı)
+function getWellnessData(uid) {
+  try { return JSON.parse(localStorage.getItem('wellness_' + uid)||'{}'); } catch(e){ return {}; }
+}
+
 
 function studentKazanimlar() {
   return `
@@ -5764,7 +6129,7 @@ function updateTaskUnits() {
   const sub = document.getElementById('taskSubject').value;
   const units = kazanimlar[sub] || [];
   const sel = document.getElementById('taskUnit');
-  sel.innerHTML = units.map(u => `<option>${u}</option>`).join('');
+  sel.innerHTML = `<option value="Genel Tekrar">Genel Tekrar</option>` + units.map(u => `<option>${u}</option>`).join('');
   updateTaskTitle();
 }
 
