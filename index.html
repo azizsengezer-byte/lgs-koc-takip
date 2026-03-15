@@ -3354,10 +3354,17 @@ function exportStudentDetailPDF(sName) {
   doc.text('%'+netRate, 75+pW+3, Y+4);
   Y+=12;
 
+  // Dinamik bölüm numarası sayacı
+  let secNum = 0;
+  const nextSec = (title, r=90, g=72, b=200) => {
+    secNum++;
+    Y = pdfSecHeader(doc, secNum + '. ' + title, Y, r, g, b);
+  };
+
   // ================================================================
   // BÖLÜM 1 — SORU ÇÖZÜMÜ ANALİZİ
   // ================================================================
-  Y=pdfSecHeader(doc,'1. SORU ÇÖZÜMÜ ANALİZİ',Y);
+  nextSec('SORU ÇÖZÜMÜ ANALİZİ');
 
   // Ders bazlı tablo
   const t1H=['Ders','Süre(dk)','Soru','D','Y','Net','%'];
@@ -3395,7 +3402,7 @@ function exportStudentDetailPDF(sName) {
   // BÖLÜM 2 — KONU ÇALIŞMASI & TEKRAR
   // ================================================================
   if(konuEntries.length>0||tekrarEntries.length>0) {
-    Y=pdfCheck(doc,Y,14); Y=pdfSecHeader(doc,'2. KONU ÇALIŞMASI VE TEKRAR',Y,38,150,100);
+    Y=pdfCheck(doc,Y,14); nextSec('KONU ÇALIŞMASI VE TEKRAR',38,150,100);
     const ktRows=[];
     const ktMap={};
     [...konuEntries,...tekrarEntries].forEach(e=>{
@@ -3412,7 +3419,7 @@ function exportStudentDetailPDF(sName) {
   // BÖLÜM 3 — GÜN GÜNLÜK AKTİVİTE
   // ================================================================
   if(dayList.length>1) {
-    Y=pdfCheck(doc,Y,14); Y=pdfSecHeader(doc,'3. GÜNLÜK AKTİVİTE TRENDİ',Y,43,150,100);
+    Y=pdfCheck(doc,Y,14); nextSec('GÜNLÜK AKTİVİTE TRENDİ',43,150,100);
 
     // Tablo
     const gH=['Tarih','Soru','Net','Süre(dk)','Konu(dk)','Tekrar(dk)'];
@@ -3437,7 +3444,7 @@ function exportStudentDetailPDF(sName) {
   // BÖLÜM 4 — DENEME SINAVLARI
   // ================================================================
   if(denemeler.length>0) {
-    Y=pdfCheck(doc,Y,14); Y=pdfSecHeader(doc,'4. DENEME SINAVI SONUÇLARI',Y,80,60,200);
+    Y=pdfCheck(doc,Y,14); nextSec('DENEME SINAVI SONUÇLARI',80,60,200);
 
     // Özet tablo
     const denH=['#','Deneme Adı','Tarih','LGS Puanı','Ham Puan'];
@@ -3488,10 +3495,8 @@ function exportStudentDetailPDF(sName) {
 
   // ================================================================
   // ================================================================
-  // BÖLÜM 5 — KOÇ DEĞERLENDİRMESİ
-  // Her zaman yeni sayfada başlasın — hem başlık hem içerik birlikte
   Y = pdfNewPage(doc);
-  Y = pdfSecHeader(doc,'5. KOÇ DEĞERLENDİRMESİ',Y,43,180,123);
+  nextSec('KOÇ DEĞERLENDİRMESİ',43,180,123);
 
   // Tespit & Yorum
   const insights=[];
