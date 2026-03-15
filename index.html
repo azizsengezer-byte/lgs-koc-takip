@@ -2458,27 +2458,38 @@ function pdfHeader(doc, title, subtitle, dateStr) {
   doc.setFont(_PF,'normal'); doc.setFontSize(5.5); doc.setTextColor(76,201,240);
   doc.text('O\u011frenci Takip', 32, 19);
 
-  // Orta: 3 satır — öğrenci adı / rapor türü / tarih
-  // title = "Öğrenci Adı — 9 Mart - 15 Mart 2026 Haftalık Rapor"
-  // subtitle = "Öğrenci Bireysel Performans Raporu"
-  // dateStr = "15 Mart 2026"
-  // Bunu parçalayıp 3 satır olarak göster
+  // Sağ üst: rapor tarihi
+  doc.setFont(_PF,'normal'); doc.setFontSize(6); doc.setTextColor(180,175,230);
+  doc.text(tx(dateStr), 203, 8, {align:'right'});
+
+  // Orta: 3 satır — ÖĞRENCİ ADI / RAPOR TÜRÜ / TARİH ARALIĞI
+  // title formatı: "Test Öğrenci — 9 Mart - 15 Mart 2026 Haftalık Rapor"
   const tRaw = tx(title);
   const dashIdx = tRaw.indexOf(' \u2014 ');
-  const studentName = dashIdx > -1 ? tRaw.substring(0, dashIdx) : tRaw;
-  const reportPeriod = dashIdx > -1 ? tRaw.substring(dashIdx + 3) : tx(subtitle);
+  const studentName = dashIdx > -1 ? tRaw.substring(0, dashIdx).toUpperCase() : tRaw.toUpperCase();
 
-  const cx = 130; // merkez x
-  // Satır 1: Öğrenci adı — büyük, beyaz
-  doc.setFont(_PF,'bold'); doc.setFontSize(10); doc.setTextColor(255,255,255);
-  doc.text(studentName, cx, 10, {align:'center'});
-  // Satır 2: Rapor türü (Haftalık/Aylık Rapor) — orta, açık mor
-  doc.setFont(_PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(210,205,255);
-  const pShort = reportPeriod.length > 42 ? reportPeriod.substring(0,40)+'..' : reportPeriod;
-  doc.text(pShort, cx, 18, {align:'center'});
-  // Satır 3: Tarih — küçük, soluk
-  doc.setFont(_PF,'normal'); doc.setFontSize(6); doc.setTextColor(160,155,210);
-  doc.text(tx(dateStr), cx, 25, {align:'center'});
+  // Rapor türü ve tarih aralığını subtitle'dan al
+  // subtitle = "Öğrenci Bireysel Performans Raporu" → pLabel'dan al
+  const pL = tx(subtitle); // örn: "Haftalık Rapor" ya da "Aylık Rapor"
+  // Tarih aralığını title'dan çıkar
+  const afterDash = dashIdx > -1 ? tRaw.substring(dashIdx + 3) : '';
+  // "9 Mart - 15 Mart 2026 Haftalık Rapor" → tarih kısmını ayır
+  const reportTypeMatch = afterDash.match(/(Haftalık|Aylık|Günlük)\s+Rapor/);
+  const reportType = reportTypeMatch ? reportTypeMatch[0].toUpperCase() : pL.toUpperCase();
+  // Tarih aralığı: afterDash'ten rapor tipini çıkar
+  const dateRange = afterDash.replace(/(Haftalık|Aylık|Günlük)\s+Rapor/,'').trim().replace(/\s+\d{4}$/,'').trim();
+
+  const cx = 130;
+  // Satır 1: Öğrenci adı — büyük, beyaz, kalın
+  doc.setFont(_PF,'bold'); doc.setFontSize(10.5); doc.setTextColor(255,255,255);
+  doc.text(studentName, cx, 9, {align:'center'});
+  // Satır 2: HAFTALIK RAPOR — orta, açık mor
+  doc.setFont(_PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(180,175,230);
+  doc.text(reportType, cx, 17, {align:'center'});
+  // Satır 3: Tarih aralığı — küçük, soluk
+  doc.setFont(_PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(140,135,200);
+  const dR = dateRange.length > 30 ? dateRange.substring(0,28)+'..' : dateRange;
+  doc.text(dR, cx, 24, {align:'center'});
 
   return 38;
 }
@@ -2801,7 +2812,7 @@ function exportStudentDetailPDF(sName) {
   // ================================================================
   // SAYFA 1 — KAPAK + GENEL ÖZET
   // ================================================================
-  let Y = pdfHeader(doc, tx(sName) + ' — ' + tx(periodTitle), tx('Öğrenci Bireysel Performans Raporu'), tx(dateStr));
+  let Y = pdfHeader(doc, tx(sName) + ' — ' + tx(periodTitle), tx(pLabel + ' Rapor'), tx(dateStr));
 
   // Özet istatistik kutuları (3+3)
   const boxes = [
