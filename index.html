@@ -2447,10 +2447,10 @@ function pdfHeader(doc, title, subtitle, dateStr) {
   doc.setFillColor(72,58,180); doc.rect(0,0,210,32,'F');
   doc.setFillColor(72,200,130); doc.rect(0,30.2,210,1.8,'F');
 
-  // Sol: Logo ikonu
+  // Sol: Logo ikonu (7,4) boyut 22mm → 7+22=29mm bitiyor
   pdfDrawLogo(doc, 7, 4, 22);
 
-  // Sol: LGSKoç yazısı
+  // Sol: LGSKoç yazısı x=32'den başlıyor, ~55mm'de bitiyor
   doc.setFont(_PF,'bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
   doc.text('LGS', 32, 13);
   doc.setTextColor(180,225,255);
@@ -2458,38 +2458,57 @@ function pdfHeader(doc, title, subtitle, dateStr) {
   doc.setFont(_PF,'normal'); doc.setFontSize(5.5); doc.setTextColor(76,201,240);
   doc.text('O\u011frenci Takip', 32, 19);
 
-  // Sağ üst: rapor tarihi
+  // Sağ üst: rapor tarihi — 203mm sağdan
   doc.setFont(_PF,'normal'); doc.setFontSize(6); doc.setTextColor(180,175,230);
   doc.text(tx(dateStr), 203, 8, {align:'right'});
 
-  // Orta: 3 satır — ÖĞRENCİ ADI / RAPOR TÜRÜ / TARİH ARALIĞI
+  // Orta merkez: logo bölgesi 55mm, tarih alanı ~25mm → kullanılabilir 55-185mm → merkez 120mm
+  const cx = 120;
+
   // title formatı: "Test Öğrenci — 9 Mart - 15 Mart 2026 Haftalık Rapor"
+  //            ya: "Test Öğrenci — Mart 2026 Aylık Rapor"
   const tRaw = tx(title);
   const dashIdx = tRaw.indexOf(' \u2014 ');
-  const studentName = dashIdx > -1 ? tRaw.substring(0, dashIdx).toUpperCase() : tRaw.toUpperCase();
-
-  // Rapor türü ve tarih aralığını subtitle'dan al
-  // subtitle = "Öğrenci Bireysel Performans Raporu" → pLabel'dan al
-  const pL = tx(subtitle); // örn: "Haftalık Rapor" ya da "Aylık Rapor"
-  // Tarih aralığını title'dan çıkar
+  const studentName = (dashIdx > -1 ? tRaw.substring(0, dashIdx) : tRaw).toUpperCase();
   const afterDash = dashIdx > -1 ? tRaw.substring(dashIdx + 3) : '';
-  // "9 Mart - 15 Mart 2026 Haftalık Rapor" → tarih kısmını ayır
-  const reportTypeMatch = afterDash.match(/(Haftalık|Aylık|Günlük)\s+Rapor/);
-  const reportType = reportTypeMatch ? reportTypeMatch[0].toUpperCase() : pL.toUpperCase();
-  // Tarih aralığı: afterDash'ten rapor tipini çıkar
-  const dateRange = afterDash.replace(/(Haftalık|Aylık|Günlük)\s+Rapor/,'').trim().replace(/\s+\d{4}$/,'').trim();
 
-  const cx = 130;
+  // Rapor tipini bul
+  const typeMatch = afterDash.match(/(Haftal\u0131k|Ayl\u0131k|G\u00fcnl\u00fck)/);
+  const reportType = typeMatch ? typeMatch[0] : 'Haftalık';
+
+  // Satır 2 ve 3 için içeriği belirle
+  let line2 = '', line3 = '';
+
+  if (reportType === 'Aylık') {
+    // "Mart 2026 Aylık Rapor" → "MART AYLIK RAPORU" tek satır, 3. satır boş
+    const monthMatch = afterDash.match(/^([A-Za-zığüşöçİĞÜŞÖÇ]+)\s+\d{4}/);
+    const monthName = monthMatch ? monthMatch[1].toUpperCase() : '';
+    line2 = monthName ? monthName + ' AYLIK RAPORU' : 'AYLIK RAPOR';
+    line3 = '';
+  } else if (reportType === 'Günlük') {
+    line2 = 'GÜNLÜK RAPOR';
+    // tarih aralığı = dateStr
+    line3 = tx(dateStr);
+  } else {
+    // Haftalık: "9 Mart - 15 Mart 2026 Haftalık Rapor" → tarih aralığını çıkar
+    line2 = 'HAFTALIK RAPOR';
+    const dateRangePart = afterDash.replace(/Haftal\u0131k\s+Rapor/,'').trim();
+    // "9 Mart - 15 Mart 2026" → "9 - 15 Mart" gibi kısa tut
+    const yearRemoved = dateRangePart.replace(/\s*\d{4}\s*$/,'').trim();
+    line3 = yearRemoved;
+  }
+
   // Satır 1: Öğrenci adı — büyük, beyaz, kalın
   doc.setFont(_PF,'bold'); doc.setFontSize(10.5); doc.setTextColor(255,255,255);
-  doc.text(studentName, cx, 9, {align:'center'});
-  // Satır 2: HAFTALIK RAPOR — orta, açık mor
+  doc.text(studentName, cx, line3 ? 9 : 12, {align:'center'});
+  // Satır 2: Rapor türü
   doc.setFont(_PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(180,175,230);
-  doc.text(reportType, cx, 17, {align:'center'});
-  // Satır 3: Tarih aralığı — küçük, soluk
-  doc.setFont(_PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(140,135,200);
-  const dR = dateRange.length > 30 ? dateRange.substring(0,28)+'..' : dateRange;
-  doc.text(dR, cx, 24, {align:'center'});
+  doc.text(line2, cx, line3 ? 17 : 21, {align:'center'});
+  // Satır 3: Tarih aralığı (haftalık için)
+  if (line3) {
+    doc.setFont(_PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(140,135,200);
+    doc.text(line3, cx, 24, {align:'center'});
+  }
 
   return 38;
 }
