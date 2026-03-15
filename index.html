@@ -2554,28 +2554,27 @@ function registerFontIfAvailable(doc) {
 
 // PDF'i oluştur ve sayfada indirme linki göster
 async function preparePdfLink(sName, btn) {
-  if (btn) { btn.textContent = '⏳ Hazirlaniyor...'; btn.disabled = true; }
+  const origText = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳ Hazırlanıyor...'; btn.disabled = true; }
   try {
     const doc = exportStudentDetailPDF(sName);
-    if (!doc) { if(btn){btn.textContent='📄 PDF Raporu Indir';btn.disabled=false;} return; }
+    if (!doc) { if(btn){btn.textContent=origText;btn.disabled=false;} return; }
+    const ov = window._pdfDateOverride;
+    const period = ov?.label || studentAnalysisPeriod || 'haftalik';
+    const fname = ts(sName.replace(/\s+/g,'_')) + '_' + period + '_' + new Date().toISOString().split('T')[0] + '.pdf';
+    // Direkt indir — yeşil buton yok
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);
-    const fname = ts(sName.replace(/\s+/g,'_')) + '_' + (studentAnalysisPeriod||'haftalik') + '_' + new Date().toISOString().split('T')[0] + '.pdf';
-    const container = btn ? btn.parentElement : document.createElement('div');
-    container.innerHTML = `
-      <a href="${url}" download="${fname}"
-         style="display:block;width:100%;padding:14px;text-align:center;background:var(--accent3);color:#111;
-                font-weight:900;font-size:0.95rem;border-radius:14px;text-decoration:none;box-sizing:border-box">
-        ✅ PDF Hazır — Buraya Dokun ve İndir
-      </a>
-      <div style="text-align:center;font-size:0.75rem;color:var(--text2);margin-top:8px">
-        Açılmazsa: linke uzun bas → "Bağlantıyı indir" seç
-      </div>
-    `;
-    showToast('📄', 'PDF hazır! Yeşil butona dokun.');
+    const a = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    showToast('📄', 'PDF indiriliyor!');
   } catch(e) {
-    if(btn){btn.textContent='📄 PDF Raporu Indir';btn.disabled=false;}
     showToast('❌','Hata: '+e.message);
+  } finally {
+    if (btn) { btn.textContent = origText; btn.disabled = false; }
   }
 }
 
@@ -3007,7 +3006,18 @@ function exportStudentDetailPDF(sName) {
   const dayList = buildDayList(trendDays);
 
   // Deneme verileri
-  const allDenemeler = allEntries.filter(e=>e.type==='deneme');
+  // Denemeler — seçilen dönemin tarih aralığına göre filtrele
+  const _ov = window._pdfDateOverride;
+  const denStartKey = _ov ? _ov.startKey : (
+    studentAnalysisPeriod==='weekly' ? mondayKey :
+    studentAnalysisPeriod==='monthly' ? monthStart : todayKey
+  );
+  const denEndKey = _ov ? _ov.endKey : null;
+  const allDenemeler = allEntries.filter(e =>
+    e.type==='deneme' &&
+    e.dateKey >= denStartKey &&
+    (!denEndKey || e.dateKey <= denEndKey)
+  );
   const denPdfMap={};
   allDenemeler.forEach(e=>{ const k=e.examId||(e.dateKey+'_lgc'); if(!denPdfMap[k]) denPdfMap[k]=[]; denPdfMap[k].push(e); });
   const denemeler = Object.entries(denPdfMap).sort((a,b)=>(a[1][0]?.dateKey||'').localeCompare(b[1][0]?.dateKey||'')).map(([k,dl],di)=>{
