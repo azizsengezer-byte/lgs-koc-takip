@@ -308,6 +308,56 @@
   .modal-title { font-family:'Sora',sans-serif; font-weight:700; font-size:1.2rem; margin-bottom:20px; }
   .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
 
+  /* Özel onay modal */
+  #appConfirmModal {
+    position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:9998;
+    display:none; align-items:flex-end; justify-content:center;
+    padding:0 0 32px;
+  }
+  #appConfirmModal.open { display:flex; }
+  #appConfirmBox {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; padding:24px 20px 20px;
+    width:100%; max-width:440px;
+    box-shadow:0 -4px 32px rgba(0,0,0,.4);
+    animation:slideUp .22s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+  #appConfirmTitle { font-weight:800; font-size:1rem; margin-bottom:8px; }
+  #appConfirmMsg { font-size:0.88rem; color:var(--text2); line-height:1.5; margin-bottom:20px; }
+  .confirm-btns { display:flex; gap:10px; }
+  .confirm-btns button { flex:1; padding:12px; border-radius:12px; font-weight:700; font-size:0.92rem; cursor:pointer; border:none; transition:.15s; }
+  .confirm-cancel { background:var(--surface2); color:var(--text); }
+  .confirm-ok { background:var(--accent2); color:#fff; }
+  .confirm-ok.danger { background:#ff4757; }
+
+  /* Tarih seçici modal */
+  #datePickerModal {
+    position:fixed; inset:0; background:rgba(0,0,0,.65); z-index:9998;
+    display:none; align-items:flex-end; justify-content:center; padding:0;
+  }
+  #datePickerModal.open { display:flex; }
+  #datePickerBox {
+    background:var(--surface); border-top:1px solid var(--border);
+    border-radius:20px 20px 0 0; padding:20px 16px 32px;
+    width:100%; max-width:540px;
+    animation:slideUp .22s ease;
+  }
+  .dp-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .dp-title { font-weight:800; font-size:1rem; }
+  .dp-close { background:none; border:none; color:var(--text2); font-size:1.4rem; cursor:pointer; padding:4px; }
+  .dp-section { margin-bottom:14px; }
+  .dp-label { font-size:0.75rem; font-weight:700; color:var(--text2); letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+  .dp-chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .dp-chip {
+    padding:8px 14px; border-radius:10px; border:1.5px solid var(--border);
+    background:transparent; color:var(--text2); font-weight:600; font-size:0.82rem;
+    cursor:pointer; transition:.15s;
+  }
+  .dp-chip.active { border-color:var(--accent); background:rgba(108,99,255,.15); color:var(--accent); }
+  .dp-chip:hover { border-color:var(--accent); color:var(--accent); }
+  .dp-btn { width:100%; padding:13px; border-radius:12px; background:var(--accent); color:#fff; border:none; font-weight:800; font-size:0.95rem; cursor:pointer; margin-top:6px; }
+
   /* MESSAGING */
   .chat-layout { display:grid; grid-template-columns:260px 1fr; gap:0; height:calc(100vh - 140px); min-height:400px; background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; }
   .chat-list { border-right:1px solid var(--border); overflow-y:auto; }
@@ -924,6 +974,41 @@
 </div>
 
 <div id="toast"><span class="toast-icon"></span><span id="toastMsg"></span></div>
+
+<!-- Özel onay dialogu -->
+<div id="appConfirmModal">
+  <div id="appConfirmBox">
+    <div id="appConfirmTitle"></div>
+    <div id="appConfirmMsg"></div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="appConfirmResolve(false)">İptal</button>
+      <button class="confirm-ok" id="appConfirmOkBtn" onclick="appConfirmResolve(true)">Tamam</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tarih seçici modal -->
+<div id="datePickerModal">
+  <div id="datePickerBox">
+    <div class="dp-header">
+      <div class="dp-title" id="dpTitle">Rapor Dönemi Seç</div>
+      <button class="dp-close" onclick="closeDatePicker()">✕</button>
+    </div>
+    <div class="dp-section" id="dpYearSection">
+      <div class="dp-label">Yıl</div>
+      <div class="dp-chips" id="dpYearChips"></div>
+    </div>
+    <div class="dp-section" id="dpMonthSection" style="display:none">
+      <div class="dp-label">Ay</div>
+      <div class="dp-chips" id="dpMonthChips"></div>
+    </div>
+    <div class="dp-section" id="dpWeekSection" style="display:none">
+      <div class="dp-label">Hafta</div>
+      <div class="dp-chips" id="dpWeekChips"></div>
+    </div>
+    <button class="dp-btn" id="dpConfirmBtn" onclick="dpConfirm()" style="display:none">📄 Bu Dönemi Seç</button>
+  </div>
+</div>
 
 <!-- MOBILE NAV -->
 <nav class="mobile-nav" id="mobileNav"></nav>
@@ -1695,7 +1780,8 @@ async function editDeneme(examId, currentTitle) {
 }
 
 async function deleteDeneme(examId) {
-  if (!confirm('Bu denemeyi silmek istediğinize emin misiniz?')) return;
+  const ok = await appConfirm('Denemeyi Sil', 'Bu denemeyi silmek istediğinize emin misiniz?', true);
+  if (!ok) return;
   const user = auth.currentUser;
   if (!user) return;
   showToast('⏳', 'Siliniyor...');
@@ -1767,7 +1853,8 @@ async function saveEditEntry() {
 }
 
 async function deleteEntry(firestoreId, localIdx) {
-  if (!confirm('Bu girişi silmek istediğinize emin misiniz?')) return;
+  const ok = await appConfirm('Girişi Sil', 'Bu girişi silmek istediğinize emin misiniz?', true);
+  if (!ok) return;
 
   const entry = studyEntries[localIdx];
   studyEntries.splice(localIdx, 1);
@@ -1794,7 +1881,8 @@ async function deleteEntry(firestoreId, localIdx) {
 
 // ---- GÖREV SİLME / DÜZENLEME ----
 async function deleteTask(taskId, idx) {
-  if (!confirm('Bu görevi silmek istediğinize emin misiniz?')) return;
+  const ok = await appConfirm('Görevi Sil', 'Bu görevi silmek istediğinize emin misiniz?', true);
+  if (!ok) return;
   tasks.splice(idx, 1);
   if (taskId) {
     try { await db.collection('tasks').doc(taskId).delete(); } catch(e) {}
@@ -2101,24 +2189,18 @@ function studentDetailAnalysis() {
         <span id="raporAlArrow_${sName.replace(/\s/g,'_')}" style="transition:.2s;font-size:0.8rem">▼</span>
       </button>
       <div id="raporAlPanel_${sName.replace(/\s/g,'_')}" style="display:none;margin-top:6px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <div style="display:flex;gap:6px;flex:1;min-width:160px">
-            <button id="pdfModeWeekly_${sName.replace(/\s/g,'_')}"
-              onclick="setPdfMode('${sName}','weekly')"
-              style="flex:1;padding:7px;border-radius:9px;border:2px solid var(--accent);background:var(--accent)22;color:var(--accent);font-weight:700;font-size:0.8rem;cursor:pointer">Haftalık</button>
-            <button id="pdfModeMonthly_${sName.replace(/\s/g,'_')}"
-              onclick="setPdfMode('${sName}','monthly')"
-              style="flex:1;padding:7px;border-radius:9px;border:2px solid var(--border);background:transparent;color:var(--text2);font-weight:700;font-size:0.8rem;cursor:pointer">Aylık</button>
-          </div>
-          <select id="pdfDateSel_${sName.replace(/\s/g,'_')}"
-            style="flex:2;min-width:150px;padding:7px 10px;border-radius:9px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.85rem">
-            ${generateWeekOptions()}
-          </select>
-          <button onclick="preparePdfLinkWithDate('${sName}',this)"
-            style="flex:1;min-width:110px;padding:8px 12px;border-radius:10px;background:var(--accent);color:#fff;border:none;font-weight:700;font-size:0.85rem;cursor:pointer">
-            📄 PDF İndir
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button onclick="openDatePicker('${sName}','weekly')"
+            style="flex:1;padding:10px;border-radius:10px;background:var(--accent)22;border:1.5px solid var(--accent);color:var(--accent);font-weight:700;font-size:0.85rem;cursor:pointer">
+            📅 Haftalık Rapor
+          </button>
+          <button onclick="openDatePicker('${sName}','monthly')"
+            style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.85rem;cursor:pointer">
+            📆 Aylık Rapor
           </button>
         </div>
+        <button class="dp-btn-pdf" onclick="openDatePicker('${sName}','weekly')"
+          style="display:none"></button>
       </div>
     </div>
 
@@ -2308,6 +2390,145 @@ function generateMonthOptions() {
     opts.push(`<option value="${val}"${m===0?' selected':''}>${label}</option>`);
   }
   return opts.join('');
+}
+
+// ============================================================
+// ÖZEL ONAY DİALOGU — confirm() yerine
+// ============================================================
+let appConfirmResolve = null;
+function appConfirm(title, msg, danger=false) {
+  return new Promise(resolve => {
+    appConfirmResolve = (val) => {
+      document.getElementById('appConfirmModal').classList.remove('open');
+      resolve(val);
+    };
+    document.getElementById('appConfirmTitle').textContent = title;
+    document.getElementById('appConfirmMsg').textContent = msg;
+    const ok = document.getElementById('appConfirmOkBtn');
+    ok.className = 'confirm-ok' + (danger?' danger':'');
+    document.getElementById('appConfirmModal').classList.add('open');
+  });
+}
+
+// ============================================================
+// TARİH SEÇİCİ MODAL
+// ============================================================
+let _dpMode = 'weekly';
+let _dpSName = '';
+let _dpSelected = { year: null, month: null, weekStart: null };
+
+function openDatePicker(sName, mode) {
+  _dpSName = sName;
+  _dpMode = mode;
+  _dpSelected = { year: new Date().getFullYear(), month: null, weekStart: null };
+  const now = new Date();
+
+  // Yılları oluştur (bu yıl + önceki 2 yıl)
+  const years = [now.getFullYear(), now.getFullYear()-1, now.getFullYear()-2];
+  document.getElementById('dpYearChips').innerHTML = years.map(y =>
+    `<button class="dp-chip${y===now.getFullYear()?' active':''}" onclick="dpSelectYear(${y},this)">${y}</button>`
+  ).join('');
+
+  document.getElementById('dpTitle').textContent = mode==='weekly' ? 'Haftalık Rapor Seç' : 'Aylık Rapor Seç';
+  document.getElementById('dpYearSection').style.display = '';
+  document.getElementById('dpMonthSection').style.display = 'none';
+  document.getElementById('dpWeekSection').style.display = 'none';
+  document.getElementById('dpConfirmBtn').style.display = 'none';
+
+  // Varsayılan olarak bu yılı seç ve ayları göster
+  dpSelectYear(now.getFullYear(), document.querySelector('#dpYearChips .dp-chip'));
+  document.getElementById('datePickerModal').classList.add('open');
+}
+
+function dpSelectYear(year, btn) {
+  _dpSelected.year = year; _dpSelected.month = null; _dpSelected.weekStart = null;
+  document.querySelectorAll('#dpYearChips .dp-chip').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const now = new Date();
+  const months = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const maxMonth = year === now.getFullYear() ? now.getMonth() : 11;
+  document.getElementById('dpMonthChips').innerHTML = months.slice(0, maxMonth+1).map((m,i) =>
+    `<button class="dp-chip" onclick="dpSelectMonth(${i},this)">${m}</button>`
+  ).join('');
+  document.getElementById('dpMonthSection').style.display = '';
+  document.getElementById('dpWeekSection').style.display = 'none';
+  document.getElementById('dpConfirmBtn').style.display = 'none';
+}
+
+function dpSelectMonth(monthIdx, btn) {
+  _dpSelected.month = monthIdx; _dpSelected.weekStart = null;
+  document.querySelectorAll('#dpMonthChips .dp-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  if (_dpMode === 'monthly') {
+    document.getElementById('dpWeekSection').style.display = 'none';
+    document.getElementById('dpConfirmBtn').style.display = 'block';
+    return;
+  }
+
+  // Haftalık: o aydaki haftaları listele
+  const year = _dpSelected.year;
+  const now = new Date();
+  const weeks = [];
+  // Ayın ilk Pazartesisi'ni bul
+  const firstDay = new Date(year, monthIdx, 1);
+  const dayOfWeek = firstDay.getDay();
+  let mon = new Date(firstDay);
+  mon.setDate(firstDay.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+  // O aya ait haftaları listele
+  while (mon.getMonth() <= monthIdx && mon.getFullYear() <= year) {
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    // Sadece gelecekteki haftaları gösterme
+    if (mon <= now) {
+      const monKey = mon.toISOString().split('T')[0];
+      const label = mon.toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) + ' - ' + sun.toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
+      weeks.push({key: monKey, label});
+    }
+    mon.setDate(mon.getDate()+7);
+    if (mon.getMonth() > monthIdx && mon.getFullYear() >= year) break;
+  }
+  weeks.reverse(); // En yeni hafta üstte
+  document.getElementById('dpWeekChips').innerHTML = weeks.map(w =>
+    `<button class="dp-chip" style="flex:1;min-width:140px" onclick="dpSelectWeek('${w.key}',this)">${w.label}</button>`
+  ).join('');
+  document.getElementById('dpWeekSection').style.display = '';
+  document.getElementById('dpConfirmBtn').style.display = 'none';
+}
+
+function dpSelectWeek(monKey, btn) {
+  _dpSelected.weekStart = monKey;
+  document.querySelectorAll('#dpWeekChips .dp-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('dpConfirmBtn').style.display = 'block';
+}
+
+function dpConfirm() {
+  const sName = _dpSName;
+  const key = sName.replace(/\s/g,'_');
+  if (_dpMode === 'monthly') {
+    const yr = _dpSelected.year, mo = _dpSelected.month;
+    const startKey = `${yr}-${String(mo+1).padStart(2,'0')}-01`;
+    const lastDay = new Date(yr, mo+1, 0).getDate();
+    const endKey = `${yr}-${String(mo+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+    const monthName = new Date(yr, mo, 1).toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
+    window._pdfDateOverride = { mode:'monthly', startKey, endKey, label:'Aylık', title: monthName + ' Aylık Rapor' };
+  } else {
+    const monKey = _dpSelected.weekStart;
+    const mon = new Date(monKey+'T12:00:00');
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    const endKey = sun.toISOString().split('T')[0];
+    const rangeLabel = mon.toLocaleDateString('tr-TR',{day:'numeric',month:'long'}) + ' - ' + sun.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+    window._pdfDateOverride = { mode:'weekly', startKey: monKey, endKey, label:'Haftalık', title: rangeLabel + ' Haftalık Rapor' };
+  }
+  closeDatePicker();
+  // PDF indir
+  const btn = document.querySelector(`#raporAlPanel_${key} .dp-btn-pdf`);
+  preparePdfLink(sName, btn || null).finally(() => { window._pdfDateOverride = null; });
+}
+
+function closeDatePicker() {
+  document.getElementById('datePickerModal').classList.remove('open');
 }
 
 function toggleRaporAl(key) {
@@ -4431,8 +4652,9 @@ async function markMessagesAsSeen(partnerUid) {
 }
 
 // Sohbeti sil onay
-function confirmDeleteConversation(partnerUid, cId) {
-  if (!confirm('Bu sohbeti silmek istediğinize emin misiniz?\nMesajlar kalıcı olarak silinecek.')) return;
+async function confirmDeleteConversation(partnerUid, cId) {
+  const ok = await appConfirm('Sohbeti Sil', 'Bu sohbeti silmek istediğinize emin misiniz? Mesajlar kalıcı olarak silinecek.', true);
+  if (!ok) return;
   deleteConversation(partnerUid, cId);
 }
 
@@ -5020,7 +5242,8 @@ function saveEntry() {
 
 async function deleteStudent(i) {
   const s = students[i];
-  if (!confirm(`${s.name} silinsin mi?`)) return;
+  const ok = await appConfirm('Öğrenciyi Sil', `${s.name} silinsin mi? Bu işlem geri alınamaz.`, true);
+  if (!ok) return;
   students.splice(i, 1);
   // Firestore'dan da sil
   const user = auth.currentUser;
