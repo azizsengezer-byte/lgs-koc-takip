@@ -2061,7 +2061,7 @@ function studentDetailAnalysis() {
     <div class="page-sub">Bireysel Analiz Raporu</div>
 
     <!-- Dönem seçici -->
-    <div style="display:flex;gap:6px;margin-bottom:18px;background:var(--surface2);border-radius:12px;padding:4px">
+    <div style="display:flex;gap:6px;margin-bottom:12px;background:var(--surface2);border-radius:12px;padding:4px">
       ${['daily','weekly','monthly'].map((p,i)=>{
         const lbl=['Günlük','Haftalık','Aylık'][i];
         return `<button onclick="studentAnalysisPeriod='${p}';showPage('student-detail')"
@@ -2069,6 +2069,28 @@ function studentDetailAnalysis() {
           background:${studentAnalysisPeriod===p?'var(--accent)':'transparent'};
           color:${studentAnalysisPeriod===p?'#fff':'var(--text2)'};transition:.2s">${lbl}</button>`;
       }).join('')}
+    </div>
+
+    <!-- PDF İndir — dönem seçicinin hemen altında -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:18px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;gap:6px;flex:1;min-width:200px">
+          <button id="pdfModeWeekly_${sName.replace(/\s/g,'_')}"
+            onclick="setPdfMode('${sName}','weekly')"
+            style="flex:1;padding:7px;border-radius:9px;border:2px solid var(--accent);background:var(--accent)22;color:var(--accent);font-weight:700;font-size:0.8rem;cursor:pointer">Haftalık</button>
+          <button id="pdfModeMonthly_${sName.replace(/\s/g,'_')}"
+            onclick="setPdfMode('${sName}','monthly')"
+            style="flex:1;padding:7px;border-radius:9px;border:2px solid var(--border);background:transparent;color:var(--text2);font-weight:700;font-size:0.8rem;cursor:pointer">Aylık</button>
+        </div>
+        <select id="pdfDateSel_${sName.replace(/\s/g,'_')}"
+          style="flex:2;min-width:160px;padding:7px 10px;border-radius:9px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.85rem">
+          ${generateWeekOptions()}
+        </select>
+        <button onclick="preparePdfLinkWithDate('${sName}',this)"
+          style="flex:1;min-width:120px;padding:8px 12px;border-radius:10px;background:var(--accent);color:#fff;border:none;font-weight:700;font-size:0.85rem;cursor:pointer">
+          📄 PDF İndir
+        </button>
+      </div>
     </div>
 
     <!-- Özet kartlar -->
@@ -2247,35 +2269,6 @@ function studentDetailAnalysis() {
       <div class="card-title">🧑‍🏫 Koç Değerlendirmesi</div>
       <div style="font-size:0.86rem;line-height:1.75;color:var(--text)">${comment}</div>
     </div>
-
-    <!-- PDF -->
-    <div id="pdfDownloadArea_${sName.replace(/\s/g,'_')}" style="margin-bottom:24px">
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px">
-        <div style="font-size:0.82rem;font-weight:700;color:var(--text2);margin-bottom:10px">📅 Rapor Dönemi Seç</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-          <button onclick="setPdfMode('${sName}','weekly',this)" class="pdf-mode-btn active-mode" style="flex:1;padding:8px;border-radius:9px;border:2px solid var(--accent);background:var(--accent)22;color:var(--accent);font-weight:700;font-size:0.8rem;cursor:pointer">Haftalık</button>
-          <button onclick="setPdfMode('${sName}','monthly',this)" class="pdf-mode-btn" style="flex:1;padding:8px;border-radius:9px;border:2px solid var(--border);background:transparent;color:var(--text2);font-weight:700;font-size:0.8rem;cursor:pointer">Aylık</button>
-        </div>
-        <!-- Haftalık seçici -->
-        <div id="weekPicker_${sName.replace(/\s/g,'_')}" style="display:flex;flex-direction:column;gap:6px">
-          <div style="font-size:0.75rem;color:var(--text2);font-weight:600">Hafta seç:</div>
-          <select id="weekSelect_${sName.replace(/\s/g,'_')}" style="width:100%;padding:8px 12px;border-radius:9px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.85rem">
-            ${generateWeekOptions()}
-          </select>
-        </div>
-        <!-- Aylık seçici -->
-        <div id="monthPicker_${sName.replace(/\s/g,'_')}" style="display:none;flex-direction:column;gap:6px">
-          <div style="font-size:0.75rem;color:var(--text2);font-weight:600">Ay seç:</div>
-          <select id="monthSelect_${sName.replace(/\s/g,'_')}" style="width:100%;padding:8px 12px;border-radius:9px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.85rem">
-            ${generateMonthOptions()}
-          </select>
-        </div>
-      </div>
-      <button class="btn btn-primary" style="width:100%;padding:14px;font-size:0.95rem"
-        onclick="preparePdfLinkWithDate('${sName}', this)">
-        📄 PDF Raporu İndir
-      </button>
-    </div>
   `;
 }
 
@@ -2307,64 +2300,52 @@ function generateMonthOptions() {
   return opts.join('');
 }
 
-function setPdfMode(sName, mode, btn) {
+function setPdfMode(sName, mode) {
   const key = sName.replace(/\s/g,'_');
-  const weekPicker = document.getElementById('weekPicker_'+key);
-  const monthPicker = document.getElementById('monthPicker_'+key);
-  const allBtns = btn.parentElement.querySelectorAll('.pdf-mode-btn');
-  allBtns.forEach(b => {
-    b.style.borderColor = 'var(--border)';
-    b.style.background = 'transparent';
-    b.style.color = 'var(--text2)';
-  });
-  btn.style.borderColor = 'var(--accent)';
-  btn.style.background = 'var(--accent)22';
-  btn.style.color = 'var(--accent)';
+  const weekBtn = document.getElementById('pdfModeWeekly_'+key);
+  const monthBtn = document.getElementById('pdfModeMonthly_'+key);
+  const dateSel = document.getElementById('pdfDateSel_'+key);
+  if (!weekBtn || !monthBtn || !dateSel) return;
+
+  // Buton stillerini güncelle
   if (mode === 'weekly') {
-    weekPicker.style.display = 'flex';
-    monthPicker.style.display = 'none';
+    weekBtn.style.borderColor = 'var(--accent)'; weekBtn.style.background = 'var(--accent)22'; weekBtn.style.color = 'var(--accent)';
+    monthBtn.style.borderColor = 'var(--border)'; monthBtn.style.background = 'transparent'; monthBtn.style.color = 'var(--text2)';
+    dateSel.innerHTML = generateWeekOptions();
   } else {
-    weekPicker.style.display = 'none';
-    monthPicker.style.display = 'flex';
+    monthBtn.style.borderColor = 'var(--accent)'; monthBtn.style.background = 'var(--accent)22'; monthBtn.style.color = 'var(--accent)';
+    weekBtn.style.borderColor = 'var(--border)'; weekBtn.style.background = 'transparent'; weekBtn.style.color = 'var(--text2)';
+    dateSel.innerHTML = generateMonthOptions();
   }
-  btn.parentElement.dataset.mode = mode;
+  // Seçili modu data attribute olarak sakla
+  dateSel.dataset.mode = mode;
 }
 
 async function preparePdfLinkWithDate(sName, btn) {
   const key = sName.replace(/\s/g,'_');
-  const modeBtns = btn.previousElementSibling;
-  const mode = modeBtns?.querySelector('.active-mode')?.textContent?.includes('Aylık') ? 'monthly' : 
-               (modeBtns?.dataset?.mode || 'weekly');
-  
-  // Seçilen tarihi al
-  let startKey, endKey, periodLabel, periodTitle;
+  const dateSel = document.getElementById('pdfDateSel_'+key);
+  // Modu belirle: dataset.mode yoksa haftalık (varsayılan)
+  const mode = dateSel?.dataset?.mode || 'weekly';
+  const val = dateSel?.value || '';
   const now = new Date();
 
   if (mode === 'monthly') {
-    const sel = document.getElementById('monthSelect_'+key);
-    const val = sel ? sel.value : now.toISOString().substring(0,7);
     const [yr, mo] = val.split('-').map(Number);
-    startKey = val + '-01';
+    const startKey = val + '-01';
     const lastDay = new Date(yr, mo, 0).getDate();
-    endKey = val + '-' + String(lastDay).padStart(2,'0');
+    const endKey = val + '-' + String(lastDay).padStart(2,'0');
     const monthName = new Date(yr, mo-1, 1).toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
-    periodLabel = 'Aylık';
-    periodTitle = monthName.split(' ')[0].toUpperCase() + ' AYLIK RAPORU';
-    // exportStudentDetailPDF'e geçilebilmesi için geçici override
-    window._pdfDateOverride = { mode:'monthly', startKey, endKey, label:periodLabel, title: new Date(yr,mo-1,1).toLocaleDateString('tr-TR',{month:'long',year:'numeric'})+' Aylık Rapor' };
+    window._pdfDateOverride = { mode:'monthly', startKey, endKey, label:'Aylık', title: monthName + ' Aylık Rapor' };
   } else {
-    const sel = document.getElementById('weekSelect_'+key);
-    const monKey = sel ? sel.value : (() => {
-      const m = new Date(now); m.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1)); return m.toISOString().split('T')[0];
+    const monKey = val || (() => {
+      const m = new Date(now); m.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
+      return m.toISOString().split('T')[0];
     })();
     const mon = new Date(monKey+'T12:00:00');
     const sun = new Date(mon); sun.setDate(mon.getDate()+6);
-    startKey = monKey;
-    endKey = sun.toISOString().split('T')[0];
+    const endKey = sun.toISOString().split('T')[0];
     const rangeLabel = mon.toLocaleDateString('tr-TR',{day:'numeric',month:'long'}) + ' - ' + sun.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
-    periodLabel = 'Haftalık';
-    periodTitle = rangeLabel + ' Haftalık Rapor';
-    window._pdfDateOverride = { mode:'weekly', startKey, endKey, label:periodLabel, title: periodTitle };
+    window._pdfDateOverride = { mode:'weekly', startKey: monKey, endKey, label:'Haftalık', title: rangeLabel + ' Haftalık Rapor' };
   }
 
   await preparePdfLink(sName, btn);
