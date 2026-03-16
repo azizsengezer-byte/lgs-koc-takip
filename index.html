@@ -633,9 +633,7 @@
     <input type="hidden" id="editEntryIdx">
     <div class="form-group">
       <label class="form-label">Ders</label>
-      <select class="form-select" id="editEntrySub">
-        ${subjects.map(s=>`<option value="${s.name}">${s.icon} ${s.name}</option>`).join('')}
-      </select>
+      <select class="form-select" id="editEntrySub"></select>
     </div>
     <div class="form-group">
       <label class="form-label">Konu / Başlık</label>
@@ -646,6 +644,10 @@
       <input class="form-input" type="number" id="editEntryDur" min="0">
     </div>
     <div id="editEntryQFields">
+      <div class="form-group">
+        <label class="form-label">Soru Sayısı</label>
+        <input class="form-input" type="number" id="editEntryQuestions" min="0">
+      </div>
       <div class="form-group">
         <label class="form-label">Doğru</label>
         <input class="form-input" type="number" id="editEntryCorrect" min="0">
@@ -1913,13 +1915,21 @@ function editEntryModal(firestoreId, localIdx) {
   if (!entry) return;
   document.getElementById('editEntryId').value = firestoreId;
   document.getElementById('editEntryIdx').value = localIdx;
-  document.getElementById('editEntrySub').value = entry.subject || subjects[0].name;
+
+  // Ders seçicisini dinamik doldur
+  const selEl = document.getElementById('editEntrySub');
+  selEl.innerHTML = subjects.map(s=>`<option value="${s.name}">${s.icon} ${s.name}</option>`).join('');
+  selEl.value = entry.subject || subjects[0].name;
+
   document.getElementById('editEntryTopic').value = entry.topic || '';
   document.getElementById('editEntryDur').value = entry.duration || 0;
   const hasQ = entry.type === 'soru';
   document.getElementById('editEntryQFields').style.display = hasQ ? 'block' : 'none';
   document.getElementById('editEntryCorrect').value = entry.correct || 0;
   document.getElementById('editEntryWrong').value = entry.wrong || 0;
+  // Soru sayısı alanını doldur
+  const qCountEl = document.getElementById('editEntryQuestions');
+  if (qCountEl) qCountEl.value = entry.questions || 0;
   document.getElementById('editEntryNote').value = entry.note || '';
   openModal('editEntryModalEl');
 }
@@ -1932,9 +1942,10 @@ async function saveEditEntry() {
   const dur = parseInt(document.getElementById('editEntryDur').value) || 0;
   const correct = parseInt(document.getElementById('editEntryCorrect').value) || 0;
   const wrong = parseInt(document.getElementById('editEntryWrong').value) || 0;
+  const qManual = parseInt(document.getElementById('editEntryQuestions')?.value) || 0;
   const note = document.getElementById('editEntryNote').value.trim();
   const net = correct > 0 || wrong > 0 ? correct - wrong/3 : (studyEntries[localIdx]?.net || 0);
-  const q = correct + wrong;
+  const q = qManual > 0 ? qManual : (correct + wrong);
 
   const updates = { subject: sub, topic, duration: dur, correct, wrong, net, questions: q, note };
 
@@ -2737,7 +2748,7 @@ async function exportPsychPDF(sName) {
   const PF = registerFontIfAvailable(doc);
   const dateStr = now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
 
-  let Y = pdfHeader(doc, tx(sName)+' \u2014 '+tx(periodTitle), tx('Psikolojik Takip'), tx(dateStr));
+  let Y = pdfHeader(doc, tx(sName)+' \u2014 '+tx(periodTitle), tx('PSİKOLOJİK TAKİP RAPORU'), tx(dateStr));
 
   // Hedefler
   if (data.hedef || data.hedefOkul) {
@@ -3172,20 +3183,27 @@ async function exportPsychPDF(sName) {
         moodEntries3.forEach(([mood, subs])=>{
           const topSub = Object.entries(subs).sort((a,b)=>b[1]-a[1])[0];
           if (!topSub) return;
-          Y = pdfCheck(doc, Y, 8);
+          Y = pdfCheck(doc, Y, 10);
           const mc = moodColorsPDF[mood]||[150,150,150];
-          doc.setFillColor(mc[0],mc[1],mc[2],0.15);
-          doc.roundedRect(16,Y,178,8,1.5,1.5,'F');
-          doc.setFillColor(mc[0],mc[1],mc[2]); doc.roundedRect(16,Y,3,8,1,1,'F');
-          doc.setFont(PF,'bold'); doc.setFontSize(7); doc.setTextColor(mc[0]>180?60:200, 60, 60);
-          doc.setTextColor(40,40,80);
-          doc.text(tx(moodLabelsPDF[mood]||mood)+' →', 21, Y+5.5);
-          doc.setFont(PF,'normal');
-          doc.text(tx('En çok: ')+tx(topSub[0])+' ('+topSub[1]+' soru)', 55, Y+5.5);
-          const allSubs = Object.entries(subs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([s,q])=>tx(s.substring(0,4))+'('+q+')').join(', ');
-          doc.setFontSize(6); doc.setTextColor(120,120,150);
-          doc.text(allSubs, 120, Y+5.5);
-          Y+=9;
+          // Açık arka plan: rengi 230 ile karıştır
+          const bgR = Math.round(mc[0]*0.15 + 240*0.85);
+          const bgG = Math.round(mc[1]*0.15 + 240*0.85);
+          const bgB = Math.round(mc[2]*0.15 + 240*0.85);
+          doc.setFillColor(bgR, bgG, bgB);
+          doc.roundedRect(16,Y,178,9,1.5,1.5,'F');
+          // Sol renkli şerit
+          doc.setFillColor(mc[0],mc[1],mc[2]); doc.roundedRect(16,Y,3,9,1,1,'F');
+          // Duygu etiketi
+          doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(40,40,80);
+          doc.text(tx(moodLabelsPDF[mood]||mood)+' →', 21, Y+6);
+          // En çok çalışılan ders
+          doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(60,60,100);
+          doc.text(tx('En çok: ')+tx(topSub[0])+' ('+topSub[1]+' soru)', 58, Y+6);
+          // Tüm dersler listesi
+          const allSubs = Object.entries(subs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([s,q])=>tx(s.substring(0,5))+'('+q+')').join('  ');
+          doc.setFontSize(6.5); doc.setTextColor(100,100,130);
+          doc.text(allSubs, 128, Y+6);
+          Y+=11;
         });
       }
 
@@ -3885,6 +3903,12 @@ function pdfHeader(doc, title, subtitle, dateStr) {
   if (line3) {
     doc.setFont(_PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(140,135,200);
     doc.text(line3, cx, 24, {align:'center'});
+  }
+
+  // Sağ alt: subtitle etiketi (rapor türü açıklaması)
+  if (subtitle) {
+    doc.setFont(_PF,'normal'); doc.setFontSize(5.5); doc.setTextColor(140,200,255);
+    doc.text(tx(subtitle), 203, 27, {align:'right'});
   }
 
   return 38;
