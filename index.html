@@ -5260,6 +5260,14 @@ function saveWellnessDay(field, value, btn) {
   if (btn && ['mood','uykuKalite','su'].includes(field)) {
     _updateWellnessButtons(field, value, btn);
   }
+  // Anlık bildirim: kritik duygu seçilince koça bildir
+  if (field === 'mood' && ['anxious','sad','tired'].includes(value)) {
+    const moodLabels = { anxious:'Kaygılı', sad:'Mutsuz', tired:'Yorgun' };
+    sendWellnessNotification(myUid,
+      `💙 ${(window.currentUserData||{}).name||'Öğrenci'} bugün "${moodLabels[value]}" hissediyor.`,
+      'mood_alert'
+    );
+  }
 }
 
 function saveWellnessAll(btn) {
@@ -5283,6 +5291,10 @@ function saveWellnessAll(btn) {
   });
 
   localStorage.setItem(storageKey, JSON.stringify(data));
+
+  // 3 gün üst üste olumsuz kontrolü
+  checkConsecutiveNegativeMoods(myUid, data);
+
   if (myUid !== 'local' && window.db) {
     db.collection('wellness').doc(myUid).set(data)
       .then(() => {
@@ -5293,6 +5305,58 @@ function saveWellnessAll(btn) {
   } else {
     showToast('✅','Kaydedildi (çevrimdışı)');
     if (btn) { btn.textContent='✅ Kaydedildi'; setTimeout(()=>{ btn.textContent='✅ Bugünü Kaydet'; },2000); }
+  }
+}
+
+// Koça bildirim gönder
+async function sendWellnessNotification(studentUid, text, type) {
+  if (!window.db || !studentUid) return;
+  try {
+    // Öğrencinin teacherId'sini bul
+    const teacherId = (window.currentUserData||{}).teacherId;
+    if (!teacherId) return;
+    // Aynı tipte bugün zaten bildirim gönderildiyse tekrar gönderme
+    const todayKey = new Date().toISOString().split('T')[0];
+    const existing = await db.collection('notifications')
+      .where('toUid','==',teacherId)
+      .where('fromUid','==',studentUid)
+      .where('type','==',type)
+      .where('dateKey','==',todayKey)
+      .get();
+    if (!existing.empty) return; // Bugün zaten gönderilmiş
+    await db.collection('notifications').add({
+      toUid: teacherId,
+      fromUid: studentUid,
+      text,
+      type,
+      dateKey: todayKey,
+      read: false,
+      time: new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) { console.log('Wellness notif error:', e.message); }
+}
+
+// 3 gün üst üste olumsuz duygu kontrolü
+function checkConsecutiveNegativeMoods(studentUid, data) {
+  const negativeMoods = ['anxious','sad','tired'];
+  const days = data.days || {};
+  let consecutiveCount = 0;
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const dk = d.toISOString().split('T')[0];
+    if (days[dk] && negativeMoods.includes(days[dk].mood)) {
+      consecutiveCount++;
+    } else {
+      break;
+    }
+  }
+  if (consecutiveCount >= 3) {
+    const name = (window.currentUserData||{}).name || 'Öğrenci';
+    sendWellnessNotification(studentUid,
+      `⚠️ ${name} son 3 gündür olumsuz duygu bildiriyor. Bir görüşme planlanması önerilir.`,
+      'mood_consecutive'
+    );
   }
 }
 
