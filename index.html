@@ -817,26 +817,24 @@
     <div class="modal-title">📚 Günlük Çalışma Ekle</div>
     <div class="form-group">
       <label class="form-label">Çalışma Türü</label>
-      <select class="form-select" id="entryType" onchange="toggleEntryFields()">
-        <option value="soru">📝 Soru Çözümü</option>
-        <option value="konu">📖 Konu Çalışma</option>
-        <option value="tekrar">🔁 Tekrar</option>
-        <option value="deneme">📊 Deneme Sınavı</option>
-      </select>
+      <button type="button" onclick="openOptionPicker('entryType','Çalışma Türü Seç',[{v:'soru',l:'📝 Soru Çözümü'},{v:'konu',l:'📖 Konu Çalışma'},{v:'tekrar',l:'🔁 Tekrar'},{v:'deneme',l:'📊 Deneme Sınavı'}], toggleEntryFields)"
+        id="entryTypeBtn" style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+        <span id="entryTypeLabel">📝 Soru Çözümü</span>
+        <span style="color:var(--text2)">▼</span>
+      </button>
+      <input type="hidden" id="entryType" value="soru">
     </div>
 
     <!-- Soru Çözümü & Konu & Tekrar için ders/konu -->
     <div id="normalFields">
       <div class="form-group">
         <label class="form-label">Ders</label>
-        <select class="form-select" id="entrySubject" onchange="updateEntryTopics()">
-          <option value="Türkçe">📖 Türkçe</option>
-          <option value="Matematik">📐 Matematik</option>
-          <option value="Fen Bilimleri">🔬 Fen Bilimleri</option>
-          <option value="İnkılap Tarihi">🏛️ İnkılap Tarihi</option>
-          <option value="Din Kültürü">☪️ Din Kültürü</option>
-          <option value="İngilizce">🌍 İngilizce</option>
-        </select>
+        <button type="button" onclick="openOptionPicker('entrySubject','Ders Seç',[{v:'Türkçe',l:'📖 Türkçe'},{v:'Matematik',l:'📐 Matematik'},{v:'Fen Bilimleri',l:'🔬 Fen Bilimleri'},{v:'İnkılap Tarihi',l:'🏛️ İnkılap Tarihi'},{v:'Din Kültürü',l:'☪️ Din Kültürü'},{v:'İngilizce',l:'🌍 İngilizce'}], updateEntryTopics)"
+          id="entrySubjectBtn" style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+          <span id="entrySubjectLabel">📖 Türkçe</span>
+          <span style="color:var(--text2)">▼</span>
+        </button>
+        <input type="hidden" id="entrySubject" value="Türkçe">
       </div>
       <div class="form-group">
         <label class="form-label">Konu</label>
@@ -932,16 +930,21 @@
     <div class="modal-title">📋 Ödev / Görev Ata</div>
     <div class="form-group">
       <label class="form-label">Öğrenci</label>
-      <select class="form-select" id="taskStudent">
-        <option value="">-- Öğrenci Seç --</option>
-      </select>
+      <button type="button" id="taskStudentBtn" onclick="openOptionPicker('taskStudent','Öğrenci Seç', students.map(s=>({v:s.name,l:s.name})), null)"
+        style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+        <span id="taskStudentLabel">— Öğrenci seç —</span>
+        <span style="color:var(--text2)">▼</span>
+      </button>
+      <input type="hidden" id="taskStudent" value="">
     </div>
     <div class="form-group">
       <label class="form-label">Ders</label>
-      <select class="form-select" id="taskSubject" onchange="updateTaskUnits()">
-        <option>Türkçe</option><option>Matematik</option><option>Fen Bilimleri</option>
-        <option>İnkılap Tarihi</option><option>Din Kültürü</option><option>İngilizce</option>
-      </select>
+      <button type="button" id="taskSubjectBtn" onclick="openOptionPicker('taskSubject','Ders Seç',[{v:'Türkçe',l:'📖 Türkçe'},{v:'Matematik',l:'📐 Matematik'},{v:'Fen Bilimleri',l:'🔬 Fen Bilimleri'},{v:'İnkılap Tarihi',l:'🏛️ İnkılap Tarihi'},{v:'Din Kültürü',l:'☪️ Din Kültürü'},{v:'İngilizce',l:'🌍 İngilizce'}], updateTaskUnits)"
+        style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+        <span id="taskSubjectLabel">📖 Türkçe</span>
+        <span style="color:var(--text2)">▼</span>
+      </button>
+      <input type="hidden" id="taskSubject" value="Türkçe">
     </div>
     <div class="form-group">
       <label class="form-label">Ünite / Konu</label>
@@ -954,13 +957,12 @@
     </div>
     <div class="form-group">
       <label class="form-label">Görev Türü</label>
-      <select class="form-select" id="taskType" onchange="updateTaskTitle()">
-        <option value="soru">📝 Soru Çözümü</option>
-        <option value="konu">📖 Konu Çalışma</option>
-        <option value="ozet">✏️ Özet Çıkarma</option>
-        <option value="tekrar">🔁 Tekrar</option>
-        <option value="diger">📌 Diğer</option>
-      </select>
+      <button type="button" id="taskTypeBtn" onclick="openOptionPicker('taskType','Görev Türü Seç',[{v:'soru',l:'📝 Soru Çözümü'},{v:'konu',l:'📖 Konu Çalışma'},{v:'ozet',l:'✏️ Özet Çıkarma'},{v:'tekrar',l:'🔁 Tekrar'},{v:'diger',l:'📌 Diğer'}], updateTaskTitle)"
+        style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+        <span id="taskTypeLabel">📝 Soru Çözümü</span>
+        <span style="color:var(--text2)">▼</span>
+      </button>
+      <input type="hidden" id="taskType" value="soru">
     </div>
     <div class="form-group" id="taskCountGroup">
       <label class="form-label">Soru Sayısı</label>
@@ -5025,11 +5027,12 @@ function wellnessPage() {
       <div class="card-title">📚 Akademik Özgüven</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Bugün hangi derste en çok zorlandın?</div>
-      <select onchange="saveWellnessDay('zorDers',this.value)"
-        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;margin-bottom:12px;outline:none">
-        <option value="">— Ders seç —</option>
-        ${subjects.map(s=>`<option value="${s}" ${today.zorDers===s?'selected':''}>${s}</option>`).join('')}
-      </select>
+      <button type="button" onclick="openOptionPicker('zorDers','Zorlanan Ders',[{v:'',l:'— Seçiniz —'},{v:'Türkçe',l:'📖 Türkçe'},{v:'Matematik',l:'📐 Matematik'},{v:'Fen Bilimleri',l:'🔬 Fen Bilimleri'},{v:'İnkılap Tarihi',l:'🏛️ İnkılap Tarihi'},{v:'Din Kültürü',l:'☪️ Din Kültürü'},{v:'İngilizce',l:'🌍 İngilizce'}], null)"
+        id="zorDersBtn" style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.88rem;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+        <span id="zorDersLabel">${today.zorDers ? subjects.find(s=>s===today.zorDers)||today.zorDers : '— Ders seç —'}</span>
+        <span style="color:var(--text2)">▼</span>
+      </button>
+      <input type="hidden" id="zorDers" value="${today.zorDers||''}">
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Odaklanma Puanı (1-10)</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
@@ -5153,52 +5156,45 @@ function newMotivation() {
 }
 
 // ============================================================
-// KONU SEÇİCİ MODAL
+// KONU & SEÇENEK MODAL — Tüm seçimler için
 // ============================================================
-let _topicPickerTarget = 'entry'; // 'entry' veya 'task'
 
-function openTopicPicker(target) {
-  _topicPickerTarget = target;
-  let sub, type;
-  if (target === 'entry') {
-    sub = document.getElementById('entrySubject')?.value || '';
-    type = document.getElementById('entryType')?.value || '';
-  } else {
-    sub = document.getElementById('taskSubject')?.value || '';
-    type = document.getElementById('taskType')?.value || '';
-  }
-  const topics = kazanimlar[sub] || [];
-  const showGenel = type === 'tekrar';
-
-  document.getElementById('topicPickerTitle').textContent = (sub || 'Konu') + ' — Seç';
-  const list = document.getElementById('topicPickerList');
-  const allTopics = showGenel ? [...topics, 'Genel Tekrar'] : topics;
-
-  list.innerHTML = allTopics.map(t => `
-    <button onclick="selectTopic('${t.replace(/'/g,"\\'")}',this)"
-      style="width:100%;padding:14px 18px;background:transparent;border:none;border-bottom:1px solid var(--border);
-             color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
-      <span>${t}</span>
-      <span style="color:var(--text2);font-size:0.8rem">›</span>
-    </button>`).join('');
-
+function openOptionPicker(targetId, title, options, callback) {
   const modal = document.getElementById('topicPickerModal');
+  document.getElementById('topicPickerTitle').textContent = title;
+  const currentVal = document.getElementById(targetId)?.value || '';
+  document.getElementById('topicPickerList').innerHTML = options.map(o => `
+    <button onclick="selectOption('${targetId}','${o.v.replace(/'/g,"\\'")}','${(o.l||o.v).replace(/'/g,"\\'")}','${callback ? callback.name : ''}')"
+      style="width:100%;padding:14px 18px;background:${o.v===currentVal?'rgba(108,99,255,0.1)':'transparent'};
+             border:none;border-bottom:1px solid var(--border);color:var(--text);
+             text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+      <span>${o.l||o.v}</span>
+      ${o.v===currentVal ? '<span style="color:var(--accent)">✓</span>' : '<span style="color:var(--text2);font-size:0.8rem">›</span>'}
+    </button>`).join('');
   modal.style.display = 'flex';
-  modal.onclick = (e) => { if(e.target === modal) closeTopicPicker(); };
+  modal.onclick = (e) => { if(e.target===modal) closeTopicPicker(); };
 }
 
-function selectTopic(topic, btn) {
-  if (_topicPickerTarget === 'entry') {
-    document.getElementById('entryTopic').value = topic;
-    const lbl = document.getElementById('entryTopicLabel');
-    if (lbl) lbl.textContent = topic;
-  } else {
-    document.getElementById('taskUnit').value = topic;
-    const lbl = document.getElementById('taskUnitLabel');
-    if (lbl) lbl.textContent = topic;
-    updateTaskTitle();
-  }
+function selectOption(targetId, value, label, callbackName) {
+  const inp = document.getElementById(targetId);
+  if (inp) inp.value = value;
+  const lbl = document.getElementById(targetId+'Label');
+  if (lbl) lbl.textContent = label;
   closeTopicPicker();
+  if (callbackName) { const fn=window[callbackName]; if(typeof fn==='function') fn(); }
+}
+
+// Konu seçici — kazanimlar listesini kullanır
+function openTopicPicker(target) {
+  const sub = document.getElementById(target==='entry'?'entrySubject':'taskSubject')?.value || '';
+  const type = document.getElementById(target==='entry'?'entryType':'taskType')?.value || '';
+  const topics = kazanimlar[sub] || [];
+  const showGenel = type === 'tekrar';
+  const allTopics = showGenel ? [...topics, 'Genel Tekrar'] : topics;
+  const targetId = target==='entry' ? 'entryTopic' : 'taskUnit';
+  const cbName = target==='entry' ? '' : 'updateTaskTitle';
+  const opts = allTopics.map(t=>({v:t, l:t}));
+  openOptionPicker(targetId, (sub||'Konu')+' — Seç', opts, cbName ? {name:cbName} : null);
 }
 
 function closeTopicPicker() {
@@ -5206,15 +5202,12 @@ function closeTopicPicker() {
 }
 
 function updateEntryTopics() {
-  // Artık hidden input kullanıyoruz — sadece değeri sıfırla
-  const sub = document.getElementById('entrySubject')?.value;
   document.getElementById('entryTopic').value = '';
   const lbl = document.getElementById('entryTopicLabel');
   if (lbl) lbl.textContent = '— Konu seç —';
 }
 
 function updateTaskUnits() {
-  const type = document.getElementById('taskType')?.value || '';
   document.getElementById('taskUnit').value = '';
   const lbl = document.getElementById('taskUnitLabel');
   if (lbl) lbl.textContent = '— Konu seç —';
@@ -6353,17 +6346,19 @@ async function saveNewStudent() {
 }
 
 function populateTaskStudents() {
-  const sel = document.getElementById('taskStudent');
-  sel.innerHTML = '<option value="">-- Öğrenci Seç --</option>';
-  students.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.name;
-    opt.textContent = s.name;
-    sel.appendChild(opt);
-  });
-  if (students.length === 0) {
-    sel.innerHTML = '<option value="">Henüz öğrenci eklenmedi</option>';
+  // taskStudentBtn'in onclick'ini öğrenci listesiyle güncelle
+  const btn = document.getElementById('taskStudentBtn');
+  if (btn) {
+    const opts = students.length > 0
+      ? students.map(s=>({v:s.name, l:s.name}))
+      : [{v:'', l:'Henüz öğrenci eklenmedi'}];
+    btn.setAttribute('onclick', `openOptionPicker('taskStudent','Öğrenci Seç',${JSON.stringify(opts)},null)`);
   }
+  // Değeri sıfırla
+  const inp = document.getElementById('taskStudent');
+  if (inp) inp.value = '';
+  const lbl = document.getElementById('taskStudentLabel');
+  if (lbl) lbl.textContent = '— Öğrenci seç —';
   updateTaskUnits();
 }
 
