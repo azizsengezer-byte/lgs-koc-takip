@@ -637,7 +637,13 @@
     </div>
     <div class="form-group">
       <label class="form-label">Konu / Başlık</label>
-      <input class="form-input" type="text" id="editEntryTopic" placeholder="Konu adı">
+      <button type="button" id="editEntryTopicBtn"
+        onclick="openEditTopicPicker()"
+        style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span id="editEntryTopicLabel">— Konu seç —</span>
+        <span style="color:var(--text2)">▼</span>
+      </button>
+      <input class="form-input" type="text" id="editEntryTopic" placeholder="veya buraya yaz..." style="font-size:0.88rem">
     </div>
     <div class="form-group">
       <label class="form-label">Süre (dk)</label>
@@ -1922,6 +1928,9 @@ function editEntryModal(firestoreId, localIdx) {
   selEl.value = entry.subject || subjects[0].name;
 
   document.getElementById('editEntryTopic').value = entry.topic || '';
+  // Konu seçici label'ını da güncelle
+  const topicLbl = document.getElementById('editEntryTopicLabel');
+  if (topicLbl) topicLbl.textContent = entry.topic || '— Konu seç —';
   document.getElementById('editEntryDur').value = entry.duration || 0;
   const hasQ = entry.type === 'soru';
   document.getElementById('editEntryQFields').style.display = hasQ ? 'block' : 'none';
@@ -3895,20 +3904,28 @@ function pdfHeader(doc, title, subtitle, dateStr) {
 
   // Satır 1: Öğrenci adı — büyük, beyaz, kalın
   doc.setFont(_PF,'bold'); doc.setFontSize(10.5); doc.setTextColor(255,255,255);
-  doc.text(studentName, cx, line3 ? 9 : 12, {align:'center'});
-  // Satır 2: Rapor türü
-  doc.setFont(_PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(180,175,230);
-  doc.text(line2, cx, line3 ? 17 : 21, {align:'center'});
-  // Satır 3: Tarih aralığı (haftalık için)
-  if (line3) {
-    doc.setFont(_PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(140,135,200);
-    doc.text(line3, cx, 24, {align:'center'});
-  }
+  doc.text(studentName, cx, line3 ? 8 : 11, {align:'center'});
 
-  // Sağ alt: subtitle etiketi (rapor türü açıklaması)
-  if (subtitle) {
-    doc.setFont(_PF,'normal'); doc.setFontSize(5.5); doc.setTextColor(140,200,255);
-    doc.text(tx(subtitle), 203, 27, {align:'right'});
+  // Subtitle satırı: "PSİKOLOJİK TAKİP RAPORU" gibi — öğrenci adından hemen sonra
+  const showSubtitle = subtitle && subtitle.includes('PSİKOLOJİK');
+  if (showSubtitle) {
+    doc.setFont(_PF,'bold'); doc.setFontSize(5.5); doc.setTextColor(72,220,160);
+    doc.text(tx(subtitle).toLocaleUpperCase('tr-TR'), cx, line3 ? 13.5 : 16.5, {align:'center'});
+    // Rapor türü
+    doc.setFont(_PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(180,175,230);
+    doc.text(line2, cx, line3 ? 19 : 22, {align:'center'});
+    if (line3) {
+      doc.setFont(_PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(140,135,200);
+      doc.text(line3, cx, 25, {align:'center'});
+    }
+  } else {
+    // Normal rapor: subtitle yok
+    doc.setFont(_PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(180,175,230);
+    doc.text(line2, cx, line3 ? 17 : 21, {align:'center'});
+    if (line3) {
+      doc.setFont(_PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(140,135,200);
+      doc.text(line3, cx, 24, {align:'center'});
+    }
   }
 
   return 38;
@@ -5844,7 +5861,27 @@ function selectOption(targetId, value, label, callbackName) {
 }
 
 // Konu seçici — kazanimlar listesini kullanır
-function openTopicPicker(target) {
+function openEditTopicPicker() {
+  const sub = document.getElementById('editEntrySub')?.value || '';
+  const topics = kazanimlar[sub] || [];
+  const opts = topics.map(t=>({v:t, l:t}));
+  if (!opts.length) { showToast('ℹ️','Bu ders için konu listesi yok, elle yaz'); return; }
+  const current = document.getElementById('editEntryTopic')?.value || '';
+  openOptionPicker('editEntryTopicHidden', (sub||'Konu')+' — Seç', opts, 'applyEditTopic');
+  // Mevcut değeri geçici hidden input'a yansıt
+  let hid = document.getElementById('editEntryTopicHidden');
+  if (!hid) { hid = document.createElement('input'); hid.type='hidden'; hid.id='editEntryTopicHidden'; document.body.appendChild(hid); }
+  hid.value = current;
+}
+
+function applyEditTopic() {
+  const val = document.getElementById('editEntryTopicHidden')?.value || '';
+  if (!val) return;
+  document.getElementById('editEntryTopic').value = val;
+  const lbl = document.getElementById('editEntryTopicLabel');
+  if (lbl) lbl.textContent = val;
+}
+
   const sub = document.getElementById(target==='entry'?'entrySubject':'taskSubject')?.value || '';
   const type = document.getElementById(target==='entry'?'entryType':'taskType')?.value || '';
   const topics = kazanimlar[sub] || [];
