@@ -2479,7 +2479,7 @@ function studentDetailAnalysis() {
     ${korelasyonInsights.length>0?`
     <div class="card" style="margin-bottom:12px;border:1px solid #6c63ff44;background:linear-gradient(135deg,#6c63ff0a,#fd79a80a)">
       <div class="card-title">🔗 Psikolojik-Akademik Korelasyon</div>
-      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:10px">Son 7 gün psikolojik veri ile akademik performans karşılaştırması:</div>
+      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:10px">${periodLabel} psikolojik veri ile akademik performans karşılaştırması:</div>
       ${korelasyonInsights.map(ins=>`
         <div style="padding:10px 12px;background:var(--surface2);border-radius:10px;margin-bottom:8px;font-size:0.83rem;line-height:1.6;color:var(--text)">
           ${ins}
@@ -2510,14 +2510,19 @@ async function psychReportPage() {
 
   // Dönem filtresi
   const now = new Date();
-  let startKey;
-  if (period === 'weekly') {
+  const todayKey = now.toISOString().split('T')[0];
+  let startKey, endKey;
+  if (period === 'daily') {
+    startKey = todayKey; endKey = todayKey;
+  } else if (period === 'weekly') {
     const mon = new Date(now); mon.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
     startKey = mon.toISOString().split('T')[0];
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    endKey = sun.toISOString().split('T')[0];
   } else {
-    startKey = now.toISOString().split('T')[0].substring(0,7)+'-01';
+    startKey = todayKey.substring(0,7)+'-01'; endKey = todayKey;
   }
-  const sortedDays = Object.keys(days).filter(k=>k>=startKey).sort().reverse();
+  const sortedDays = Object.keys(days).filter(k=>k>=startKey&&k<=endKey).sort().reverse();
   const allSortedDays = Object.keys(days).sort().reverse().slice(0,30);
 
   const moodLabels = { excited:'Heyecanlı', good:'İyiyim', focused:'Odaklı', ok:'İdare Eder', tired:'Yorgunum', anxious:'Kaygılı', sad:'Mutsuzum' };
@@ -2612,6 +2617,10 @@ async function psychReportPage() {
 
     <!-- Dönem seçici -->
     <div style="display:flex;gap:6px;margin-bottom:14px;background:var(--surface2);border-radius:12px;padding:4px">
+      <button onclick="window._psychPeriod='daily';renderTeacherPage('psych-report',document.getElementById('mainContent'))"
+        style="flex:1;padding:8px;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:0.82rem;
+               background:${period==='daily'?'var(--accent)':'transparent'};
+               color:${period==='daily'?'#fff':'var(--text2)'};transition:.2s">Günlük</button>
       <button onclick="window._psychPeriod='weekly';renderTeacherPage('psych-report',document.getElementById('mainContent'))"
         style="flex:1;padding:8px;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:0.82rem;
                background:${period==='weekly'?'var(--accent)':'transparent'};
@@ -2656,7 +2665,7 @@ async function psychReportPage() {
         </div>
       </div>
 
-      <!-- Rapor Al — Haftalık/Aylık -->
+      <!-- Rapor Al — Günlük/Haftalık/Aylık -->
       <div style="margin-bottom:14px">
         <button onclick="toggleRaporAl('psych_${sName.replace(/\s/g,'_')}')"
           style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);cursor:pointer;font-weight:700;font-size:0.9rem">
@@ -2665,13 +2674,17 @@ async function psychReportPage() {
         </button>
         <div id="raporAlPanel_psych_${sName.replace(/\s/g,'_')}" style="display:none;margin-top:6px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
           <div style="display:flex;gap:8px">
-            <button onclick="window._psychPeriod='weekly';exportPsychPDF('${sName}')"
-              style="flex:1;padding:10px;border-radius:10px;background:var(--accent)22;border:1.5px solid var(--accent);color:var(--accent);font-weight:700;font-size:0.85rem;cursor:pointer">
-              📅 Haftalık Rapor
+            <button onclick="window._psychPeriod='daily';exportPsychPDF('${sName}')"
+              style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
+              📋 Günlük
             </button>
-            <button onclick="window._psychPeriod='monthly';exportPsychPDF('${sName}')"
-              style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.85rem;cursor:pointer">
-              📆 Aylık Rapor
+            <button onclick="openDatePicker('psych_${sName.replace(/\s/g,'_')}','weekly')"
+              style="flex:1;padding:10px;border-radius:10px;background:var(--accent)22;border:1.5px solid var(--accent);color:var(--accent);font-weight:700;font-size:0.82rem;cursor:pointer">
+              📅 Haftalık
+            </button>
+            <button onclick="openDatePicker('psych_${sName.replace(/\s/g,'_')}','monthly')"
+              style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
+              📆 Aylık
             </button>
           </div>
         </div>
@@ -2688,22 +2701,33 @@ async function exportPsychPDF(sName) {
   const now = new Date();
 
   // Dönem filtresi + başlık
-  let startKey, periodLabel, periodTitle;
-  if (period === 'weekly') {
+  let startKey, endKey, periodLabel, periodTitle;
+  const ov = window._pdfDateOverride;
+  if (ov) {
+    startKey = ov.startKey; endKey = ov.endKey;
+    periodLabel = ov.label; periodTitle = ov.title;
+  } else if (period === 'daily') {
+    startKey = now.toISOString().split('T')[0];
+    endKey = startKey;
+    periodLabel = 'Günlük';
+    periodTitle = now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'}) + ' Günlük Raporu';
+  } else if (period === 'weekly') {
     const mon = new Date(now); mon.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
     startKey = mon.toISOString().split('T')[0];
     const endDate = new Date(mon); endDate.setDate(mon.getDate()+6);
+    endKey = endDate.toISOString().split('T')[0];
     const s = mon.toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
     const e = endDate.toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'});
     periodLabel = 'Haftalık';
     periodTitle = s + ' – ' + e + ' Haftalık Raporu';
   } else {
     startKey = now.toISOString().split('T')[0].substring(0,7)+'-01';
+    endKey = now.toISOString().split('T')[0];
     const monthName = now.toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
     periodLabel = 'Aylık';
     periodTitle = monthName + ' Aylık Raporu';
   }
-  const sortedDays = Object.keys(days).filter(k=>k>=startKey).sort().reverse();
+  const sortedDays = Object.keys(days).filter(k=>k>=startKey&&k<=endKey).sort().reverse();
 
   const moodLabels = { excited:'Heyecanlı', good:'İyiyim', focused:'Odaklı', ok:'İdare Eder', tired:'Yorgunum', anxious:'Kaygılı', sad:'Mutsuzum' };
   const moodColors = { excited:[249,202,36], good:[69,183,209], focused:[108,99,255], ok:[162,155,254], tired:[253,121,168], anxious:[255,107,107], sad:[119,140,163] };
@@ -2833,10 +2857,85 @@ async function exportPsychPDF(sName) {
       }),
       Y,[108,99,255]);
 
+    // Psikolojik-Akademik Korelasyon Analizi
+    const sObj2 = students.find(s=>s.name===sName) || {};
+    const sUid2 = sObj2.uid || '';
+    const matchE2 = e => e.studentName===sName || (sUid2 && e.userId===sUid2);
+    const acadEntries = studyEntries.filter(e=>matchE2(e)&&e.type==='soru'&&e.dateKey>=startKey&&e.dateKey<=endKey);
+    const psychAcadDays = sortedDays.map(dk=>{
+      const we = days[dk]||{};
+      const ae = acadEntries.filter(e=>e.dateKey===dk);
+      return { dk,
+        kaygi:parseFloat(we.kaygi)||0, uyku:parseFloat(we.uyku)||0,
+        enerji:parseFloat(we.enerji)||0, ekran:parseFloat(we.ekran)||0,
+        net:ae.reduce((a,e)=>a+(e.net||0),0), q:ae.reduce((a,e)=>a+(e.questions||0),0)
+      };
+    });
+    const acadKorLines = [];
+    const wdArr = psychAcadDays.filter(d=>d.kaygi>0||d.uyku>0);
+    if (wdArr.length >= 2) {
+      const highSleep = wdArr.filter(d=>d.uyku>=7&&d.q>0);
+      const lowSleep  = wdArr.filter(d=>d.uyku>0&&d.uyku<6&&d.q>0);
+      if (highSleep.length>0&&lowSleep.length>0) {
+        const hs=highSleep.reduce((a,d)=>a+d.net,0)/highSleep.length;
+        const ls=lowSleep.reduce((a,d)=>a+d.net,0)/lowSleep.length;
+        if(Math.abs(hs-ls)>0.3) acadKorLines.push(tx('💤 Uyku: 7+ saat günlerde ort. net '+hs.toFixed(1)+', 6 saat altında ise '+ls.toFixed(1)+'. '+(hs>ls?'Uyku kalitesi akademik performansı olumlu destekliyor.':'Uyku artmasına rağmen performans farkı beklenen düzeyde değil.')));
+      }
+      const highAnx = wdArr.filter(d=>d.kaygi>=7&&d.q>0);
+      const lowAnx  = wdArr.filter(d=>d.kaygi>0&&d.kaygi<=4&&d.q>0);
+      if (highAnx.length>0&&lowAnx.length>0) {
+        const ha=highAnx.reduce((a,d)=>a+d.net,0)/highAnx.length;
+        const la=lowAnx.reduce((a,d)=>a+d.net,0)/lowAnx.length;
+        if(Math.abs(ha-la)>0.3) acadKorLines.push(tx('😰 Kaygı: Yüksek kaygılı günlerde (7+) ort. net '+ha.toFixed(1)+', düşük kaygılı günlerde '+la.toFixed(1)+'. '+(ha<la?'Yüksek kaygı akademik performansı olumsuz etkiliyor.':'Kaygıya rağmen akademik performans korunuyor.')));
+      }
+      const highScr = wdArr.filter(d=>d.ekran>=3&&d.q>0);
+      const lowScr  = wdArr.filter(d=>d.ekran>0&&d.ekran<=1.5&&d.q>0);
+      if (highScr.length>0&&lowScr.length>0) {
+        const hs2=highScr.reduce((a,d)=>a+d.net,0)/highScr.length;
+        const ls2=lowScr.reduce((a,d)=>a+d.net,0)/lowScr.length;
+        if(Math.abs(hs2-ls2)>0.3) acadKorLines.push(tx('📱 Ekran: 3+ saat günlerde ort. net '+hs2.toFixed(1)+', 1.5 saat altında '+ls2.toFixed(1)+'. '+(hs2<ls2?'Ekran süresini azaltmak performansı artırabilir.':'Ekran süresi bu dönemde performansı belirgin etkilemiyor.')));
+      }
+      // Genel soru/net özeti
+      const totalQ2 = psychAcadDays.reduce((a,d)=>a+d.q,0);
+      const totalNet2 = psychAcadDays.reduce((a,d)=>a+d.net,0);
+      const activeDays2 = psychAcadDays.filter(d=>d.q>0).length;
+      if (totalQ2>0) acadKorLines.push(tx('📚 Bu dönem toplamda '+totalQ2+' soru çözüldü, '+activeDays2+' aktif çalışma günü, ort. net: '+(totalNet2/Math.max(activeDays2,1)).toFixed(1)+'.'));
+    }
+    if (acadKorLines.length > 0) {
+      Y = pdfCheck(doc, Y, 20);
+      Y = pdfSecHeader(doc, tx('PSİKOLOJİK-AKADEMİK KORELASYON'), Y, 255, 101, 132);
+      acadKorLines.forEach(line => {
+        Y = pdfCheck(doc, Y, 18);
+        doc.setFillColor(255,240,245); doc.roundedRect(16,Y,178,14,2,2,'F');
+        doc.setFont(PF,'normal'); doc.setFontSize(8); doc.setTextColor(80,40,60);
+        const ls = doc.splitTextToSize(line, 170);
+        doc.text(ls, 20, Y+5);
+        Y += ls.length*5 + 5;
+      });
+    }
+
   } else {
     doc.setFont(PF,'normal'); doc.setFontSize(10); doc.setTextColor(120,120,140);
     doc.text(tx('Bu dönem için henüz psikolojik takip verisi bulunmuyor.'), 16, Y);
   }
+
+  // Eğitim Koçu / Öğrenci bilgi alanı (PDF sonu)
+  Y = pdfCheck(doc, Y, 30);
+  Y += 8;
+  doc.setDrawColor(180,175,230); doc.setLineWidth(0.5);
+  doc.roundedRect(14, Y, 182, 22, 3, 3, 'S');
+  doc.setFillColor(240,238,255); doc.roundedRect(14, Y, 182, 22, 3, 3, 'F');
+  doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(72,58,180);
+  doc.text(tx('Eğitim Koç:'), 20, Y+7);
+  doc.text(tx('Öğrenci:'), 112, Y+7);
+  const coachName = (window.currentUserData||{}).name || 'Koç';
+  doc.setFont(PF,'normal'); doc.setFontSize(9); doc.setTextColor(40,40,80);
+  doc.text(tx(coachName), 20, Y+14);
+  doc.text(tx(sName), 112, Y+14);
+  doc.setFont(PF,'normal'); doc.setFontSize(7); doc.setTextColor(130,125,180);
+  doc.text(tx('Tarih: ') + tx(dateStr), 20, Y+20);
+  doc.text(tx('LGSKoç Psikolojik Takip Raporu'), 112, Y+20);
+  Y += 30;
 
   pdfFooter(doc, doc.internal.getNumberOfPages(), tx(sName)+' | Psikolojik Takip');
   doc.save(ts(sName.replace(/\s+/g,'_'))+'_Psikolojik_'+periodLabel+'_'+now.toISOString().split('T')[0]+'.pdf');
@@ -3077,6 +3176,8 @@ function dpSelectWeek(monKey, btn) {
 
 function dpConfirm() {
   const sName = _dpSName;
+  const isPsych = sName.startsWith('psych_');
+  const realName = isPsych ? sName.replace(/^psych_/,'').replace(/_/g,' ') : sName;
   const key = sName.replace(/\s/g,'_');
   if (_dpMode === 'monthly') {
     const yr = _dpSelected.year, mo = _dpSelected.month;
@@ -3095,9 +3196,13 @@ function dpConfirm() {
     window._pdfDateOverride = { mode:'weekly', startKey: monKey, endKey, label:'Haftalık', title: rangeLabel + ' Haftalık Rapor' };
   }
   closeDatePicker();
-  // PDF indir
-  const btn = document.querySelector(`#raporAlPanel_${key} .dp-btn-pdf`);
-  preparePdfLink(sName, btn || null).finally(() => { window._pdfDateOverride = null; });
+  if (isPsych) {
+    window._psychPeriod = _dpMode;
+    exportPsychPDF(realName).finally(() => { window._pdfDateOverride = null; });
+  } else {
+    const btn = document.querySelector(`#raporAlPanel_${key} .dp-btn-pdf`);
+    preparePdfLink(realName, btn || null).finally(() => { window._pdfDateOverride = null; });
+  }
 }
 
 function closeDatePicker() {
