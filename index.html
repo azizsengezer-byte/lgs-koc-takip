@@ -146,6 +146,34 @@
 
   .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
   .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+
+  /* Wellness dönen çerçeve animasyonu */
+  @keyframes rotateBorder {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .wellness-banner-wrap {
+    padding: 2px;
+    border-radius: 16px;
+    background: linear-gradient(270deg, #6c63ff, #fd79a8, #f9ca24, #45b7d1, #6c63ff);
+    background-size: 300% 300%;
+    animation: rotateBorder 3s ease infinite;
+    margin-bottom: 12px;
+  }
+  .wellness-banner-inner {
+    background: var(--surface);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    cursor: pointer;
+    color: var(--text);
+    text-align: left;
+    width: 100%;
+    border: none;
+  }
   .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
 
   /* STAT CARDS */
@@ -812,7 +840,12 @@
       </div>
       <div class="form-group">
         <label class="form-label">Konu</label>
-        <select class="form-select" id="entryTopic"></select>
+        <button type="button" id="entryTopicBtn" onclick="openTopicPicker('entry')"
+          style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+          <span id="entryTopicLabel">— Konu seç —</span>
+          <span style="color:var(--text2)">▼</span>
+        </button>
+        <input type="hidden" id="entryTopic" value="">
       </div>
     </div>
 
@@ -912,15 +945,18 @@
     </div>
     <div class="form-group">
       <label class="form-label">Ünite / Konu</label>
-      <select class="form-select" id="taskUnit">
-      </select>
+      <button type="button" id="taskUnitBtn" onclick="openTopicPicker('task')"
+        style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+        <span id="taskUnitLabel">— Konu seç —</span>
+        <span style="color:var(--text2)">▼</span>
+      </button>
+      <input type="hidden" id="taskUnit" value="">
     </div>
     <div class="form-group">
       <label class="form-label">Görev Türü</label>
       <select class="form-select" id="taskType" onchange="updateTaskTitle()">
         <option value="soru">📝 Soru Çözümü</option>
         <option value="konu">📖 Konu Çalışma</option>
-        <option value="test">📊 Test Çözme</option>
         <option value="ozet">✏️ Özet Çıkarma</option>
         <option value="tekrar">🔁 Tekrar</option>
         <option value="diger">📌 Diğer</option>
@@ -970,6 +1006,17 @@
       <button class="btn btn-outline" onclick="closeModal('addStudentModal')">İptal</button>
       <button class="btn btn-primary" onclick="saveNewStudent()">Ekle ✓</button>
     </div>
+  </div>
+</div>
+
+<!-- Topic Picker Modal -->
+<div id="topicPickerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:flex-end;justify-content:center">
+  <div id="topicPickerBox" style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:540px;max-height:80vh;display:flex;flex-direction:column;animation:slideUp .2s ease">
+    <div style="padding:16px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div style="font-weight:800;font-size:1rem" id="topicPickerTitle">Konu Seç</div>
+      <button onclick="closeTopicPicker()" style="background:none;border:none;color:var(--text2);font-size:1.4rem;cursor:pointer;padding:4px">✕</button>
+    </div>
+    <div id="topicPickerList" style="overflow-y:auto;padding:8px 0;flex:1"></div>
   </div>
 </div>
 
@@ -4026,6 +4073,18 @@ function studentDashboard() {
 
     ${lgsCountdownWidget()}
 
+    <!-- Nasıl Hissediyorum — animasyonlu banner -->
+    <div class="wellness-banner-wrap">
+      <button class="wellness-banner-inner" onclick="showPage('wellness')">
+        <span style="font-size:1.8rem">💙</span>
+        <div style="flex:1">
+          <div style="font-weight:800;font-size:0.95rem">Nasıl Hissediyorum?</div>
+          <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Bugünkü duygu, enerji ve hedeflerini kaydet</div>
+        </div>
+        <span style="color:var(--accent);font-size:1rem">›</span>
+      </button>
+    </div>
+
     <div class="grid-3">
       <div class="stat-card">
         <div class="stat-label">Bu Hafta Soru</div>
@@ -4043,20 +4102,6 @@ function studentDashboard() {
         <div class="stat-change">${pendingTasks>0?'📋 Tamamlanacak':'✅ Temiz!'}</div>
       </div>
     </div>
-
-    <!-- Nasıl Hissediyorum — tam genişlik banner -->
-    <button onclick="showPage('wellness')"
-      style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 18px;
-             background:linear-gradient(135deg,#6c63ff28,#fd79a818);
-             border:1.5px solid #6c63ff55;border-radius:14px;
-             cursor:pointer;color:var(--text);margin-bottom:12px;text-align:left">
-      <span style="font-size:1.8rem">💙</span>
-      <div style="flex:1">
-        <div style="font-weight:800;font-size:0.95rem">Nasıl Hissediyorum?</div>
-        <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Bugünkü duygu, enerji ve hedeflerini kaydet</div>
-      </div>
-      <span style="color:var(--accent);font-size:1rem">›</span>
-    </button>
 
     <div class="card" style="margin-bottom:16px">
       <div class="card-title">📅 Bu Hafta
@@ -4917,14 +4962,14 @@ function wellnessPage() {
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <div style="flex:1;min-width:120px">
           <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:5px">Hedef Puan</div>
-          <input type="number" placeholder="örn: 480" min="100" max="500"
+          <input type="number" id="wellnessHedefPuan" placeholder="örn: 480" min="100" max="500"
             value="${data.hedef||''}"
             onchange="saveWellnessField('hedef',this.value)"
             style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.95rem;font-weight:700;outline:none;box-sizing:border-box">
         </div>
         <div style="flex:2;min-width:160px">
           <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:5px">Hedef Okul</div>
-          <input type="text" placeholder="örn: Çankaya Anadolu Lisesi"
+          <input type="text" id="wellnessHedefOkul" placeholder="örn: Çankaya Anadolu Lisesi"
             value="${data.hedefOkul||''}"
             onchange="saveWellnessField('hedefOkul',this.value)"
             style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box">
@@ -4958,7 +5003,7 @@ function wellnessPage() {
       </div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Günün Kelimesi</div>
-      <input type="text" placeholder="Bugünü tek kelimeyle özetle... (örn: 'kararlı', 'dağınık')"
+      <input type="text" id="wellnessKelime" placeholder="Bugünü tek kelimeyle özetle... (örn: 'kararlı', 'dağınık')"
         value="${today.kelime||''}"
         onchange="saveWellnessDay('kelime',this.value)"
         style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box;margin-bottom:10px">
@@ -4995,7 +5040,7 @@ function wellnessPage() {
       </div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">💪 Bugün seni gururlandıran küçük bir an?</div>
-      <input type="text" placeholder="örn: Matematik problemini tek başıma çözdüm"
+      <input type="text" id="wellnessGurur" placeholder="örn: Matematik problemini tek başıma çözdüm"
         value="${today.gurur||''}"
         onchange="saveWellnessDay('gurur',this.value)"
         style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box">
@@ -5008,14 +5053,14 @@ function wellnessPage() {
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
         <div style="flex:1;min-width:120px">
           <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:5px">🛌 Kaç saat uyudun?</div>
-          <input type="number" min="2" max="12" step="0.5" placeholder="örn: 7"
+          <input type="number" min="2" max="12" step="0.5" id="wellnessUyku" placeholder="örn: 7"
             value="${today.uyku||''}"
             onchange="saveWellnessDay('uyku',this.value)"
             style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.95rem;outline:none;box-sizing:border-box">
         </div>
         <div style="flex:1;min-width:120px">
           <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:5px">📱 Ekran süresi (saat)</div>
-          <input type="number" min="0" max="12" step="0.5" placeholder="örn: 2"
+          <input type="number" min="0" max="12" step="0.5" id="wellnessEkran" placeholder="örn: 2"
             value="${today.ekran||''}"
             onchange="saveWellnessDay('ekran',this.value)"
             style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.95rem;outline:none;box-sizing:border-box">
@@ -5056,23 +5101,29 @@ function wellnessPage() {
       </div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">😟 Aklına gelen en olumsuz düşünce?</div>
-      <input type="text" placeholder="örn: Asla başaramayacağım, çok geç kaldım..."
+      <input type="text" id="wellnessNegatif" placeholder="örn: Asla başaramayacağım, çok geç kaldım..."
         value="${today.negatif||''}"
         onchange="saveWellnessDay('negatif',this.value)"
         style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box;margin-bottom:12px">
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">🌟 Her şeye rağmen bugün iyi giden bir şey?</div>
-      <input type="text" placeholder="örn: Bugün 50 soru çözdüm, küçük ama güzel..."
+      <input type="text" id="wellnessPozitif" placeholder="örn: Bugün 50 soru çözdüm, küçük ama güzel..."
         value="${today.pozitif||''}"
         onchange="saveWellnessDay('pozitif',this.value)"
         style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box;margin-bottom:12px">
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">📝 Günlük not (sadece sana özel)</div>
-      <textarea rows="3" placeholder="Bugün ne düşündüm, ne hissettim..."
+      <textarea rows="3" id="wellnessNot" placeholder="Bugün ne düşündüm, ne hissettim..."
         onchange="saveWellnessDay('not',this.value)"
         style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);
                color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box">${today.not||''}</textarea>
     </div>
+
+    <!-- Kaydet butonu -->
+    <button onclick="saveWellnessAll(this)"
+      style="width:100%;padding:14px;border-radius:14px;background:var(--accent);color:#fff;border:none;font-weight:800;font-size:0.95rem;cursor:pointer;margin-bottom:14px">
+      ✅ Bugünü Kaydet
+    </button>
 
     <!-- Motivasyon -->
     <div style="background:linear-gradient(135deg,#fd79a822,#f9ca2422);border:1px solid #fd79a844;border-radius:16px;padding:16px;margin-bottom:24px">
@@ -5101,6 +5152,118 @@ function newMotivation() {
   if(el) el.textContent = '"' + s.text + '"';
 }
 
+// ============================================================
+// KONU SEÇİCİ MODAL
+// ============================================================
+let _topicPickerTarget = 'entry'; // 'entry' veya 'task'
+
+function openTopicPicker(target) {
+  _topicPickerTarget = target;
+  let sub, type;
+  if (target === 'entry') {
+    sub = document.getElementById('entrySubject')?.value || '';
+    type = document.getElementById('entryType')?.value || '';
+  } else {
+    sub = document.getElementById('taskSubject')?.value || '';
+    type = document.getElementById('taskType')?.value || '';
+  }
+  const topics = kazanimlar[sub] || [];
+  const showGenel = type === 'tekrar';
+
+  document.getElementById('topicPickerTitle').textContent = (sub || 'Konu') + ' — Seç';
+  const list = document.getElementById('topicPickerList');
+  const allTopics = showGenel ? [...topics, 'Genel Tekrar'] : topics;
+
+  list.innerHTML = allTopics.map(t => `
+    <button onclick="selectTopic('${t.replace(/'/g,"\\'")}',this)"
+      style="width:100%;padding:14px 18px;background:transparent;border:none;border-bottom:1px solid var(--border);
+             color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+      <span>${t}</span>
+      <span style="color:var(--text2);font-size:0.8rem">›</span>
+    </button>`).join('');
+
+  const modal = document.getElementById('topicPickerModal');
+  modal.style.display = 'flex';
+  modal.onclick = (e) => { if(e.target === modal) closeTopicPicker(); };
+}
+
+function selectTopic(topic, btn) {
+  if (_topicPickerTarget === 'entry') {
+    document.getElementById('entryTopic').value = topic;
+    const lbl = document.getElementById('entryTopicLabel');
+    if (lbl) lbl.textContent = topic;
+  } else {
+    document.getElementById('taskUnit').value = topic;
+    const lbl = document.getElementById('taskUnitLabel');
+    if (lbl) lbl.textContent = topic;
+    updateTaskTitle();
+  }
+  closeTopicPicker();
+}
+
+function closeTopicPicker() {
+  document.getElementById('topicPickerModal').style.display = 'none';
+}
+
+function updateEntryTopics() {
+  // Artık hidden input kullanıyoruz — sadece değeri sıfırla
+  const sub = document.getElementById('entrySubject')?.value;
+  document.getElementById('entryTopic').value = '';
+  const lbl = document.getElementById('entryTopicLabel');
+  if (lbl) lbl.textContent = '— Konu seç —';
+}
+
+function updateTaskUnits() {
+  const type = document.getElementById('taskType')?.value || '';
+  document.getElementById('taskUnit').value = '';
+  const lbl = document.getElementById('taskUnitLabel');
+  if (lbl) lbl.textContent = '— Konu seç —';
+}
+
+function saveWellnessAll(btn) {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  const storageKey = 'wellness_' + myUid;
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
+  const todayKey = new Date().toISOString().split('T')[0];
+  if (!data.days) data.days = {};
+  if (!data.days[todayKey]) data.days[todayKey] = {};
+
+  // Tüm form alanlarını oku
+  const fields = {
+    kelime: document.getElementById('wellnessKelime')?.value,
+    enerji: document.querySelector('input[oninput*="enerji"]')?.value,
+    odak: document.querySelector('input[oninput*="odak"]')?.value,
+    kaygi: document.querySelector('input[oninput*="kaygi"]')?.value,
+    gurur: document.getElementById('wellnessGurur')?.value,
+    uyku: document.getElementById('wellnessUyku')?.value,
+    ekran: document.getElementById('wellnessEkran')?.value,
+    negatif: document.getElementById('wellnessNegatif')?.value,
+    pozitif: document.getElementById('wellnessPozitif')?.value,
+    not: document.getElementById('wellnessNot')?.value,
+  };
+  // Hedef alanlar (gün bazlı değil)
+  const hedef = document.getElementById('wellnessHedefPuan')?.value;
+  const hedefOkul = document.getElementById('wellnessHedefOkul')?.value;
+  if (hedef !== undefined) data.hedef = hedef;
+  if (hedefOkul !== undefined) data.hedefOkul = hedefOkul;
+
+  Object.entries(fields).forEach(([k,v]) => { if(v !== undefined && v !== null) data.days[todayKey][k] = v; });
+  localStorage.setItem(storageKey, JSON.stringify(data));
+
+  if (myUid !== 'local' && window.db) {
+    db.collection('wellness').doc(myUid).set(data).then(()=>{
+      showToast('✅','Kaydedildi!');
+      if(btn) { btn.textContent='✅ Kaydedildi'; setTimeout(()=>{ btn.textContent='✅ Bugünü Kaydet'; },2000); }
+    }).catch(()=>{
+      showToast('❌','Kaydetme hatası');
+    });
+  } else {
+    showToast('✅','Kaydedildi!');
+    if(btn) { btn.textContent='✅ Kaydedildi'; setTimeout(()=>{ btn.textContent='✅ Bugünü Kaydet'; },2000); }
+  }
+}
+
 function saveWellnessField(field, value) {
   const myUid = (window.currentUserData||{}).uid || 'local';
   const storageKey = 'wellness_' + myUid;
@@ -5108,9 +5271,12 @@ function saveWellnessField(field, value) {
   try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
   data[field] = value;
   localStorage.setItem(storageKey, JSON.stringify(data));
-  // Firestore'a da kaydet
   if (myUid !== 'local' && window.db) {
-    db.collection('wellness').doc(myUid).set(data, {merge:true}).catch(()=>{});
+    const upd = {}; upd[field] = value;
+    db.collection('wellness').doc(myUid).update(upd).catch(()=>{
+      // Belge yoksa oluştur
+      db.collection('wellness').doc(myUid).set(data).catch(()=>{});
+    });
   }
 }
 
@@ -5124,13 +5290,37 @@ function saveWellnessDay(field, value, btn) {
   if (!data.days[todayKey]) data.days[todayKey] = {};
   data.days[todayKey][field] = value;
   localStorage.setItem(storageKey, JSON.stringify(data));
-  // Firestore'a da kaydet
+  // Firestore'a kaydet - dot notation ile field güncelle
   if (myUid !== 'local' && window.db) {
-    const dayUpdate = {};
-    dayUpdate['days.' + todayKey + '.' + field] = value;
-    db.collection('wellness').doc(myUid).set(dayUpdate, {merge:true}).catch(()=>{});
+    const upd = {};
+    upd[`days.${todayKey}.${field}`] = value;
+    db.collection('wellness').doc(myUid).update(upd).catch(()=>{
+      // Belge yoksa tüm data ile oluştur
+      db.collection('wellness').doc(myUid).set(data).catch(()=>{});
+    });
   }
-  if (btn && ['mood','uykuKalite','su'].includes(field)) showPage('wellness');
+  // Sayfa başa ATMA — sadece buton stilini güncelle
+  if (btn && ['mood','uykuKalite','su'].includes(field)) {
+    _updateWellnessButtons(field, value, btn);
+  }
+}
+
+function _updateWellnessButtons(field, value, activeBtn) {
+  // Aynı grubtaki butonları bul ve stillerini güncelle
+  const parent = activeBtn.parentElement;
+  if (!parent) return;
+  const allBtns = parent.querySelectorAll('button');
+  const moodColors = { excited:'#f9ca24', good:'#45b7d1', focused:'#6c63ff', ok:'#a29bfe', tired:'#fd79a8', anxious:'#ff6b6b', sad:'#778ca3' };
+  allBtns.forEach(b => {
+    const val = b.getAttribute('onclick')?.match(/'([^']+)'\s*,\s*this/)?.[1];
+    const isActive = b === activeBtn;
+    const col = field === 'mood' ? (moodColors[value] || 'var(--accent)') : 'var(--accent)';
+    b.style.borderColor = isActive ? col : 'var(--border)';
+    b.style.background = isActive ? col + '22' : 'transparent';
+    if (b.querySelector('span:last-child')) {
+      b.querySelector('span:last-child').style.color = isActive ? col : 'var(--text2)';
+    }
+  });
 }
 
 // Wellness verilerini Firestore'dan oku (öğretmen tarafı)
@@ -6179,9 +6369,11 @@ function populateTaskStudents() {
 
 function updateTaskUnits() {
   const sub = document.getElementById('taskSubject').value;
+  const type = document.getElementById('taskType').value;
   const units = kazanimlar[sub] || [];
   const sel = document.getElementById('taskUnit');
-  sel.innerHTML = `<option value="Genel Tekrar">Genel Tekrar</option>` + units.map(u => `<option>${u}</option>`).join('');
+  const genel = type === 'tekrar' ? `<option value="Genel Tekrar">Genel Tekrar</option>` : '';
+  sel.innerHTML = units.map(u => `<option>${u}</option>`).join('') + genel;
   updateTaskTitle();
 }
 
@@ -6191,10 +6383,12 @@ function updateTaskTitle() {
   const countGroup = document.getElementById('taskCountGroup');
   const titleEl = document.getElementById('taskTitle');
   const typeLabels = {
-    soru: 'Soru Çözümü', konu: 'Konu Çalışma', test: 'Test Çözme',
+    soru: 'Soru Çözümü', konu: 'Konu Çalışma',
     ozet: 'Özet Çıkarma', tekrar: 'Tekrar', diger: 'Görev'
   };
-  countGroup.style.display = (type === 'soru' || type === 'test') ? 'block' : 'none';
+  countGroup.style.display = type === 'soru' ? 'block' : 'none';
+  // Konu listesini türe göre güncelle
+  updateTaskUnits();
   if (unit) titleEl.value = `${unit} — ${typeLabels[type]||'Görev'}`;
 }
 
