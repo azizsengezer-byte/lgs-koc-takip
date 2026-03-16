@@ -1225,6 +1225,9 @@ auth.onAuthStateChanged(async (user) => {
           tasks = [];
           tSnap.forEach(d => tasks.push({ ...d.data(), id: d.id }));
         } catch(e) { console.log('Görev çekme hatası:', e.message); tasks = []; }
+
+        // Wellness verisini Firestore'dan yükle
+        loadWellnessFromFirestore();
       }
 
       renderSidebar();
@@ -1482,18 +1485,33 @@ let _prevPage = 'dashboard';
 function showPage(id) {
   currentPage = id;
   if (id === 'messages') { clearAllMessageNotifs(); }
-  // Geri sayım timer'ını temizle — yeni sayfada kart olmayabilir
   if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
+  // Telefon geri tuşunun uygulama içinde çalışması için
+  history.pushState({ page: id }, '', window.location.pathname + '?p=' + id);
   renderSidebar();
   const content = document.getElementById('mainContent');
   if(currentRole==='teacher') renderTeacherPage(id, content);
   else renderStudentPage(id, content);
   window.scrollTo(0,0);
-  // Dashboard sayfalarında geri sayımı başlat
   if (id === 'dashboard') {
     requestAnimationFrame(()=>requestAnimationFrame(startCountdown));
   }
 }
+
+// Telefon/tarayıcı geri tuşunu yakala
+window.addEventListener('popstate', (e) => {
+  if (e.state && e.state.page && currentPage) {
+    const id = e.state.page;
+    currentPage = id;
+    if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
+    renderSidebar();
+    const content = document.getElementById('mainContent');
+    if(currentRole==='teacher') renderTeacherPage(id, content);
+    else renderStudentPage(id, content);
+    window.scrollTo(0,0);
+    if (id === 'dashboard') requestAnimationFrame(()=>requestAnimationFrame(startCountdown));
+  }
+});
 
 // Mesajlar sayfası açıldığında Firestore'daki tüm message bildirimlerini temizle
 async function clearAllMessageNotifs() {
@@ -1521,7 +1539,10 @@ function renderTeacherPage(id, el) {
   if(id==='dashboard') el.innerHTML = teacherDashboard();
   else if(id==='students') el.innerHTML = teacherStudents();
   else if(id==='student-detail') el.innerHTML = studentDetailAnalysis();
-  else if(id==='psych-report') el.innerHTML = psychReportPage();
+  else if(id==='psych-report') {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">💙 Yükleniyor...</div>';
+    psychReportPage().then(html => { el.innerHTML = html; });
+  }
   else if(id==='analysis') el.innerHTML = teacherAnalysis();
   else if(id==='tasks-teacher') el.innerHTML = teacherTasks();
   else if(id==='messages') {
@@ -2086,11 +2107,11 @@ function showPsychReport(sName) {
   showPage('psych-report');
 }
 
-function psychReportPage() {
+async function psychReportPage() {
   const sName = selectedStudentName;
   const sObj = students.find(s=>s.name===sName) || {};
   const sUid = sObj.uid || '';
-  const data = getWellnessData(sUid || sName);
+  const data = await getWellnessData(sUid || sName);
   const days = data.days || {};
   const sortedDays = Object.keys(days).sort().reverse().slice(0, 14); // son 14 gün
 
@@ -2164,7 +2185,7 @@ function psychReportPage() {
 
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-      <button onclick="openStudentAnalysis('${sName}')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
+      <button onclick="showPage('students')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
       <div class="page-title" style="margin:0">💙 ${sName}</div>
     </div>
     <div class="page-sub">Psikolojik Takip Raporu</div>
@@ -4023,6 +4044,20 @@ function studentDashboard() {
       </div>
     </div>
 
+    <!-- Nasıl Hissediyorum — tam genişlik banner -->
+    <button onclick="showPage('wellness')"
+      style="width:100%;display:flex;align-items:center;gap:14px;padding:14px 18px;
+             background:linear-gradient(135deg,#6c63ff28,#fd79a818);
+             border:1.5px solid #6c63ff55;border-radius:14px;
+             cursor:pointer;color:var(--text);margin-bottom:12px;text-align:left">
+      <span style="font-size:1.8rem">💙</span>
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:0.95rem">Nasıl Hissediyorum?</div>
+        <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Bugünkü duygu, enerji ve hedeflerini kaydet</div>
+      </div>
+      <span style="color:var(--accent);font-size:1rem">›</span>
+    </button>
+
     <div class="card" style="margin-bottom:16px">
       <div class="card-title">📅 Bu Hafta
         <span style="float:right;font-size:0.72rem;color:var(--text2);font-weight:400">Güne tıkla → girişleri gör</span>
@@ -4035,15 +4070,8 @@ function studentDashboard() {
       </div>
     </div>
 
-    <!-- Kısayollar -->
+    <!-- LGS Soru Dağılımı kısayolu -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-      <button onclick="showPage('wellness')"
-        style="background:linear-gradient(135deg,#6c63ff22,#4cc9f022);border:1.5px solid #6c63ff44;
-               border-radius:14px;padding:16px;text-align:left;cursor:pointer;color:var(--text)">
-        <div style="font-size:1.5rem;margin-bottom:6px">💙</div>
-        <div style="font-weight:800;font-size:0.88rem">Nasıl Hissediyorum</div>
-        <div style="font-size:0.72rem;color:var(--text2);margin-top:3px">Hedefler & Mood</div>
-      </button>
       <button onclick="showPage('lgs-dagilim')"
         style="background:linear-gradient(135deg,#f9ca2422,#fd79a822);border:1.5px solid #f9ca2444;
                border-radius:14px;padding:16px;text-align:left;cursor:pointer;color:var(--text)">
@@ -4863,7 +4891,6 @@ function wellnessPage() {
 
   const todayKey = new Date().toISOString().split('T')[0];
   const today = data.days?.[todayKey] || {};
-  const daysLeft = Math.max(0, Math.ceil((new Date('2026-06-07') - new Date()) / 86400000));
 
   // Son 7 gün mood geçmişi
   const last7 = Array.from({length:7},(_,i)=>{
@@ -4875,6 +4902,7 @@ function wellnessPage() {
   }).reverse();
 
   const subjects = ['Türkçe','Matematik','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce'];
+  const randomMot = motivasyonSozleri[Math.floor(Math.random()*motivasyonSozleri.length)];
 
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
@@ -4882,12 +4910,6 @@ function wellnessPage() {
       <div class="page-title" style="margin:0">💙 Nasıl Hissediyorum</div>
     </div>
     <div class="page-sub">Günlük psikolojik takip ve hedeflerim</div>
-
-    <!-- LGS Geri sayım -->
-    <div style="background:linear-gradient(135deg,#6c63ff22,#4cc9f022);border:1px solid #6c63ff44;border-radius:16px;padding:16px;margin-bottom:14px;text-align:center">
-      <div style="font-size:2.2rem;font-weight:900;font-family:'Sora',sans-serif;color:var(--accent)">${daysLeft}</div>
-      <div style="font-size:0.82rem;color:var(--text2);font-weight:600">gün kaldı — LGS 2026</div>
-    </div>
 
     <!-- Hedefler -->
     <div class="card" style="margin-bottom:14px">
@@ -5053,13 +5075,11 @@ function wellnessPage() {
     </div>
 
     <!-- Motivasyon -->
-    <div style="background:linear-gradient(135deg,#fd79a822,#f9ca2422);border:1px solid #fd79a844;border-radius:16px;padding:16px;text-align:center;margin-bottom:24px">
-      <div style="font-size:1.3rem;margin-bottom:6px" id="motivasyonEmoji">💪</div>
-      <div id="motivasyonText" style="font-size:0.85rem;font-weight:600;color:var(--text);line-height:1.6"></div>
+    <div style="background:linear-gradient(135deg,#fd79a822,#f9ca2422);border:1px solid #fd79a844;border-radius:16px;padding:16px;margin-bottom:24px">
+      <div style="font-size:0.78rem;font-weight:700;color:var(--text2);margin-bottom:8px;letter-spacing:.05em">💫 GÜNÜN SÖZÜ</div>
+      <div id="motivasyonText" style="font-size:0.92rem;font-weight:600;color:var(--text);line-height:1.6;font-style:italic">"${randomMot.text}"</div>
       <button onclick="newMotivation()" style="margin-top:10px;background:none;border:none;color:var(--accent);font-size:0.78rem;cursor:pointer;font-weight:700">🔄 Yeni söz</button>
     </div>`;
-  setTimeout(()=>newMotivation(), 50);
-  return result;
 }
 
 const motivasyonSozleri = [
@@ -5078,9 +5098,7 @@ const motivasyonSozleri = [
 function newMotivation() {
   const s = motivasyonSozleri[Math.floor(Math.random()*motivasyonSozleri.length)];
   const el = document.getElementById('motivasyonText');
-  const em = document.getElementById('motivasyonEmoji');
-  if(el) el.textContent = s.text;
-  if(em) em.textContent = s.emoji;
+  if(el) el.textContent = '"' + s.text + '"';
 }
 
 function saveWellnessField(field, value) {
@@ -5090,6 +5108,10 @@ function saveWellnessField(field, value) {
   try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
   data[field] = value;
   localStorage.setItem(storageKey, JSON.stringify(data));
+  // Firestore'a da kaydet
+  if (myUid !== 'local' && window.db) {
+    db.collection('wellness').doc(myUid).set(data, {merge:true}).catch(()=>{});
+  }
 }
 
 function saveWellnessDay(field, value, btn) {
@@ -5102,13 +5124,43 @@ function saveWellnessDay(field, value, btn) {
   if (!data.days[todayKey]) data.days[todayKey] = {};
   data.days[todayKey][field] = value;
   localStorage.setItem(storageKey, JSON.stringify(data));
-  // Mood seçimi — buton stillerini güncelle
+  // Firestore'a da kaydet
+  if (myUid !== 'local' && window.db) {
+    const dayUpdate = {};
+    dayUpdate['days.' + todayKey + '.' + field] = value;
+    db.collection('wellness').doc(myUid).set(dayUpdate, {merge:true}).catch(()=>{});
+  }
   if (btn && ['mood','uykuKalite','su'].includes(field)) showPage('wellness');
 }
 
-// Wellness verilerini dışarıdan okumak için (öğretmen tarafı)
-function getWellnessData(uid) {
-  try { return JSON.parse(localStorage.getItem('wellness_' + uid)||'{}'); } catch(e){ return {}; }
+// Wellness verilerini Firestore'dan oku (öğretmen tarafı)
+async function getWellnessData(uid) {
+  // Önce localStorage'a bak
+  try {
+    const local = JSON.parse(localStorage.getItem('wellness_' + uid)||'{}');
+    // Firestore'dan taze veriyi al
+    if (uid && uid !== 'local' && window.db) {
+      const snap = await db.collection('wellness').doc(uid).get();
+      if (snap.exists) {
+        const fresh = snap.data();
+        localStorage.setItem('wellness_' + uid, JSON.stringify(fresh));
+        return fresh;
+      }
+    }
+    return local;
+  } catch(e) { return {}; }
+}
+
+// Öğrenci girişinde wellness verisini Firestore'dan çek
+async function loadWellnessFromFirestore() {
+  const myUid = (window.currentUserData||{}).uid;
+  if (!myUid || !window.db) return;
+  try {
+    const snap = await db.collection('wellness').doc(myUid).get();
+    if (snap.exists) {
+      localStorage.setItem('wellness_' + myUid, JSON.stringify(snap.data()));
+    }
+  } catch(e) {}
 }
 
 
