@@ -2245,28 +2245,36 @@ function studentDetailAnalysis() {
   });
   const maxTQ = Math.max(...trendDays.map(t=>t.q),1);
 
-  // Korelasyon analizi — psiko vs akademik
+  // Korelasyon analizi — seçili döneme göre psiko vs akademik
   const wellnessLocal = (() => { try { return JSON.parse(localStorage.getItem('wellness_'+sUid)||'{}'); } catch(e){ return {}; } })();
   const wDays = wellnessLocal.days || {};
   const korelasyonInsights = [];
-  const last7 = Array.from({length:7},(_,i)=>{
-    const d=new Date(now); d.setDate(now.getDate()-6+i);
-    const dk=d.toISOString().split('T')[0];
+
+  // Seçili döneme göre gün listesi oluştur
+  const periodStart = studentAnalysisPeriod==='daily' ? todayKey
+    : studentAnalysisPeriod==='weekly' ? mondayKey : monthStart;
+  const allPeriodKeys = Object.keys(wDays).filter(k=>k>=periodStart).sort();
+  // Akademik verisi olan günler için eşleştir
+  const periodDataDays = allPeriodKeys.map(dk=>{
     const we=wDays[dk]||{};
     const ac=allEntries.filter(e=>e.dateKey===dk&&e.type==='soru');
     return { dk, kaygi:parseFloat(we.kaygi)||0, uyku:parseFloat(we.uyku)||0,
       ekran:parseFloat(we.ekran)||0, enerji:parseFloat(we.enerji)||0,
       net:ac.reduce((a,e)=>a+(e.net||0),0), q:ac.reduce((a,e)=>a+(e.questions||0),0) };
   });
-  const wDataDays = last7.filter(d=>d.kaygi>0||d.uyku>0);
-  if (wDataDays.length>=2) {
+
+  const minDays = studentAnalysisPeriod==='monthly' ? 3 : 2;
+  const wDataDays = periodDataDays.filter(d=>d.kaygi>0||d.uyku>0);
+  const korLabel = studentAnalysisPeriod==='monthly' ? 'Bu ay' : studentAnalysisPeriod==='weekly' ? 'Bu hafta' : 'Bugün';
+
+  if (wDataDays.length>=minDays) {
     // Uyku-başarı korelasyonu
     const highSleep = wDataDays.filter(d=>d.uyku>=7&&d.q>0);
     const lowSleep = wDataDays.filter(d=>d.uyku>0&&d.uyku<6&&d.q>0);
     if (highSleep.length>0&&lowSleep.length>0) {
       const avgNetHS = highSleep.reduce((a,d)=>a+d.net,0)/highSleep.length;
       const avgNetLS = lowSleep.reduce((a,d)=>a+d.net,0)/lowSleep.length;
-      if (avgNetHS > avgNetLS+0.5) korelasyonInsights.push(`💤 Uyku süresi 7+ saat olan günlerde ortalama net ${avgNetHS.toFixed(1)}, 6 saat altında ise ${avgNetLS.toFixed(1)}. Uyku kalitesi akademik performansı olumlu etkiliyor.`);
+      if (Math.abs(avgNetHS-avgNetLS)>0.3) korelasyonInsights.push(`💤 ${korLabel} uyku süresi 7+ saat olan günlerde ortalama net ${avgNetHS.toFixed(1)}, 6 saat altında ise ${avgNetLS.toFixed(1)}. ${avgNetHS>avgNetLS?'Uyku kalitesi akademik performansı olumlu etkiliyor.':'Uyku artmasına rağmen performans farkı beklendiği kadar değil.'}`);
     }
     // Kaygı-başarı korelasyonu
     const highAnx = wDataDays.filter(d=>d.kaygi>=7&&d.q>0);
@@ -2274,23 +2282,40 @@ function studentDetailAnalysis() {
     if (highAnx.length>0&&lowAnx.length>0) {
       const avgNetHA = highAnx.reduce((a,d)=>a+d.net,0)/highAnx.length;
       const avgNetLA = lowAnx.reduce((a,d)=>a+d.net,0)/lowAnx.length;
-      if (avgNetHA < avgNetLA-0.5) korelasyonInsights.push(`😰 Kaygı skoru yüksek günlerde (7+) net ortalama ${avgNetHA.toFixed(1)}, düşük kaygılı günlerde ise ${avgNetLA.toFixed(1)}. Yüksek kaygı performansı olumsuz etkiliyor.`);
+      if (Math.abs(avgNetHA-avgNetLA)>0.3) korelasyonInsights.push(`😰 ${korLabel} kaygı skoru yüksek günlerde (7+) net ortalama ${avgNetHA.toFixed(1)}, düşük kaygılı günlerde ise ${avgNetLA.toFixed(1)}. ${avgNetHA<avgNetLA?'Yüksek kaygı performansı olumsuz etkiliyor.':'Kaygıya rağmen performans korunuyor.'}`);
     }
-    // Ekran süresi
+    // Ekran süresi korelasyonu
     const highScreen = wDataDays.filter(d=>d.ekran>=3&&d.q>0);
     const lowScreen = wDataDays.filter(d=>d.ekran>0&&d.ekran<=1.5&&d.q>0);
     if (highScreen.length>0&&lowScreen.length>0) {
       const avgNetHSc = highScreen.reduce((a,d)=>a+d.net,0)/highScreen.length;
       const avgNetLSc = lowScreen.reduce((a,d)=>a+d.net,0)/lowScreen.length;
-      if (avgNetHSc < avgNetLSc-0.5) korelasyonInsights.push(`📱 Ekran süresi 3+ saat olan günlerde net ${avgNetHSc.toFixed(1)}, 1.5 saat altında ise ${avgNetLSc.toFixed(1)}. Ekran süresini azaltmak performansı artırabilir.`);
+      if (Math.abs(avgNetHSc-avgNetLSc)>0.3) korelasyonInsights.push(`📱 ${korLabel} ekran süresi 3+ saat olan günlerde net ${avgNetHSc.toFixed(1)}, 1.5 saat altında ise ${avgNetLSc.toFixed(1)}. ${avgNetHSc<avgNetLSc?'Ekran süresini azaltmak performansı artırabilir.':'Ekran süresi bu dönemde performansı belirgin etkilemiyor.'}`);
     }
-    // Enerji trendi
-    const energyTrend = wDataDays.slice(-3).map(d=>d.enerji).filter(e=>e>0);
+    // Enerji trendi (son 3-5 gün)
+    const recentDays = wDataDays.slice(-Math.min(5,wDataDays.length));
+    const energyTrend = recentDays.map(d=>d.enerji).filter(e=>e>0);
     if (energyTrend.length>=3) {
-      const isDecreasing = energyTrend[0]>energyTrend[1]&&energyTrend[1]>energyTrend[2];
-      const isIncreasing = energyTrend[0]<energyTrend[1]&&energyTrend[1]<energyTrend[2];
-      if (isDecreasing) korelasyonInsights.push(`⚡ Son 3 günde enerji seviyesi düşüş eğiliminde (${energyTrend.join(' → ')}). Motivasyon desteği ve dinlenme önerilir.`);
-      else if (isIncreasing) korelasyonInsights.push(`⚡ Son 3 günde enerji seviyesi yükseliş eğiliminde (${energyTrend.join(' → ')}). Bu ivmeyi akademik çalışmaya yönlendirme iyi fırsat.`);
+      const first = energyTrend.slice(0,Math.floor(energyTrend.length/2));
+      const last = energyTrend.slice(Math.floor(energyTrend.length/2));
+      const avgFirst = first.reduce((a,b)=>a+b,0)/first.length;
+      const avgLast = last.reduce((a,b)=>a+b,0)/last.length;
+      if (avgFirst-avgLast>1) korelasyonInsights.push(`⚡ ${korLabel} enerji seviyesi düşüş eğiliminde (${energyTrend.join(' → ')}). Motivasyon desteği ve dinlenme önerilir.`);
+      else if (avgLast-avgFirst>1) korelasyonInsights.push(`⚡ ${korLabel} enerji seviyesi yükseliş eğiliminde (${energyTrend.join(' → ')}). Bu ivmeyi akademik çalışmaya yönlendirme iyi bir fırsat.`);
+    }
+    // Aylık özet — ek istatistik
+    if (studentAnalysisPeriod==='monthly' && wDataDays.length>=7) {
+      const avgKaygi = wDataDays.reduce((a,d)=>a+d.kaygi,0)/wDataDays.filter(d=>d.kaygi>0).length;
+      const avgUyku = wDataDays.filter(d=>d.uyku>0).reduce((a,d)=>a+d.uyku,0)/wDataDays.filter(d=>d.uyku>0).length||0;
+      const netTrend = wDataDays.filter(d=>d.q>0);
+      if (netTrend.length>=4) {
+        const firstHalf = netTrend.slice(0,Math.floor(netTrend.length/2));
+        const secondHalf = netTrend.slice(Math.floor(netTrend.length/2));
+        const avgFirst = firstHalf.reduce((a,d)=>a+d.net,0)/firstHalf.length;
+        const avgSecond = secondHalf.reduce((a,d)=>a+d.net,0)/secondHalf.length;
+        if (avgSecond-avgFirst>0.5) korelasyonInsights.push(`📈 Bu ay akademik performans ikinci yarıda ilerleme gösterdi (Ort. net: ${avgFirst.toFixed(1)} → ${avgSecond.toFixed(1)}). Kaygı ort. ${avgKaygi.toFixed(1)}/10, uyku ort. ${avgUyku.toFixed(1)} saat.`);
+        else if (avgFirst-avgSecond>0.5) korelasyonInsights.push(`📉 Bu ay akademik performans ikinci yarıda geriledi (Ort. net: ${avgFirst.toFixed(1)} → ${avgSecond.toFixed(1)}). Kaygı ort. ${avgKaygi.toFixed(1)}/10, uyku ort. ${avgUyku.toFixed(1)} saat. Nedenler incelenmeli.`);
+      }
     }
   }
 
