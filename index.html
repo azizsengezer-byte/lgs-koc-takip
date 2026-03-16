@@ -2737,7 +2737,7 @@ async function exportPsychPDF(sName) {
   const PF = registerFontIfAvailable(doc);
   const dateStr = now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
 
-  let Y = pdfHeader(doc, tx(sName)+' \u2014 Psikolojik Takip', tx(periodTitle), tx(dateStr));
+  let Y = pdfHeader(doc, tx(sName)+' \u2014 '+tx(periodTitle), tx('Psikolojik Takip'), tx(dateStr));
 
   // Hedefler
   if (data.hedef || data.hedefOkul) {
@@ -2857,60 +2857,358 @@ async function exportPsychPDF(sName) {
       }),
       Y,[108,99,255]);
 
-    // Psikolojik-Akademik Korelasyon Analizi
+    // ============================================================
+    // PSİKOLOJİK-AKADEMİK KORELASYON — 3 EKSENLİ SİSTEM
+    // ============================================================
     const sObj2 = students.find(s=>s.name===sName) || {};
     const sUid2 = sObj2.uid || '';
     const matchE2 = e => e.studentName===sName || (sUid2 && e.userId===sUid2);
-    const acadEntries = studyEntries.filter(e=>matchE2(e)&&e.type==='soru'&&e.dateKey>=startKey&&e.dateKey<=endKey);
-    const psychAcadDays = sortedDays.map(dk=>{
+    // Tüm giriş türleri (soru, deneme, konu, tekrar)
+    const allAcadEntries = studyEntries.filter(e=>matchE2(e)&&e.dateKey>=startKey&&e.dateKey<=endKey);
+    const soruEntries2   = allAcadEntries.filter(e=>e.type==='soru');
+    const denemEntries2  = allAcadEntries.filter(e=>e.type==='deneme');
+
+    // Gün bazlı veri birleştirme
+    const trendKeys2 = sortedDays.slice().reverse(); // kronolojik
+    const psychAcadDays = trendKeys2.map(dk=>{
       const we = days[dk]||{};
-      const ae = acadEntries.filter(e=>e.dateKey===dk);
-      return { dk,
-        kaygi:parseFloat(we.kaygi)||0, uyku:parseFloat(we.uyku)||0,
-        enerji:parseFloat(we.enerji)||0, ekran:parseFloat(we.ekran)||0,
-        net:ae.reduce((a,e)=>a+(e.net||0),0), q:ae.reduce((a,e)=>a+(e.questions||0),0)
+      const soruDay  = soruEntries2.filter(e=>e.dateKey===dk);
+      const denDay   = denemEntries2.filter(e=>e.dateKey===dk);
+      const q        = soruDay.reduce((a,e)=>a+(e.questions||0),0);
+      const dur      = soruDay.reduce((a,e)=>a+(e.duration||0),0);
+      const net      = soruDay.reduce((a,e)=>a+(e.net||0),0);
+      const yanlis   = denDay.reduce((a,e)=>a+(e.wrong||0),0);
+      const denQ     = denDay.reduce((a,e)=>a+(e.correct||0)+(e.wrong||0),0);
+      const yanlisPct= denQ>0 ? (yanlis/denQ*100) : null;
+      // Ders bazlı: hangi duygu durumunda hangi ders
+      const subByMood = {};
+      soruDay.forEach(e=>{
+        if (!subByMood[e.subject]) subByMood[e.subject]=0;
+        subByMood[e.subject]+=(e.questions||0);
+      });
+      return {
+        dk,
+        enerji: parseFloat(we.enerji)||0,
+        odak:   parseFloat(we.odak)||0,
+        kaygi:  parseFloat(we.kaygi)||0,
+        uyku:   parseFloat(we.uyku)||0,
+        mood:   we.mood||null,
+        q, dur, net, yanlis, yanlisPct, subByMood
       };
     });
-    const acadKorLines = [];
-    const wdArr = psychAcadDays.filter(d=>d.kaygi>0||d.uyku>0);
-    if (wdArr.length >= 2) {
-      const highSleep = wdArr.filter(d=>d.uyku>=7&&d.q>0);
-      const lowSleep  = wdArr.filter(d=>d.uyku>0&&d.uyku<6&&d.q>0);
-      if (highSleep.length>0&&lowSleep.length>0) {
-        const hs=highSleep.reduce((a,d)=>a+d.net,0)/highSleep.length;
-        const ls=lowSleep.reduce((a,d)=>a+d.net,0)/lowSleep.length;
-        if(Math.abs(hs-ls)>0.3) acadKorLines.push(tx('💤 Uyku: 7+ saat günlerde ort. net '+hs.toFixed(1)+', 6 saat altında ise '+ls.toFixed(1)+'. '+(hs>ls?'Uyku kalitesi akademik performansı olumlu destekliyor.':'Uyku artmasına rağmen performans farkı beklenen düzeyde değil.')));
+
+    const wdArr2 = psychAcadDays.filter(d=>d.enerji>0||d.kaygi>0||d.uyku>0);
+
+    if (wdArr2.length >= 2) {
+      Y = pdfCheck(doc, Y, 14);
+      Y = pdfSecHeader(doc, tx('PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ'), Y, 220, 50, 100);
+
+      // ── A. ENERJİ-HACİM KORELASYONU ─────────────────────────────
+      Y = pdfCheck(doc, Y, 8);
+      doc.setFont(PF,'bold'); doc.setFontSize(8); doc.setTextColor(249,180,36);
+      doc.text(tx('A. Enerji – Akademik Hacim Korelasyonu'), 16, Y); Y+=5;
+
+      const daysWithEnerji = wdArr2.filter(d=>d.enerji>0);
+      const highEnerji = daysWithEnerji.filter(d=>d.enerji>=7);
+      const lowEnerji  = daysWithEnerji.filter(d=>d.enerji<=4);
+
+      if (highEnerji.length>0 && lowEnerji.length>0) {
+        const avgQHE = highEnerji.reduce((a,d)=>a+d.q,0)/highEnerji.length;
+        const avgQLe = lowEnerji.reduce((a,d)=>a+d.q,0)/lowEnerji.length;
+        const avgDHE = highEnerji.reduce((a,d)=>a+d.dur,0)/highEnerji.length;
+        const avgDLe = lowEnerji.reduce((a,d)=>a+d.dur,0)/lowEnerji.length;
+        const ratio  = avgQLe > 0 ? (avgQHE/avgQLe) : null;
+
+        const enLine1 = tx('Yüksek enerjili günler (7+): ort. '+avgQHE.toFixed(0)+' soru / '+avgDHE.toFixed(0)+' dk');
+        const enLine2 = tx('Düşük enerjili günler (≤4): ort. '+avgQLe.toFixed(0)+' soru / '+avgDLe.toFixed(0)+' dk');
+        let enYorum = '';
+        if (ratio !== null) {
+          if (avgQLe >= avgQHE*0.85) {
+            enYorum = tx('Öğrenci düşük enerjili günlerde de çalışma hacmini koruyor. Bu yüksek disiplin göstergesidir.');
+          } else if (avgQLe < avgQHE*0.4) {
+            enYorum = tx('Enerji düşüşü soru sayısını ciddi ölçüde etkiliyor. Öğrenci duygu odaklı çalışıyor — bu risklidir, plan dışı günler oluşabilir.');
+          } else {
+            enYorum = tx('Enerji düşüşünde çalışma hacmi bir miktar azalıyor ancak tamamen durmuyor. Dengeleme stratejileri önerilebilir.');
+          }
+        }
+        [enLine1, enLine2, enYorum].filter(Boolean).forEach((line,i) => {
+          Y = pdfCheck(doc, Y, 10);
+          if (i < 2) {
+            doc.setFillColor(255,248,220); doc.roundedRect(16,Y,178,9,1.5,1.5,'F');
+            doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(80,60,20);
+          } else {
+            doc.setFillColor(255,235,180); doc.roundedRect(16,Y,178,10,1.5,1.5,'F');
+            doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(120,70,0);
+          }
+          const ls = doc.splitTextToSize(line, 170);
+          doc.text(ls, 20, Y+5);
+          Y += ls.length*5 + 3;
+        });
+      } else {
+        doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(150,140,120);
+        doc.text(tx('Bu dönem için enerji-hacim karşılaştırması yapılacak yeterli veri yok.'), 16, Y); Y+=8;
       }
-      const highAnx = wdArr.filter(d=>d.kaygi>=7&&d.q>0);
-      const lowAnx  = wdArr.filter(d=>d.kaygi>0&&d.kaygi<=4&&d.q>0);
-      if (highAnx.length>0&&lowAnx.length>0) {
-        const ha=highAnx.reduce((a,d)=>a+d.net,0)/highAnx.length;
-        const la=lowAnx.reduce((a,d)=>a+d.net,0)/lowAnx.length;
-        if(Math.abs(ha-la)>0.3) acadKorLines.push(tx('😰 Kaygı: Yüksek kaygılı günlerde (7+) ort. net '+ha.toFixed(1)+', düşük kaygılı günlerde '+la.toFixed(1)+'. '+(ha<la?'Yüksek kaygı akademik performansı olumsuz etkiliyor.':'Kaygıya rağmen akademik performans korunuyor.')));
+
+      // Çift eksenli mini grafik: Soru sayısı (sol) + Kaygı skoru (sağ)
+      if (trendKeys2.length >= 2) {
+        Y = pdfCheck(doc, Y, 42);
+        const chartX=16, chartW=178, chartH=36;
+        doc.setFillColor(245,245,255); doc.roundedRect(chartX,Y,chartW,chartH,2,2,'F');
+        doc.setFont(PF,'bold'); doc.setFontSize(6); doc.setTextColor(80,80,120);
+        doc.text(tx('Çözülen Soru (çubuk) vs Kaygı Skoru (çizgi)'), chartX+chartW/2, Y+4, {align:'center'});
+
+        const qVals   = trendKeys2.map(dk=>psychAcadDays.find(d=>d.dk===dk)?.q||0);
+        const kayVals = trendKeys2.map(dk=>psychAcadDays.find(d=>d.dk===dk)?.kaygi||0);
+        const maxQ3   = Math.max(...qVals, 1);
+        const n       = trendKeys2.length;
+        const pad3    = 14, innerW=chartW-pad3*2, innerH=chartH-10;
+        const barW    = Math.min(innerW/n*0.55, 10);
+        const xStep3  = innerW/Math.max(n-1,1);
+        const baseY   = Y+chartH-4;
+        const topY    = Y+8;
+
+        // Çubuklar (soru sayısı - sol eksen)
+        qVals.forEach((v,i)=>{
+          const bx = chartX+pad3 + (n===1 ? innerW/2 : i*xStep3) - barW/2;
+          const bh = v>0 ? Math.max((v/maxQ3)*innerH, 2) : 0;
+          doc.setFillColor(108,99,255); doc.setFillColor(180,170,255);
+          doc.roundedRect(bx, baseY-bh, barW, bh, 0.5,0.5,'F');
+          if (v>0) {
+            doc.setFont(PF,'normal'); doc.setFontSize(4.5); doc.setTextColor(80,70,180);
+            doc.text(String(v), bx+barW/2, baseY-bh-1, {align:'center'});
+          }
+        });
+
+        // Kaygı çizgisi (sağ eksen - 1-10 skala)
+        const kPts = kayVals.map((v,i)=>({
+          x: chartX+pad3 + (n===1 ? innerW/2 : i*xStep3),
+          y: v>0 ? topY + (1-v/10)*innerH : null
+        }));
+        const validKPts = kPts.filter(p=>p.y!==null);
+        if (validKPts.length >= 2) {
+          doc.setDrawColor(255,107,107); doc.setLineWidth(0.8);
+          for (let i=1; i<kPts.length; i++) {
+            if (kPts[i-1].y && kPts[i].y) {
+              doc.line(kPts[i-1].x, kPts[i-1].y, kPts[i].x, kPts[i].y);
+            }
+          }
+        }
+        // Nokta
+        validKPts.forEach(pt=>{
+          doc.setFillColor(255,107,107); doc.circle(pt.x, pt.y, 0.8, 'F');
+        });
+
+        // X etiketleri
+        doc.setFont(PF,'normal'); doc.setFontSize(4); doc.setTextColor(130,130,150);
+        trendKeys2.forEach((dk,i)=>{
+          const lx = chartX+pad3 + (n===1 ? innerW/2 : i*xStep3);
+          const lbl = new Date(dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
+          doc.text(lbl, lx, baseY+3, {align:'center'});
+        });
+
+        // Lejant
+        doc.setFillColor(180,170,255); doc.roundedRect(chartX+pad3, Y+1, 4, 3, 0.5,0.5,'F');
+        doc.setFont(PF,'normal'); doc.setFontSize(4.5); doc.setTextColor(80,70,180);
+        doc.text(tx('Soru'), chartX+pad3+5, Y+3.5);
+        doc.setDrawColor(255,107,107); doc.setLineWidth(0.8);
+        doc.line(chartX+pad3+18, Y+2.5, chartX+pad3+24, Y+2.5);
+        doc.setTextColor(180,50,50);
+        doc.text(tx('Kaygı'), chartX+pad3+25, Y+3.5);
+
+        Y += chartH+4;
       }
-      const highScr = wdArr.filter(d=>d.ekran>=3&&d.q>0);
-      const lowScr  = wdArr.filter(d=>d.ekran>0&&d.ekran<=1.5&&d.q>0);
-      if (highScr.length>0&&lowScr.length>0) {
-        const hs2=highScr.reduce((a,d)=>a+d.net,0)/highScr.length;
-        const ls2=lowScr.reduce((a,d)=>a+d.net,0)/lowScr.length;
-        if(Math.abs(hs2-ls2)>0.3) acadKorLines.push(tx('📱 Ekran: 3+ saat günlerde ort. net '+hs2.toFixed(1)+', 1.5 saat altında '+ls2.toFixed(1)+'. '+(hs2<ls2?'Ekran süresini azaltmak performansı artırabilir.':'Ekran süresi bu dönemde performansı belirgin etkilemiyor.')));
+
+      // ── B. KAYGI-HATA KORELASYONU ────────────────────────────────
+      Y = pdfCheck(doc, Y, 10);
+      doc.setFont(PF,'bold'); doc.setFontSize(8); doc.setTextColor(255,107,107);
+      doc.text(tx('B. Kaygı – Hata Oranı Korelasyonu'), 16, Y); Y+=5;
+
+      const daysWithKaygi = wdArr2.filter(d=>d.kaygi>0);
+      const highKaygi = daysWithKaygi.filter(d=>d.kaygi>=7);
+      const lowKaygi  = daysWithKaygi.filter(d=>d.kaygi<=4);
+
+      // Deneme yanlış oranı vs kaygı
+      const denDaysWithKaygi = psychAcadDays.filter(d=>d.kaygi>0&&d.yanlisPct!==null);
+      const highKaygiDen = denDaysWithKaygi.filter(d=>d.kaygi>=7);
+      const lowKaygiDen  = denDaysWithKaygi.filter(d=>d.kaygi<=4);
+
+      if (highKaygiDen.length>0 && lowKaygiDen.length>0) {
+        const avgYHK = highKaygiDen.reduce((a,d)=>a+d.yanlisPct,0)/highKaygiDen.length;
+        const avgYLK = lowKaygiDen.reduce((a,d)=>a+d.yanlisPct,0)/lowKaygiDen.length;
+        const kLine1 = tx('Yüksek kaygılı günler (7+): deneme yanlış oranı ort. %'+avgYHK.toFixed(1));
+        const kLine2 = tx('Düşük kaygılı günler (≤4): deneme yanlış oranı ort. %'+avgYLK.toFixed(1));
+        let kYorum = '';
+        if (avgYHK > avgYLK*1.2) {
+          kYorum = tx('Yüksek kaygı anında yanlış oranı belirgin artıyor. Bu bilgi eksikliği değil, dikkat/stres yönetimi sorunudur. Sınav simülasyonu ve nefes egzersizleri önerilebilir.');
+        } else if (avgYHK <= avgYLK) {
+          kYorum = tx('Kaygı yüksek olduğunda yanlış oranı artmıyor. Öğrenci kaygıyı performansa yansıtmıyor — bu güçlü bir psikolojik direnç göstergesidir.');
+        } else {
+          kYorum = tx('Kaygı ile yanlış oranı arasında orta düzeyde ilişki var. Deneme koşullarına alışma çalışmaları yararlı olabilir.');
+        }
+        [kLine1, kLine2, kYorum].filter(Boolean).forEach((line,i)=>{
+          Y = pdfCheck(doc, Y, 10);
+          if (i < 2) {
+            doc.setFillColor(255,235,235); doc.roundedRect(16,Y,178,9,1.5,1.5,'F');
+            doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(100,30,30);
+          } else {
+            doc.setFillColor(255,210,210); doc.roundedRect(16,Y,178,10,1.5,1.5,'F');
+            doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(150,20,20);
+          }
+          const ls = doc.splitTextToSize(line, 170);
+          doc.text(ls, 20, Y+5);
+          Y += ls.length*5 + 3;
+        });
+      } else if (highKaygi.length>0 || lowKaygi.length>0) {
+        // Deneme yoksa soru neti ile karşılaştır
+        const highKNet = highKaygi.filter(d=>d.q>0);
+        const lowKNet  = lowKaygi.filter(d=>d.q>0);
+        if (highKNet.length>0 && lowKNet.length>0) {
+          const avgNHK = highKNet.reduce((a,d)=>a+d.net,0)/highKNet.length;
+          const avgNLK = lowKNet.reduce((a,d)=>a+d.net,0)/lowKNet.length;
+          const kLine = tx('Yüksek kaygı (7+) günler ort. net: '+avgNHK.toFixed(1)+' | Düşük kaygı (≤4) günler ort. net: '+avgNLK.toFixed(1));
+          let kYorum2 = avgNHK < avgNLK*0.8
+            ? tx('Yüksek kaygı net skoru baskılıyor. Kaygı yönetimi çalışması öncelikli gündem maddesi olmalı.')
+            : tx('Kaygıya rağmen net skor korunuyor. Öğrenci baskı altında performansını sürdürebiliyor.');
+          [kLine, kYorum2].forEach((line,i)=>{
+            Y = pdfCheck(doc, Y, 10);
+            i===0 ? (doc.setFillColor(255,235,235), doc.setFont(PF,'normal'), doc.setTextColor(100,30,30))
+                  : (doc.setFillColor(255,210,210), doc.setFont(PF,'bold'), doc.setTextColor(150,20,20));
+            doc.roundedRect(16,Y,178,9,1.5,1.5,'F'); doc.setFontSize(7.5);
+            const ls = doc.splitTextToSize(line, 170);
+            doc.text(ls, 20, Y+5); Y += ls.length*5 + 3;
+          });
+        } else {
+          doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(150,120,120);
+          doc.text(tx('Kaygı-hata karşılaştırması için yeterli deneme/soru verisi yok.'), 16, Y); Y+=8;
+        }
+      } else {
+        doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(150,120,120);
+        doc.text(tx('Bu dönem kaygı verisi bulunamadı.'), 16, Y); Y+=8;
       }
-      // Genel soru/net özeti
-      const totalQ2 = psychAcadDays.reduce((a,d)=>a+d.q,0);
-      const totalNet2 = psychAcadDays.reduce((a,d)=>a+d.net,0);
-      const activeDays2 = psychAcadDays.filter(d=>d.q>0).length;
-      if (totalQ2>0) acadKorLines.push(tx('📚 Bu dönem toplamda '+totalQ2+' soru çözüldü, '+activeDays2+' aktif çalışma günü, ort. net: '+(totalNet2/Math.max(activeDays2,1)).toFixed(1)+'.'));
-    }
-    if (acadKorLines.length > 0) {
-      Y = pdfCheck(doc, Y, 20);
-      Y = pdfSecHeader(doc, tx('PSİKOLOJİK-AKADEMİK KORELASYON'), Y, 255, 101, 132);
-      acadKorLines.forEach(line => {
-        Y = pdfCheck(doc, Y, 18);
-        doc.setFillColor(255,240,245); doc.roundedRect(16,Y,178,14,2,2,'F');
-        doc.setFont(PF,'normal'); doc.setFontSize(8); doc.setTextColor(80,40,60);
-        const ls = doc.splitTextToSize(line, 170);
-        doc.text(ls, 20, Y+5);
-        Y += ls.length*5 + 5;
+
+      // ── C. UYKU-ODAKLANMA-VERİMLİLİK KORELASYONU ────────────────
+      Y = pdfCheck(doc, Y, 10);
+      doc.setFont(PF,'bold'); doc.setFontSize(8); doc.setTextColor(162,155,254);
+      doc.text(tx('C. Uyku – Odak – Verimlilik Korelasyonu'), 16, Y); Y+=5;
+
+      const daysWithUyku = wdArr2.filter(d=>d.uyku>0&&d.odak>0);
+      const goodSleep = daysWithUyku.filter(d=>d.uyku>=8);
+      const badSleep  = daysWithUyku.filter(d=>d.uyku>0&&d.uyku<6);
+
+      if (goodSleep.length>0 && badSleep.length>0) {
+        const avgOdakGS = goodSleep.reduce((a,d)=>a+d.odak,0)/goodSleep.length;
+        const avgOdakBS = badSleep.reduce((a,d)=>a+d.odak,0)/badSleep.length;
+        const avgNetGS  = goodSleep.filter(d=>d.q>0).reduce((a,d)=>a+d.net,0)/Math.max(goodSleep.filter(d=>d.q>0).length,1);
+        const avgNetBS  = badSleep.filter(d=>d.q>0).reduce((a,d)=>a+d.net,0)/Math.max(badSleep.filter(d=>d.q>0).length,1);
+        const uLine1 = tx('8+ saat uyku günler: ort. odak '+avgOdakGS.toFixed(1)+'/10, ort. net '+avgNetGS.toFixed(1));
+        const uLine2 = tx('6 saat altı uyku günler: ort. odak '+avgOdakBS.toFixed(1)+'/10, ort. net '+avgNetBS.toFixed(1));
+        let uYorum = '';
+        if (avgOdakBS < avgOdakGS*0.75) {
+          uYorum = tx('Yetersiz uyku odak skorunu ve net verimi belirgin düşürüyor. Akademik düşüşün sebebi konu eksiği değil, fizyolojik yorgunluk olabilir. Uyku düzeni öncelikli müdahale alanıdır.');
+        } else if (avgOdakBS >= avgOdakGS*0.9) {
+          uYorum = tx('Uyku süresinden bağımsız olarak odak puanı korunuyor. Öğrenci iyi bir uyku verimliliğine sahip veya uyku kalitesi saat sayısından önemli.');
+        } else {
+          uYorum = tx('Uyku süresi odak ve performansı orta düzeyde etkiliyor. Uyku rutinini iyileştirmek tutarlı bir gelişme sağlayabilir.');
+        }
+        [uLine1, uLine2, uYorum].filter(Boolean).forEach((line,i)=>{
+          Y = pdfCheck(doc, Y, 10);
+          if (i < 2) {
+            doc.setFillColor(235,230,255); doc.roundedRect(16,Y,178,9,1.5,1.5,'F');
+            doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(50,40,120);
+          } else {
+            doc.setFillColor(215,205,255); doc.roundedRect(16,Y,178,10,1.5,1.5,'F');
+            doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(70,40,160);
+          }
+          const ls = doc.splitTextToSize(line, 170);
+          doc.text(ls, 20, Y+5);
+          Y += ls.length*5 + 3;
+        });
+
+        // IF-THEN kural motoru
+        Y = pdfCheck(doc, Y, 8);
+        const avgKaygiAll = wdArr2.filter(d=>d.kaygi>0).reduce((a,d)=>a+d.kaygi,0)/Math.max(wdArr2.filter(d=>d.kaygi>0).length,1);
+        const avgUykuAll  = wdArr2.filter(d=>d.uyku>0).reduce((a,d)=>a+d.uyku,0)/Math.max(wdArr2.filter(d=>d.uyku>0).length,1);
+        const ruleLines = [];
+        if (avgKaygiAll > 7 && denemEntries2.length > 0) {
+          const allYanlis = denemEntries2.reduce((a,e)=>a+(e.wrong||0),0);
+          const allDenQ   = denemEntries2.reduce((a,e)=>a+(e.correct||0)+(e.wrong||0),0);
+          if (allDenQ>0 && allYanlis/allDenQ > 0.25)
+            ruleLines.push(tx('⚠ Kural: Kaygı > 7 + Deneme yanlış oranı > %25 → Sınav kaygısı akademik performansı baskılıyor. Deneme simülasyonu yapılmalı.'));
+        }
+        if (avgUykuAll < 6 && wdArr2.filter(d=>d.odak>0).reduce((a,d)=>a+d.odak,0)/Math.max(wdArr2.filter(d=>d.odak>0).length,1) < 5)
+          ruleLines.push(tx('⚠ Kural: Uyku < 6 saat + Odak < 5 → Akademik düşüşün sebebi konu eksiği değil, fizyolojik yorgunluk.'));
+
+        if (ruleLines.length>0) {
+          doc.setFont(PF,'bold'); doc.setFontSize(7); doc.setTextColor(180,50,50);
+          ruleLines.forEach(rl=>{
+            Y = pdfCheck(doc, Y, 12);
+            doc.setFillColor(255,230,230); doc.roundedRect(16,Y,178,11,1.5,1.5,'F');
+            const ls=doc.splitTextToSize(rl,170);
+            doc.text(ls, 20, Y+5); Y+=ls.length*5+4;
+          });
+        }
+      } else {
+        doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(150,140,180);
+        doc.text(tx('Uyku-odak karşılaştırması için yeterli veri yok.'), 16, Y); Y+=8;
+      }
+
+      // ── KATEGORİK DAĞILIM: Duygu durumuna göre ders verimi ─────
+      const moodSubMap = {};
+      psychAcadDays.forEach(d=>{
+        if (!d.mood || !d.subByMood) return;
+        if (!moodSubMap[d.mood]) moodSubMap[d.mood]={};
+        Object.entries(d.subByMood).forEach(([sub,q])=>{
+          if (!moodSubMap[d.mood][sub]) moodSubMap[d.mood][sub]=0;
+          moodSubMap[d.mood][sub]+=q;
+        });
+      });
+      const moodEntries3 = Object.entries(moodSubMap).filter(([m,subs])=>Object.values(subs).some(v=>v>0));
+      if (moodEntries3.length>0) {
+        Y = pdfCheck(doc, Y, 12);
+        doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(69,183,209);
+        doc.text(tx('Duygu Durumu – Ders Verimi Dağılımı'), 16, Y); Y+=5;
+        const moodLabelsPDF = { excited:'Heyecanlı', good:'İyiyim', focused:'Odaklı', ok:'İdare Eder', tired:'Yorgunum', anxious:'Kaygılı', sad:'Mutsuzum' };
+        const moodColorsPDF = { excited:[249,202,36], good:[69,183,209], focused:[108,99,255], ok:[162,155,254], tired:[253,121,168], anxious:[255,107,107], sad:[119,140,163] };
+        moodEntries3.forEach(([mood, subs])=>{
+          const topSub = Object.entries(subs).sort((a,b)=>b[1]-a[1])[0];
+          if (!topSub) return;
+          Y = pdfCheck(doc, Y, 8);
+          const mc = moodColorsPDF[mood]||[150,150,150];
+          doc.setFillColor(mc[0],mc[1],mc[2],0.15);
+          doc.roundedRect(16,Y,178,8,1.5,1.5,'F');
+          doc.setFillColor(mc[0],mc[1],mc[2]); doc.roundedRect(16,Y,3,8,1,1,'F');
+          doc.setFont(PF,'bold'); doc.setFontSize(7); doc.setTextColor(mc[0]>180?60:200, 60, 60);
+          doc.setTextColor(40,40,80);
+          doc.text(tx(moodLabelsPDF[mood]||mood)+' →', 21, Y+5.5);
+          doc.setFont(PF,'normal');
+          doc.text(tx('En çok: ')+tx(topSub[0])+' ('+topSub[1]+' soru)', 55, Y+5.5);
+          const allSubs = Object.entries(subs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([s,q])=>tx(s.substring(0,4))+'('+q+')').join(', ');
+          doc.setFontSize(6); doc.setTextColor(120,120,150);
+          doc.text(allSubs, 120, Y+5.5);
+          Y+=9;
+        });
+      }
+
+      // ── GENEL KOÇ DEĞERLENDİRMESİ ───────────────────────────────
+      Y = pdfCheck(doc, Y, 10);
+      doc.setFont(PF,'bold'); doc.setFontSize(8); doc.setTextColor(72,200,130);
+      doc.text(tx('Koç Değerlendirmesi'), 16, Y); Y+=5;
+
+      const avgKaygiAll2 = wdArr2.filter(d=>d.kaygi>0).reduce((a,d)=>a+d.kaygi,0)/Math.max(wdArr2.filter(d=>d.kaygi>0).length,1);
+      const totalQAll    = psychAcadDays.reduce((a,d)=>a+d.q,0);
+      const genel = [];
+      if (avgKaygiAll2 >= 7 && totalQAll > 0) {
+        genel.push(tx('Öğrenci akademik olarak aktif ve üretken olmasına rağmen kaygı seviyesi yüksek seyrediyor. Bu "Mükemmeliyetçilik Kaygısı" örüntüsüne işaret edebilir — başarı sağlansa bile kaygı azalmıyor. Koçun odaklanması gereken alan ders programı değil, başarı algısı yönetimidir.'));
+      }
+      const totalDur2 = psychAcadDays.reduce((a,d)=>a+d.dur,0);
+      if (totalQAll > 0) genel.push(tx('Dönem toplamı: '+totalQAll+' soru, '+totalDur2+' dk çalışma, '+psychAcadDays.filter(d=>d.q>0).length+' aktif gün.'));
+      genel.forEach(line=>{
+        Y = pdfCheck(doc, Y, 14);
+        doc.setFillColor(230,255,240); doc.roundedRect(16,Y,178,13,2,2,'F');
+        doc.setFillColor(72,200,130); doc.roundedRect(16,Y,3,13,1,1,'F');
+        doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(20,80,50);
+        const ls = doc.splitTextToSize(line, 168);
+        doc.text(ls, 22, Y+5); Y += Math.max(ls.length*5+4, 15);
       });
     }
 
@@ -3569,10 +3867,10 @@ function pdfHeader(doc, title, subtitle, dateStr) {
     // tarih aralığı = dateStr
     line3 = tx(dateStr);
   } else {
-    // Haftalık: "9 Mart - 15 Mart 2026 Haftalık Rapor" → tarih aralığını çıkar
+    // Haftalık: "16 Mart – 22 Mart 2026 Haftalık Raporu" → tarih aralığını çıkar
     line2 = 'HAFTALIK RAPOR';
-    const dateRangePart = afterDash.replace(/Haftal\u0131k\s+Rapor/,'').trim();
-    // "9 Mart - 15 Mart 2026" → "9 - 15 Mart" gibi kısa tut
+    const dateRangePart = afterDash.replace(/Haftal\u0131k.*$/,'').trim();
+    // Yıl ve "Raporu" kısmını kaldır, sadece tarih aralığını bırak
     const yearRemoved = dateRangePart.replace(/\s*\d{4}\s*$/,'').trim();
     line3 = yearRemoved;
   }
