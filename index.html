@@ -1015,8 +1015,13 @@
 <div id="topicPickerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:flex-end;justify-content:center">
   <div id="topicPickerBox" style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:540px;max-height:80vh;display:flex;flex-direction:column;animation:slideUp .2s ease">
     <div style="padding:16px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <div style="font-weight:800;font-size:1rem" id="topicPickerTitle">Konu Seç</div>
+      <div style="font-weight:800;font-size:1rem" id="topicPickerTitle">Seç</div>
       <button onclick="closeTopicPicker()" style="background:none;border:none;color:var(--text2);font-size:1.4rem;cursor:pointer;padding:4px">✕</button>
+    </div>
+    <!-- Arama kutusu -->
+    <div style="padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <input type="text" id="topicPickerSearch" placeholder="Ara..." oninput="filterTopicPicker(this.value)"
+        style="width:100%;padding:8px 12px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box">
     </div>
     <div id="topicPickerList" style="overflow-y:auto;padding:8px 0;flex:1"></div>
   </div>
@@ -1280,7 +1285,12 @@ auth.onAuthStateChanged(async (user) => {
       }
 
       renderSidebar();
-      showPage('dashboard');
+      // Sayfa yenilenince son sayfaya dön (URL'den oku)
+      const _urlPage = new URLSearchParams(window.location.search).get('p');
+      const _safePages = ['dashboard','students','student-detail','tasks-teacher','messages','notifs',
+        'daily-entry','my-analysis','kazanimlar','my-tasks','wellness','lgs-dagilim','psych-report'];
+      const _startPage = _safePages.includes(_urlPage) ? _urlPage : 'dashboard';
+      showPage(_startPage);
       startNotifListener();
 
       // Öğrenci sınıf seçmemişse sor
@@ -2119,6 +2129,15 @@ function toggleDenemeAcc(id) {
   if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
 }
 
+function toggleDersAcc(id) {
+  const el = document.getElementById(id);
+  const arrow = document.getElementById(id+'_arrow');
+  if (!el) return;
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
 function openStudentAnalysis(name) {
   // İki seçenek sun: Bireysel Analiz veya Psikolojik Takip
   selectedStudentName = name;
@@ -2597,17 +2616,45 @@ function studentDetailAnalysis() {
       <div class="card-title">📚 Ders Bazlı Detay — ${periodLabel}</div>
       ${filtered.length===0
         ? `<div style="text-align:center;padding:24px;color:var(--text2)">Bu dönemde veri yok</div>`
-        : subStats.map(s=>`
-        <div style="padding:10px 0;border-bottom:1px solid var(--border)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-            <span style="font-weight:700;font-size:0.85rem;color:var(--${s.cls})">${s.icon} ${s.name}</span>
-            <span style="font-size:0.75rem;color:var(--text2)">${s.dur}dk • ${s.q} soru • Net <b style="color:var(--accent3)">${s.net.toFixed(1)}</b></span>
-          </div>
-          <div class="bar-bg" style="height:6px">
-            <div class="bar-fill bg-${s.cls}" style="width:${Math.round(s.q/maxQ*100)}%"></div>
-          </div>
-          ${s.q>0?`<div style="font-size:0.7rem;color:var(--text2);margin-top:3px">✅${s.d} doğru &nbsp;❌${s.y} yanlış &nbsp;🎯%${s.pct} isabet</div>`:''}
-        </div>`).join('')}
+        : subStats.map(s=>{
+          const accId = 'dersAcc_'+s.name.replace(/\s/g,'_');
+          const topicEntries = filtered.filter(e=>e.type==='soru'&&e.subject===s.name);
+          const topicMap = {};
+          topicEntries.forEach(e=>{
+            const t = e.topic||'Genel';
+            if(!topicMap[t]) topicMap[t]={q:0,d:0,y:0,dur:0};
+            topicMap[t].q+=(e.questions||0);
+            topicMap[t].d+=(e.correct||0);
+            topicMap[t].y+=(e.wrong||0);
+            topicMap[t].dur+=(e.duration||0);
+          });
+          const topics = Object.entries(topicMap);
+          return `
+          <div style="border-bottom:1px solid var(--border)">
+            <div onclick="toggleDersAcc('${accId}')" style="padding:10px 0;cursor:pointer">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                <span style="font-weight:700;font-size:0.85rem;color:var(--${s.cls})">${s.icon} ${s.name}</span>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:0.72rem;color:var(--text2)">${s.dur}dk • ${s.q} soru • Net <b style="color:var(--accent3)">${s.net.toFixed(1)}</b></span>
+                  <span id="${accId}_arrow" style="color:var(--text2);font-size:0.7rem">▼</span>
+                </div>
+              </div>
+              <div class="bar-bg" style="height:6px">
+                <div class="bar-fill bg-${s.cls}" style="width:${Math.round(s.q/maxQ*100)}%"></div>
+              </div>
+              ${s.q>0?`<div style="font-size:0.7rem;color:var(--text2);margin-top:3px">✅${s.d} doğru &nbsp;❌${s.y} yanlış &nbsp;🎯%${s.pct} isabet</div>`:''}
+            </div>
+            <div id="${accId}" style="display:none;padding-bottom:8px">
+              ${topics.length===0
+                ? `<div style="font-size:0.78rem;color:var(--text2);padding:4px 0 8px">Konu detayı yok</div>`
+                : topics.map(([topic,td])=>`
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface2);border-radius:8px;margin-bottom:4px">
+                    <span style="font-size:0.78rem;font-weight:600">${topic}</span>
+                    <span style="font-size:0.7rem;color:var(--text2)">✅${td.d} ❌${td.y} • Net ${(td.d-td.y/3).toFixed(1)}</span>
+                  </div>`).join('')}
+            </div>
+          </div>`;
+        }).join('')}
     </div>
 
     <!-- Deneme Sınavı Sonuçları -->
@@ -4132,16 +4179,21 @@ function studentDashboard() {
       </div>
     </div>
 
-    <!-- LGS Soru Dağılımı kısayolu -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-      <button onclick="showPage('lgs-dagilim')"
-        style="background:linear-gradient(135deg,#f9ca2422,#fd79a822);border:1.5px solid #f9ca2444;
-               border-radius:14px;padding:16px;text-align:left;cursor:pointer;color:var(--text)">
-        <div style="font-size:1.5rem;margin-bottom:6px">📊</div>
-        <div style="font-weight:800;font-size:0.88rem">LGS Soru Dağılımı</div>
-        <div style="font-size:0.72rem;color:var(--text2);margin-top:3px">Yıllara göre analiz</div>
-      </button>
     </div>
+
+    <!-- LGS Soru Dağılımı -->
+    <button onclick="showPage('lgs-dagilim')"
+      style="width:100%;display:flex;align-items:center;gap:14px;padding:13px 18px;
+             background:linear-gradient(135deg,#f9ca2422,#fd79a818);
+             border:1.5px solid #f9ca2455;border-radius:14px;
+             cursor:pointer;color:var(--text);margin-bottom:14px;text-align:left">
+      <span style="font-size:1.6rem">📊</span>
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:0.92rem">LGS Soru Dağılımı</div>
+        <div style="font-size:0.72rem;color:var(--text2);margin-top:2px">2018-2025 yıllara göre konu analizi</div>
+      </div>
+      <span style="color:var(--text2);font-size:1rem">›</span>
+    </button>
 
     <div class="card">
       <div class="card-title">📊 Son Girişlerim</div>
@@ -5177,7 +5229,22 @@ function newMotivation() {
 function openOptionPicker(targetId, title, options, callback) {
   const modal = document.getElementById('topicPickerModal');
   document.getElementById('topicPickerTitle').textContent = title;
+  // Arama kutusunu temizle
+  const searchEl = document.getElementById('topicPickerSearch');
+  if (searchEl) searchEl.value = '';
   const currentVal = document.getElementById(targetId)?.value || '';
+  // Seçenekleri data olarak sakla (filtreleme için)
+  modal._options = options;
+  modal._targetId = targetId;
+  modal._callback = callback;
+  _renderPickerOptions(options, currentVal, targetId, callback);
+  modal.style.display = 'flex';
+  modal.onclick = (e) => { if(e.target===modal) closeTopicPicker(); };
+  // Arama kutusuna odaklan (kısa gecikmeyle)
+  setTimeout(()=>{ if(searchEl) searchEl.focus(); }, 200);
+}
+
+function _renderPickerOptions(options, currentVal, targetId, callback) {
   document.getElementById('topicPickerList').innerHTML = options.map(o => `
     <button onclick="selectOption('${targetId}','${o.v.replace(/'/g,"\\'")}','${(o.l||o.v).replace(/'/g,"\\'")}','${callback ? callback.name : ''}')"
       style="width:100%;padding:14px 18px;background:${o.v===currentVal?'rgba(108,99,255,0.1)':'transparent'};
@@ -5186,8 +5253,15 @@ function openOptionPicker(targetId, title, options, callback) {
       <span>${o.l||o.v}</span>
       ${o.v===currentVal ? '<span style="color:var(--accent)">✓</span>' : '<span style="color:var(--text2);font-size:0.8rem">›</span>'}
     </button>`).join('');
-  modal.style.display = 'flex';
-  modal.onclick = (e) => { if(e.target===modal) closeTopicPicker(); };
+}
+
+function filterTopicPicker(query) {
+  const modal = document.getElementById('topicPickerModal');
+  if (!modal._options) return;
+  const q = query.toLowerCase().trim();
+  const filtered = q ? modal._options.filter(o=>(o.l||o.v).toLowerCase().includes(q)) : modal._options;
+  const currentVal = document.getElementById(modal._targetId)?.value || '';
+  _renderPickerOptions(filtered, currentVal, modal._targetId, modal._callback);
 }
 
 function selectOption(targetId, value, label, callbackName) {
@@ -5238,7 +5312,7 @@ function _getW() {
 
 function _syncW(myUid, storageKey, data) {
   localStorage.setItem(storageKey, JSON.stringify(data));
-  if (myUid !== 'local' && window.db) {
+  if (myUid !== 'local' && db) {
     db.collection('wellness').doc(myUid).set(data)
       .catch(e => console.log('Wellness sync:', e.message));
   }
@@ -5295,7 +5369,7 @@ function saveWellnessAll(btn) {
   // 3 gün üst üste olumsuz kontrolü
   checkConsecutiveNegativeMoods(myUid, data);
 
-  if (myUid !== 'local' && window.db) {
+  if (myUid !== 'local' && db) {
     db.collection('wellness').doc(myUid).set(data)
       .then(() => {
         showToast('✅','Kaydedildi!');
@@ -5310,7 +5384,7 @@ function saveWellnessAll(btn) {
 
 // Koça bildirim gönder
 async function sendWellnessNotification(studentUid, text, type) {
-  if (!window.db || !studentUid) return;
+  if (!db || !studentUid) return;
   try {
     // Öğrencinin teacherId'sini bul
     const teacherId = (window.currentUserData||{}).teacherId;
@@ -5377,7 +5451,7 @@ function _updateWellnessButtons(field, value, activeBtn) {
 async function getWellnessData(uid) {
   if (!uid || uid === 'local') return {};
   try {
-    if (window.db) {
+    if (db) {
       const snap = await db.collection('wellness').doc(uid).get();
       if (snap.exists) {
         const fresh = snap.data();
@@ -5393,7 +5467,7 @@ async function getWellnessData(uid) {
 
 async function loadWellnessFromFirestore() {
   const myUid = (window.currentUserData||{}).uid;
-  if (!myUid || !window.db) return;
+  if (!myUid || !db) return;
   try {
     const snap = await db.collection('wellness').doc(myUid).get();
     if (snap.exists) localStorage.setItem('wellness_'+myUid, JSON.stringify(snap.data()));
