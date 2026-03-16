@@ -5882,6 +5882,7 @@ function applyEditTopic() {
   if (lbl) lbl.textContent = val;
 }
 
+function openTopicPicker(target) {
   const sub = document.getElementById(target==='entry'?'entrySubject':'taskSubject')?.value || '';
   const type = document.getElementById(target==='entry'?'entryType':'taskType')?.value || '';
   const topics = kazanimlar[sub] || [];
