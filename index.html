@@ -5014,7 +5014,7 @@ function wellnessPage() {
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Enerji Seviyesi (1-10)</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
         <input type="range" min="1" max="10" value="${today.enerji||5}"
-          oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('enerji',this.value)"
+          id="wellnessEnerji" oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('enerji',this.value)"
           style="flex:1;accent-color:var(--accent)">
         <span style="font-weight:900;font-size:1.1rem;color:var(--accent);min-width:24px;text-align:center">${today.enerji||5}</span>
       </div>
@@ -5052,7 +5052,7 @@ function wellnessPage() {
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Odaklanma Puanı (1-10)</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
         <input type="range" min="1" max="10" value="${today.odak||5}"
-          oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('odak',this.value)"
+          id="wellnessOdak" oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('odak',this.value)"
           style="flex:1;accent-color:#45b7d1">
         <span style="font-weight:900;font-size:1.1rem;color:#45b7d1;min-width:24px;text-align:center">${today.odak||5}</span>
       </div>
@@ -5113,7 +5113,7 @@ function wellnessPage() {
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Kaygı Skoru (1-10)</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
         <input type="range" min="1" max="10" value="${today.kaygi||3}"
-          oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('kaygi',this.value)"
+          id="wellnessKaygi" oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('kaygi',this.value)"
           style="flex:1;accent-color:#ff6b6b">
         <span style="font-weight:900;font-size:1.1rem;color:#ff6b6b;min-width:24px;text-align:center">${today.kaygi||3}</span>
       </div>
@@ -5228,136 +5228,111 @@ function updateTaskUnits() {
   if (lbl) lbl.textContent = '— Konu seç —';
 }
 
-function saveWellnessAll(btn) {
+function _getW() {
   const myUid = (window.currentUserData||{}).uid || 'local';
   const storageKey = 'wellness_' + myUid;
   let data = {};
   try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
-  const todayKey = new Date().toISOString().split('T')[0];
-  if (!data.days) data.days = {};
-  if (!data.days[todayKey]) data.days[todayKey] = {};
+  return { myUid, storageKey, data };
+}
 
-  // Tüm form alanlarını oku
-  const fields = {
-    kelime: document.getElementById('wellnessKelime')?.value,
-    enerji: document.querySelector('input[oninput*="enerji"]')?.value,
-    odak: document.querySelector('input[oninput*="odak"]')?.value,
-    kaygi: document.querySelector('input[oninput*="kaygi"]')?.value,
-    gurur: document.getElementById('wellnessGurur')?.value,
-    uyku: document.getElementById('wellnessUyku')?.value,
-    ekran: document.getElementById('wellnessEkran')?.value,
-    negatif: document.getElementById('wellnessNegatif')?.value,
-    pozitif: document.getElementById('wellnessPozitif')?.value,
-    not: document.getElementById('wellnessNot')?.value,
-  };
-  // Hedef alanlar (gün bazlı değil)
-  const hedef = document.getElementById('wellnessHedefPuan')?.value;
-  const hedefOkul = document.getElementById('wellnessHedefOkul')?.value;
-  if (hedef !== undefined) data.hedef = hedef;
-  if (hedefOkul !== undefined) data.hedefOkul = hedefOkul;
-
-  Object.entries(fields).forEach(([k,v]) => { if(v !== undefined && v !== null) data.days[todayKey][k] = v; });
+function _syncW(myUid, storageKey, data) {
   localStorage.setItem(storageKey, JSON.stringify(data));
-
   if (myUid !== 'local' && window.db) {
-    db.collection('wellness').doc(myUid).set(data).then(()=>{
-      showToast('✅','Kaydedildi!');
-      if(btn) { btn.textContent='✅ Kaydedildi'; setTimeout(()=>{ btn.textContent='✅ Bugünü Kaydet'; },2000); }
-    }).catch(()=>{
-      showToast('❌','Kaydetme hatası');
-    });
-  } else {
-    showToast('✅','Kaydedildi!');
-    if(btn) { btn.textContent='✅ Kaydedildi'; setTimeout(()=>{ btn.textContent='✅ Bugünü Kaydet'; },2000); }
+    db.collection('wellness').doc(myUid).set(data)
+      .catch(e => console.log('Wellness sync:', e.message));
   }
 }
 
 function saveWellnessField(field, value) {
-  const myUid = (window.currentUserData||{}).uid || 'local';
-  const storageKey = 'wellness_' + myUid;
-  let data = {};
-  try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
+  const { myUid, storageKey, data } = _getW();
   data[field] = value;
-  localStorage.setItem(storageKey, JSON.stringify(data));
-  if (myUid !== 'local' && window.db) {
-    const upd = {}; upd[field] = value;
-    db.collection('wellness').doc(myUid).update(upd).catch(()=>{
-      // Belge yoksa oluştur
-      db.collection('wellness').doc(myUid).set(data).catch(()=>{});
-    });
-  }
+  _syncW(myUid, storageKey, data);
 }
 
 function saveWellnessDay(field, value, btn) {
-  const myUid = (window.currentUserData||{}).uid || 'local';
-  const storageKey = 'wellness_' + myUid;
-  let data = {};
-  try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
+  const { myUid, storageKey, data } = _getW();
   const todayKey = new Date().toISOString().split('T')[0];
   if (!data.days) data.days = {};
   if (!data.days[todayKey]) data.days[todayKey] = {};
   data.days[todayKey][field] = value;
-  localStorage.setItem(storageKey, JSON.stringify(data));
-  // Firestore'a kaydet - dot notation ile field güncelle
-  if (myUid !== 'local' && window.db) {
-    const upd = {};
-    upd[`days.${todayKey}.${field}`] = value;
-    db.collection('wellness').doc(myUid).update(upd).catch(()=>{
-      // Belge yoksa tüm data ile oluştur
-      db.collection('wellness').doc(myUid).set(data).catch(()=>{});
-    });
-  }
-  // Sayfa başa ATMA — sadece buton stilini güncelle
+  _syncW(myUid, storageKey, data);
   if (btn && ['mood','uykuKalite','su'].includes(field)) {
     _updateWellnessButtons(field, value, btn);
   }
 }
 
+function saveWellnessAll(btn) {
+  const { myUid, storageKey, data } = _getW();
+  const todayKey = new Date().toISOString().split('T')[0];
+  if (!data.days) data.days = {};
+  if (!data.days[todayKey]) data.days[todayKey] = {};
+
+  const hedef     = document.getElementById('wellnessHedefPuan')?.value;
+  const hedefOkul = document.getElementById('wellnessHedefOkul')?.value;
+  if (hedef)     data.hedef = hedef;
+  if (hedefOkul) data.hedefOkul = hedefOkul;
+
+  const ids = ['wellnessKelime','wellnessEnerji','wellnessOdak','wellnessKaygi',
+               'wellnessGurur','wellnessUyku','wellnessEkran','wellnessNegatif',
+               'wellnessPozitif','wellnessNot','zorDers'];
+  const keys = ['kelime','enerji','odak','kaygi','gurur','uyku','ekran','negatif','pozitif','not','zorDers'];
+  ids.forEach((id, i) => {
+    const v = document.getElementById(id)?.value;
+    if (v !== undefined && v !== null && v !== '') data.days[todayKey][keys[i]] = v;
+  });
+
+  localStorage.setItem(storageKey, JSON.stringify(data));
+  if (myUid !== 'local' && window.db) {
+    db.collection('wellness').doc(myUid).set(data)
+      .then(() => {
+        showToast('✅','Kaydedildi!');
+        if (btn) { btn.textContent='✅ Kaydedildi'; setTimeout(()=>{ btn.textContent='✅ Bugünü Kaydet'; },2000); }
+      })
+      .catch(e => { showToast('❌','Hata: '+e.message); });
+  } else {
+    showToast('✅','Kaydedildi (çevrimdışı)');
+    if (btn) { btn.textContent='✅ Kaydedildi'; setTimeout(()=>{ btn.textContent='✅ Bugünü Kaydet'; },2000); }
+  }
+}
+
 function _updateWellnessButtons(field, value, activeBtn) {
-  // Aynı grubtaki butonları bul ve stillerini güncelle
   const parent = activeBtn.parentElement;
   if (!parent) return;
-  const allBtns = parent.querySelectorAll('button');
   const moodColors = { excited:'#f9ca24', good:'#45b7d1', focused:'#6c63ff', ok:'#a29bfe', tired:'#fd79a8', anxious:'#ff6b6b', sad:'#778ca3' };
-  allBtns.forEach(b => {
-    const val = b.getAttribute('onclick')?.match(/'([^']+)'\s*,\s*this/)?.[1];
+  parent.querySelectorAll('button').forEach(b => {
     const isActive = b === activeBtn;
-    const col = field === 'mood' ? (moodColors[value] || 'var(--accent)') : 'var(--accent)';
+    const col = field === 'mood' ? (moodColors[value]||'var(--accent)') : 'var(--accent)';
     b.style.borderColor = isActive ? col : 'var(--border)';
-    b.style.background = isActive ? col + '22' : 'transparent';
-    if (b.querySelector('span:last-child')) {
-      b.querySelector('span:last-child').style.color = isActive ? col : 'var(--text2)';
-    }
+    b.style.background  = isActive ? col+'22' : 'transparent';
+    const lbl = b.querySelector('span:last-child');
+    if (lbl) lbl.style.color = isActive ? col : 'var(--text2)';
   });
 }
 
-// Wellness verilerini Firestore'dan oku (öğretmen tarafı)
 async function getWellnessData(uid) {
-  // Önce localStorage'a bak
+  if (!uid || uid === 'local') return {};
   try {
-    const local = JSON.parse(localStorage.getItem('wellness_' + uid)||'{}');
-    // Firestore'dan taze veriyi al
-    if (uid && uid !== 'local' && window.db) {
+    if (window.db) {
       const snap = await db.collection('wellness').doc(uid).get();
       if (snap.exists) {
         const fresh = snap.data();
-        localStorage.setItem('wellness_' + uid, JSON.stringify(fresh));
+        localStorage.setItem('wellness_'+uid, JSON.stringify(fresh));
         return fresh;
       }
     }
-    return local;
-  } catch(e) { return {}; }
+    return JSON.parse(localStorage.getItem('wellness_'+uid)||'{}');
+  } catch(e) {
+    return JSON.parse(localStorage.getItem('wellness_'+uid)||'{}');
+  }
 }
 
-// Öğrenci girişinde wellness verisini Firestore'dan çek
 async function loadWellnessFromFirestore() {
   const myUid = (window.currentUserData||{}).uid;
   if (!myUid || !window.db) return;
   try {
     const snap = await db.collection('wellness').doc(myUid).get();
-    if (snap.exists) {
-      localStorage.setItem('wellness_' + myUid, JSON.stringify(snap.data()));
-    }
+    if (snap.exists) localStorage.setItem('wellness_'+myUid, JSON.stringify(snap.data()));
   } catch(e) {}
 }
 
