@@ -2631,7 +2631,6 @@ async function psychReportPage() {
     ` : `
       ${alertHtml}
       ${hedefHtml}
-      ${heatMapHtml}
 
       <div class="grid-4" style="margin-bottom:14px">
         <div class="stat-card"><div class="stat-label">⚡ Ort. Enerji</div><div class="stat-value" style="color:#f9ca24">${avg('enerji')}/10</div></div>
@@ -2688,15 +2687,21 @@ async function exportPsychPDF(sName) {
   const period = window._psychPeriod || 'weekly';
   const now = new Date();
 
-  // Dönem filtresi
-  let startKey, periodLabel;
+  // Dönem filtresi + başlık
+  let startKey, periodLabel, periodTitle;
   if (period === 'weekly') {
     const mon = new Date(now); mon.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
     startKey = mon.toISOString().split('T')[0];
+    const endDate = new Date(mon); endDate.setDate(mon.getDate()+6);
+    const s = mon.toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
+    const e = endDate.toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'});
     periodLabel = 'Haftalık';
+    periodTitle = s + ' – ' + e + ' Haftalık Raporu';
   } else {
     startKey = now.toISOString().split('T')[0].substring(0,7)+'-01';
+    const monthName = now.toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
     periodLabel = 'Aylık';
+    periodTitle = monthName + ' Aylık Raporu';
   }
   const sortedDays = Object.keys(days).filter(k=>k>=startKey).sort().reverse();
 
@@ -2706,10 +2711,9 @@ async function exportPsychPDF(sName) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'p', unit:'mm', format:'a4' });
   const PF = registerFontIfAvailable(doc);
-
   const dateStr = now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
-  const title = tx(sName) + ' \u2014 Psikolojik Takip Raporu';
-  let Y = pdfHeader(doc, title, tx(periodLabel + ' Psikolojik Takip Raporu'), tx(dateStr));
+
+  let Y = pdfHeader(doc, tx(sName)+' \u2014 Psikolojik Takip', tx(periodTitle), tx(dateStr));
 
   // Hedefler
   if (data.hedef || data.hedefOkul) {
@@ -2720,15 +2724,15 @@ async function exportPsychPDF(sName) {
   }
 
   if (sortedDays.length > 0) {
-    // İstatistikler
     const avg = (field) => {
       const vals = sortedDays.map(k=>parseFloat(days[k]?.[field])||0).filter(v=>v>0);
       return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : '-';
     };
+
+    // İstatistik kutuları
     Y = pdfSecHeader(doc, tx('ÖZET İSTATİSTİKLER'), Y, 108, 99, 255);
-    const statBoxes = [[tx('Ort. Enerji'),avg('enerji')+'/10',[249,202,36]],[tx('Ort. Odak'),avg('odak')+'/10',[69,183,209]],[tx('Ort. Kaygı'),avg('kaygi')+'/10',[255,107,107]],[tx('Ort. Uyku'),avg('uyku')+'sa',[162,155,254]]];
-    statBoxes.forEach((b,i)=>{
-      const bx = 16+i*46;
+    [[tx('Ort. Enerji'),avg('enerji')+'/10',[249,202,36]],[tx('Ort. Odak'),avg('odak')+'/10',[69,183,209]],[tx('Ort. Kaygı'),avg('kaygi')+'/10',[255,107,107]],[tx('Ort. Uyku'),avg('uyku')+'sa',[162,155,254]]].forEach((b,i)=>{
+      const bx=16+i*46;
       doc.setFillColor(b[2][0],b[2][1],b[2][2]); doc.roundedRect(bx,Y,40,16,2,2,'F');
       doc.setFont(PF,'bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
       doc.text(b[1], bx+20, Y+9, {align:'center'});
@@ -2737,65 +2741,97 @@ async function exportPsychPDF(sName) {
     });
     Y += 22;
 
-    // Psikolojik ısı haritası
-    Y = pdfCheck(doc, Y, 30);
+    // Trend grafikleri — tüm dönem günleri kronolojik
+    const trendKeys = sortedDays.slice().reverse();
+    Y = pdfCheck(doc, Y, 50);
+    Y = pdfSecHeader(doc, tx('TREND GRAFİKLERİ'), Y, 108, 99, 255);
+    if (trendKeys.length >= 2) {
+      const labels = trendKeys.map(k=>new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}));
+      const enerjis = trendKeys.map(k=>parseFloat(days[k]?.enerji)||0);
+      const kaygis  = trendKeys.map(k=>parseFloat(days[k]?.kaygi)||0);
+      const uykus   = trendKeys.map(k=>parseFloat(days[k]?.uyku)||0);
+      if(enerjis.some(v=>v>0)) { Y=pdfBarChart(doc,enerjis,labels,Y,32,enerjis.map(()=>[249,202,36]),tx('Enerji Seviyesi (1-10)')); Y+=4; }
+      if(kaygis.some(v=>v>0))  { Y=pdfBarChart(doc,kaygis,labels,Y,32,kaygis.map(()=>[255,107,107]),tx('Kaygı Seviyesi (1-10)')); Y+=4; }
+      if(uykus.some(v=>v>0))   { Y=pdfBarChart(doc,uykus,labels,Y,32,uykus.map(()=>[162,155,254]),tx('Uyku Süresi (saat)')); Y+=4; }
+    } else {
+      doc.setFont(PF,'normal'); doc.setFontSize(9); doc.setTextColor(120,120,140);
+      doc.text(tx('Grafik için yeterli veri yok.'), 16, Y); Y+=10;
+    }
+
+    // Isı haritası — son 30 gün
+    Y = pdfCheck(doc, Y, 55);
     Y = pdfSecHeader(doc, tx('PSİKOLOJİK ISI HARİTASI — SON 30 GÜN'), Y, 108, 99, 255);
-    doc.setFont(PF,'normal'); doc.setFontSize(7); doc.setTextColor(80,80,100);
-    const cellW = 15.5, cellH = 10, cols = 10;
-    // Tüm 30 günü göster (boş günler gri)
-    const last30Keys = Array.from({length:30},(_,i)=>{ const d=new Date(now); d.setDate(now.getDate()-29+i); return d.toISOString().split('T')[0]; });
-    Y = pdfCheck(doc, Y, last30Keys.length/cols*(cellH+1)+20);
-    last30Keys.forEach((k,i)=>{
-      const col = i % cols, row = Math.floor(i/cols);
-      const x = 16 + col * (cellW+1), y = Y + row * (cellH+1);
-      const d = days[k];
-      const mc = d?.mood ? moodColors[d.mood] || [200,200,200] : [230,230,235];
-      doc.setFillColor(mc[0],mc[1],mc[2]);
-      doc.roundedRect(x,y,cellW,cellH,1.5,1.5,'F');
-      doc.setTextColor(d?.mood?255:160, d?.mood?255:160, d?.mood?255:160);
-      doc.setFontSize(5);
-      const dLabel = new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
-      doc.text(tx(dLabel), x+cellW/2, y+4, {align:'center'});
-      if(d?.mood) doc.text(tx(moodLabels[d.mood]?.substring(0,6)||''), x+cellW/2, y+8.5, {align:'center'});
+    const cellW=15.5, cellH=10, cols=10;
+    const last30 = Array.from({length:30},(_,i)=>{ const d=new Date(now); d.setDate(now.getDate()-29+i); return d.toISOString().split('T')[0]; });
+    last30.forEach((k,i)=>{
+      const col=i%cols, row=Math.floor(i/cols);
+      const x=16+col*(cellW+1), y=Y+row*(cellH+1);
+      const d=days[k];
+      const mc=d?.mood?moodColors[d.mood]||[200,200,200]:[230,230,235];
+      doc.setFillColor(mc[0],mc[1],mc[2]); doc.roundedRect(x,y,cellW,cellH,1.5,1.5,'F');
+      doc.setTextColor(d?.mood?255:160,d?.mood?255:160,d?.mood?255:160); doc.setFontSize(5);
+      doc.text(tx(new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'})), x+cellW/2, y+4, {align:'center'});
+      if(d?.mood) doc.text(tx((moodLabels[d.mood]||'').substring(0,6)), x+cellW/2, y+8.5, {align:'center'});
     });
-    Y += Math.ceil(30/cols) * (cellH+1) + 4;
-    // Renk açıklamaları (legend)
-    doc.setFontSize(6.5); doc.setTextColor(60,60,80);
-    const legendItems = Object.entries(moodColors);
-    legendItems.forEach(([mood,col],i)=>{
-      const lx = 16 + i*24;
-      doc.setFillColor(col[0],col[1],col[2]);
-      doc.roundedRect(lx,Y,6,4,1,1,'F');
-      doc.setTextColor(60,60,80);
+    Y += Math.ceil(30/cols)*(cellH+1)+4;
+    doc.setFontSize(6); doc.setTextColor(60,60,80);
+    Object.entries(moodColors).forEach(([mood,col],i)=>{
+      const lx=16+i*24;
+      doc.setFillColor(col[0],col[1],col[2]); doc.roundedRect(lx,Y,6,4,1,1,'F');
       doc.text(tx(moodLabels[mood]||mood), lx+7, Y+3.5);
     });
     Y += 10;
 
-    // Trend grafikleri — Enerji, Kaygı, Uyku
-    Y = pdfCheck(doc, Y, 50);
-    Y = pdfSecHeader(doc, tx('TREND GRAFİKLERİ'), Y, 108, 99, 255);
-    const trendKeys = sortedDays.slice(0,7).reverse();
-    if (trendKeys.length >= 2) {
-      const enerjis = trendKeys.map(k=>parseFloat(days[k]?.enerji)||0);
-      const kaygis = trendKeys.map(k=>parseFloat(days[k]?.kaygi)||0);
-      const uykus = trendKeys.map(k=>parseFloat(days[k]?.uyku)||0);
-      const labels = trendKeys.map(k=>new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}));
-      if(enerjis.some(v=>v>0)) { Y=pdfBarChart(doc,enerjis,labels,Y,32,enerjis.map(()=>[249,202,36]),tx('Enerji Seviyesi (1-10)')); Y+=4; }
-      if(kaygis.some(v=>v>0)) { Y=pdfBarChart(doc,kaygis,labels,Y,32,kaygis.map(()=>[255,107,107]),tx('Kaygı Seviyesi (1-10)')); Y+=4; }
-      if(uykus.some(v=>v>0)) { Y=pdfBarChart(doc,uykus,labels,Y,32,uykus.map(()=>[162,155,254]),tx('Uyku Süresi (saat)')); Y+=4; }
+    // Psikolojik değerlendirme
+    const wArr = sortedDays.map(k=>({
+      kaygi:parseFloat(days[k]?.kaygi)||0, uyku:parseFloat(days[k]?.uyku)||0,
+      enerji:parseFloat(days[k]?.enerji)||0
+    })).filter(d=>d.kaygi>0||d.uyku>0);
+    const korLines = [];
+    if (wArr.length >= 2) {
+      const avgK=(wArr.filter(d=>d.kaygi>0).reduce((a,d)=>a+d.kaygi,0)/Math.max(wArr.filter(d=>d.kaygi>0).length,1)).toFixed(1);
+      const avgU=(wArr.filter(d=>d.uyku>0).reduce((a,d)=>a+d.uyku,0)/Math.max(wArr.filter(d=>d.uyku>0).length,1)).toFixed(1);
+      const avgE=(wArr.filter(d=>d.enerji>0).reduce((a,d)=>a+d.enerji,0)/Math.max(wArr.filter(d=>d.enerji>0).length,1)).toFixed(1);
+      if(parseFloat(avgK)>=7) korLines.push(tx('Kaygı seviyesi bu dönemde yüksek seyretti (ort. '+avgK+'/10). Sınav öncesi kaygı yönetimi çalışması önerilebilir.'));
+      else if(parseFloat(avgK)<=3) korLines.push(tx('Kaygı seviyesi bu dönemde oldukça düşük kaldı (ort. '+avgK+'/10). Öğrenci sakin ve rahat bir dönem geçirdi.'));
+      if(parseFloat(avgU)<7) korLines.push(tx('Ortalama uyku süresi '+avgU+' saat — yetersiz uyku akademik performansı olumsuz etkileyebilir. Uyku düzeni gözden geçirilmeli.'));
+      else korLines.push(tx('Uyku süresi yeterli düzeyde (ort. '+avgU+' saat). Bu, öğrenme kapasitesini destekler.'));
+      if(parseFloat(avgE)>=7) korLines.push(tx('Enerji seviyesi yüksek seyretti (ort. '+avgE+'/10). Bu motivasyon çalışma verimliliğine yansıyabilir.'));
+      else if(parseFloat(avgE)<=4) korLines.push(tx('Enerji seviyesi düşük kaldı (ort. '+avgE+'/10). Motivasyon desteği ve aktivite planlaması önerilebilir.'));
+      const enTrend = sortedDays.slice().reverse().map(k=>parseFloat(days[k]?.enerji)||0).filter(v=>v>0);
+      if(enTrend.length>=3) {
+        const fh=enTrend.slice(0,Math.floor(enTrend.length/2)), sh=enTrend.slice(Math.floor(enTrend.length/2));
+        const fa=fh.reduce((a,b)=>a+b,0)/fh.length, sa=sh.reduce((a,b)=>a+b,0)/sh.length;
+        if(fa-sa>1) korLines.push(tx('Dönem sonuna doğru enerji düşüşü gözlemlendi. Yorgunluk ve tükenmişlik belirtileri izlenmeli.'));
+        else if(sa-fa>1) korLines.push(tx('Dönem boyunca enerji artışı gözlemlendi. Artan motivasyon akademik çalışmaya yönlendirilebilir.'));
+      }
+    }
+    if (korLines.length > 0) {
+      Y = pdfCheck(doc, Y, 20);
+      Y = pdfSecHeader(doc, tx('PSİKOLOJİK DEĞERLENDİRME'), Y, 108, 99, 255);
+      korLines.forEach(line => {
+        Y = pdfCheck(doc, Y, 18);
+        doc.setFillColor(240,240,255); doc.roundedRect(16,Y,178,14,2,2,'F');
+        doc.setFont(PF,'normal'); doc.setFontSize(8); doc.setTextColor(40,40,80);
+        const ls = doc.splitTextToSize(line, 170);
+        doc.text(ls, 20, Y+5);
+        Y += ls.length*5 + 5;
+      });
     }
 
     // Günlük tablo
     Y = pdfCheck(doc, Y, 14);
     Y = pdfSecHeader(doc, tx('GÜNLÜK VERİLER'), Y, 108, 99, 255);
-    const tH = [tx('Tarih'),tx('Duygu'),tx('Enerji'),tx('Kaygı'),tx('Uyku'),tx('Pozitif/Not')];
-    const tW = [28,32,18,18,18,72];
-    const tR = sortedDays.map(k=>{
-      const d=days[k];
-      const dateL=new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
-      return [tx(dateL),tx(moodLabels[d?.mood]||'-'),d?.enerji||'-',d?.kaygi||'-',(d?.uyku||'-')+'sa',tx((d?.pozitif||d?.gurur||d?.not||'').substring(0,30))];
-    });
-    Y = pdfTable(doc,tH,tW,tR,Y,[108,99,255]);
+    Y = pdfTable(doc,
+      [tx('Tarih'),tx('Duygu'),tx('Enerji'),tx('Kaygı'),tx('Uyku'),tx('Pozitif/Not')],
+      [28,32,18,18,18,72],
+      sortedDays.map(k=>{
+        const d=days[k];
+        return [tx(new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'})),
+          tx(moodLabels[d?.mood]||'-'),d?.enerji||'-',d?.kaygi||'-',(d?.uyku||'-')+'sa',
+          tx((d?.pozitif||d?.gurur||d?.not||'').substring(0,30))];
+      }),
+      Y,[108,99,255]);
 
   } else {
     doc.setFont(PF,'normal'); doc.setFontSize(10); doc.setTextColor(120,120,140);
@@ -2803,8 +2839,7 @@ async function exportPsychPDF(sName) {
   }
 
   pdfFooter(doc, doc.internal.getNumberOfPages(), tx(sName)+' | Psikolojik Takip');
-  const fname = ts(sName.replace(/\s+/g,'_'))+'_Psikolojik_'+periodLabel+'_'+now.toISOString().split('T')[0]+'.pdf';
-  doc.save(fname);
+  doc.save(ts(sName.replace(/\s+/g,'_'))+'_Psikolojik_'+periodLabel+'_'+now.toISOString().split('T')[0]+'.pdf');
   showToast('📄','PDF indiriliyor!');
 }
 
