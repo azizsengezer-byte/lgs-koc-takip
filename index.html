@@ -1983,12 +1983,27 @@ async function deleteTask(taskId, idx) {
 function editTaskModal(idx) {
   const t = tasks[idx];
   if (!t) return;
-  document.getElementById('taskStudent').value = t.student || '';
-  document.getElementById('taskTitle').value = t.title || '';
+  // Hidden input değerleri
+  document.getElementById('taskStudent').value = t.studentName || t.student || '';
   document.getElementById('taskSubject').value = t.subject || subjects[0].name;
+  document.getElementById('taskUnit').value = t.unit || '';
+  document.getElementById('taskType').value = t.type || 'soru';
+  document.getElementById('taskTitle').value = t.title || '';
   document.getElementById('taskDesc').value = t.desc || '';
   document.getElementById('taskDue').value = t.due || '';
-  // Düzenleme modunda kaydet
+  // Buton label'larını güncelle
+  const sLbl = document.getElementById('taskStudentLabel');
+  if (sLbl) sLbl.textContent = t.studentName || t.student || '— Öğrenci seç —';
+  const subLbl = document.getElementById('taskSubjectLabel');
+  if (subLbl) subLbl.textContent = t.subject || subjects[0].name;
+  const unitLbl = document.getElementById('taskUnitLabel');
+  if (unitLbl) unitLbl.textContent = t.unit || '— Konu seç —';
+  const typeLbl = document.getElementById('taskTypeLabel');
+  const typeLabels = {soru:'📝 Soru Çözümü',konu:'📖 Konu Çalışma',ozet:'✏️ Özet Çıkarma',tekrar:'🔁 Tekrar',diger:'📌 Diğer'};
+  if (typeLbl) typeLbl.textContent = typeLabels[t.type]||'📝 Soru Çözümü';
+  // countGroup görünürlüğü
+  const cg = document.getElementById('taskCountGroup');
+  if (cg) cg.style.display = (t.type==='soru') ? 'block' : 'none';
   document.getElementById('taskSaveBtn').onclick = () => saveEditTask(idx);
   document.querySelector('#addTaskModal .modal-title').textContent = '✏️ Görevi Düzenle';
   openModal('addTaskModal');
@@ -6363,17 +6378,15 @@ function populateTaskStudents() {
 }
 
 function updateTaskUnits() {
-  const sub = document.getElementById('taskSubject').value;
-  const type = document.getElementById('taskType').value;
-  const units = kazanimlar[sub] || [];
-  const sel = document.getElementById('taskUnit');
-  const genel = type === 'tekrar' ? `<option value="Genel Tekrar">Genel Tekrar</option>` : '';
-  sel.innerHTML = units.map(u => `<option>${u}</option>`).join('') + genel;
-  updateTaskTitle();
+  // Hidden input — değeri sıfırla, label güncelle
+  const inp = document.getElementById('taskUnit');
+  if (inp) inp.value = '';
+  const lbl = document.getElementById('taskUnitLabel');
+  if (lbl) lbl.textContent = '— Konu seç —';
 }
 
 function updateTaskTitle() {
-  const type = document.getElementById('taskType').value;
+  const type = document.getElementById('taskType')?.value || 'soru';
   const unit = document.getElementById('taskUnit')?.value || '';
   const countGroup = document.getElementById('taskCountGroup');
   const titleEl = document.getElementById('taskTitle');
@@ -6381,10 +6394,10 @@ function updateTaskTitle() {
     soru: 'Soru Çözümü', konu: 'Konu Çalışma',
     ozet: 'Özet Çıkarma', tekrar: 'Tekrar', diger: 'Görev'
   };
-  countGroup.style.display = type === 'soru' ? 'block' : 'none';
-  // Konu listesini türe göre güncelle
+  if (countGroup) countGroup.style.display = type === 'soru' ? 'block' : 'none';
+  // Konu sıfırla (tür değişince)
   updateTaskUnits();
-  if (unit) titleEl.value = `${unit} — ${typeLabels[type]||'Görev'}`;
+  if (unit && titleEl) titleEl.value = `${unit} — ${typeLabels[type]||'Görev'}`;
 }
 
 function openTaskModal() {
