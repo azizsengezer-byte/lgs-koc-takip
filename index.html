@@ -1286,10 +1286,13 @@ auth.onAuthStateChanged(async (user) => {
 
       renderSidebar();
       // Sayfa yenilenince son sayfaya dön (URL'den oku)
-      const _urlPage = new URLSearchParams(window.location.search).get('p');
+      const _urlParams = new URLSearchParams(window.location.search);
+      const _urlPage = _urlParams.get('p');
+      const _urlStudent = _urlParams.get('s');
       const _safePages = ['dashboard','students','student-detail','tasks-teacher','messages','notifs',
         'daily-entry','my-analysis','kazanimlar','my-tasks','wellness','lgs-dagilim','psych-report'];
       const _startPage = _safePages.includes(_urlPage) ? _urlPage : 'dashboard';
+      if (_urlStudent) selectedStudentName = decodeURIComponent(_urlStudent);
       showPage(_startPage);
       startNotifListener();
 
@@ -1545,8 +1548,13 @@ function showPage(id) {
   currentPage = id;
   if (id === 'messages') { clearAllMessageNotifs(); }
   if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
-  // Telefon geri tuşunun uygulama içinde çalışması için
-  history.pushState({ page: id }, '', window.location.pathname + '?p=' + id);
+  // URL'e sayfa + öğrenci adını kaydet (yenileme için)
+  const params = new URLSearchParams();
+  params.set('p', id);
+  if ((id==='psych-report'||id==='student-detail') && selectedStudentName) {
+    params.set('s', encodeURIComponent(selectedStudentName));
+  }
+  history.pushState({ page: id }, '', window.location.pathname + '?' + params.toString());
   renderSidebar();
   const content = document.getElementById('mainContent');
   if(currentRole==='teacher') renderTeacherPage(id, content);
@@ -2317,10 +2325,11 @@ async function psychReportPage() {
     `}`;
 }
 
-function exportPsychPDF(sName) {
+async function exportPsychPDF(sName) {
+  showToast('⏳','PDF hazırlanıyor...');
   const sObj = students.find(s=>s.name===sName) || {};
   const sUid = sObj.uid || '';
-  const data = getWellnessData(sUid || sName);
+  const data = await getWellnessData(sUid || sName);
   const days = data.days || {};
   const sortedDays = Object.keys(days).sort().reverse().slice(0, 14);
 
@@ -2595,7 +2604,8 @@ function studentDetailAnalysis() {
           const hQ = Math.max(Math.round((t.q/maxV)*70),2);
           const hN = maxV>0 ? Math.max(Math.round((t.net/maxV)*70),1) : 0;
           const isToday = t.dk===todayKey;
-          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          const dateLabel = new Date(t.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'short'});
+          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer" onclick="showDayEntries('${t.dk}','${dateLabel}')">
             <div style="font-size:0.6rem;color:var(--text2);line-height:1">${t.q>0?t.q:''}</div>
             <div style="width:100%;display:flex;gap:1px;align-items:flex-end;height:70px">
               <div style="flex:1;height:${hQ}px;background:${isToday?'var(--accent)':'var(--accent)66'};border-radius:3px 3px 0 0;min-height:2px" title="Soru: ${t.q}"></div>
@@ -2603,6 +2613,7 @@ function studentDetailAnalysis() {
             </div>
             <div style="font-size:0.6rem;color:${isToday?'var(--accent)':'var(--text2)'};">${t.label}</div>
           </div>`;
+        }).join('')}
         }).join('')}
       </div>
       <div style="display:flex;gap:16px;justify-content:center;margin-top:6px;font-size:0.72rem;color:var(--text2)">
@@ -2680,9 +2691,9 @@ function studentDetailAnalysis() {
           </div>
         </div>`:''}
 
-        <!-- Accordion liste -->
+        <!-- Accordion liste — son 5 -->
         <div style="display:flex;flex-direction:column;gap:8px">
-          ${denemeSinavlari.map((d,i)=>{
+          ${denemeSinavlari.slice(0,5).map((d,i)=>{
             const dateLabel = d.dk ? new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'}) : '';
             const lgsDetay = d.lgsRes.detail || [];
             const accId = 'deneme_acc_'+i;
@@ -2740,6 +2751,10 @@ function studentDetailAnalysis() {
             </div>`;
           }).join('')}
         </div>
+        ${denemeSinavlari.length > 5 ? `
+        <button onclick="showAllDenemeler()" style="width:100%;padding:11px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-weight:700;font-size:0.85rem;cursor:pointer;margin-top:6px">
+          📋 Tüm Deneme Sonuçlarını Gör (${denemeSinavlari.length} deneme)
+        </button>` : ''}
         `}
     </div>
 
@@ -2771,6 +2786,77 @@ function studentDetailAnalysis() {
       <div style="font-size:0.86rem;line-height:1.75;color:var(--text)">${comment}</div>
     </div>
   `;
+}
+
+function showAllDenemeler() {
+  showPage('all-denemeler');
+}
+
+function allDenemelerPage() {
+  const myUid = (window.currentUserData||{}).uid || '';
+  const myName = (window.currentUserData||{}).name || '';
+  const matchE = e => e.studentName===myName || (myUid && e.userId===myUid);
+  const allE = studyEntries.filter(e=>matchE(e)&&e.type==='deneme');
+
+  // Tüm denemeleri grupla
+  const denMap = {};
+  allE.forEach(e=>{
+    const k = e.examId||(e.dateKey+'_'+e.examTitle);
+    if(!denMap[k]) denMap[k]=[];
+    denMap[k].push(e);
+  });
+  const allDen = Object.entries(denMap)
+    .sort((a,b)=>(b[1][0]?.dateKey||'').localeCompare(a[1][0]?.dateKey||''))
+    .map(([k,dl])=>{
+      const title = dl[0]?.examTitle||dl[0]?.topic||(dl[0]?.dateKey+' Denemesi');
+      const dk = dl[0]?.dateKey||'';
+      const subR = subjects.map(s=>{ const se=dl.find(e=>e.subject===s.name); if(!se) return {name:s.name,d:0,y:0,net:0,q:0}; const d=se.correct||0,y=se.wrong||0; return {name:s.name,d,y,net:Math.round((d-y/3)*100)/100,q:d+y}; });
+      const lgsR = calcLGSScore(subR.map(s=>({...s,avgNet:s.net,count:s.q>0?1:0})));
+      return {title,dk,lgsR,examId:k};
+    });
+
+  // Aylık gruplama
+  const byMonth = {};
+  allDen.forEach(d=>{
+    const mo = d.dk ? d.dk.substring(0,7) : 'bilinmiyor';
+    if(!byMonth[mo]) byMonth[mo]=[];
+    byMonth[mo].push(d);
+  });
+
+  const months = Object.keys(byMonth).sort().reverse();
+
+  return `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+      <button onclick="showPage('my-analysis')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
+      <div class="page-title" style="margin:0">🎯 Tüm Denemeler</div>
+    </div>
+    <div class="page-sub">Tüm deneme geçmişin — ${allDen.length} deneme</div>
+
+    ${allDen.length===0 ? `<div class="card" style="text-align:center;padding:40px;color:var(--text2)">Henüz deneme girilmemiş</div>` :
+      months.map(mo=>{
+        const moLabel = new Date(mo+'-01T12:00:00').toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
+        const moDen = byMonth[mo];
+        return `
+          <div style="margin-bottom:20px">
+            <div style="font-size:0.78rem;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">${moLabel}</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              ${moDen.map(d=>{
+                const dateLabel = d.dk ? new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'}) : '';
+                return `
+                  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;justify-content:space-between;align-items:center">
+                    <div>
+                      <div style="font-weight:700;font-size:0.88rem">${d.title}</div>
+                      <div style="font-size:0.72rem;color:var(--text2);margin-top:2px">${dateLabel}</div>
+                    </div>
+                    <div style="text-align:right">
+                      <div style="font-size:1.3rem;font-weight:900;color:var(--accent)">${d.lgsR.puan}</div>
+                      <div style="font-size:0.6rem;color:var(--text2)">/500</div>
+                    </div>
+                  </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+      }).join('')}`;
 }
 
 function generateWeekOptions() {
@@ -4085,6 +4171,7 @@ function renderStudentPage(id, el) {
   else if(id==='my-tasks') el.innerHTML = studentTasks();
   else if(id==='wellness') el.innerHTML = wellnessPage();
   else if(id==='lgs-dagilim') el.innerHTML = lgsDagilimPage();
+  else if(id==='all-denemeler') el.innerHTML = allDenemelerPage();
   else if(id==='messages') {
     el.innerHTML = messagesPage('student');
   }
@@ -5229,19 +5316,20 @@ function newMotivation() {
 function openOptionPicker(targetId, title, options, callback) {
   const modal = document.getElementById('topicPickerModal');
   document.getElementById('topicPickerTitle').textContent = title;
-  // Arama kutusunu temizle
   const searchEl = document.getElementById('topicPickerSearch');
+  const searchWrap = searchEl?.parentElement;
+  // Sadece öğrenci seçiminde arama göster
+  const showSearch = targetId === 'taskStudent';
+  if (searchWrap) searchWrap.style.display = showSearch ? '' : 'none';
   if (searchEl) searchEl.value = '';
   const currentVal = document.getElementById(targetId)?.value || '';
-  // Seçenekleri data olarak sakla (filtreleme için)
   modal._options = options;
   modal._targetId = targetId;
   modal._callback = callback;
   _renderPickerOptions(options, currentVal, targetId, callback);
   modal.style.display = 'flex';
   modal.onclick = (e) => { if(e.target===modal) closeTopicPicker(); };
-  // Arama kutusuna odaklan (kısa gecikmeyle)
-  setTimeout(()=>{ if(searchEl) searchEl.focus(); }, 200);
+  if (showSearch) setTimeout(()=>{ searchEl?.focus(); }, 200);
 }
 
 function _renderPickerOptions(options, currentVal, targetId, callback) {
