@@ -2195,6 +2195,7 @@ function openStudentAnalysis(name) {
 
 function showPsychReport(sName) {
   selectedStudentName = sName;
+  window._psychPeriod = window._psychPeriod || 'weekly';
   showPage('psych-report');
 }
 
@@ -2204,75 +2205,102 @@ async function psychReportPage() {
   const sUid = sObj.uid || '';
   const data = await getWellnessData(sUid || sName);
   const days = data.days || {};
-  const sortedDays = Object.keys(days).sort().reverse().slice(0, 14); // son 14 gün
+  const period = window._psychPeriod || 'weekly';
+
+  // Dönem filtresi
+  const now = new Date();
+  let startKey;
+  if (period === 'weekly') {
+    const mon = new Date(now); mon.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
+    startKey = mon.toISOString().split('T')[0];
+  } else {
+    startKey = now.toISOString().split('T')[0].substring(0,7)+'-01';
+  }
+  const sortedDays = Object.keys(days).filter(k=>k>=startKey).sort().reverse();
+  const allSortedDays = Object.keys(days).sort().reverse().slice(0,30);
 
   const moodLabels = { excited:'Heyecanlı', good:'İyiyim', focused:'Odaklı', ok:'İdare Eder', tired:'Yorgunum', anxious:'Kaygılı', sad:'Mutsuzum' };
   const moodEmojis = { excited:'🔥', good:'😊', focused:'🎯', ok:'😐', tired:'😔', anxious:'😰', sad:'😢' };
   const moodColors = { excited:'#f9ca24', good:'#45b7d1', focused:'#6c63ff', ok:'#a29bfe', tired:'#fd79a8', anxious:'#ff6b6b', sad:'#778ca3' };
-
-  // Isı haritası analizi
-  const last7Keys = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); return d.toISOString().split('T')[0]; }).reverse();
   const alertMoods = ['tired','anxious','sad'];
-  const alertDays = last7Keys.filter(k => days[k] && alertMoods.includes(days[k].mood)).length;
-  const avgEnerji = sortedDays.length ? (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].enerji)||0),0)/sortedDays.length).toFixed(1) : '-';
-  const avgKaygi = sortedDays.length ? (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].kaygi)||0),0)/sortedDays.length).toFixed(1) : '-';
-  const avgOdak = sortedDays.length ? (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].odak)||0),0)/sortedDays.length).toFixed(1) : '-';
-  const avgUyku = sortedDays.length ? (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].uyku)||0),0)/sortedDays.filter(k=>days[k].uyku).length||0).toFixed(1) : '-';
 
-  // Uyarı
-  const alertHtml = alertDays >= 3 ? `
-    <div style="background:#ff6b6b22;border:1.5px solid #ff6b6b66;border-radius:12px;padding:14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">
-      <span style="font-size:1.4rem">⚠️</span>
-      <div>
-        <div style="font-weight:800;color:#ff6b6b;margin-bottom:4px">Psikolojik Uyarı</div>
-        <div style="font-size:0.82rem;color:var(--text)">${sName.split(' ')[0]} son 7 günde ${alertDays} kez yorgun/kaygılı/mutsuz hissetti. Bir motivasyon görüşmesi planlanması önerilir.</div>
-      </div>
-    </div>` : alertDays >= 2 ? `
-    <div style="background:#f9ca2422;border:1.5px solid #f9ca2466;border-radius:12px;padding:14px;margin-bottom:14px;display:flex;gap:10px">
-      <span style="font-size:1.4rem">💛</span>
-      <div style="font-size:0.82rem;color:var(--text)">${sName.split(' ')[0]} bu hafta ${alertDays} gün düşük duygu durumu bildirdi. Takipte kalınması önerilir.</div>
-    </div>` : `
-    <div style="background:#45b7d122;border:1.5px solid #45b7d144;border-radius:12px;padding:14px;margin-bottom:14px;display:flex;gap:10px">
-      <span style="font-size:1.4rem">✅</span>
-      <div style="font-size:0.82rem;color:var(--text)">${sName.split(' ')[0]}'in psikolojik durumu bu hafta iyi görünüyor.</div>
-    </div>`;
+  // İstatistikler
+  const validDays = sortedDays.filter(k=>days[k]);
+  const alertDays = validDays.filter(k=>alertMoods.includes(days[k].mood)).length;
+  const avg = (field) => {
+    const vals = validDays.map(k=>parseFloat(days[k][field])||0).filter(v=>v>0);
+    return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : '-';
+  };
 
-  // Özet kartlar
-  const summaryCards = [
-    { label:'Ort. Enerji', value:avgEnerji+'/10', color:'#f9ca24', icon:'⚡' },
-    { label:'Ort. Odak', value:avgOdak+'/10', color:'#45b7d1', icon:'🎯' },
-    { label:'Ort. Kaygı', value:avgKaygi+'/10', color:'#ff6b6b', icon:'😰' },
-    { label:'Ort. Uyku', value:avgUyku+'sa', color:'#a29bfe', icon:'🌙' },
-  ];
+  // Psikolojik ısı haritası — son 30 gün (max-width grid)
+  const heatMapDays = Array.from({length:30},(_,i)=>{
+    const d=new Date(now); d.setDate(now.getDate()-29+i);
+    const dk=d.toISOString().split('T')[0];
+    const dayData=days[dk]||{};
+    const mood=dayData.mood;
+    const col=mood?moodColors[mood]:'transparent';
+    const hasData=!!mood;
+    return {dk,col,hasData,emoji:moodEmojis[mood]||'',label:d.getDate()};
+  });
 
-  // Günlük detay tablosu
-  const tableRows = sortedDays.map(k => {
-    const d = days[k];
-    const dateStr = new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',weekday:'short'});
-    const moodE = moodEmojis[d.mood] || '·';
-    const moodC = moodColors[d.mood] || 'var(--text2)';
-    return `
-      <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:10px 8px;font-size:0.78rem;color:var(--text2)">${dateStr}</td>
-        <td style="padding:10px 8px;text-align:center">
-          <span style="background:${moodC}22;border:1px solid ${moodC}66;border-radius:8px;padding:3px 7px;font-size:0.72rem;font-weight:700;color:${moodC}">${moodE} ${moodLabels[d.mood]||'-'}</span>
-        </td>
-        <td style="padding:10px 8px;text-align:center;font-size:0.85rem;font-weight:700;color:#f9ca24">${d.enerji||'-'}</td>
-        <td style="padding:10px 8px;text-align:center;font-size:0.85rem;font-weight:700;color:#ff6b6b">${d.kaygi||'-'}</td>
-        <td style="padding:10px 8px;text-align:center;font-size:0.85rem;font-weight:700;color:#a29bfe">${d.uyku||'-'}sa</td>
-        <td style="padding:10px 8px;font-size:0.75rem;color:var(--text2);max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.pozitif||d.gurur||''}</td>
-      </tr>`;
-  }).join('');
+  // Uyarı banner
+  const alertHtml = alertDays >= 3 ?
+    `<div style="background:#ff6b6b22;border:1.5px solid #ff6b6b66;border-radius:12px;padding:14px;margin-bottom:14px;display:flex;gap:10px">
+      <span>⚠️</span><div><div style="font-weight:800;color:#ff6b6b;margin-bottom:3px">Psikolojik Uyarı</div>
+      <div style="font-size:0.82rem">${sName.split(' ')[0]} bu dönemde ${alertDays} kez olumsuz duygu bildirdi. Görüşme önerilir.</div></div></div>` :
+    alertDays >= 2 ?
+    `<div style="background:#f9ca2422;border:1.5px solid #f9ca2466;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;gap:10px">
+      <span>💛</span><div style="font-size:0.82rem">${sName.split(' ')[0]} bu dönemde ${alertDays} gün düşük duygu bildirdi.</div></div>` :
+    `<div style="background:#45b7d122;border:1.5px solid #45b7d144;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;gap:10px">
+      <span>✅</span><div style="font-size:0.82rem">${sName.split(' ')[0]}'in psikolojik durumu bu dönemde iyi görünüyor.</div></div>`;
 
-  // Hedefler
-  const hedefHtml = (data.hedef || data.hedefOkul) ? `
+  // Hedefler (en son kaydedilen)
+  const hedefHtml = (data.hedef||data.hedefOkul) ? `
     <div class="card" style="margin-bottom:14px">
       <div class="card-title">🎯 Öğrencinin Hedefleri</div>
-      <div style="display:flex;gap:16px;flex-wrap:wrap">
-        ${data.hedef ? `<div><div style="font-size:0.72rem;color:var(--text2)">Hedef Puan</div><div style="font-weight:800;font-size:1.3rem;color:var(--accent)">${data.hedef}</div></div>` : ''}
-        ${data.hedefOkul ? `<div><div style="font-size:0.72rem;color:var(--text2)">Hedef Okul</div><div style="font-weight:700;font-size:0.92rem">${data.hedefOkul}</div></div>` : ''}
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        ${data.hedef?`<div><div style="font-size:0.72rem;color:var(--text2)">Hedef Puan</div><div style="font-weight:800;font-size:1.3rem;color:var(--accent)">${data.hedef}</div></div>`:''}
+        ${data.hedefOkul?`<div><div style="font-size:0.72rem;color:var(--text2)">Hedef Okul</div><div style="font-weight:700;font-size:0.92rem">${data.hedefOkul}</div></div>`:''}
       </div>
     </div>` : '';
+
+  // Isı haritası HTML
+  const heatMapHtml = `
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">🌡️ Psikolojik Isı Haritası — Son 30 Gün</div>
+      <div style="display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-bottom:8px">
+        ${heatMapDays.map(d=>`
+          <div title="${d.dk}" style="aspect-ratio:1;border-radius:5px;background:${d.hasData?d.col+'88':'var(--surface2)'};
+               border:1px solid ${d.hasData?d.col:'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:0.7rem">
+            ${d.hasData?d.emoji:'<span style="font-size:0.55rem;color:var(--text2)">${d.label}</span>'}
+          </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+        ${Object.entries(moodColors).slice(0,4).map(([k,c])=>`
+          <span style="font-size:0.68rem;display:flex;align-items:center;gap:3px">
+            <span style="width:10px;height:10px;border-radius:3px;background:${c};display:inline-block"></span>
+            ${moodLabels[k]||k}
+          </span>`).join('')}
+      </div>
+    </div>`;
+
+  // Detay tablosu
+  const tableRows = sortedDays.map(k=>{
+    const d=days[k];
+    const dateStr=new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',weekday:'short'});
+    const mc=moodColors[d.mood]||'var(--text2)';
+    const me=moodEmojis[d.mood]||'·';
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:9px 6px;font-size:0.75rem;color:var(--text2);white-space:nowrap">${dateStr}</td>
+      <td style="padding:9px 6px;text-align:center">
+        <span style="background:${mc}22;border:1px solid ${mc}66;border-radius:7px;padding:2px 6px;font-size:0.68rem;font-weight:700;color:${mc};white-space:nowrap">${me} ${moodLabels[d.mood]||'-'}</span>
+      </td>
+      <td style="padding:9px 6px;text-align:center;font-size:0.82rem;font-weight:700;color:#f9ca24">${d.enerji||'-'}</td>
+      <td style="padding:9px 6px;text-align:center;font-size:0.82rem;font-weight:700;color:#ff6b6b">${d.kaygi||'-'}</td>
+      <td style="padding:9px 6px;text-align:center;font-size:0.82rem;font-weight:700;color:#a29bfe">${d.uyku?d.uyku+'sa':'-'}</td>
+      <td style="padding:9px 6px;font-size:0.72rem;color:var(--text2);max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.pozitif||d.gurur||''}</td>
+    </tr>`;
+  }).join('');
 
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
@@ -2281,38 +2309,48 @@ async function psychReportPage() {
     </div>
     <div class="page-sub">Psikolojik Takip Raporu</div>
 
-    ${sortedDays.length === 0 ? `
+    <!-- Dönem seçici -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;background:var(--surface2);border-radius:12px;padding:4px">
+      <button onclick="window._psychPeriod='weekly';renderTeacherPage('psych-report',document.getElementById('mainContent'))"
+        style="flex:1;padding:8px;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:0.82rem;
+               background:${period==='weekly'?'var(--accent)':'transparent'};
+               color:${period==='weekly'?'#fff':'var(--text2)'};transition:.2s">Haftalık</button>
+      <button onclick="window._psychPeriod='monthly';renderTeacherPage('psych-report',document.getElementById('mainContent'))"
+        style="flex:1;padding:8px;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:0.82rem;
+               background:${period==='monthly'?'var(--accent)':'transparent'};
+               color:${period==='monthly'?'#fff':'var(--text2)'};transition:.2s">Aylık</button>
+    </div>
+
+    ${sortedDays.length===0 ? `
       <div class="card" style="text-align:center;padding:40px;color:var(--text2)">
         <div style="font-size:3rem;margin-bottom:12px">💙</div>
-        <div style="font-weight:700;margin-bottom:8px">Henüz veri yok</div>
+        <div style="font-weight:700;margin-bottom:8px">Bu dönemde veri yok</div>
         <div style="font-size:0.85rem">Öğrenci "Nasıl Hissediyorum" bölümünden veri girişi yaptıkça burada görünecek.</div>
       </div>
     ` : `
       ${alertHtml}
       ${hedefHtml}
+      ${heatMapHtml}
 
       <div class="grid-4" style="margin-bottom:14px">
-        ${summaryCards.map(c=>`
-          <div class="stat-card">
-            <div class="stat-label">${c.icon} ${c.label}</div>
-            <div class="stat-value" style="color:${c.color}">${c.value}</div>
-          </div>`).join('')}
+        <div class="stat-card"><div class="stat-label">⚡ Ort. Enerji</div><div class="stat-value" style="color:#f9ca24">${avg('enerji')}/10</div></div>
+        <div class="stat-card"><div class="stat-label">🎯 Ort. Odak</div><div class="stat-value" style="color:#45b7d1">${avg('odak')}/10</div></div>
+        <div class="stat-card"><div class="stat-label">😰 Ort. Kaygı</div><div class="stat-value" style="color:#ff6b6b">${avg('kaygi')}/10</div></div>
+        <div class="stat-card"><div class="stat-label">🌙 Ort. Uyku</div><div class="stat-value" style="color:#a29bfe">${avg('uyku')}sa</div></div>
       </div>
 
       <div class="card" style="margin-bottom:14px">
-        <div class="card-title">📅 Son 14 Gün Detayı</div>
+        <div class="card-title">📅 Dönem Detayı</div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse">
-            <thead>
-              <tr style="border-bottom:2px solid var(--border)">
-                <th style="padding:8px;text-align:left;font-size:0.72rem;color:var(--text2)">Tarih</th>
-                <th style="padding:8px;font-size:0.72rem;color:var(--text2)">Duygu</th>
-                <th style="padding:8px;font-size:0.72rem;color:var(--text2)">Enerji</th>
-                <th style="padding:8px;font-size:0.72rem;color:var(--text2)">Kaygı</th>
-                <th style="padding:8px;font-size:0.72rem;color:var(--text2)">Uyku</th>
-                <th style="padding:8px;font-size:0.72rem;color:var(--text2)">Pozitif</th>
-              </tr>
-            </thead>
+            <thead><tr style="border-bottom:2px solid var(--border)">
+              <th style="padding:8px 6px;text-align:left;font-size:0.7rem;color:var(--text2)">Tarih</th>
+              <th style="padding:8px 6px;font-size:0.7rem;color:var(--text2)">Duygu</th>
+              <th style="padding:8px 6px;font-size:0.7rem;color:var(--text2)">Enerji</th>
+              <th style="padding:8px 6px;font-size:0.7rem;color:var(--text2)">Kaygı</th>
+              <th style="padding:8px 6px;font-size:0.7rem;color:var(--text2)">Uyku</th>
+              <th style="padding:8px 6px;font-size:0.7rem;color:var(--text2)">Pozitif</th>
+            </tr></thead>
             <tbody>${tableRows}</tbody>
           </table>
         </div>
@@ -2324,468 +2362,105 @@ async function psychReportPage() {
       </button>
     `}`;
 }
-
 async function exportPsychPDF(sName) {
   showToast('⏳','PDF hazırlanıyor...');
   const sObj = students.find(s=>s.name===sName) || {};
   const sUid = sObj.uid || '';
   const data = await getWellnessData(sUid || sName);
   const days = data.days || {};
-  const sortedDays = Object.keys(days).sort().reverse().slice(0, 14);
+  const period = window._psychPeriod || 'weekly';
+  const now = new Date();
+
+  // Dönem filtresi
+  let startKey, periodLabel;
+  if (period === 'weekly') {
+    const mon = new Date(now); mon.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
+    startKey = mon.toISOString().split('T')[0];
+    periodLabel = 'Haftalık';
+  } else {
+    startKey = now.toISOString().split('T')[0].substring(0,7)+'-01';
+    periodLabel = 'Aylık';
+  }
+  const sortedDays = Object.keys(days).filter(k=>k>=startKey).sort().reverse();
 
   const moodLabels = { excited:'Heyecanlı', good:'İyiyim', focused:'Odaklı', ok:'İdare Eder', tired:'Yorgunum', anxious:'Kaygılı', sad:'Mutsuzum' };
+  const moodColors = { excited:[249,202,36], good:[69,183,209], focused:[108,99,255], ok:[162,155,254], tired:[253,121,168], anxious:[255,107,107], sad:[119,140,163] };
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'p', unit:'mm', format:'a4' });
   const PF = registerFontIfAvailable(doc);
 
-  const now = new Date();
   const dateStr = now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
   const title = tx(sName) + ' \u2014 Psikolojik Takip Raporu';
-  let Y = pdfHeader(doc, title, tx('Psikolojik Takip Raporu'), tx(dateStr));
+  let Y = pdfHeader(doc, title, tx(periodLabel + ' Psikolojik Takip Raporu'), tx(dateStr));
 
   // Hedefler
   if (data.hedef || data.hedefOkul) {
     Y = pdfSecHeader(doc, tx('HEDEFLER'), Y, 108, 99, 255);
-    if (data.hedef) { doc.setFont(PF,'normal'); doc.setFontSize(9); doc.setTextColor(60,60,80); doc.text(tx('Hedef Puan: ') + data.hedef, 16, Y); Y+=6; }
+    doc.setFont(PF,'normal'); doc.setFontSize(9); doc.setTextColor(60,60,80);
+    if (data.hedef) { doc.text(tx('Hedef Puan: ') + data.hedef, 16, Y); Y+=6; }
     if (data.hedefOkul) { doc.text(tx('Hedef Okul: ') + tx(data.hedefOkul), 16, Y); Y+=8; }
   }
 
-  // Özet istatistikler
   if (sortedDays.length > 0) {
-    const avgEnerji = (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].enerji)||0),0)/sortedDays.length).toFixed(1);
-    const avgKaygi = (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].kaygi)||0),0)/sortedDays.length).toFixed(1);
-    const avgOdak = (sortedDays.reduce((a,k)=>a+(parseFloat(days[k].odak)||0),0)/sortedDays.length).toFixed(1);
-
+    // İstatistikler
+    const avg = (field) => {
+      const vals = sortedDays.map(k=>parseFloat(days[k]?.[field])||0).filter(v=>v>0);
+      return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : '-';
+    };
     Y = pdfSecHeader(doc, tx('ÖZET İSTATİSTİKLER'), Y, 108, 99, 255);
-    const statBoxes = [[tx('Ort. Enerji'),avgEnerji+'/10',[249,202,36]],[tx('Ort. Odak'),avgOdak+'/10',[69,183,209]],[tx('Ort. Kaygı'),avgKaygi+'/10',[255,107,107]]];
+    const statBoxes = [[tx('Ort. Enerji'),avg('enerji')+'/10',[249,202,36]],[tx('Ort. Odak'),avg('odak')+'/10',[69,183,209]],[tx('Ort. Kaygı'),avg('kaygi')+'/10',[255,107,107]],[tx('Ort. Uyku'),avg('uyku')+'sa',[162,155,254]]];
     statBoxes.forEach((b,i)=>{
-      const bx = 16+i*62;
-      doc.setFillColor(b[2][0],b[2][1],b[2][2]); doc.roundedRect(bx,Y,56,18,3,3,'F');
-      doc.setFont(PF,'bold'); doc.setFontSize(14); doc.setTextColor(255,255,255);
-      doc.text(b[1], bx+28, Y+11, {align:'center'});
-      doc.setFont(PF,'normal'); doc.setFontSize(7);
-      doc.text(b[0], bx+28, Y+16, {align:'center'});
+      const bx = 16+i*46;
+      doc.setFillColor(b[2][0],b[2][1],b[2][2]); doc.roundedRect(bx,Y,40,16,2,2,'F');
+      doc.setFont(PF,'bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
+      doc.text(b[1], bx+20, Y+9, {align:'center'});
+      doc.setFont(PF,'normal'); doc.setFontSize(6.5);
+      doc.text(b[0], bx+20, Y+14, {align:'center'});
     });
-    Y += 24;
+    Y += 22;
+
+    // Psikolojik ısı haritası
+    Y = pdfCheck(doc, Y, 30);
+    Y = pdfSecHeader(doc, tx('PSİKOLOJİK ISI HARİTASI'), Y, 108, 99, 255);
+    doc.setFont(PF,'normal'); doc.setFontSize(7); doc.setTextColor(80,80,100);
+    const cellW = 16, cellH = 10, cols = 10;
+    sortedDays.slice(0,20).forEach((k,i)=>{
+      const col = i % cols, row = Math.floor(i/cols);
+      const x = 16 + col * (cellW+1), y = Y + row * (cellH+1);
+      const d = days[k];
+      const mc = d?.mood ? moodColors[d.mood] || [200,200,200] : [200,200,200];
+      doc.setFillColor(mc[0],mc[1],mc[2]);
+      doc.roundedRect(x,y,cellW,cellH,1.5,1.5,'F');
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(5.5);
+      const dLabel = new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
+      doc.text(tx(dLabel), x+cellW/2, y+4, {align:'center'});
+      if(d?.mood) doc.text(tx(moodLabels[d.mood]?.substring(0,7)||''), x+cellW/2, y+8, {align:'center'});
+    });
+    Y += Math.ceil(Math.min(sortedDays.length,20)/cols) * (cellH+1) + 6;
 
     // Günlük tablo
+    Y = pdfCheck(doc, Y, 14);
     Y = pdfSecHeader(doc, tx('GÜNLÜK VERİLER'), Y, 108, 99, 255);
-    const tH = [tx('Tarih'), tx('Duygu'), tx('Enerji'), tx('Kaygı'), tx('Uyku'), tx('Pozitif/Not')];
-    const tW = [30, 30, 20, 20, 20, 66];
-    const tR = sortedDays.map(k => {
-      const d = days[k];
-      const dateL = new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
-      return [tx(dateL), tx(moodLabels[d.mood]||'-'), d.enerji||'-', d.kaygi||'-', (d.uyku||'-')+'sa', tx((d.pozitif||d.gurur||d.not||'').substring(0,25))];
+    const tH = [tx('Tarih'),tx('Duygu'),tx('Enerji'),tx('Kaygı'),tx('Uyku'),tx('Pozitif/Not')];
+    const tW = [28,32,18,18,18,72];
+    const tR = sortedDays.map(k=>{
+      const d=days[k];
+      const dateL=new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'});
+      return [tx(dateL),tx(moodLabels[d?.mood]||'-'),d?.enerji||'-',d?.kaygi||'-',(d?.uyku||'-')+'sa',tx((d?.pozitif||d?.gurur||d?.not||'').substring(0,30))];
     });
-    Y = pdfTable(doc, tH, tW, tR, Y, [108,99,255]);
+    Y = pdfTable(doc,tH,tW,tR,Y,[108,99,255]);
 
-    // Negatif düşünceler & pozitif anlar
-    const negatifler = sortedDays.filter(k=>days[k].negatif).map(k=>({ tarih:k, text:days[k].negatif }));
-    const pozitifler = sortedDays.filter(k=>days[k].pozitif||days[k].gurur).map(k=>({ tarih:k, text:days[k].pozitif||days[k].gurur }));
-
-    if (negatifler.length > 0) {
-      Y = pdfCheck(doc, Y, 14); Y = pdfSecHeader(doc, tx('OLUMSUZ DÜŞÜNCELER'), Y, 255, 107, 107);
-      negatifler.slice(0,5).forEach(n => {
-        const lines = doc.splitTextToSize(tx(new Date(n.tarih+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}))+': '+tx(n.text), 174);
-        Y = pdfCheck(doc,Y,8); doc.setFont(PF,'normal'); doc.setFontSize(8); doc.setTextColor(60,60,80);
-        lines.forEach(l=>{ doc.text(l, 16, Y); Y+=5; });
-      });
-    }
-    if (pozitifler.length > 0) {
-      Y = pdfCheck(doc, Y, 14); Y = pdfSecHeader(doc, tx('OLUMLU ANLAR'), Y, 69, 183, 209);
-      pozitifler.slice(0,5).forEach(p => {
-        const lines = doc.splitTextToSize(tx(new Date(p.tarih+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}))+': '+tx(p.text), 174);
-        Y = pdfCheck(doc,Y,8); doc.setFont(PF,'normal'); doc.setFontSize(8); doc.setTextColor(60,60,80);
-        lines.forEach(l=>{ doc.text(l, 16, Y); Y+=5; });
-      });
-    }
   } else {
     doc.setFont(PF,'normal'); doc.setFontSize(10); doc.setTextColor(120,120,140);
-    doc.text(tx('Bu öğrenci için henüz psikolojik takip verisi bulunmuyor.'), 16, Y);
+    doc.text(tx('Bu dönem için henüz psikolojik takip verisi bulunmuyor.'), 16, Y);
   }
 
   pdfFooter(doc, doc.internal.getNumberOfPages(), tx(sName)+' | Psikolojik Takip');
-  const fname = ts(sName.replace(/\s+/g,'_'))+'_Psikolojik_'+now.toISOString().split('T')[0]+'.pdf';
+  const fname = ts(sName.replace(/\s+/g,'_'))+'_Psikolojik_'+periodLabel+'_'+now.toISOString().split('T')[0]+'.pdf';
   doc.save(fname);
   showToast('📄','PDF indiriliyor!');
-}
-
-function studentDetailAnalysis() {
-  const sName = selectedStudentName;
-  const sObj = students.find(s=>s.name===sName) || { color:'#6c63ff' };
-  const sUid = sObj.uid || '';
-  const now = new Date();
-  const todayKey = now.toISOString().split('T')[0];
-
-  // Öğrenci girişleri: studentName VEYA userId ile eşleştir (her ikisi de çalışsın)
-  const matchEntry = e => e.studentName===sName || (sUid && e.userId===sUid);
-
-  // Dönem filtre
-  let filtered = [];
-  let periodLabel = '';
-  const monday = new Date(now);
-  monday.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
-  const mondayKey = monday.toISOString().split('T')[0];
-  const monthStart = todayKey.substring(0,7)+'-01';
-
-  if (studentAnalysisPeriod==='daily') {
-    filtered = studyEntries.filter(e=>matchEntry(e) && e.dateKey===todayKey);
-    periodLabel = 'Bugün';
-  } else if (studentAnalysisPeriod==='weekly') {
-    filtered = studyEntries.filter(e=>matchEntry(e) && e.dateKey>=mondayKey);
-    periodLabel = 'Bu Hafta';
-  } else {
-    filtered = studyEntries.filter(e=>matchEntry(e) && e.dateKey>=monthStart);
-    periodLabel = 'Bu Ay';
-  }
-
-  const allEntries = studyEntries.filter(e=>matchEntry(e));
-
-  // Özet istatistikler
-  const totalDur = filtered.reduce((a,e)=>a+(e.duration||0),0);
-  const totalQ   = filtered.reduce((a,e)=>a+(e.questions||0),0);
-  const totalD   = filtered.reduce((a,e)=>a+(e.correct||0),0);
-  const totalY   = filtered.reduce((a,e)=>a+(e.wrong||0),0);
-  const totalNet = filtered.reduce((a,e)=>a+(e.net||0),0);
-  const activeDays = new Set(filtered.map(e=>e.dateKey)).size;
-
-  // Ders bazlı analiz
-  const subStats = subjects.map(s => {
-    const se = filtered.filter(e=>e.subject===s.name);
-    const q = se.reduce((a,e)=>a+(e.questions||0),0);
-    const d = se.reduce((a,e)=>a+(e.correct||0),0);
-    const y = se.reduce((a,e)=>a+(e.wrong||0),0);
-    const net = se.reduce((a,e)=>a+(e.net||0),0);
-    const dur = se.reduce((a,e)=>a+(e.duration||0),0);
-    const pct = q>0 ? Math.round(d/q*100) : 0;
-    return { ...s, q, d, y, net, dur, pct, count: se.length };
-  });
-  const maxQ = Math.max(...subStats.map(s=>s.q), 1);
-
-  // Güçlü / zayıf
-  const withQ = subStats.filter(s=>s.q>0).sort((a,b)=>b.pct-a.pct);
-  const strong = withQ.slice(0,2);
-  const weak   = [...withQ].reverse().slice(0,2);
-
-  // Son 7 günlük trend bar chart verisi
-  const trendDays = [];
-  for(let i=6;i>=0;i--) {
-    const d = new Date(now); d.setDate(now.getDate()-i);
-    const dk = d.toISOString().split('T')[0];
-    const dayEntries = allEntries.filter(e=>e.dateKey===dk);
-    trendDays.push({
-      label: d.toLocaleDateString('tr-TR',{weekday:'short'}),
-      dk, q: dayEntries.reduce((a,e)=>a+(e.questions||0),0),
-      dur: dayEntries.reduce((a,e)=>a+(e.duration||0),0),
-      net: dayEntries.reduce((a,e)=>a+(e.net||0),0)
-    });
-  }
-  const maxTQ = Math.max(...trendDays.map(t=>t.q),1);
-
-  // Aylık trend (son 4 hafta)
-  const monthTrend = [];
-  for(let w=3;w>=0;w--) {
-    const wStart = new Date(now); wStart.setDate(now.getDate()-w*7-6);
-    const wEnd   = new Date(now); wEnd.setDate(now.getDate()-w*7);
-    const wk = wStart.toISOString().split('T')[0];
-    const wkEnd = wEnd.toISOString().split('T')[0];
-    const we = allEntries.filter(e=>e.dateKey>=wk && e.dateKey<=wkEnd);
-    monthTrend.push({
-      label: `H${4-w}`,
-      q: we.reduce((a,e)=>a+(e.questions||0),0),
-      dur: we.reduce((a,e)=>a+(e.duration||0),0),
-      net: we.reduce((a,e)=>a+(e.net||0),0)
-    });
-  }
-  const maxMQ = Math.max(...monthTrend.map(t=>t.q),1);
-
-  // Deneme sonuçları — examId ile grupla (yoksa dateKey), TÜM ZAMANLAR
-  const tumDenemeler = allEntries.filter(e=>e.type==='deneme');
-  const denemeDateMap = {};
-  tumDenemeler.forEach(e=>{
-    const key = e.examId || (e.dateKey+'_legacy');
-    if(!denemeDateMap[key]) denemeDateMap[key]=[];
-    denemeDateMap[key].push(e);
-  });
-  const denemeSinavlari = Object.entries(denemeDateMap)
-    .sort((a,b)=>{
-      const da = a[1][0]?.dateKey||''; const db2 = b[1][0]?.dateKey||'';
-      return db2.localeCompare(da);
-    })
-    .map(([key, dersler])=>{
-      const examTitle = dersler[0]?.examTitle || dersler[0]?.topic || (dersler[0]?.dateKey+' Denemesi');
-      const dk = dersler[0]?.dateKey || '';
-      const subResults = subjects.map(s=>{
-        const se = dersler.find(e=>e.subject===s.name);
-        if (!se) return {...s, d:0, y:0, net:0, q:0};
-        const d = se.correct||0, y = se.wrong||0;
-        return {...s, d, y, net: Math.round((d-y/3)*100)/100, q: d+y};
-      });
-      const lgsInput = subResults.map(s=>({...s, avgNet:s.net, count:s.q>0?1:0}));
-      const lgsRes = calcLGSScore(lgsInput);
-      // Düzenleme/silme için firestoreIds
-      const firestoreIds = dersler.map(e=>e.firestoreId||e.id).filter(Boolean);
-      const examId2 = dersler[0]?.examId || key;
-      return { key, examId: examId2, examTitle, dk, subResults, lgsRes, firestoreIds, dersler };
-    });
-  const hasDenemeler = denemeSinavlari.length > 0;
-
-  // Yorum üret
-  const comment = generateStudentComment(sName, filtered, subStats, totalDur, totalQ, totalNet, activeDays, studentAnalysisPeriod);
-
-  return `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-      <button onclick="showPage('students')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
-      <div class="page-title" style="margin:0">📊 ${sName}</div>
-    </div>
-    <div class="page-sub">Bireysel Analiz Raporu</div>
-
-    <!-- Dönem seçici -->
-    <div style="display:flex;gap:6px;margin-bottom:12px;background:var(--surface2);border-radius:12px;padding:4px">
-      ${['daily','weekly','monthly'].map((p,i)=>{
-        const lbl=['Günlük','Haftalık','Aylık'][i];
-        return `<button onclick="studentAnalysisPeriod='${p}';showPage('student-detail')"
-          style="flex:1;padding:8px 4px;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:0.82rem;
-          background:${studentAnalysisPeriod===p?'var(--accent)':'transparent'};
-          color:${studentAnalysisPeriod===p?'#fff':'var(--text2)'};transition:.2s">${lbl}</button>`;
-      }).join('')}
-    </div>
-
-    <!-- Özet kartlar -->
-    <div class="grid-3" style="margin-bottom:16px">
-      <div class="stat-card">
-        <div class="stat-label">Süre</div>
-        <div class="stat-value" style="color:var(--accent)">${totalDur}<span style="font-size:0.75rem">dk</span></div>
-        <div class="stat-change">${activeDays} gün aktif</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Toplam Soru</div>
-        <div class="stat-value" style="color:var(--accent4)">${totalQ}</div>
-        <div class="stat-change">✅${totalD} ❌${totalY}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Net</div>
-        <div class="stat-value" style="color:var(--accent3)">${totalNet.toFixed(1)}</div>
-        <div class="stat-change">${totalQ>0?(totalNet/totalQ*100).toFixed(0)+'% isabet':'-'}</div>
-      </div>
-    </div>
-
-    <!-- RAPOR AL — collapsible -->
-    <div style="margin-bottom:16px">
-      <button onclick="toggleRaporAl('${sName.replace(/\s/g,'_')}')"
-        style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);cursor:pointer;font-weight:700;font-size:0.9rem;transition:.2s">
-        <span>📥 Rapor Al</span>
-        <span id="raporAlArrow_${sName.replace(/\s/g,'_')}" style="transition:.2s;font-size:0.8rem">▼</span>
-      </button>
-      <div id="raporAlPanel_${sName.replace(/\s/g,'_')}" style="display:none;margin-top:6px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <button onclick="openDatePicker('${sName}','weekly')"
-            style="flex:1;padding:10px;border-radius:10px;background:var(--accent)22;border:1.5px solid var(--accent);color:var(--accent);font-weight:700;font-size:0.85rem;cursor:pointer">
-            📅 Haftalık Rapor
-          </button>
-          <button onclick="openDatePicker('${sName}','monthly')"
-            style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.85rem;cursor:pointer">
-            📆 Aylık Rapor
-          </button>
-        </div>
-        <button class="dp-btn-pdf" onclick="openDatePicker('${sName}','weekly')"
-          style="display:none"></button>
-      </div>
-    </div>
-
-    <!-- Soru trendi grafik (bar) -->
-    ${studentAnalysisPeriod !== 'daily' ? `
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title">${studentAnalysisPeriod==='weekly'?'📅 Son 7 Gün — Soru & Net Trendi':'📆 Haftalık Soru Trendi (Son 4 Hafta)'}</div>
-      <div style="display:flex;align-items:flex-end;gap:5px;height:90px;padding:4px 0">
-        ${(studentAnalysisPeriod==='weekly'?trendDays:monthTrend).map(t=>{
-          const maxV = studentAnalysisPeriod==='weekly'?maxTQ:maxMQ;
-          const hQ = Math.max(Math.round((t.q/maxV)*70),2);
-          const hN = maxV>0 ? Math.max(Math.round((t.net/maxV)*70),1) : 0;
-          const isToday = t.dk===todayKey;
-          const dateLabel = new Date(t.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'short'});
-          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer" onclick="showDayEntries('${t.dk}','${dateLabel}')">
-            <div style="font-size:0.6rem;color:var(--text2);line-height:1">${t.q>0?t.q:''}</div>
-            <div style="width:100%;display:flex;gap:1px;align-items:flex-end;height:70px">
-              <div style="flex:1;height:${hQ}px;background:${isToday?'var(--accent)':'var(--accent)66'};border-radius:3px 3px 0 0;min-height:2px" title="Soru: ${t.q}"></div>
-              <div style="flex:1;height:${hN}px;background:${isToday?'var(--accent3)':'var(--accent3)88'};border-radius:3px 3px 0 0;min-height:1px" title="Net: ${t.net.toFixed(1)}"></div>
-            </div>
-            <div style="font-size:0.6rem;color:${isToday?'var(--accent)':'var(--text2)'};">${t.label}</div>
-          </div>`;
-        }).join('')}
-        }).join('')}
-      </div>
-      <div style="display:flex;gap:16px;justify-content:center;margin-top:6px;font-size:0.72rem;color:var(--text2)">
-        <span><span style="display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:2px;margin-right:4px"></span>Soru</span>
-        <span><span style="display:inline-block;width:10px;height:10px;background:var(--accent3);border-radius:2px;margin-right:4px"></span>Net</span>
-      </div>
-    </div>` : ''}
-
-    <!-- Ders bazlı tablo -->
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title">📚 Ders Bazlı Detay — ${periodLabel}</div>
-      ${filtered.length===0
-        ? `<div style="text-align:center;padding:24px;color:var(--text2)">Bu dönemde veri yok</div>`
-        : subStats.map(s=>{
-          const accId = 'dersAcc_'+s.name.replace(/\s/g,'_');
-          const topicEntries = filtered.filter(e=>e.type==='soru'&&e.subject===s.name);
-          const topicMap = {};
-          topicEntries.forEach(e=>{
-            const t = e.topic||'Genel';
-            if(!topicMap[t]) topicMap[t]={q:0,d:0,y:0,dur:0};
-            topicMap[t].q+=(e.questions||0);
-            topicMap[t].d+=(e.correct||0);
-            topicMap[t].y+=(e.wrong||0);
-            topicMap[t].dur+=(e.duration||0);
-          });
-          const topics = Object.entries(topicMap);
-          return `
-          <div style="border-bottom:1px solid var(--border)">
-            <div onclick="toggleDersAcc('${accId}')" style="padding:10px 0;cursor:pointer">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-                <span style="font-weight:700;font-size:0.85rem;color:var(--${s.cls})">${s.icon} ${s.name}</span>
-                <div style="display:flex;align-items:center;gap:8px">
-                  <span style="font-size:0.72rem;color:var(--text2)">${s.dur}dk • ${s.q} soru • Net <b style="color:var(--accent3)">${s.net.toFixed(1)}</b></span>
-                  <span id="${accId}_arrow" style="color:var(--text2);font-size:0.7rem">▼</span>
-                </div>
-              </div>
-              <div class="bar-bg" style="height:6px">
-                <div class="bar-fill bg-${s.cls}" style="width:${Math.round(s.q/maxQ*100)}%"></div>
-              </div>
-              ${s.q>0?`<div style="font-size:0.7rem;color:var(--text2);margin-top:3px">✅${s.d} doğru &nbsp;❌${s.y} yanlış &nbsp;🎯%${s.pct} isabet</div>`:''}
-            </div>
-            <div id="${accId}" style="display:none;padding-bottom:8px">
-              ${topics.length===0
-                ? `<div style="font-size:0.78rem;color:var(--text2);padding:4px 0 8px">Konu detayı yok</div>`
-                : topics.map(([topic,td])=>`
-                  <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface2);border-radius:8px;margin-bottom:4px">
-                    <span style="font-size:0.78rem;font-weight:600">${topic}</span>
-                    <span style="font-size:0.7rem;color:var(--text2)">✅${td.d} ❌${td.y} • Net ${(td.d-td.y/3).toFixed(1)}</span>
-                  </div>`).join('')}
-            </div>
-          </div>`;
-        }).join('')}
-    </div>
-
-    <!-- Deneme Sınavı Sonuçları -->
-    <div class="card" style="margin-bottom:16px;border:1px solid var(--accent4)33">
-      <div class="card-title">🎯 Deneme Sınavı Sonuçları</div>
-      ${!hasDenemeler
-        ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.85rem">Henüz deneme sınavı girilmemiş</div>`
-        : `
-        <!-- Puan trendi -->
-        ${denemeSinavlari.length>1?`
-        <div style="margin-bottom:14px">
-          <div style="font-size:0.78rem;font-weight:700;color:var(--text2);margin-bottom:8px">📈 Puan Trendi</div>
-          <div style="display:flex;align-items:flex-end;gap:5px;height:68px">
-            ${[...denemeSinavlari].reverse().map((d,i)=>{
-              const h = Math.max(Math.round((d.lgsRes.puan/500)*56),4);
-              const isLast = i===denemeSinavlari.length-1;
-              return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px" title="${d.examTitle}">
-                <div style="font-size:0.58rem;color:var(--accent);font-weight:700">${d.lgsRes.puan}</div>
-                <div style="width:100%;height:${h}px;background:${isLast?'var(--accent)':'var(--accent)55'};border-radius:3px 3px 0 0"></div>
-                <div style="font-size:0.52rem;color:var(--text2);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">D${i+1}</div>
-              </div>`;
-            }).join('')}
-          </div>
-        </div>`:''}
-
-        <!-- Accordion liste — son 5 -->
-        <div style="display:flex;flex-direction:column;gap:8px">
-          ${denemeSinavlari.slice(0,5).map((d,i)=>{
-            const dateLabel = d.dk ? new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'}) : '';
-            const lgsDetay = d.lgsRes.detail || [];
-            const accId = 'deneme_acc_'+i;
-            const num = denemeSinavlari.length - i;
-            const canEdit = currentRole === 'student'; // Sadece öğrenci kendi denemelerini düzenler
-            return `
-            <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden">
-              <div style="display:flex;align-items:stretch">
-                <!-- Başlık (tıklanabilir) -->
-                <div onclick="toggleDenemeAcc('${accId}')" style="flex:1;display:flex;justify-content:space-between;align-items:center;padding:12px 10px;cursor:pointer;background:var(--surface2);user-select:none">
-                  <div style="display:flex;align-items:center;gap:10px;min-width:0">
-                    <div style="width:28px;height:28px;border-radius:50%;background:var(--accent)22;color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.78rem;flex-shrink:0">${num}</div>
-                    <div style="min-width:0">
-                      <div style="font-weight:800;font-size:0.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${d.examTitle}</div>
-                      <div style="font-size:0.7rem;color:var(--text2)">${dateLabel}</div>
-                    </div>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-                    <div style="text-align:right">
-                      <div style="font-size:1.2rem;font-weight:900;color:var(--accent);line-height:1">${d.lgsRes.puan}</div>
-                      <div style="font-size:0.6rem;color:var(--text2)">/500</div>
-                    </div>
-                    <span id="${accId}_arrow" style="font-size:0.9rem;color:var(--text2)">▼</span>
-                  </div>
-                </div>
-                ${canEdit ? `
-                <!-- Düzenleme butonları -->
-                <div style="display:flex;flex-direction:column;border-left:1px solid var(--border)">
-                  <button onclick="editDeneme('${d.examId}','${d.examTitle.replace(/'/g,'\\\'')}')" style="flex:1;background:var(--accent)15;border:none;padding:0 10px;cursor:pointer;font-size:0.75rem;color:var(--accent);border-bottom:1px solid var(--border)" title="İsim düzenle">✏️</button>
-                  <button onclick="deleteDeneme('${d.examId}')" style="flex:1;background:#ff658415;border:none;padding:0 10px;cursor:pointer;font-size:0.75rem;color:#ff6584" title="Sil">🗑️</button>
-                </div>` : ''}
-              </div>
-              <!-- Detay -->
-              <div id="${accId}" style="display:none;padding:12px 14px;background:var(--surface);border-top:1px solid var(--border)">
-                ${d.subResults.filter(s=>s.q>0).map(s=>`
-                  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
-                    <span style="font-size:0.8rem;color:var(--${s.cls})">${s.icon} ${s.name}</span>
-                    <span style="font-size:0.8rem">D:<b>${s.d}</b> Y:<b>${s.y}</b> <span style="color:var(--accent3);font-weight:800;margin-left:6px">Net:${s.net.toFixed(2)}</span></span>
-                  </div>`).join('')}
-                <div style="margin-top:10px;background:var(--accent)08;border-radius:8px;padding:10px;border:1px solid var(--accent)22">
-                  <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:6px">📐 Puan Hesabı</div>
-                  ${lgsDetay.map(ld=>`
-                    <div style="display:flex;justify-content:space-between;font-size:0.72rem;padding:2px 0;border-bottom:1px solid var(--border)">
-                      <span style="color:var(--text2)">${toSafe(ld.name)}</span>
-                      <span>${ld.net} × ${ld.kat} = <b style="color:var(--accent3)">${ld.agNet}</b></span>
-                    </div>`).join('')}
-                  <div style="display:flex;justify-content:space-between;font-size:0.78rem;font-weight:800;margin-top:6px">
-                    <span>Ham Puan</span><span style="color:var(--accent)">${d.lgsRes.hamPuan}</span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:900;color:var(--accent)">
-                    <span>LGS Puanı</span><span>${d.lgsRes.puan} / 500</span>
-                  </div>
-                </div>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
-        ${denemeSinavlari.length > 5 ? `
-        <button onclick="showAllDenemeler()" style="width:100%;padding:11px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-weight:700;font-size:0.85rem;cursor:pointer;margin-top:6px">
-          📋 Tüm Deneme Sonuçlarını Gör (${denemeSinavlari.length} deneme)
-        </button>` : ''}
-        `}
-    </div>
-
-    <!-- Güçlü / Zayıf -->
-    ${filtered.length>0?`
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-title">⚡ Güçlü & Geliştirilmesi Gereken</div>
-      <div class="grid-2">
-        <div>
-          <div style="color:var(--accent3);font-weight:800;margin-bottom:8px;font-size:0.85rem">💪 En Başarılı</div>
-          ${strong.length?strong.map(s=>`
-            <div style="padding:7px 10px;background:rgba(67,233,123,.08);border-radius:8px;font-size:0.8rem;margin-bottom:5px;border:1px solid rgba(67,233,123,.2)">
-              ${s.icon} ${s.name} <span style="color:var(--accent3);float:right">%${s.pct}</span>
-            </div>`).join(''):'<div style="color:var(--text2);font-size:0.8rem">Veri yok</div>'}
-        </div>
-        <div>
-          <div style="color:var(--accent2);font-weight:800;margin-bottom:8px;font-size:0.85rem">⚠️ Çalışılmalı</div>
-          ${weak.length?weak.map(s=>`
-            <div style="padding:7px 10px;background:rgba(255,101,132,.08);border-radius:8px;font-size:0.8rem;margin-bottom:5px;border:1px solid rgba(255,101,132,.2)">
-              ${s.icon} ${s.name} <span style="color:var(--accent2);float:right">%${s.pct}</span>
-            </div>`).join(''):'<div style="color:var(--text2);font-size:0.8rem">Veri yok</div>'}
-        </div>
-      </div>
-    </div>`:''}
-
-    <!-- Koç Yorumu -->
-    <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,var(--accent)10,var(--accent)04);border:1px solid var(--accent)33">
-      <div class="card-title">🧑‍🏫 Koç Değerlendirmesi</div>
-      <div style="font-size:0.86rem;line-height:1.75;color:var(--text)">${comment}</div>
-    </div>
-  `;
 }
 
 function showAllDenemeler() {
@@ -5329,7 +5004,7 @@ function openOptionPicker(targetId, title, options, callback) {
   _renderPickerOptions(options, currentVal, targetId, callback);
   modal.style.display = 'flex';
   modal.onclick = (e) => { if(e.target===modal) closeTopicPicker(); };
-  if (showSearch) setTimeout(()=>{ searchEl?.focus(); }, 200);
+  if (showSearch) { /* Kullanıcı kendisi tıklasın, otomatik klavye açma */ }
 }
 
 function _renderPickerOptions(options, currentVal, targetId, callback) {
