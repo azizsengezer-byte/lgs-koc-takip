@@ -3041,16 +3041,37 @@ async function exportPsychPDF(sName) {
         if (allDenYanlisPct !== null && allDenYanlisPct > 25) {
           // S1: Sınav Kaygısı Blokajı
           scenarioBLabel = tx('Senaryo: Sınav Kaygısı Baskısı (Blokaj)');
-          scenarioB = tx('Yüksek kaygı seviyesi (ort. '+avgKaygiAll2.toFixed(1)+'/10) ve yüksek yanlış oranı (%'+allDenYanlisPct.toFixed(1)+') birlikte seyrediyor. Hataların temel nedeni bilgi eksikliği değil, stres kaynaklı odak kaymalarıdır. Simülasyon çalışmaları artırılmalı.');
+          scenarioB = tx('Yüksek kaygı (ort. '+avgKaygiAll2.toFixed(1)+'/10) ve yüksek yanlış oranı (%'+allDenYanlisPct.toFixed(1)+') birlikte seyrediyor. Hataların temel nedeni bilgi eksikliği değil, stres kaynaklı odak kaymalarıdır. Simülasyon çalışmaları artırılmalı.');
           scenarioBColor = [150,20,20];
         } else if (allDenYanlisPct !== null && allDenYanlisPct < 10) {
           // S2: Mükemmeliyetçi Başarı (Yıpratıcı)
           scenarioBLabel = tx('Senaryo: Mükemmeliyetçi Başarı (Yıpratıcı Başarı)');
           scenarioB = tx('Öğrenci çok düşük hata payı (%'+allDenYanlisPct.toFixed(1)+') ile çalışmasına rağmen yüksek kaygı ('+avgKaygiAll2.toFixed(1)+'/10) duyuyor. Hata yapma korkusu öğrenciyi mental olarak yıpratıyor olabilir. Başarı algısı revize edilmeli.');
           scenarioBColor = [150,80,0];
+        } else if (avgSoruNet !== null) {
+          // Deneme yetersiz ama soru neti var — soru netiyle kaygıyı karşılaştır
+          const soruYuksekKaygi = psychAcadDays.filter(d=>d.kaygi>=7&&d.q>0);
+          const soruDusukKaygi  = psychAcadDays.filter(d=>d.kaygi>0&&d.kaygi<=4&&d.q>0);
+          if (soruYuksekKaygi.length>0 && soruDusukKaygi.length>0) {
+            const avgNHK = soruYuksekKaygi.reduce((a,d)=>a+d.net,0)/soruYuksekKaygi.length;
+            const avgNLK = soruDusukKaygi.reduce((a,d)=>a+d.net,0)/soruDusukKaygi.length;
+            if (avgNHK < avgNLK*0.8) {
+              scenarioBLabel = tx('Kaygı Soru Performansını Etkiliyor');
+              scenarioB = tx('Yüksek kaygılı günlerde (7+) soru neti ort. '+avgNHK.toFixed(1)+', düşük kaygılı günlerde ise '+avgNLK.toFixed(1)+'. Kaygı net skoru baskılıyor. Stres yönetimi çalışması önceliklendirilmeli.');
+              scenarioBColor = [150,20,20];
+            } else {
+              scenarioBLabel = tx('Kaygıya Rağmen Performans Korunuyor');
+              scenarioB = tx('Kaygı seviyesi yüksek (ort. '+avgKaygiAll2.toFixed(1)+'/10) olmasına rağmen soru neti korunuyor (yüksek kaygı: '+avgNHK.toFixed(1)+' / düşük kaygı: '+avgNLK.toFixed(1)+'). Güçlü psikolojik direnç göstergesi. Bu direnç tükenmişliğe dönüşmemesi için izlenmeli.');
+              scenarioBColor = [100,60,0];
+            }
+          } else {
+            scenarioBLabel = tx('Yüksek Kaygı — Soru Neti Referansı');
+            scenarioB = tx('Kaygı seviyesi yüksek (ort. '+avgKaygiAll2.toFixed(1)+'/10), soru neti ort. '+avgSoruNet.toFixed(1)+'. Deneme verisi birikince kaygı-hata korelasyonu daha net görülecek.');
+            scenarioBColor = [120,60,0];
+          }
         } else {
-          scenarioBLabel = tx('Yüksek Kaygı Tespit Edildi');
-          scenarioB = tx('Kaygı seviyesi yüksek (ort. '+avgKaygiAll2.toFixed(1)+'/10). Deneme verisiyle detaylı karşılaştırma için daha fazla deneme girişi gerekiyor.');
+          scenarioBLabel = tx('Yüksek Kaygı — Akademik Veri Bekleniyor');
+          scenarioB = tx('Kaygı seviyesi yüksek (ort. '+avgKaygiAll2.toFixed(1)+'/10). Soru çözümü ve deneme verisi girildiğinde kaygının akademik performansa etkisi analiz edilecek.');
           scenarioBColor = [120,60,0];
         }
       } else if (avgKaygiAll2 > 0 && avgKaygiAll2 <= 4) {
@@ -3159,74 +3180,97 @@ async function exportPsychPDF(sName) {
       Y = pdfCheck(doc, Y, 12);
       Y = pdfSecHeader(doc, tx('KOÇ DEĞERLENDİRMESİ — BÜTÜNCÜL ANALİZ'), Y, 72, 200, 130);
 
-      // Çoklu senaryo tespiti
+      // Soru çözümü neti de dahil et (deneme + soru)
+      const soruNetArr   = psychAcadDays.filter(d=>d.net!==0&&d.q>0).map(d=>d.net);
+      const avgSoruNet   = soruNetArr.length>0 ? soruNetArr.reduce((a,b)=>a+b,0)/soruNetArr.length : null;
+      // Genel net: önce deneme, yoksa soru neti
+      const gelenNet     = avgDenNet !== null ? avgDenNet : avgSoruNet;
+      const iyi_akademik = gelenNet !== null && gelenNet > 0;
+      const dusuk_soru   = avgQperDay < DAILY_GOAL * 0.5 && totalQAll > 0;
+
       const kocItems = [];
 
-      // 1. Başarı Odaklı Kaygı Örüntüsü
-      if (avgKaygiAll2 >= 7 && avgDenNet !== null && avgDenNet > 0) {
-        const pozitifNot = psychAcadDays.some(d=>{
-          const we=days[d.dk]||{};
-          return (we.pozitif||we.gurur||'').length>3;
-        });
+      // Senaryo 1: Başarı Odaklı Kaygı Örüntüsü
+      // KOŞUL: Kaygı yüksek + akademik sonuç iyi (çelişki değil, tükenmişlik riski)
+      if (avgKaygiAll2 >= 7 && iyi_akademik) {
+        const netRef = avgDenNet !== null
+          ? tx('deneme netleri ortalama '+avgDenNet.toFixed(1))
+          : tx('soru neti ortalama '+avgSoruNet?.toFixed(1));
         kocItems.push({
-          label: tx('1. Başarı Odaklı Kaygı Örüntüsü'),
-          text: tx('Deneme netleri pozitif ancak kaygı yüksek seyrediyor. Öğrenci süreç odaklı geri bildirim ihtiyacı duyuyor. Süreç odaklı geri bildirim verilmeli.'),
+          label: tx('Başarı Odaklı Kaygı Örüntüsü'),
+          text: tx(netRef+' ile akademik performans olumlu ancak kaygı seviyesi yüksek (ort. '+avgKaygiAll2.toFixed(1)+'/10). Başarıya rağmen kaygı düşmüyorsa bu mükemmeliyetçilik örüntüsüdür. Koçun odağı ders programı değil, başarı algısı ve süreç odaklı geri bildirim olmalıdır.'),
           color: [180,80,0], bg: [255,245,225]
         });
       }
 
-      // 2. Duygusal Tükenmişlik Riski
-      if (avgEnerjiAll<=4 && avgUykuAll2<=6.5 && maxConsec>=3) {
+      // Senaryo 2: Duygusal Tükenmişlik Riski
+      // KOŞUL: Düşük enerji + yetersiz uyku + ardışık olumsuz duygu
+      if (avgEnerjiAll > 0 && avgEnerjiAll <= 4 && avgUykuAll2 > 0 && avgUykuAll2 <= 6.5 && maxConsec >= 3) {
         kocItems.push({
-          label: tx('2. Duygusal Tükenmişlik Riski'),
-          text: tx('Kritik eşik! Fizyolojik ve mental veriler alarm veriyor. Öğrencinin akademik tempoda bir yavaşlatma (deşarj haftası) planlanmalı.'),
+          label: tx('Duygusal Tükenmişlik Riski'),
+          text: tx('Kritik eşik! Enerji (ort. '+avgEnerjiAll.toFixed(1)+'/10), uyku (ort. '+avgUykuAll2.toFixed(1)+' saat) ve duygu durumu birlikte alarm veriyor. Akademik tempo bir hafta hafifletilmeli. Fizyolojik ve mental yenilenmeden önce soru sayısı artırılmamalıdır.'),
           color: [180,30,30], bg: [255,230,230]
         });
       }
 
-      // 3. Akademik Potansiyel Kaybı
-      if (avgEnerjiAll>5 && avgQperDay < DAILY_GOAL*0.5 && totalQAll>0) {
+      // Senaryo 3: Akademik Potansiyel Kaybı
+      // KOŞUL: Enerji yeterli + kaygı makul + AMA soru sayısı düşük
+      // ÇELİŞKİ KONTROLÜ: Başarı kaygısı varsa bu senaryo gösterilmez
+      const basariKaygiVar = kocItems.some(k=>k.label.includes('Başarı Odaklı'));
+      if (!basariKaygiVar && avgEnerjiAll > 5 && avgKaygiAll2 < 7 && dusuk_soru) {
         kocItems.push({
-          label: tx('3. Akademik Potansiyel Kaybı'),
-          text: tx('Mod ve enerji yeterli ancak günlük soru sayısı hedefin altında (ort. '+avgQperDay.toFixed(0)+'/'+DAILY_GOAL+'). Öğrencinin keyfi yerinde ancak konfor bölgesi çalışmayı durağanlaştırıyor. Yeni hedeflerle motivasyon tetiklenmeli.'),
+          label: tx('Akademik Potansiyel Kaybı'),
+          text: tx('Enerji (ort. '+avgEnerjiAll.toFixed(1)+'/10) ve kaygı dengesi iyi ancak günlük soru sayısı hedefin altında (ort. '+avgQperDay.toFixed(0)+'/'+DAILY_GOAL+'). Konfor bölgesi çalışmayı durağanlaştırıyor. Somut günlük hedeflerle motivasyon yeniden tetiklenmeli.'),
           color: [100,60,0], bg: [255,248,220]
         });
       }
 
-      // 4. Kronik Uyku-Performans Sarmalı
-      if (avgUykuAll2>0 && avgUykuAll2<6.5 && avgOdakAll>0 && avgOdakAll<5 && avgKaygiAll2>=6) {
+      // Senaryo 4: Yüksek Kaygı + Düşük Akademik Üretim (kaygı felç etkisi)
+      // Senaryo 1'den farklı: burada akademik sonuç da kötü
+      if (avgKaygiAll2 >= 7 && !iyi_akademik && totalQAll === 0) {
         kocItems.push({
-          label: tx('4. Kronik Uyku–Performans Sarmalı'),
-          text: tx('Yetersiz uyku → düşük odak → yüksek kaygı döngüsü oluşmuş. Bu sarmalı kırmak için önce uyku düzeni düzeltilmeli, ardından çalışma programı güncellenmeli.'),
+          label: tx('Kaygı Felç Etkisi'),
+          text: tx('Yüksek kaygı (ort. '+avgKaygiAll2.toFixed(1)+'/10) ile birlikte bu dönem akademik üretim başlamamış. Kaygı harekete geçirici değil, engelleyici rol oynuyor. Küçük ve başarılabilir görevlerle aksiyon başlatılmalıdır.'),
+          color: [150,20,20], bg: [255,230,230]
+        });
+      }
+
+      // Senaryo 5: Kronik Uyku–Performans Sarmalı
+      if (avgUykuAll2 > 0 && avgUykuAll2 < 6.5 && avgOdakAll > 0 && avgOdakAll < 5 && avgKaygiAll2 >= 6) {
+        kocItems.push({
+          label: tx('Kronik Uyku–Performans Sarmalı'),
+          text: tx('Yetersiz uyku (ort. '+avgUykuAll2.toFixed(1)+' saat) → düşük odak ('+avgOdakAll.toFixed(1)+'/10) → yüksek kaygı döngüsü oluşmuş. Akademik düşüşün sebebi konu eksiği değil fizyolojik yorgunluktur. Önce uyku düzeni, sonra çalışma programı revize edilmeli.'),
           color: [80,40,130], bg: [240,235,255]
         });
       }
 
-      // 5. Dengeli İyi Profil
-      if (kocItems.length===0 && avgKaygiAll2>0 && avgKaygiAll2<6 && avgUykuAll2>=7 && totalQAll>0) {
+      // Senaryo 6: Dengeli Profil (hiç olumsuz senaryo yoksa)
+      if (kocItems.length === 0 && avgKaygiAll2 > 0 && avgKaygiAll2 < 6 && avgUykuAll2 >= 7 && totalQAll > 0) {
         kocItems.push({
-          label: tx('5. Dengeli ve Sürdürülebilir Çalışma Profili'),
-          text: tx('Kaygı kontrollü, uyku yeterli, akademik üretim aktif. Öğrenci sağlıklı bir tempo yakalamış. Bu ritmi korumak ve sınav dönemine taşımak öncelikli hedef olmalı.'),
+          label: tx('Dengeli ve Sürdürülebilir Çalışma Profili'),
+          text: tx('Kaygı kontrollü (ort. '+avgKaygiAll2.toFixed(1)+'/10), uyku yeterli (ort. '+avgUykuAll2.toFixed(1)+' saat), akademik üretim aktif. Öğrenci sağlıklı bir tempo yakalamış. Bu ritmi sınav dönemine taşımak temel öncelik olmalı.'),
           color: [20,100,50], bg: [230,255,240]
         });
       }
 
-      // 6. Veri Yetersiz
-      if (kocItems.length===0) {
+      // Senaryo 7: Veri Yetersiz
+      if (kocItems.length === 0) {
         kocItems.push({
-          label: tx('Değerlendirme için daha fazla veri gerekiyor'),
-          text: tx('Bu dönem için koç değerlendirmesi yapılabilecek yeterli veri birikimi yok. Öğrenci nasıl hissediyorum girişlerini düzenli yapmalı.'),
+          label: tx('Değerlendirme için Daha Fazla Veri Gerekiyor'),
+          text: tx('Bu dönem için koç değerlendirmesi yapılabilecek yeterli veri birikimi yok. Öğrenci "Nasıl Hissediyorum" bölümüne düzenli giriş yapmalı.'),
           color: [100,100,130], bg: [240,240,250]
         });
       }
 
-      kocItems.forEach(item=>{
+      // Dinamik numaralandırma ile yazdır
+      kocItems.forEach((item, idx)=>{
         Y = pdfCheck(doc, Y, 18);
-        const textH = Math.max(doc.splitTextToSize(item.text,162).length*5+12, 20);
+        const numberedLabel = (idx+1)+'. '+item.label;
+        const textH = Math.max(doc.splitTextToSize(tx('Öğretmen Notu: ')+item.text, 162).length*5+14, 22);
         doc.setFillColor(item.bg[0],item.bg[1],item.bg[2]); doc.roundedRect(16,Y,178,textH,2,2,'F');
         doc.setFillColor(item.color[0],item.color[1],item.color[2]); doc.roundedRect(16,Y,4,textH,1,1,'F');
         doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(item.color[0],item.color[1],item.color[2]);
-        doc.text(item.label, 23, Y+6);
+        doc.text(tx(numberedLabel), 23, Y+6);
         doc.setFont(PF,'normal'); doc.setFontSize(7); doc.setTextColor(40,40,80);
         const lsK = doc.splitTextToSize(tx('Öğretmen Notu: ')+item.text, 162);
         doc.text(lsK, 23, Y+12); Y += textH+4;
@@ -6046,23 +6090,23 @@ function checkAllWellnessNotifications(studentUid, data, todayKey) {
   const consecutive3Neg = last3.every(d=>negativeMoods.includes(d.mood));
   const consecutive3LowEnerji = last3.every(d=>parseFloat(d.enerji)>0 && parseFloat(d.enerji)<=4);
 
-  const notifications = []; // { msg, type, priority, color, icon }
+  const notifications = [];
 
   // ──────────────────────────────────────────────────────────
-  // KATMAN 1: "AYNA TUTMA" — Veri Yorumlama (Anlık Geri Bildirim)
+  // KATMAN 1: "AYNA TUTMA" — Veri Yorumlama
   // ──────────────────────────────────────────────────────────
 
-  // 1A. Başarı-Kaygı Zıtlığı: İyi not/deneme AMA kaygı yüksek
+  // 1A. Başarı-Kaygı Zıtlığı: İyi deneme AMA kaygı yüksek
   if (kaygi >= 8 && todayDenNet !== null && todayDenNet > 0) {
     notifications.push({
-      msg: `✨ Harika bir başarı elde etmişsin ama kaygı seviyen hâlâ yüksek görünüyor. Unutma, bu netleri SEN yaptin! Kendine biraz kredi vermeye ne dersin?`,
+      msg: `✨ Harika bir başarı elde etmişsin ama kaygı seviyen hâlâ yüksek görünüyor. Unutma, bu netleri SEN yaptın! Kendine biraz kredi vermeye ne dersin?`,
       type: 'basari_kaygi_zitligi', priority: 1, color: '#f9ca24', icon: '✨',
-      koç: `${name} bugün iyi sonuç aldı ancak kaygı 8+ bildirdi. Mükemmeliyetçilik örüntüsü izleniyor.`
+      koç: `${name} bugün iyi deneme neti aldı ancak kaygı ${kaygi}/10 bildirdi. Mükemmeliyetçilik örüntüsü izleniyor.`
     });
   }
 
-  // 1B. Enerji-Disiplin Uyumu: Düşük enerji AMA hedefe yakın soru
-  if (enerji <= 4 && todayQ >= GOAL * 0.8) {
+  // 1B. Enerji-Disiplin Uyumu: Düşük enerji AMA çok soru çözdü
+  if (enerji > 0 && enerji <= 4 && todayQ >= GOAL * 0.8) {
     notifications.push({
       msg: `💪 Bugün enerjin düşük olmasına rağmen masadan kalkmamışsın. Bu disiplin seni hedefine götürecek en büyük gücün! Gurur duy kendinle.`,
       type: 'enerji_disiplin_uyumu', priority: 1, color: '#43e97b', icon: '💪',
@@ -6070,12 +6114,21 @@ function checkAllWellnessNotifications(studentUid, data, todayKey) {
     });
   }
 
-  // 1C. Yüksek Enerji - Düşük Üretim: Potansiyel kullanılmıyor
+  // 1C. Düşük enerji — sadece enerji düşükse de bildir
+  if (enerji > 0 && enerji <= 3 && todayQ < GOAL * 0.8) {
+    notifications.push({
+      msg: `⚡ Enerjin bugün oldukça düşük görünüyor. Küçük hedefler koy — sadece 30 dakika bir konuya odaklan. Küçük adımlar da ilerlemedir!`,
+      type: 'dusuk_enerji_genel', priority: 2, color: '#f9ca24', icon: '⚡',
+      koç: `${name} düşük enerji (${enerji}/10) bildirdi. Motivasyon ve çalışma hacmi takip edilmeli.`
+    });
+  }
+
+  // 1D. Yüksek Enerji - Düşük Üretim
   if (enerji >= 8 && todayQ > 0 && todayQ < GOAL * 0.4) {
     notifications.push({
-      msg: `🚀 Enerjin çok yüksek bugün! Bu enerjini biraz daha sorulara yönlendirirsen sonuçlar seni şaşırtacak. Hadi devam!`,
+      msg: `🚀 Enerjin çok yüksek bugün! Bu enerjiyi biraz daha sorulara yönlendirirsen sonuçlar seni şaşırtacak. Hadi devam!`,
       type: 'yuksek_enerji_dusuk_uretim', priority: 2, color: '#6c63ff', icon: '🚀',
-      koç: `${name} yüksek enerji (${enerji}/10) bildirdi ama soru sayısı düşük (${todayQ}). Zaman yönetimi desteği gerekebilir.`
+      koç: `${name} yüksek enerji (${enerji}/10) bildirdi ama soru sayısı düşük (${todayQ}).`
     });
   }
 
@@ -6083,36 +6136,52 @@ function checkAllWellnessNotifications(studentUid, data, todayKey) {
   // KATMAN 2: "TAHMİN VE ÖNLEME" — Risk Yönetimi
   // ──────────────────────────────────────────────────────────
 
-  // 2A. Zihinsel Sis Tahmini: Az uyku + sabah girişi
-  const now = new Date();
-  const isMorning = now.getHours() < 12;
-  if (uyku > 0 && uyku < 6.5 && isMorning) {
-    const dersOnerisi = zorDers || 'en dinç olduğun ders';
+  // 2A. Yüksek Kaygı — tek başına bile bildir (en yaygın senaryo)
+  if (kaygi >= 8 && notifications.filter(n=>n.type==='basari_kaygi_zitligi').length === 0) {
+    const dersRef = zorDers ? ` ${zorDers} dersine` : '';
     notifications.push({
-      msg: `😴 Az uyudun bugün — odaklanmakta zorlanabilirsin. En zor dersin (${dersOnerisi}) en dinç olduğun ilk 2 saate koy, sonra hafif programa geç. Ne dersin?`,
+      msg: `😰 Kaygı seviyen bugün oldukça yüksek (${kaygi}/10). Başlamadan önce${dersRef} bildiğin bir konudan 10 soru çöz — 'başarı hissiyle' ısın. Küçük bir kazanım büyük fark yaratır! 🎯`,
+      type: 'yuksek_kaygi_genel', priority: 1, color: '#ff6b6b', icon: '😰',
+      koç: `${name} yüksek kaygı bildirdi (${kaygi}/10). Günlük akademik performans yakından izlenmeli.`
+    });
+  }
+
+  // 2B. Orta Kaygı — hatırlatma
+  if (kaygi >= 6 && kaygi < 8) {
+    notifications.push({
+      msg: `🧘 Kaygı seviyen biraz yükselmiş (${kaygi}/10). Bu normal — sınav döneminde herkes hisseder. Bugün sadece çalıştığın sürece odaklan, sonuca değil.`,
+      type: 'orta_kaygi', priority: 3, color: '#fd79a8', icon: '🧘',
+      koç: `${name} orta düzey kaygı (${kaygi}/10) bildirdi.`
+    });
+  }
+
+  // 2C. Zihinsel Sis: Az uyku (saat bağımsız)
+  if (uyku > 0 && uyku < 6.5) {
+    const dersOnerisi = zorDers || 'en önemli konunu';
+    notifications.push({
+      msg: `😴 Az uyudun bugün (${uyku} saat). Odaklanmakta zorlanabilirsin — ${dersOnerisi} en dinç olduğun ilk 2 saate koy, sonra hafif konulara geç. Kaliteli 2 saat, yorgun 5 saatten iyidir!`,
       type: 'zihinsel_sis', priority: 1, color: '#ff9f43', icon: '😴',
-      koç: `${name} ${uyku} saat uyudu. Sabah girişi yaptı. Zihinsel yorgunluk riski — program hafifletilmesi önerilebilir.`
+      koç: `${name} ${uyku} saat uyudu. Zihinsel yorgunluk riski — program hafifletilmesi önerilebilir.`
     });
   }
 
-  // 2B. Kaygı-Hata Uyarısı: Yüksek kaygı + yeni konu çalışacak
-  if (kaygi >= 8 && zorDers) {
+  // 2D. Düşük Odak — tek başına bildir
+  if (odak > 0 && odak <= 4) {
     notifications.push({
-      msg: `🎯 Şu an kaygı seviyen biraz yüksek. Yeni ve zor bir konuya başlamadan önce bildiğin bir dersten 10 soru çözüp 'başarı hissiyle' ısınmak ister misin?`,
-      type: 'kaygi_hata_uyarisi', priority: 1, color: '#ff6b6b', icon: '🎯',
-      koç: `${name} kaygı ${kaygi}/10 bildirdi ve zorlandığı ders: ${zorDers}. Yeni konuya başlamadan önce ısınma önerildi.`
+      msg: `🎯 Odaklanma zorluğu yaşıyorsun (${odak}/10). 25 dakika çalış, 5 dakika gerçekten kalk — Pomodoro tekniğini dene. Telefonu başka odaya bırak. Kalite, saatten önemli!`,
+      type: 'dusuk_odak_genel', priority: 2, color: '#45b7d1', icon: '🎯',
+      koç: `${name} düşük odak bildirdi (${odak}/10). Verimlilik tekniği önerildi.`
     });
   }
 
-  // 2C. Olumsuz Düşünce Kırıcı: Negatif not içeriği varsa
-  if (negatif && (negatif.includes('yapamam') || negatif.includes('korkuyor') || negatif.includes('başaramam') || negatif.includes('geç kaldım') || negatif.includes('olmaz'))) {
-    // Son başarılı deneme veya iyi günü bul
+  // 2E. Olumsuz Düşünce Kırıcı
+  if (negatif && (negatif.includes('yapamam') || negatif.includes('korkuyor') || negatif.includes('başaramam') || negatif.includes('geç kaldım') || negatif.includes('olmaz') || negatif.includes('zor'))) {
     const bestEntry = studyEntries.filter(e=>(e.studentName===myName||e.userId===myUid)&&e.type==='deneme').sort((a,b)=>(b.net||0)-(a.net||0))[0];
-    const bestRef = bestEntry ? `${bestEntry.examTitle||'son denemen'}de ${bestEntry.net?.toFixed(1)||''} net` : 'geçen haftaki çalışmalarını';
+    const bestRef = bestEntry ? `${bestEntry.examTitle||'son denemedeki'} ${bestEntry.net?.toFixed(1)||''} neti` : 'geçen haftaki çalışmalarını';
     notifications.push({
       msg: `🤝 Zihninden geçen o olumsuz düşünceyi gördüm. Bu sadece bir düşünce, gerçek değil. ${bestRef} hatırla — bunu yapabilirsin!`,
       type: 'olumsuz_dusunce_kirici', priority: 1, color: '#a29bfe', icon: '🤝',
-      koç: `${name} olumsuz düşünce kaydetti: "${negatif.substring(0,40)}...". Motivasyon desteği gerekiyor.`
+      koç: `${name} olumsuz düşünce kaydetti. Motivasyon desteği gerekiyor.`
     });
   }
 
@@ -6120,43 +6189,55 @@ function checkAllWellnessNotifications(studentUid, data, todayKey) {
   // KATMAN 3: "DUYGUSAL REÇETE" — Aksiyon Önerisi
   // ──────────────────────────────────────────────────────────
 
-  // 3A. Tükenmişlik Sinyali: 3 gün düşük enerji + yorgun/mutsuz duygu
+  // 3A. Tükenmişlik Sinyali: 3 gün düşük enerji + olumsuz duygu
   if (consecutive3LowEnerji && (mood === 'tired' || mood === 'sad')) {
     notifications.push({
-      msg: `🌊 Son 3 gündür pillerin biraz boşalmış görünüyor. Bugün programını %20 hafifletip akşam en çok sevdiğin bir şeyi yapmaya ne zaman ayırıyorsun? Dinlenmek de çalışmaya dahildir! 🌙`,
+      msg: `🌊 Son 3 gündür pillerin biraz boşalmış görünüyor. Bugün programını %20 hafifletip akşam en çok sevdiğin bir şeyi yapmaya vakit ayır. Dinlenmek de çalışmaya dahildir! 🌙`,
       type: 'tukenmisl_sinyali', priority: 1, color: '#fd79a8', icon: '🌊',
-      koç: `⚠️ ${name} 3 gündür düşük enerji + olumsuz duygu bildiriyor. Tükenmişlik riski. Acil görüşme veya program hafifletme önerilir.`
+      koç: `⚠️ ${name} 3 gündür düşük enerji + olumsuz duygu bildiriyor. Tükenmişlik riski. Acil görüşme önerilir.`
     });
   }
 
-  // 3B. 3 Gün Üst Üste Olumsuz Duygu (eski sistem korunuyor)
+  // 3B. 3 Gün Üst Üste Olumsuz Duygu
   if (consecutive3Neg && !consecutive3LowEnerji) {
     notifications.push({
       msg: `💙 Son birkaç gündür zorlu bir süreç geçiriyorsun. Bu hisler geçici — sen bu süreçten daha güçlü çıkacaksın. Koçunla konuşmak ister misin?`,
       type: 'mood_consecutive', priority: 1, color: '#778ca3', icon: '💙',
-      koç: `⚠️ ${name} son 3 gündür olumsuz duygu (${last3.map(d=>d.mood||'?').join(', ')}) bildiriyor. Görüşme planlanması önerilir.`
+      koç: `⚠️ ${name} son 3 gündür olumsuz duygu bildiriyor. Görüşme planlanması önerilir.`
     });
   }
 
-  // 3C. Odak Düşük + Uzun Çalışma: Verimsiz masa başı
-  if (odak <= 4 && todayEntries.filter(e=>e.type!=='deneme').reduce((a,e)=>a+(e.duration||0),0) > 120) {
+  // 3C. Mutsuz/Yorgun duygu — tek günlük de bildir
+  if ((mood === 'sad' || mood === 'anxious') && !consecutive3Neg) {
+    const moodMsg = mood === 'sad'
+      ? `Bugün kendini iyi hissetmiyorsun — bu tamamen normal. Küçük bir yürüyüş veya sevdiğin bir müzik sana iyi gelebilir. Yarın yeni bir gün! 🌱`
+      : `Kaygılı hissediyorsun. Derin bir nefes al — 4 sayı içeri, 4 sayı tut, 4 sayı dışarı. Şimdi sadece önündeki tek göreve odaklan. 🌬️`;
     notifications.push({
-      msg: `⏱ Uzun süredir masadasın ama odaklanmakta zorlandığını hissediyorum. 25 dakika çalış, 5 dakika gerçekten kalk — Pomodoro dene. Kalite, saatten önemli!`,
-      type: 'verimsiz_masa_basi', priority: 2, color: '#45b7d1', icon: '⏱',
-      koç: `${name} düşük odak (${odak}/10) bildirmesine rağmen 2+ saat çalışmış. Verimlilik tekniği önerildi.`
+      msg: moodMsg,
+      type: 'duygu_destegi', priority: 2, color: '#a29bfe', icon: mood === 'sad' ? '💙' : '🌬️',
+      koç: `${name} bugün "${mood === 'sad' ? 'Mutsuzum' : 'Kaygılı'}" bildirdi.`
+    });
+  }
+
+  // 3D. Yorgun duygu
+  if (mood === 'tired' && !consecutive3LowEnerji) {
+    notifications.push({
+      msg: `😔 Bugün yorgunsun. Kısa bir mola ver, 10 dakika gözlerini kapat. Sonra sadece 1 konuya odaklan — hepsini birden yapmak zorunda değilsin. Adım adım! 🐢`,
+      type: 'yorgun_duygu', priority: 2, color: '#fd79a8', icon: '😔',
+      koç: `${name} yorgun hissediyor. Çalışma temposu izlenmeli.`
     });
   }
 
   if (notifications.length === 0) return;
 
-  // Önceliğe göre sırala, en kritik önce
+  // Önceliğe göre sırala (1 = en kritik)
   notifications.sort((a,b) => a.priority - b.priority);
 
-  // Öğrenciye anlık bildirim modalı göster
+  // Öğrenciye en kritik bildirimi göster
   showWellnessFeedbackModal(notifications[0]);
 
-  // Koça tüm bildirimleri gönder
-  notifications.forEach(n => {
+  // Koça tüm kritik bildirimleri gönder (priority 1 olanlar)
+  notifications.filter(n=>n.priority===1).forEach(n => {
     if (n.koç) sendWellnessNotification(studentUid, n.koç, n.type);
   });
 }
