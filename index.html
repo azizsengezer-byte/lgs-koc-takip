@@ -5991,10 +5991,14 @@ function saveWellnessAll(btn) {
     if (v !== undefined && v !== null && v !== '') data.days[todayKey][keys[i]] = v;
   });
 
+  // Mood butonu seçiliyse onu da al
+  const moodEl = document.querySelector('[data-mood-selected]');
+  if (moodEl) data.days[todayKey].mood = moodEl.dataset.moodSelected;
+
   localStorage.setItem(storageKey, JSON.stringify(data));
 
-  // 3 gün üst üste olumsuz kontrolü
-  checkConsecutiveNegativeMoods(myUid, data);
+  // Akademik verilerle korelasyon bildirimleri
+  checkAllWellnessNotifications(myUid, data, todayKey);
 
   if (myUid !== 'local' && db) {
     db.collection('wellness').doc(myUid).set(data)
@@ -6009,14 +6013,206 @@ function saveWellnessAll(btn) {
   }
 }
 
+// ============================================================
+// BİLDİRİM SİSTEMİ — 3 KATMANLI FRAMEWORK
+// ============================================================
+
+function checkAllWellnessNotifications(studentUid, data, todayKey) {
+  const days   = data.days || {};
+  const today  = days[todayKey] || {};
+  const name   = (window.currentUserData||{}).name?.split(' ')[0] || 'Sen';
+  const GOAL   = 200;
+
+  const kaygi  = parseFloat(today.kaygi) || 0;
+  const enerji = parseFloat(today.enerji) || 0;
+  const uyku   = parseFloat(today.uyku) || 0;
+  const odak   = parseFloat(today.odak) || 0;
+  const mood   = today.mood || '';
+  const negatif= today.negatif || '';
+  const zorDers= today.zorDers || '';
+
+  // Bugünkü akademik veriler (localStorage'dan hızlı çek)
+  const myUid  = (window.currentUserData||{}).uid || '';
+  const myName = (window.currentUserData||{}).name || '';
+  const todayEntries = studyEntries.filter(e => (e.studentName===myName||e.userId===myUid) && e.dateKey===todayKey);
+  const todayQ = todayEntries.filter(e=>e.type==='soru').reduce((a,e)=>a+(e.questions||0),0);
+  const todayNet = todayEntries.filter(e=>e.type==='soru').reduce((a,e)=>a+(e.net||0),0);
+  const todayDen = todayEntries.filter(e=>e.type==='deneme');
+  const todayDenNet = todayDen.length>0 ? todayDen.reduce((a,e)=>a+(e.net||0),0)/todayDen.length : null;
+
+  // Son 3 gün verileri
+  const last3 = [0,1,2].map(i=>{ const d=new Date(); d.setDate(d.getDate()-i); return days[d.toISOString().split('T')[0]]||{}; });
+  const negativeMoods = ['anxious','sad','tired'];
+  const consecutive3Neg = last3.every(d=>negativeMoods.includes(d.mood));
+  const consecutive3LowEnerji = last3.every(d=>parseFloat(d.enerji)>0 && parseFloat(d.enerji)<=4);
+
+  const notifications = []; // { msg, type, priority, color, icon }
+
+  // ──────────────────────────────────────────────────────────
+  // KATMAN 1: "AYNA TUTMA" — Veri Yorumlama (Anlık Geri Bildirim)
+  // ──────────────────────────────────────────────────────────
+
+  // 1A. Başarı-Kaygı Zıtlığı: İyi not/deneme AMA kaygı yüksek
+  if (kaygi >= 8 && todayDenNet !== null && todayDenNet > 0) {
+    notifications.push({
+      msg: `✨ Harika bir başarı elde etmişsin ama kaygı seviyen hâlâ yüksek görünüyor. Unutma, bu netleri SEN yaptin! Kendine biraz kredi vermeye ne dersin?`,
+      type: 'basari_kaygi_zitligi', priority: 1, color: '#f9ca24', icon: '✨',
+      koç: `${name} bugün iyi sonuç aldı ancak kaygı 8+ bildirdi. Mükemmeliyetçilik örüntüsü izleniyor.`
+    });
+  }
+
+  // 1B. Enerji-Disiplin Uyumu: Düşük enerji AMA hedefe yakın soru
+  if (enerji <= 4 && todayQ >= GOAL * 0.8) {
+    notifications.push({
+      msg: `💪 Bugün enerjin düşük olmasına rağmen masadan kalkmamışsın. Bu disiplin seni hedefine götürecek en büyük gücün! Gurur duy kendinle.`,
+      type: 'enerji_disiplin_uyumu', priority: 1, color: '#43e97b', icon: '💪',
+      koç: `${name} düşük enerjiyle (${enerji}/10) hedefe yakın soru çözdü (${todayQ}). Yüksek disiplin göstergesi.`
+    });
+  }
+
+  // 1C. Yüksek Enerji - Düşük Üretim: Potansiyel kullanılmıyor
+  if (enerji >= 8 && todayQ > 0 && todayQ < GOAL * 0.4) {
+    notifications.push({
+      msg: `🚀 Enerjin çok yüksek bugün! Bu enerjini biraz daha sorulara yönlendirirsen sonuçlar seni şaşırtacak. Hadi devam!`,
+      type: 'yuksek_enerji_dusuk_uretim', priority: 2, color: '#6c63ff', icon: '🚀',
+      koç: `${name} yüksek enerji (${enerji}/10) bildirdi ama soru sayısı düşük (${todayQ}). Zaman yönetimi desteği gerekebilir.`
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // KATMAN 2: "TAHMİN VE ÖNLEME" — Risk Yönetimi
+  // ──────────────────────────────────────────────────────────
+
+  // 2A. Zihinsel Sis Tahmini: Az uyku + sabah girişi
+  const now = new Date();
+  const isMorning = now.getHours() < 12;
+  if (uyku > 0 && uyku < 6.5 && isMorning) {
+    const dersOnerisi = zorDers || 'en dinç olduğun ders';
+    notifications.push({
+      msg: `😴 Az uyudun bugün — odaklanmakta zorlanabilirsin. En zor dersin (${dersOnerisi}) en dinç olduğun ilk 2 saate koy, sonra hafif programa geç. Ne dersin?`,
+      type: 'zihinsel_sis', priority: 1, color: '#ff9f43', icon: '😴',
+      koç: `${name} ${uyku} saat uyudu. Sabah girişi yaptı. Zihinsel yorgunluk riski — program hafifletilmesi önerilebilir.`
+    });
+  }
+
+  // 2B. Kaygı-Hata Uyarısı: Yüksek kaygı + yeni konu çalışacak
+  if (kaygi >= 8 && zorDers) {
+    notifications.push({
+      msg: `🎯 Şu an kaygı seviyen biraz yüksek. Yeni ve zor bir konuya başlamadan önce bildiğin bir dersten 10 soru çözüp 'başarı hissiyle' ısınmak ister misin?`,
+      type: 'kaygi_hata_uyarisi', priority: 1, color: '#ff6b6b', icon: '🎯',
+      koç: `${name} kaygı ${kaygi}/10 bildirdi ve zorlandığı ders: ${zorDers}. Yeni konuya başlamadan önce ısınma önerildi.`
+    });
+  }
+
+  // 2C. Olumsuz Düşünce Kırıcı: Negatif not içeriği varsa
+  if (negatif && (negatif.includes('yapamam') || negatif.includes('korkuyor') || negatif.includes('başaramam') || negatif.includes('geç kaldım') || negatif.includes('olmaz'))) {
+    // Son başarılı deneme veya iyi günü bul
+    const bestEntry = studyEntries.filter(e=>(e.studentName===myName||e.userId===myUid)&&e.type==='deneme').sort((a,b)=>(b.net||0)-(a.net||0))[0];
+    const bestRef = bestEntry ? `${bestEntry.examTitle||'son denemen'}de ${bestEntry.net?.toFixed(1)||''} net` : 'geçen haftaki çalışmalarını';
+    notifications.push({
+      msg: `🤝 Zihninden geçen o olumsuz düşünceyi gördüm. Bu sadece bir düşünce, gerçek değil. ${bestRef} hatırla — bunu yapabilirsin!`,
+      type: 'olumsuz_dusunce_kirici', priority: 1, color: '#a29bfe', icon: '🤝',
+      koç: `${name} olumsuz düşünce kaydetti: "${negatif.substring(0,40)}...". Motivasyon desteği gerekiyor.`
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // KATMAN 3: "DUYGUSAL REÇETE" — Aksiyon Önerisi
+  // ──────────────────────────────────────────────────────────
+
+  // 3A. Tükenmişlik Sinyali: 3 gün düşük enerji + yorgun/mutsuz duygu
+  if (consecutive3LowEnerji && (mood === 'tired' || mood === 'sad')) {
+    notifications.push({
+      msg: `🌊 Son 3 gündür pillerin biraz boşalmış görünüyor. Bugün programını %20 hafifletip akşam en çok sevdiğin bir şeyi yapmaya ne zaman ayırıyorsun? Dinlenmek de çalışmaya dahildir! 🌙`,
+      type: 'tukenmisl_sinyali', priority: 1, color: '#fd79a8', icon: '🌊',
+      koç: `⚠️ ${name} 3 gündür düşük enerji + olumsuz duygu bildiriyor. Tükenmişlik riski. Acil görüşme veya program hafifletme önerilir.`
+    });
+  }
+
+  // 3B. 3 Gün Üst Üste Olumsuz Duygu (eski sistem korunuyor)
+  if (consecutive3Neg && !consecutive3LowEnerji) {
+    notifications.push({
+      msg: `💙 Son birkaç gündür zorlu bir süreç geçiriyorsun. Bu hisler geçici — sen bu süreçten daha güçlü çıkacaksın. Koçunla konuşmak ister misin?`,
+      type: 'mood_consecutive', priority: 1, color: '#778ca3', icon: '💙',
+      koç: `⚠️ ${name} son 3 gündür olumsuz duygu (${last3.map(d=>d.mood||'?').join(', ')}) bildiriyor. Görüşme planlanması önerilir.`
+    });
+  }
+
+  // 3C. Odak Düşük + Uzun Çalışma: Verimsiz masa başı
+  if (odak <= 4 && todayEntries.filter(e=>e.type!=='deneme').reduce((a,e)=>a+(e.duration||0),0) > 120) {
+    notifications.push({
+      msg: `⏱ Uzun süredir masadasın ama odaklanmakta zorlandığını hissediyorum. 25 dakika çalış, 5 dakika gerçekten kalk — Pomodoro dene. Kalite, saatten önemli!`,
+      type: 'verimsiz_masa_basi', priority: 2, color: '#45b7d1', icon: '⏱',
+      koç: `${name} düşük odak (${odak}/10) bildirmesine rağmen 2+ saat çalışmış. Verimlilik tekniği önerildi.`
+    });
+  }
+
+  if (notifications.length === 0) return;
+
+  // Önceliğe göre sırala, en kritik önce
+  notifications.sort((a,b) => a.priority - b.priority);
+
+  // Öğrenciye anlık bildirim modalı göster
+  showWellnessFeedbackModal(notifications[0]);
+
+  // Koça tüm bildirimleri gönder
+  notifications.forEach(n => {
+    if (n.koç) sendWellnessNotification(studentUid, n.koç, n.type);
+  });
+}
+
+// Öğrenciye anlık geri bildirim modalı
+function showWellnessFeedbackModal(notif) {
+  const existing = document.getElementById('wellnessFeedbackModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'wellnessFeedbackModal';
+  modal.style.cssText = `
+    position:fixed; inset:0; background:rgba(0,0,0,0.6);
+    display:flex; align-items:flex-end; justify-content:center;
+    z-index:9999; padding:16px; animation:fadeIn .2s ease;
+  `;
+  modal.innerHTML = `
+    <div style="
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:20px 20px 16px 16px; width:100%; max-width:480px;
+      padding:24px 20px 20px; box-shadow:0 -8px 40px rgba(0,0,0,0.4);
+      border-top:3px solid ${notif.color};
+    ">
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px">
+        <div style="font-size:1.8rem;line-height:1">${notif.icon}</div>
+        <div style="flex:1">
+          <div style="font-weight:800;font-size:0.95rem;color:var(--text);line-height:1.6">
+            ${notif.msg}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="document.getElementById('wellnessFeedbackModal').remove()"
+          style="flex:1;padding:12px;background:${notif.color};border:none;border-radius:12px;
+                 color:#fff;font-weight:800;font-size:0.92rem;cursor:pointer;font-family:inherit">
+          Anladım 👍
+        </button>
+        <button onclick="document.getElementById('wellnessFeedbackModal').remove()"
+          style="padding:12px 16px;background:var(--surface2);border:1px solid var(--border);
+                 border-radius:12px;color:var(--text2);font-weight:700;font-size:0.85rem;
+                 cursor:pointer;font-family:inherit">
+          Kapat
+        </button>
+      </div>
+    </div>
+  `;
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
 // Koça bildirim gönder
 async function sendWellnessNotification(studentUid, text, type) {
   if (!db || !studentUid) return;
   try {
-    // Öğrencinin teacherId'sini bul
     const teacherId = (window.currentUserData||{}).teacherId;
     if (!teacherId) return;
-    // Aynı tipte bugün zaten bildirim gönderildiyse tekrar gönderme
     const todayKey = new Date().toISOString().split('T')[0];
     const existing = await db.collection('notifications')
       .where('toUid','==',teacherId)
@@ -6024,7 +6220,7 @@ async function sendWellnessNotification(studentUid, text, type) {
       .where('type','==',type)
       .where('dateKey','==',todayKey)
       .get();
-    if (!existing.empty) return; // Bugün zaten gönderilmiş
+    if (!existing.empty) return;
     await db.collection('notifications').add({
       toUid: teacherId,
       fromUid: studentUid,
@@ -6038,27 +6234,9 @@ async function sendWellnessNotification(studentUid, text, type) {
   } catch(e) { console.log('Wellness notif error:', e.message); }
 }
 
-// 3 gün üst üste olumsuz duygu kontrolü
+// 3 gün üst üste olumsuz duygu kontrolü (geriye dönük uyumluluk)
 function checkConsecutiveNegativeMoods(studentUid, data) {
-  const negativeMoods = ['anxious','sad','tired'];
-  const days = data.days || {};
-  let consecutiveCount = 0;
-  for (let i = 0; i < 3; i++) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    const dk = d.toISOString().split('T')[0];
-    if (days[dk] && negativeMoods.includes(days[dk].mood)) {
-      consecutiveCount++;
-    } else {
-      break;
-    }
-  }
-  if (consecutiveCount >= 3) {
-    const name = (window.currentUserData||{}).name || 'Öğrenci';
-    sendWellnessNotification(studentUid,
-      `⚠️ ${name} son 3 gündür olumsuz duygu bildiriyor. Bir görüşme planlanması önerilir.`,
-      'mood_consecutive'
-    );
-  }
+  // Artık checkAllWellnessNotifications içinde yönetiliyor
 }
 
 function _updateWellnessButtons(field, value, activeBtn) {
