@@ -2485,13 +2485,38 @@ function studentDetailAnalysis() {
     ${denList.length>0?`
     <div class="card" style="margin-bottom:12px">
       <div class="card-title">🎯 Son Denemeler</div>
-      ${denList.map(d=>{
-        const subR=subjects.map(s=>{ const e=d.entries.find(e=>e.subject===s.name); if(!e) return {name:s.name,d:0,y:0,net:0}; return {name:s.name,d:e.correct||0,y:e.wrong||0,net:e.net||0}; });
+      ${denList.map((d,di)=>{
+        const subR=subjects.map(s=>{ const e=d.entries.find(e=>e.subject===s.name); if(!e) return null; return {name:s.name,icon:s.icon,cls:s.cls,d:e.correct||0,y:e.wrong||0,net:e.net||0}; }).filter(Boolean);
         const lgsR=calcLGSScore(subR.map(s=>({...s,avgNet:s.net,count:s.net>0?1:0})));
         const dateL=d.dk?new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'}):'';
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
-          <div><div style="font-weight:700;font-size:0.85rem">${d.title}</div><div style="font-size:0.72rem;color:var(--text2)">${dateL}</div></div>
-          <div style="font-size:1.2rem;font-weight:900;color:var(--accent)">${lgsR.puan}<span style="font-size:0.65rem;color:var(--text2)">/500</span></div>
+        const accId='denAcc_'+di;
+        return `
+        <div style="border-bottom:1px solid var(--border)">
+          <div onclick="toggleDenemeAcc('${accId}')" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;cursor:pointer;user-select:none">
+            <div>
+              <div style="font-weight:700;font-size:0.85rem">${d.title}</div>
+              <div style="font-size:0.72rem;color:var(--text2)">${dateL}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="font-size:1.2rem;font-weight:900;color:var(--accent)">${lgsR.puan}<span style="font-size:0.65rem;color:var(--text2)">/500</span></div>
+              <span id="${accId}_arrow" style="color:var(--text2);font-size:0.75rem;transition:.2s">▼</span>
+            </div>
+          </div>
+          <div id="${accId}" style="display:none;padding-bottom:10px">
+            ${subR.map(s=>`
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--surface2);border-radius:7px;margin-bottom:4px">
+                <span style="font-size:0.8rem;color:var(--${s.cls})">${s.icon} ${s.name}</span>
+                <span style="font-size:0.78rem">✅${s.d} ❌${s.y} <b style="color:var(--accent3)">Net:${s.net.toFixed(1)}</b></span>
+              </div>`).join('')}
+            <div style="display:flex;justify-content:space-between;margin-top:6px;padding:6px 8px;background:var(--accent)10;border-radius:7px;font-size:0.8rem">
+              <span style="color:var(--text2)">Ham Puan</span>
+              <b style="color:var(--accent)">${lgsR.hamPuan}</b>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:4px 8px;font-size:0.8rem">
+              <span style="color:var(--text2)">LGS Tahmini</span>
+              <b style="color:var(--accent);font-size:1rem">${lgsR.puan}/500</b>
+            </div>
+          </div>
         </div>`;}).join('')}
     </div>`:''}
 
@@ -4652,8 +4677,13 @@ function teacherAnalysis() {
       </div>
     ` : `
       <div class="card" style="margin-bottom:16px">
-        <div class="card-title">📊 Haftalık Özet</div>
-        <canvas id="trendChart" height="180"></canvas>
+        <div class="card-title">📊 Son 7 Gün — Tüm Öğrenciler Toplam Soru</div>
+        <div id="teacherTrendBars" style="display:flex;align-items:flex-end;gap:6px;height:90px;padding:4px 0">
+          <div style="color:var(--text2);font-size:0.82rem;text-align:center;width:100%;padding-top:20px">Yükleniyor...</div>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:4px;font-size:0.68rem;color:var(--text2)">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--accent);border-radius:2px;display:inline-block"></span>Soru</span>
+        </div>
       </div>
       <div class="card">
         <div class="card-title">👥 Öğrenci Bazlı Çalışma Tablosu</div>
@@ -5961,11 +5991,7 @@ function closeTopicPicker() {
   document.getElementById('topicPickerModal').style.display = 'none';
 }
 
-function updateEntryTopics() {
-  document.getElementById('entryTopic').value = '';
-  const lbl = document.getElementById('entryTopicLabel');
-  if (lbl) lbl.textContent = '— Konu seç —';
-}
+// updateEntryTopics aşağıda tanımlanmıştır (satır ~7141)
 
 function updateTaskUnits() {
   document.getElementById('taskUnit').value = '';
@@ -7140,9 +7166,15 @@ function toggleEntryFields() {
 
 function updateEntryTopics() {
   const sub = document.getElementById('entrySubject').value;
+  // Konu değerini ve label'ı sıfırla
+  const topicInput = document.getElementById('entryTopic');
+  if (topicInput) topicInput.value = '';
+  const lbl = document.getElementById('entryTopicLabel');
+  if (lbl) lbl.textContent = '— Konu seç —';
+  // Konu picker için de sıfırla
   const topics = kazanimlar[sub] || [];
   const sel = document.getElementById('entryTopic');
-  sel.innerHTML = topics.map(t=>`<option>${t}</option>`).join('');
+  if (sel && sel.tagName === 'SELECT') sel.innerHTML = topics.map(t=>`<option>${t}</option>`).join('');
 }
 
 function openEntryFor(subjectName) {
@@ -7744,6 +7776,29 @@ function drawCharts() {
     } else {
       subDistEl.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;text-align:center;padding:12px">Bu hafta çalışma verisi yok</div>';
     }
+  }
+
+  // Öğretmen trend bar grafiği (canvas yerine HTML barlar)
+  const teacherBars = document.getElementById('teacherTrendBars');
+  if(teacherBars) {
+    const days7 = [];
+    for(let i=6;i>=0;i--) {
+      const d = new Date(now); d.setDate(now.getDate()-i);
+      const dk = d.toISOString().split('T')[0];
+      const label = d.toLocaleDateString('tr-TR',{weekday:'short'});
+      const q = studyEntries.filter(e=>e.dateKey===dk).reduce((a,e)=>a+(e.questions||0),0);
+      const dateLabel = d.toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'long'});
+      days7.push({dk, label, q, dateLabel, isToday: dk===todayKey});
+    }
+    const maxQ7 = Math.max(...days7.map(t=>t.q), 1);
+    teacherBars.innerHTML = days7.map(t=>{
+      const h = Math.max(Math.round((t.q/maxQ7)*70), t.q>0?4:2);
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer" onclick="showDayEntries('${t.dk}','${t.dateLabel}')">
+        <div style="font-size:0.6rem;color:var(--text2);line-height:1">${t.q>0?t.q:''}</div>
+        <div style="width:100%;height:${h}px;background:${t.isToday?'var(--accent)':'var(--accent)55'};border-radius:3px 3px 0 0;min-height:2px;transition:.3s"></div>
+        <div style="font-size:0.6rem;color:${t.isToday?'var(--accent)':'var(--text2)'};font-weight:${t.isToday?'800':'600'}">${t.label}</div>
+      </div>`;
+    }).join('');
   }
 
   // Trend chart (analysis page) - son 7 gün
