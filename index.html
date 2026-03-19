@@ -2264,6 +2264,7 @@ function studentDetailAnalysis() {
       q:dayE.reduce((a,e)=>a+(e.questions||0),0), net:dayE.reduce((a,e)=>a+(e.net||0),0) };
   });
   const maxTQ = Math.max(...trendDays.map(t=>t.q),1);
+  const maxTN = Math.max(...trendDays.map(t=>t.net),0.1);
 
   // Korelasyon analizi — seçili döneme göre psiko vs akademik
   const wellnessLocal = (() => { try { return JSON.parse(localStorage.getItem('wellness_'+sUid)||'{}'); } catch(e){ return {}; } })();
@@ -2421,7 +2422,7 @@ function studentDetailAnalysis() {
     <div class="card" style="margin-bottom:12px">
       <div class="card-title">📅 Son 7 Gün — Soru & Net Trendi</div>
       <div style="display:flex;align-items:flex-end;gap:5px;height:90px;padding:4px 0">
-        ${(()=>{ const maxTN=Math.max(...trendDays.map(x=>x.net),1); return trendDays.map(t=>{
+        ${trendDays.map(t=>{
           const hQ=t.q>0?Math.max(Math.round((t.q/maxTQ)*70),4):0;
           const hN=t.net>0?Math.max(Math.round((t.net/maxTN)*70),4):0;
           const isToday=t.dk===todayKey;
@@ -2434,7 +2435,7 @@ function studentDetailAnalysis() {
             </div>
             <div style="font-size:0.6rem;color:${isToday?'var(--accent)':'var(--text2)'}">${t.label}</div>
           </div>`;
-        }).join('');})()}
+        }).join('')}
       </div>
       <div style="display:flex;gap:12px;justify-content:center;margin-top:4px;font-size:0.68rem;color:var(--text2)">
         <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--accent);border-radius:2px;display:inline-block"></span>Soru</span>
