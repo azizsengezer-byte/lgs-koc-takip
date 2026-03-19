@@ -863,11 +863,14 @@
 
     <!-- Soru Çözümü için doğru/yanlış -->
     <div id="soruFields">
-      <div class="grid-3">
+      <div class="grid-2">
         <div class="form-group">
           <label class="form-label">📝 Toplam Soru</label>
           <input class="form-input" type="number" id="entryQuestions" placeholder="20" min="0">
         </div>
+        <div class="form-group" style="visibility:hidden" id="placeholder"></div>
+      </div>
+      <div class="grid-2">
         <div class="form-group">
           <label class="form-label">✅ Doğru</label>
           <input class="form-input" type="number" id="entryCorrect" placeholder="0" min="0">
@@ -5902,9 +5905,8 @@ function openOptionPicker(targetId, title, options, callback) {
 }
 
 function _renderPickerOptions(options, currentVal, targetId, callback) {
-  const cbName = typeof callback === 'string' ? callback : (callback?.name || '');
   document.getElementById('topicPickerList').innerHTML = options.map(o => `
-    <button onclick="selectOption('${targetId}','${o.v.replace(/'/g,"\\'")}','${(o.l||o.v).replace(/'/g,"\\'")}','${cbName}')"
+    <button onclick="selectOption('${targetId}','${o.v.replace(/'/g,"\\'")}','${(o.l||o.v).replace(/'/g,"\\'")}','${callback ? callback.name : ''}')"
       style="width:100%;padding:14px 18px;background:${o.v===currentVal?'rgba(108,99,255,0.1)':'transparent'};
              border:none;border-bottom:1px solid var(--border);color:var(--text);
              text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
@@ -5925,8 +5927,19 @@ function filterTopicPicker(query) {
 function selectOption(targetId, value, label, callbackName) {
   const inp = document.getElementById(targetId);
   if (inp) inp.value = value;
+  // Label'ı güncelle — hem targetId+'Label' hem de özel durumlar
   const lbl = document.getElementById(targetId+'Label');
   if (lbl) lbl.textContent = label;
+  // taskUnit için taskUnitLabel'ı da güncelle (hidden input olduğu için ayrıca)
+  if (targetId === 'taskUnit') {
+    const unitLbl = document.getElementById('taskUnitLabel');
+    if (unitLbl) unitLbl.textContent = label;
+  }
+  // entryTopic için entryTopicLabel'ı da güncelle
+  if (targetId === 'entryTopic') {
+    const topicLbl = document.getElementById('entryTopicLabel');
+    if (topicLbl) topicLbl.textContent = label;
+  }
   closeTopicPicker();
   if (callbackName) { const fn=window[callbackName]; if(typeof fn==='function') fn(); }
 }
@@ -5962,17 +5975,24 @@ function openTopicPicker(target) {
   const targetId = target==='entry' ? 'entryTopic' : 'taskUnit';
   const cbName = target==='entry' ? '' : 'updateTaskTitle';
   const opts = allTopics.map(t=>({v:t, l:t}));
-  if (!opts.length) { showToast('ℹ️','Bu ders için konu listesi yok'); return; }
-  openOptionPicker(targetId, (sub||'Konu')+' — Seç', opts, cbName || null);
+  openOptionPicker(targetId, (sub||'Konu')+' — Seç', opts, cbName ? {name:cbName} : null);
 }
 
 function closeTopicPicker() {
   document.getElementById('topicPickerModal').style.display = 'none';
 }
 
-// updateEntryTopics aşağıda tanımlı (7191. satır civarı)
+function updateEntryTopics() {
+  document.getElementById('entryTopic').value = '';
+  const lbl = document.getElementById('entryTopicLabel');
+  if (lbl) lbl.textContent = '— Konu seç —';
+}
 
-// updateTaskUnits aşağıda tanımlı
+function updateTaskUnits() {
+  document.getElementById('taskUnit').value = '';
+  const lbl = document.getElementById('taskUnitLabel');
+  if (lbl) lbl.textContent = '— Konu seç —';
+}
 
 function _getW() {
   const myUid = (window.currentUserData||{}).uid || 'local';
@@ -7159,15 +7179,8 @@ function openDayAction(dk, dateLabel, isToday, isPast) {
 }
 
 function openEntryForDay(dk) {
-  if (!dk) {
-    // Bugün → direkt Giriş Yap sekmesine git
-    window._selectedEntryDate = null;
-    showPage('daily-entry');
-  } else {
-    // Geçmiş gün → modal aç
-    window._selectedEntryDate = dk;
-    openEntryFor(null);
-  }
+  window._selectedEntryDate = dk || null;
+  openEntryFor(null);
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
@@ -7184,23 +7197,17 @@ function toggleEntryFields() {
 
 function updateEntryTopics() {
   const sub = document.getElementById('entrySubject').value;
-  // Konu değeri ve label'ı sıfırla
-  const topicInput = document.getElementById('entryTopic');
-  if (topicInput) topicInput.value = '';
-  const lbl = document.getElementById('entryTopicLabel');
-  if (lbl) lbl.textContent = '— Konu seç —';
-  // Ders değişince ders label'ını da güncelle
-  const subjects_map = {'Türkçe':'📖 Türkçe','Matematik':'📐 Matematik','Fen Bilimleri':'🔬 Fen Bilimleri','İnkılap Tarihi':'🏛️ İnkılap Tarihi','Din Kültürü':'☪️ Din Kültürü','İngilizce':'🌍 İngilizce'};
-  const subLbl = document.getElementById('entrySubjectLabel');
-  if (subLbl && sub) subLbl.textContent = subjects_map[sub] || sub;
+  const topics = kazanimlar[sub] || [];
+  const sel = document.getElementById('entryTopic');
+  sel.innerHTML = topics.map(t=>`<option>${t}</option>`).join('');
 }
 
 function openEntryFor(subjectName) {
-  // Önce subject set et, sonra topic sıfırla
+  updateEntryTopics();
   if (subjectName) {
     document.getElementById('entrySubject').value = subjectName;
+    updateEntryTopics();
   }
-  updateEntryTopics();
   document.getElementById('entryType').value = 'soru';
   toggleEntryFields();
   document.getElementById('entryDuration').value = '';
@@ -7430,14 +7437,11 @@ function populateTaskStudents() {
 }
 
 function updateTaskUnits() {
-  // Konu sıfırla
+  // Hidden input — değeri sıfırla, label güncelle
   const inp = document.getElementById('taskUnit');
   if (inp) inp.value = '';
   const lbl = document.getElementById('taskUnitLabel');
   if (lbl) lbl.textContent = '— Konu seç —';
-  // Görev başlığını da sıfırla
-  const titleEl = document.getElementById('taskTitle');
-  if (titleEl) titleEl.value = '';
 }
 
 function updateTaskTitle() {
