@@ -5902,8 +5902,9 @@ function openOptionPicker(targetId, title, options, callback) {
 }
 
 function _renderPickerOptions(options, currentVal, targetId, callback) {
+  const cbName = typeof callback === 'string' ? callback : (callback?.name || '');
   document.getElementById('topicPickerList').innerHTML = options.map(o => `
-    <button onclick="selectOption('${targetId}','${o.v.replace(/'/g,"\\'")}','${(o.l||o.v).replace(/'/g,"\\'")}','${callback ? callback.name : ''}')"
+    <button onclick="selectOption('${targetId}','${o.v.replace(/'/g,"\\'")}','${(o.l||o.v).replace(/'/g,"\\'")}','${cbName}')"
       style="width:100%;padding:14px 18px;background:${o.v===currentVal?'rgba(108,99,255,0.1)':'transparent'};
              border:none;border-bottom:1px solid var(--border);color:var(--text);
              text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
@@ -5961,7 +5962,8 @@ function openTopicPicker(target) {
   const targetId = target==='entry' ? 'entryTopic' : 'taskUnit';
   const cbName = target==='entry' ? '' : 'updateTaskTitle';
   const opts = allTopics.map(t=>({v:t, l:t}));
-  openOptionPicker(targetId, (sub||'Konu')+' — Seç', opts, cbName ? {name:cbName} : null);
+  if (!opts.length) { showToast('ℹ️','Bu ders için konu listesi yok'); return; }
+  openOptionPicker(targetId, (sub||'Konu')+' — Seç', opts, cbName || null);
 }
 
 function closeTopicPicker() {
@@ -5970,11 +5972,7 @@ function closeTopicPicker() {
 
 // updateEntryTopics aşağıda tanımlı (7191. satır civarı)
 
-function updateTaskUnits() {
-  document.getElementById('taskUnit').value = '';
-  const lbl = document.getElementById('taskUnitLabel');
-  if (lbl) lbl.textContent = '— Konu seç —';
-}
+// updateTaskUnits aşağıda tanımlı
 
 function _getW() {
   const myUid = (window.currentUserData||{}).uid || 'local';
@@ -7432,11 +7430,14 @@ function populateTaskStudents() {
 }
 
 function updateTaskUnits() {
-  // Hidden input — değeri sıfırla, label güncelle
+  // Konu sıfırla
   const inp = document.getElementById('taskUnit');
   if (inp) inp.value = '';
   const lbl = document.getElementById('taskUnitLabel');
   if (lbl) lbl.textContent = '— Konu seç —';
+  // Görev başlığını da sıfırla
+  const titleEl = document.getElementById('taskTitle');
+  if (titleEl) titleEl.value = '';
 }
 
 function updateTaskTitle() {
