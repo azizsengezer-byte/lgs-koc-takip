@@ -2264,7 +2264,7 @@ function studentDetailAnalysis() {
       q:dayE.reduce((a,e)=>a+(e.questions||0),0), net:dayE.reduce((a,e)=>a+(e.net||0),0) };
   });
   const maxTQ = Math.max(...trendDays.map(t=>t.q),1);
-  const maxTN = Math.max(...trendDays.map(t=>t.net),0.1);
+  const maxTN = Math.max(...trendDays.map(t=>t.net),1);
 
   // Korelasyon analizi — seçili döneme göre psiko vs akademik
   const wellnessLocal = (() => { try { return JSON.parse(localStorage.getItem('wellness_'+sUid)||'{}'); } catch(e){ return {}; } })();
@@ -2421,19 +2421,16 @@ function studentDetailAnalysis() {
     ${studentAnalysisPeriod!=='daily'?`
     <div class="card" style="margin-bottom:12px">
       <div class="card-title">📅 Son 7 Gün — Soru & Net Trendi</div>
-      <div style="display:flex;align-items:flex-end;gap:5px;padding:4px 0;position:relative;height:90px">
+      <div style="display:flex;gap:4px;align-items:flex-end;height:100px;padding-bottom:20px;box-sizing:border-box">
         ${trendDays.map(t=>{
-          const hQ=t.q>0?Math.max(Math.round((t.q/maxTQ)*66),6):2;
-          const hN=t.net>0?Math.max(Math.round((t.net/maxTN)*66),6):2;
+          const hQ=t.q>0?Math.max(Math.round((t.q/maxTQ)*60),6):0;
+          const hN=t.net>0?Math.max(Math.round((t.net/maxTN)*60),6):0;
           const isToday=t.dk===todayKey;
           const dl=new Date(t.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'short'});
-          return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:0;cursor:pointer;height:90px;justify-content:flex-end" onclick="showDayEntries('${t.dk}','${dl}')">
-            <div style="font-size:0.58rem;color:var(--text2);line-height:1.2;margin-bottom:2px">${t.q>0?t.q:''}</div>
-            <div style="width:100%;display:flex;gap:1px;align-items:flex-end">
-              <div style="flex:1;background:${isToday?'var(--accent)':'var(--accent)88'};border-radius:3px 3px 0 0;height:${hQ}px"></div>
-              <div style="flex:1;background:${isToday?'var(--accent3)':'var(--accent3)88'};border-radius:3px 3px 0 0;height:${hN}px"></div>
-            </div>
-            <div style="font-size:0.58rem;color:${isToday?'var(--accent)':'var(--text2)'};margin-top:3px">${t.label}</div>
+          return `<div style="flex:1;text-align:center;cursor:pointer;position:relative" onclick="showDayEntries('${t.dk}','${dl}')">
+            <div style="font-size:0.55rem;color:var(--text2);position:absolute;top:-16px;left:0;right:0;text-align:center">${t.q>0?t.q:''}</div>
+            <div style="display:inline-block;width:45%;height:${hQ}px;background:${isToday?'var(--accent)':'#6c63ff99'};border-radius:2px 2px 0 0;vertical-align:bottom"></div><div style="display:inline-block;width:45%;height:${hN}px;background:${isToday?'var(--accent3)':'#43e97b99'};border-radius:2px 2px 0 0;vertical-align:bottom"></div>
+            <div style="font-size:0.55rem;color:${isToday?'var(--accent)':'var(--text2)'};position:absolute;bottom:-18px;left:0;right:0;text-align:center">${t.label}</div>
           </div>`;
         }).join('')}
       </div>
@@ -4774,7 +4771,11 @@ function studentDashboard() {
     return { d, dk, day, isToday, hasEntry, count: dayEntries.length };
   });
   const weekCalendar = weekDayData.map(({d,dk,day,isToday,hasEntry,count})=>{
-    return `<div class="day-cell ${hasEntry?'has-data':''} ${isToday?'today':''}" onclick="showDayEntries('${dk}','${day.toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'short'})}')">
+    const isPast = dk < todayKey;
+    const isFuture = dk > todayKey;
+    return `<div class="day-cell ${hasEntry?'has-data':''} ${isToday?'today':''}" 
+      onclick="openDayAction('${dk}','${day.toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'short'})}','${isToday}','${isPast}')"
+      style="${isFuture?'opacity:0.4;cursor:default':'cursor:pointer'}">
       <div class="day-name">${d}</div>
       <div class="day-num">${day.getDate()}</div>
       ${hasEntry?`<div style="width:18px;height:4px;border-radius:2px;background:var(--accent3);margin-top:2px"></div>`:'<div style="height:6px"></div>'}
@@ -4824,8 +4825,12 @@ function studentDashboard() {
       <div class="week-grid">${weekCalendar}</div>
       <!-- Seçili gün girişleri -->
       <div id="dayEntriesPanel" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:12px"></div>
-      <div style="margin-top:14px">
-        <button class="btn btn-primary" style="width:100%" onclick="showPage('daily-entry')">+ Bugün Giriş Yap</button>
+      <!-- Geçmiş gün uyarısı -->
+      <div id="pastDayWarning" style="display:none;margin-top:10px;padding:10px 14px;background:#f9ca2418;border:1.5px solid #f9ca2444;border-radius:10px;font-size:0.82rem;color:#f9ca24">
+        ⚠️ <b>Geçmiş güne giriş yapıyorsun.</b> Bu veri <span id="pastDayLabel"></span> tarihine kaydedilecek.
+      </div>
+      <div style="margin-top:14px" id="dayActionBtn">
+        <button class="btn btn-primary" style="width:100%" onclick="openEntryForDay(null)">+ Bugün Giriş Yap</button>
       </div>
     </div>
 
@@ -7127,6 +7132,42 @@ function selectSubjectCard(el, name) {
   openModal('addEntryModal');
 }
 
+// Seçili geçmiş gün için global
+window._selectedEntryDate = null;
+
+function openDayAction(dk, dateLabel, isToday, isPast) {
+  const isTodayBool = isToday === 'true';
+  const isPastBool = isPast === 'true';
+
+  // Girişleri göster
+  showDayEntries(dk, dateLabel);
+
+  // Butonu güncelle
+  const btnDiv = document.getElementById('dayActionBtn');
+  const warning = document.getElementById('pastDayWarning');
+  const pastLbl = document.getElementById('pastDayLabel');
+
+  if (isTodayBool) {
+    window._selectedEntryDate = null;
+    if (btnDiv) btnDiv.innerHTML = `<button class="btn btn-primary" style="width:100%" onclick="openEntryForDay(null)">+ Bugün Giriş Yap</button>`;
+    if (warning) warning.style.display = 'none';
+  } else if (isPastBool) {
+    window._selectedEntryDate = dk;
+    if (pastLbl) pastLbl.textContent = dateLabel;
+    if (warning) warning.style.display = 'block';
+    if (btnDiv) btnDiv.innerHTML = `<button class="btn btn-primary" style="width:100%;background:linear-gradient(135deg,#f9ca24,#e17055)" onclick="openEntryForDay('${dk}')">📅 ${dateLabel} için Giriş Yap</button>`;
+  } else {
+    window._selectedEntryDate = null;
+    if (warning) warning.style.display = 'none';
+    if (btnDiv) btnDiv.innerHTML = `<button class="btn btn-primary" style="width:100%" onclick="openEntryForDay(null)">+ Bugün Giriş Yap</button>`;
+  }
+}
+
+function openEntryForDay(dk) {
+  window._selectedEntryDate = dk || null;
+  openEntryFor(null);
+}
+
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
@@ -7176,7 +7217,10 @@ function saveEntry() {
 
   const now = new Date();
   const time = now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
-  const dateKey = now.toISOString().split('T')[0];
+  // Geçmiş gün seçiliyse o tarihe kaydet, yoksa bugün
+  const dateKey = window._selectedEntryDate || now.toISOString().split('T')[0];
+  const isToday = !window._selectedEntryDate;
+  window._selectedEntryDate = null; // kullandıktan sonra sıfırla
   const user = auth.currentUser;
   const studentName = document.getElementById('menuName')?.textContent;
   const teacherId = (window.currentUserData||{}).teacherId || '';
@@ -7239,8 +7283,8 @@ function saveEntry() {
 
   const entry = {
     subject: sub, topic, type, duration: dur, questions: q,
-    correct, wrong, net, note, time, dateKey, isToday: true,
-    date: 'Bugün '+time
+    correct, wrong, net, note, time, dateKey, isToday,
+    date: isToday ? ('Bugün '+time) : (dateKey+' '+time)
   };
   studyEntries.unshift(entry);
 
