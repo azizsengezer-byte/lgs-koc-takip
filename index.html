@@ -2074,6 +2074,14 @@ function showDayEntries(dk, dateLabel) {
   const panel = document.getElementById('dayEntriesPanel');
   if (!panel) return;
 
+  // Aynı güne tekrar tıklanınca kapat
+  if (panel.dataset.openDk === dk && panel.style.display !== 'none') {
+    panel.style.display = 'none';
+    panel.dataset.openDk = '';
+    return;
+  }
+  panel.dataset.openDk = dk;
+
   const entries = studyEntries.filter(e => e.dateKey === dk);
 
   if (entries.length === 0) {
