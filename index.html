@@ -863,14 +863,11 @@
 
     <!-- Soru Çözümü için doğru/yanlış -->
     <div id="soruFields">
-      <div class="grid-2">
+      <div class="grid-3">
         <div class="form-group">
           <label class="form-label">📝 Toplam Soru</label>
           <input class="form-input" type="number" id="entryQuestions" placeholder="20" min="0">
         </div>
-        <div class="form-group" style="visibility:hidden" id="placeholder"></div>
-      </div>
-      <div class="grid-2">
         <div class="form-group">
           <label class="form-label">✅ Doğru</label>
           <input class="form-input" type="number" id="entryCorrect" placeholder="0" min="0">
@@ -2073,14 +2070,6 @@ async function saveEditTask(idx) {
 function showDayEntries(dk, dateLabel) {
   const panel = document.getElementById('dayEntriesPanel');
   if (!panel) return;
-
-  // Aynı güne tekrar tıklanınca kapat
-  if (panel.dataset.openDk === dk && panel.style.display !== 'none') {
-    panel.style.display = 'none';
-    panel.dataset.openDk = '';
-    return;
-  }
-  panel.dataset.openDk = dk;
 
   const entries = studyEntries.filter(e => e.dateKey === dk);
 
@@ -5979,11 +5968,7 @@ function closeTopicPicker() {
   document.getElementById('topicPickerModal').style.display = 'none';
 }
 
-function updateEntryTopics() {
-  document.getElementById('entryTopic').value = '';
-  const lbl = document.getElementById('entryTopicLabel');
-  if (lbl) lbl.textContent = '— Konu seç —';
-}
+// updateEntryTopics aşağıda tanımlı (7191. satır civarı)
 
 function updateTaskUnits() {
   document.getElementById('taskUnit').value = '';
@@ -7176,8 +7161,15 @@ function openDayAction(dk, dateLabel, isToday, isPast) {
 }
 
 function openEntryForDay(dk) {
-  window._selectedEntryDate = dk || null;
-  openEntryFor(null);
+  if (!dk) {
+    // Bugün → direkt Giriş Yap sekmesine git
+    window._selectedEntryDate = null;
+    showPage('daily-entry');
+  } else {
+    // Geçmiş gün → modal aç
+    window._selectedEntryDate = dk;
+    openEntryFor(null);
+  }
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
@@ -7194,17 +7186,23 @@ function toggleEntryFields() {
 
 function updateEntryTopics() {
   const sub = document.getElementById('entrySubject').value;
-  const topics = kazanimlar[sub] || [];
-  const sel = document.getElementById('entryTopic');
-  sel.innerHTML = topics.map(t=>`<option>${t}</option>`).join('');
+  // Konu değeri ve label'ı sıfırla
+  const topicInput = document.getElementById('entryTopic');
+  if (topicInput) topicInput.value = '';
+  const lbl = document.getElementById('entryTopicLabel');
+  if (lbl) lbl.textContent = '— Konu seç —';
+  // Ders değişince ders label'ını da güncelle
+  const subjects_map = {'Türkçe':'📖 Türkçe','Matematik':'📐 Matematik','Fen Bilimleri':'🔬 Fen Bilimleri','İnkılap Tarihi':'🏛️ İnkılap Tarihi','Din Kültürü':'☪️ Din Kültürü','İngilizce':'🌍 İngilizce'};
+  const subLbl = document.getElementById('entrySubjectLabel');
+  if (subLbl && sub) subLbl.textContent = subjects_map[sub] || sub;
 }
 
 function openEntryFor(subjectName) {
-  updateEntryTopics();
+  // Önce subject set et, sonra topic sıfırla
   if (subjectName) {
     document.getElementById('entrySubject').value = subjectName;
-    updateEntryTopics();
   }
+  updateEntryTopics();
   document.getElementById('entryType').value = 'soru';
   toggleEntryFields();
   document.getElementById('entryDuration').value = '';
