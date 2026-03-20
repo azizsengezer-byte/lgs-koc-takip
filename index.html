@@ -863,12 +863,9 @@
 
     <!-- Soru Çözümü için doğru/yanlış -->
     <div id="soruFields">
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">📝 Toplam Soru</label>
-          <input class="form-input" type="number" id="entryQuestions" placeholder="20" min="0">
-        </div>
-        <div class="form-group" style="visibility:hidden" id="placeholder"></div>
+      <div class="form-group">
+        <label class="form-label">📝 Toplam Soru</label>
+        <input class="form-input" type="number" id="entryQuestions" placeholder="20" min="0">
       </div>
       <div class="grid-2">
         <div class="form-group">
@@ -4834,7 +4831,7 @@ function studentDashboard() {
         ⚠️ <b>Geçmiş güne giriş yapıyorsun.</b> Bu veri <span id="pastDayLabel"></span> tarihine kaydedilecek.
       </div>
       <div style="margin-top:14px" id="dayActionBtn">
-        <button class="btn btn-primary" style="width:100%" onclick="openEntryForDay(null)">+ Bugün Giriş Yap</button>
+        <button class="btn btn-primary" style="width:100%" onclick="showPage('daily-entry')">+ Bugün Giriş Yap</button>
       </div>
     </div>
 
@@ -7154,17 +7151,28 @@ function openDayAction(dk, dateLabel, isToday, isPast) {
   const isTodayBool = isToday === 'true';
   const isPastBool = isPast === 'true';
 
-  // Girişleri göster
-  showDayEntries(dk, dateLabel);
-
-  // Butonu güncelle
+  const panel = document.getElementById('dayEntriesPanel');
   const btnDiv = document.getElementById('dayActionBtn');
   const warning = document.getElementById('pastDayWarning');
   const pastLbl = document.getElementById('pastDayLabel');
 
+  // Toggle: aynı güne tekrar tıklayınca kapat
+  if (panel && panel._openDk === dk && panel.style.display !== 'none') {
+    panel.style.display = 'none';
+    panel._openDk = null;
+    if (warning) warning.style.display = 'none';
+    // Butonu bugün için sıfırla
+    if (btnDiv) btnDiv.innerHTML = `<button class="btn btn-primary" style="width:100%" onclick="showPage('daily-entry')">+ Bugün Giriş Yap</button>`;
+    return;
+  }
+
+  // Girişleri göster
+  showDayEntries(dk, dateLabel);
+  if (panel) panel._openDk = dk;
+
   if (isTodayBool) {
     window._selectedEntryDate = null;
-    if (btnDiv) btnDiv.innerHTML = `<button class="btn btn-primary" style="width:100%" onclick="openEntryForDay(null)">+ Bugün Giriş Yap</button>`;
+    if (btnDiv) btnDiv.innerHTML = `<button class="btn btn-primary" style="width:100%" onclick="showPage('daily-entry')">+ Bugün Giriş Yap</button>`;
     if (warning) warning.style.display = 'none';
   } else if (isPastBool) {
     window._selectedEntryDate = dk;
@@ -7174,7 +7182,7 @@ function openDayAction(dk, dateLabel, isToday, isPast) {
   } else {
     window._selectedEntryDate = null;
     if (warning) warning.style.display = 'none';
-    if (btnDiv) btnDiv.innerHTML = `<button class="btn btn-primary" style="width:100%" onclick="openEntryForDay(null)">+ Bugün Giriş Yap</button>`;
+    if (btnDiv) btnDiv.innerHTML = `<button class="btn btn-primary" style="width:100%" onclick="showPage('daily-entry')">+ Bugün Giriş Yap</button>`;
   }
 }
 
@@ -7199,16 +7207,26 @@ function updateEntryTopics() {
   const sub = document.getElementById('entrySubject').value;
   const topics = kazanimlar[sub] || [];
   const sel = document.getElementById('entryTopic');
-  sel.innerHTML = topics.map(t=>`<option>${t}</option>`).join('');
+  if (sel) { sel.value = ''; }
+  // Konu seçici label'ı sıfırla
+  const topicLbl = document.getElementById('entryTopicLabel');
+  if (topicLbl) topicLbl.textContent = '— Konu seç —';
 }
 
 function openEntryFor(subjectName) {
-  updateEntryTopics();
+  // Ders seç
   if (subjectName) {
     document.getElementById('entrySubject').value = subjectName;
-    updateEntryTopics();
+    // Label'ı da güncelle
+    const sub = subjects.find(s=>s.name===subjectName);
+    const lbl = document.getElementById('entrySubjectLabel');
+    if (lbl && sub) lbl.textContent = sub.icon + ' ' + sub.name;
   }
+  updateEntryTopics();
   document.getElementById('entryType').value = 'soru';
+  // Tür label'ını sıfırla
+  const typeLbl = document.getElementById('entryTypeLabel');
+  if (typeLbl) typeLbl.textContent = '📝 Soru Çözümü';
   toggleEntryFields();
   document.getElementById('entryDuration').value = '';
   document.getElementById('entryQuestions').value = '';
