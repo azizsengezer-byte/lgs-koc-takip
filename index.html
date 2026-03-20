@@ -2007,9 +2007,21 @@ async function deleteEntry(firestoreId, localIdx) {
 async function deleteTask(taskId, idx) {
   const ok = await appConfirm('Görevi Sil', 'Bu görevi silmek istediğinize emin misiniz?', true);
   if (!ok) return;
+  const task = tasks[idx];
   tasks.splice(idx, 1);
   if (taskId) {
     try { await db.collection('tasks').doc(taskId).delete(); } catch(e) {}
+    // Öğrencinin task bildirimini de sil
+    try {
+      const studentObj = students.find(s => s.name === (task?.studentName||''));
+      if (studentObj?.uid) {
+        const notifSnap = await db.collection('notifications')
+          .where('toUid','==',studentObj.uid)
+          .where('type','==','task')
+          .get();
+        notifSnap.forEach(doc => doc.ref.delete());
+      }
+    } catch(e) {}
   }
   showToast('🗑️', 'Görev silindi!');
   showPage('tasks-teacher');
@@ -6001,33 +6013,33 @@ function wellnessPage() {
     <div class="card" style="margin-bottom:14px">
       <div class="card-title">🌙 Fizyolojik İyi Oluş</div>
 
-      <div style="display:flex;gap:10px;margin-bottom:12px">
-        <div style="flex:1;min-width:120px">
+      <!-- Uyku + Ekran yan yana üst satır -->
+      <div style="display:flex;gap:10px;margin-bottom:12px;align-items:flex-start">
+        <div style="flex:1">
           <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:5px">🛌 Kaç saat uyudun?</div>
           <input type="number" min="2" max="12" step="0.5" id="wellnessUyku" placeholder="örn: 7"
             value="${today.uyku||''}"
             onchange="saveWellnessDay('uyku',this.value)"
             style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.95rem;outline:none;box-sizing:border-box">
         </div>
-      </div>
-
-      <!-- Ekran Süresi Grubu -->
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px">
-        <div style="font-size:0.78rem;font-weight:700;color:var(--text2);margin-bottom:10px">📱 Ekran Süresi</div>
-        <div style="display:flex;gap:10px">
-          <div style="flex:1">
-            <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">💻 Online ders (saat)</div>
-            <input type="number" min="0" max="12" step="0.5" id="wellnessEkranOnline" placeholder="örn: 1"
-              value="${today.ekranOnline||''}"
-              onchange="saveWellnessDay('ekranOnline',this.value)"
-              style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.95rem;outline:none;box-sizing:border-box">
-          </div>
-          <div style="flex:1">
-            <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">📵 Sosyal medya/diğer (saat)</div>
-            <input type="number" min="0" max="12" step="0.5" id="wellnessEkranSosyal" placeholder="örn: 1"
-              value="${today.ekranSosyal||''}"
-              onchange="saveWellnessDay('ekranSosyal',this.value)"
-              style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.95rem;outline:none;box-sizing:border-box">
+        <!-- Ekran Süresi grubu -->
+        <div style="flex:2;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 10px">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:7px">📱 Ekran Süresi (saat)</div>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1">
+              <div style="font-size:0.65rem;color:var(--text2);margin-bottom:4px">💻 Online ders</div>
+              <input type="number" min="0" max="12" step="0.5" id="wellnessEkranOnline" placeholder="0"
+                value="${today.ekranOnline||''}"
+                onchange="saveWellnessDay('ekranOnline',this.value)"
+                style="width:100%;padding:7px 9px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
+            </div>
+            <div style="flex:1">
+              <div style="font-size:0.65rem;color:var(--text2);margin-bottom:4px">📵 Sosyal medya</div>
+              <input type="number" min="0" max="12" step="0.5" id="wellnessEkranSosyal" placeholder="0"
+                value="${today.ekranSosyal||''}"
+                onchange="saveWellnessDay('ekranSosyal',this.value)"
+                style="width:100%;padding:7px 9px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
+            </div>
           </div>
         </div>
       </div>
