@@ -2408,7 +2408,7 @@ function studentDetailAnalysis() {
             📋 Günlük
           </button>
           <button onclick="openDatePicker('${sName}','weekly')"
-            style="flex:1;padding:10px;border-radius:10px;background:var(--accent)22;border:1.5px solid var(--accent);color:var(--accent);font-weight:700;font-size:0.82rem;cursor:pointer">
+            style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
             📅 Haftalık
           </button>
           <button onclick="openDatePicker('${sName}','monthly')"
@@ -2743,6 +2743,8 @@ async function exportPsychPDF(sName) {
   showToast('⏳','PDF hazırlanıyor...');
   // _pdfDateOverride'ı hemen yakala (async await'ten önce, silinmeden)
   const _ovLocal = window._pdfDateOverride ? {...window._pdfDateOverride} : null;
+
+  try {
 
   const sObj = students.find(s=>s.name===sName) || {};
   const sUid = sObj.uid || '';
@@ -3394,6 +3396,12 @@ async function exportPsychPDF(sName) {
   doc.save(ts(sName.replace(/\s+/g,'_'))+'_Psikolojik_'+periodLabel+'_'+now.toISOString().split('T')[0]+'.pdf');
   window._pdfDateOverride = null;
   showToast('📄','PDF indiriliyor!');
+
+  } catch(err) {
+    window._pdfDateOverride = null;
+    showToast('❌', 'PDF hatası: ' + (err.message||'Bilinmeyen hata'));
+    console.error('exportPsychPDF hata:', err);
+  }
 }
 
 function showAllDenemeler() {
@@ -3633,14 +3641,17 @@ function dpConfirm() {
   const isPsych = sName.startsWith('psych_');
   const realName = isPsych ? sName.replace(/^psych_/,'').replace(/_/g,' ') : sName;
   const key = sName.replace(/\s/g,'_');
+
   if (_dpMode === 'monthly') {
-    const yr = _dpSelected.year, mo = _dpSelected.month;
+    const yr = _dpSelected.year ?? new Date().getFullYear();
+    const mo = _dpSelected.month ?? new Date().getMonth();
     const startKey = `${yr}-${String(mo+1).padStart(2,'0')}-01`;
     const lastDay = new Date(yr, mo+1, 0).getDate();
     const endKey = `${yr}-${String(mo+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
     const monthName = new Date(yr, mo, 1).toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
     window._pdfDateOverride = { mode:'monthly', startKey, endKey, label:'Aylık', title: monthName + ' Aylık Rapor' };
   } else {
+    if (!_dpSelected.weekStart) { showToast('⚠️','Lütfen bir hafta seçin'); return; }
     const monKey = _dpSelected.weekStart;
     const mon = new Date(monKey+'T12:00:00');
     const sun = new Date(mon); sun.setDate(mon.getDate()+6);
@@ -3649,7 +3660,9 @@ function dpConfirm() {
     const rangeLabel = mon.toLocaleDateString('tr-TR',{day:'numeric',month:'long'}) + ' - ' + sun.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
     window._pdfDateOverride = { mode:'weekly', startKey: monKey, endKey, label:'Haftalık', title: rangeLabel + ' Haftalık Rapor' };
   }
+
   closeDatePicker();
+
   if (isPsych) {
     window._psychPeriod = _dpMode;
     exportPsychPDF(realName);
