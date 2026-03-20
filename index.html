@@ -2134,7 +2134,7 @@ function showDayEntries(dk, dateLabel) {
         <div style="flex:1">
           <div style="font-weight:700;font-size:0.85rem">${e.subject}</div>
           <div style="font-size:0.75rem;color:var(--accent)">${typeLabel} · ${e.topic||'Genel'}</div>
-          <div style="font-size:0.73rem;color:var(--text2)">⏱${e.duration||0}dk${e.questions>0?' · 📝'+e.questions+' soru · Net:'+(e.net||0).toFixed(1):''}</div>
+          <div style="font-size:0.73rem;color:var(--text2)">⏱${e.duration||0}dk${e.questions>0?' · 📝'+e.questions+' soru · ✅'+(e.correct||0)+' ❌'+(e.wrong||0)+' · Net:'+(e.net||0).toFixed(1):''}</div>
         </div>
         <span style="font-size:0.68rem;color:var(--text2)">${e.time||''}</span>
       </div>`;
@@ -2189,7 +2189,7 @@ function openStudentAnalysis(name) {
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <button onclick="document.getElementById('_studentChoiceModal').remove();studentAnalysisPeriod='daily';showPage('student-detail')"
-          style="padding:16px;border-radius:14px;background:var(--accent)18;border:1.5px solid var(--accent)44;color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
+          style="padding:16px;border-radius:14px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
           <span style="font-size:1.6rem">📊</span>
           <div>
             <div style="font-weight:800;font-size:0.95rem">Bireysel Analiz Raporu</div>
@@ -2197,7 +2197,7 @@ function openStudentAnalysis(name) {
           </div>
         </button>
         <button onclick="document.getElementById('_studentChoiceModal').remove();showPsychReport('${name}')"
-          style="padding:16px;border-radius:14px;background:#fd79a818;border:1.5px solid #fd79a844;color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
+          style="padding:16px;border-radius:14px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
           <span style="font-size:1.6rem">💙</span>
           <div>
             <div style="font-weight:800;font-size:0.95rem">Psikolojik Takip Raporu</div>
@@ -2541,7 +2541,7 @@ function studentDetailAnalysis() {
 
 function showPsychReport(sName) {
   selectedStudentName = sName;
-  window._psychPeriod = window._psychPeriod || 'weekly';
+  window._psychPeriod = 'daily';
   showPage('psych-report');
 }
 
@@ -3252,7 +3252,7 @@ async function exportPsychPDF(sName) {
           doc.text(tx(moodLabelsPDF[mood]||mood)+' →', 21, Y+6);
           doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(60,60,100);
           doc.text(tx('En çok: ')+tx(topSub[0])+' ('+topSub[1]+' soru)', 58, Y+6);
-          const allSubs=Object.entries(subs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([s,q])=>tx(s)+'('+q+')').join('  ');
+          const allSubs=Object.entries(subs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([s,q])=>tx(dersKisa(s))+'('+q+')').join('  ');
           doc.setFontSize(6.5); doc.setTextColor(100,100,130); doc.text(allSubs,128,Y+6); Y+=11;
         });
       }
@@ -3392,6 +3392,7 @@ async function exportPsychPDF(sName) {
 
   pdfFooter(doc, doc.internal.getNumberOfPages(), tx(sName)+' | Psikolojik Takip');
   doc.save(ts(sName.replace(/\s+/g,'_'))+'_Psikolojik_'+periodLabel+'_'+now.toISOString().split('T')[0]+'.pdf');
+  window._pdfDateOverride = null;
   showToast('📄','PDF indiriliyor!');
 }
 
@@ -3651,7 +3652,7 @@ function dpConfirm() {
   closeDatePicker();
   if (isPsych) {
     window._psychPeriod = _dpMode;
-    exportPsychPDF(realName).finally(() => { window._pdfDateOverride = null; });
+    exportPsychPDF(realName);
   } else {
     const btn = document.querySelector(`#raporAlPanel_${key} .dp-btn-pdf`);
     preparePdfLink(realName, btn || null).finally(() => { window._pdfDateOverride = null; });
@@ -3892,6 +3893,15 @@ function ts(v) {
     else if (code === 10 || code === 13) result += ' ';
   }
   return result.trim();
+}
+
+// Grafik label'ları için ders kısaltmaları
+function dersKisa(name) {
+  const map = {
+    'Türkçe':'Tür', 'Matematik':'Mat', 'Fen Bilimleri':'Fen',
+    'İnkılap Tarihi':'İnk', 'Din Kültürü':'Din', 'İngilizce':'İng'
+  };
+  return map[name] || (name||'').substring(0,4);
 }
 
 // ============================================================
@@ -4493,7 +4503,7 @@ function exportStudentDetailPDF(sName) {
 
   // Ders bazlı soru bar
   if(subStats.some(s=>s.q>0)) {
-    Y=pdfBarChart(doc,subStats.map(s=>s.q),subStats.map(s=>tx(s.name)),Y,38,COLORS6,'Ders Bazlı Soru Sayısı');
+    Y=pdfBarChart(doc,subStats.map(s=>s.q),subStats.map(s=>tx(dersKisa(s.name))),Y,38,COLORS6,'Ders Bazlı Soru Sayısı');
   }
 
   // Konu bazlı detay — her ders için en fazla 5 konu
