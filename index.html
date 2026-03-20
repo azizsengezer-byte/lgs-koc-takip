@@ -7437,11 +7437,14 @@ function populateTaskStudents() {
 }
 
 function updateTaskUnits() {
-  // Hidden input — değeri sıfırla, label güncelle
+  // Konu sıfırla
   const inp = document.getElementById('taskUnit');
   if (inp) inp.value = '';
   const lbl = document.getElementById('taskUnitLabel');
   if (lbl) lbl.textContent = '— Konu seç —';
+  // Görev başlığını da sıfırla
+  const titleEl = document.getElementById('taskTitle');
+  if (titleEl) titleEl.value = '';
 }
 
 function updateTaskTitle() {
