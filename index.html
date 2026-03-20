@@ -3014,6 +3014,10 @@ async function exportPsychPDF(sName) {
     const allDenNetArr = denemEntries2.map(e=>e.net||0).filter(v=>v!==0);
     const avgDenNet    = allDenNetArr.length>0 ? allDenNetArr.reduce((a,b)=>a+b,0)/allDenNetArr.length : null;
 
+    // Soru neti ortalaması (deneme yoksa B korelasyonunda kullanılır)
+    const soruNetArrEarly = psychAcadDays.filter(d=>d.net!==0&&d.q>0).map(d=>d.net);
+    const avgSoruNet = soruNetArrEarly.length>0 ? soruNetArrEarly.reduce((a,b)=>a+b,0)/soruNetArrEarly.length : null;
+
     // Üst üste düşük enerji gün sayısı
     let consecutiveLowEnerji = 0, maxConsec = 0, cur = 0;
     trendKeys2.forEach(dk=>{ const d=psychAcadDays.find(x=>x.dk===dk); if(d&&d.enerji>0&&d.enerji<=4){cur++;maxConsec=Math.max(maxConsec,cur);}else{cur=0;} });
@@ -3263,9 +3267,6 @@ async function exportPsychPDF(sName) {
       Y = pdfCheck(doc, Y, 12);
       Y = pdfSecHeader(doc, tx('KOÇ DEĞERLENDİRMESİ — BÜTÜNCÜL ANALİZ'), Y, 72, 200, 130);
 
-      // Soru çözümü neti de dahil et (deneme + soru)
-      const soruNetArr   = psychAcadDays.filter(d=>d.net!==0&&d.q>0).map(d=>d.net);
-      const avgSoruNet   = soruNetArr.length>0 ? soruNetArr.reduce((a,b)=>a+b,0)/soruNetArr.length : null;
       // Genel net: önce deneme, yoksa soru neti
       const gelenNet     = avgDenNet !== null ? avgDenNet : avgSoruNet;
       const iyi_akademik = gelenNet !== null && gelenNet > 0;
