@@ -7454,8 +7454,6 @@ function updateTaskTitle() {
     ozet: 'Özet Çıkarma', tekrar: 'Tekrar', diger: 'Görev'
   };
   if (countGroup) countGroup.style.display = type === 'soru' ? 'block' : 'none';
-  // Konu sıfırla (tür değişince)
-  updateTaskUnits();
   if (unit && titleEl) titleEl.value = `${unit} — ${typeLabels[type]||'Görev'}`;
 }
 
