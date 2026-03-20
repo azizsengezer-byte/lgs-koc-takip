@@ -2741,6 +2741,9 @@ async function psychReportPage() {
 }
 async function exportPsychPDF(sName) {
   showToast('⏳','PDF hazırlanıyor...');
+  // _pdfDateOverride'ı hemen yakala (async await'ten önce, silinmeden)
+  const _ovLocal = window._pdfDateOverride ? {...window._pdfDateOverride} : null;
+
   const sObj = students.find(s=>s.name===sName) || {};
   const sUid = sObj.uid || '';
   const data = await getWellnessData(sUid || sName);
@@ -2750,7 +2753,7 @@ async function exportPsychPDF(sName) {
 
   // Dönem filtresi + başlık
   let startKey, endKey, periodLabel, periodTitle;
-  const ov = window._pdfDateOverride;
+  const ov = _ovLocal;  // yerel kopyayı kullan
   if (ov) {
     startKey = ov.startKey; endKey = ov.endKey;
     periodLabel = ov.label; periodTitle = ov.title;
@@ -2895,15 +2898,68 @@ async function exportPsychPDF(sName) {
     Y = pdfCheck(doc, Y, 14);
     Y = pdfSecHeader(doc, tx('GÜNLÜK VERİLER'), Y, 108, 99, 255);
     Y = pdfTable(doc,
-      [tx('Tarih'),tx('Duygu'),tx('Enerji'),tx('Kaygı'),tx('Uyku'),tx('Pozitif/Not')],
-      [28,32,18,18,18,72],
+      [tx('Tarih'),tx('Duygu'),tx('Enerji'),tx('Kaygı'),tx('Uyku'),tx('Ekran')],
+      [28,36,20,20,20,62],
       sortedDays.map(k=>{
         const d=days[k];
         return [tx(new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'})),
-          tx(moodLabels[d?.mood]||'-'),d?.enerji||'-',d?.kaygi||'-',(d?.uyku||'-')+'sa',
-          tx((d?.pozitif||d?.gurur||d?.not||'').substring(0,30))];
+          tx(moodLabels[d?.mood]||'-'),d?.enerji||'-',d?.kaygi||'-',(d?.uyku||'-')+'sa',(d?.ekran||'-')+'sa'];
       }),
       Y,[108,99,255]);
+
+    // Olumlu / Olumsuz düşünceler — tam metin
+    const thoughtDays = sortedDays.filter(k=>{
+      const d=days[k];
+      return (d?.pozitif||d?.gurur||'').trim() || (d?.negatif||'').trim() || (d?.not||'').trim();
+    });
+    if (thoughtDays.length>0) {
+      Y = pdfCheck(doc, Y, 14);
+      Y = pdfSecHeader(doc, tx('NOTLAR VE DÜŞÜNCELER'), Y, 108, 99, 255);
+      thoughtDays.forEach(k=>{
+        const d=days[k];
+        const dateStr2=new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',weekday:'short'});
+        const pozitif=(d?.pozitif||d?.gurur||'').trim();
+        const negatif=(d?.negatif||'').trim();
+        const not=(d?.not||'').trim();
+        Y = pdfCheck(doc, Y, 10);
+        doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(72,58,180);
+        doc.text(tx(dateStr2), 16, Y); Y+=5;
+        if (pozitif) {
+          Y = pdfCheck(doc, Y, 10);
+          doc.setFillColor(230,255,240); doc.roundedRect(16,Y,178,10,1.5,1.5,'F');
+          doc.setFillColor(72,200,130); doc.roundedRect(16,Y,3,10,1,1,'F');
+          doc.setFont(PF,'bold'); doc.setFontSize(6.5); doc.setTextColor(20,100,50);
+          doc.text(tx('Olumlu:'), 21, Y+4);
+          doc.setFont(PF,'normal'); doc.setFontSize(7);
+          const ls=doc.splitTextToSize(tx(pozitif), 148);
+          doc.text(ls, 40, Y+4);
+          Y += Math.max(ls.length*4+4, 12);
+        }
+        if (negatif) {
+          Y = pdfCheck(doc, Y, 10);
+          doc.setFillColor(255,235,235); doc.roundedRect(16,Y,178,10,1.5,1.5,'F');
+          doc.setFillColor(255,107,107); doc.roundedRect(16,Y,3,10,1,1,'F');
+          doc.setFont(PF,'bold'); doc.setFontSize(6.5); doc.setTextColor(150,20,20);
+          doc.text(tx('Olumsuz:'), 21, Y+4);
+          doc.setFont(PF,'normal'); doc.setFontSize(7);
+          const ls=doc.splitTextToSize(tx(negatif), 148);
+          doc.text(ls, 40, Y+4);
+          Y += Math.max(ls.length*4+4, 12);
+        }
+        if (not) {
+          Y = pdfCheck(doc, Y, 10);
+          doc.setFillColor(240,240,255); doc.roundedRect(16,Y,178,10,1.5,1.5,'F');
+          doc.setFillColor(162,155,254); doc.roundedRect(16,Y,3,10,1,1,'F');
+          doc.setFont(PF,'bold'); doc.setFontSize(6.5); doc.setTextColor(60,40,160);
+          doc.text(tx('Not:'), 21, Y+4);
+          doc.setFont(PF,'normal'); doc.setFontSize(7);
+          const ls=doc.splitTextToSize(tx(not), 148);
+          doc.text(ls, 40, Y+4);
+          Y += Math.max(ls.length*4+4, 12);
+        }
+        Y += 3;
+      });
+    }
 
     // ============================================================
     // PSİKOLOJİK-AKADEMİK KORELASYON — 3 EKSENLİ SİSTEM
@@ -3196,7 +3252,7 @@ async function exportPsychPDF(sName) {
           doc.text(tx(moodLabelsPDF[mood]||mood)+' →', 21, Y+6);
           doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(60,60,100);
           doc.text(tx('En çok: ')+tx(topSub[0])+' ('+topSub[1]+' soru)', 58, Y+6);
-          const allSubs=Object.entries(subs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([s,q])=>tx(s.substring(0,5))+'('+q+')').join('  ');
+          const allSubs=Object.entries(subs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([s,q])=>tx(s)+'('+q+')').join('  ');
           doc.setFontSize(6.5); doc.setTextColor(100,100,130); doc.text(allSubs,128,Y+6); Y+=11;
         });
       }
@@ -4110,7 +4166,7 @@ function pdfBarChart(doc, values, labels, Y, chartH, colors, title) {
     doc.setFontSize(5); doc.setFont(_PF,'bold'); doc.setTextColor(r,g,b);
     if(v!==0) doc.text(String(v), x+barW/2, Math.max(by-1,Y+1.5), {align:'center'});
     doc.setFontSize(5); doc.setTextColor(110,100,150); doc.setFont(_PF,'normal');
-    doc.text(tx(String(labels[i]||'').substring(0,9)), x+barW/2, Y+chartH-2, {align:'center'});
+    doc.text(tx(String(labels[i]||'')), x+barW/2, Y+chartH-2, {align:'center'});
   });
   // Trend çizgisi — kırmızı yerine turuncu, daha yumuşak
   if (values.length > 1) {
@@ -4152,7 +4208,7 @@ function pdfLineChart(doc, values, labels, Y, chartH, color, title) {
     doc.setFontSize(5); doc.setFont(_PF,'bold'); doc.setTextColor(cr,cg,cb);
     if(values[i]!==0) doc.text(String(values[i]),p.x,p.y-1.8,{align:'center'});
     doc.setFontSize(4.5); doc.setTextColor(110,100,150); doc.setFont(_PF,'normal');
-    doc.text(tx(String(labels[i]||'').substring(0,9)),p.x,Y+chartH-1.5,{align:'center'});
+    doc.text(tx(String(labels[i]||'')),p.x,Y+chartH-1.5,{align:'center'});
   });
   return Y+chartH+3;
 }
@@ -4437,7 +4493,7 @@ function exportStudentDetailPDF(sName) {
 
   // Ders bazlı soru bar
   if(subStats.some(s=>s.q>0)) {
-    Y=pdfBarChart(doc,subStats.map(s=>s.q),subStats.map(s=>tx(s.name.substring(0,9))),Y,38,COLORS6,'Ders Bazlı Soru Sayısı');
+    Y=pdfBarChart(doc,subStats.map(s=>s.q),subStats.map(s=>tx(s.name)),Y,38,COLORS6,'Ders Bazlı Soru Sayısı');
   }
 
   // Konu bazlı detay — her ders için en fazla 5 konu
@@ -4609,7 +4665,8 @@ function exportStudentDetailPDF(sName) {
   }
 
   // Genel yorum — yeni sayfaya geç ve başlıkla birlikte tut
-  const rawComment = generateStudentComment(sName,filtered,subStats,totalDur,totalQ,totalNet,activeDays,studentAnalysisPeriod,true);
+  const _effectivePeriod = _override?.mode || studentAnalysisPeriod;
+  const rawComment = generateStudentComment(sName,filtered,subStats,totalDur,totalQ,totalNet,activeDays,_effectivePeriod,true);
   const commentLines = doc.splitTextToSize(tx(rawComment), 174);
   const commentH = commentLines.length * 5 + 20; // başlık + içerik tahmini yükseklik
   if (Y + commentH > 278) { Y = pdfNewPage(doc); }
@@ -5070,12 +5127,21 @@ function studentDailyEntry() {
     <div class="card" style="margin-bottom:20px">
       <div class="card-title">📚 Ders Seç & Çalışma Ekle</div>
       <div class="subject-entry-grid">
-        ${subjects.map(s=>`
+        ${subjects.map(s=>{
+          const sEntries = todayEntries.filter(e=>e.subject===s.name&&e.type==='soru');
+          const sQ = sEntries.reduce((a,e)=>a+(e.questions||0),0);
+          const sD = sEntries.reduce((a,e)=>a+(e.correct||0),0);
+          const sY = sEntries.reduce((a,e)=>a+(e.wrong||0),0);
+          const sNet = sEntries.reduce((a,e)=>a+(e.net||0),0);
+          const girisCount = todayEntries.filter(e=>e.subject===s.name).length;
+          return `
           <div class="subject-entry-card" onclick="openEntryFor('${s.name}')">
             <div class="sec-name"><span class="sec-dot" style="background:${s.color}"></span>${s.icon} ${s.name}</div>
-            <div style="font-size:0.75rem;color:var(--text2)">${todayEntries.filter(e=>e.subject===s.name).length} giriş</div>
-          </div>
-        `).join('')}
+            ${sQ>0
+              ? `<div style="font-size:0.72rem;color:var(--text2);margin-top:2px">${sQ} soru • ✅${sD} ❌${sY}</div>
+                 <div style="font-size:0.72rem;font-weight:700;color:var(--accent3)">Net: ${sNet.toFixed(1)}</div>`
+              : `<div style="font-size:0.75rem;color:var(--text2)">${girisCount} giriş</div>`}
+          </div>`;}).join('')}
       </div>
       <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="openEntryFor(null)">+ Çalışma Ekle</button>
     </div>
