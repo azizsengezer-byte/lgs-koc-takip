@@ -2683,7 +2683,10 @@ async function saveGorusme(sName, sUid) {
     await db.collection('wellness').doc(uid).set({ gorusmeler: mevcut }, { merge: true });
     document.getElementById('_gorusmeModal').remove();
     showToast('✅', 'Görüşme kaydedildi!');
-    renderTeacherPage('psych-report', document.getElementById('mainContent'));
+    // 1.5 saniye bekleyip sayfayı yenile — uyarı kapanması için
+    setTimeout(() => {
+      renderTeacherPage('psych-report', document.getElementById('mainContent'));
+    }, 1500);
   } catch(e) {
     showToast('❌', 'Hata: ' + e.message);
   }
@@ -3194,6 +3197,7 @@ async function exportPsychPDF(sName) {
       });
     }
 
+
     // ============================================================
     // PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ
     // ============================================================
@@ -3205,532 +3209,566 @@ async function exportPsychPDF(sName) {
     const denemEntries2  = allAcadEntries.filter(e=>e.type==='deneme');
     const DAILY_GOAL = 200;
 
-    // Her gün için birleşik psikolojik + akademik veri
+    // Gün bazlı veri birleştir
     const gunler = sortedDays.slice().reverse().map(dk => {
       const p = days[dk] || {};
-      const soruGun  = soruEntries2.filter(e=>e.dateKey===dk);
-      const denGun   = denemEntries2.filter(e=>e.dateKey===dk);
-      const soru     = soruGun.reduce((a,e)=>a+(e.questions||0),0);
-      const sure     = soruGun.reduce((a,e)=>a+(e.duration||0),0);
-      const net      = soruGun.reduce((a,e)=>a+(e.net||0),0);
-      const denQ     = denGun.reduce((a,e)=>a+(e.correct||0)+(e.wrong||0),0);
-      const denY     = denGun.reduce((a,e)=>a+(e.wrong||0),0);
-      const topQ     = soru + denQ;
-      const topY     = soruGun.reduce((a,e)=>a+(e.wrong||0),0) + denY;
-      const yanlisPct= topQ >= 60 ? (topY / topQ * 100) : null;
-      const subMap   = {};
-      soruGun.forEach(e=>{ if(!subMap[e.subject]) subMap[e.subject]=0; subMap[e.subject]+=(e.questions||0); });
-      const haftaSonu= [0,6].includes(new Date(dk+'T12:00:00').getDay());
-      const sosyal   = parseFloat(p.ekranSosyal) || parseFloat(p.ekran) || 0;
-      const online   = parseFloat(p.ekranOnline) || 0;
+      const sg = soruEntries2.filter(e=>e.dateKey===dk);
+      const dg = denemEntries2.filter(e=>e.dateKey===dk);
+      const soru   = sg.reduce((a,e)=>a+(e.questions||0),0);
+      const sure   = sg.reduce((a,e)=>a+(e.duration||0),0);
+      const net    = sg.reduce((a,e)=>a+(e.net||0),0);
+      const denQ   = dg.reduce((a,e)=>a+(e.correct||0)+(e.wrong||0),0);
+      const denY   = dg.reduce((a,e)=>a+(e.wrong||0),0);
+      const topQ   = soru + denQ;
+      const topY   = sg.reduce((a,e)=>a+(e.wrong||0),0) + denY;
+      const hataOrani = topQ >= 60 ? (topY / topQ * 100) : null;
+      const sosyal = parseFloat(p.ekranSosyal)||parseFloat(p.ekran)||0;
+      const online = parseFloat(p.ekranOnline)||0;
+      const toplamEkran = sosyal + online;
       return {
-        dk, haftaSonu,
+        dk,
         enerji: parseFloat(p.enerji)||0,
         odak:   parseFloat(p.odak)||0,
         kaygi:  parseFloat(p.kaygi)||0,
         uyku:   parseFloat(p.uyku)||0,
-        sosyal, online,
-        mood: p.mood||'', negatif: p.negatif||'', pozitif: p.pozitif||p.gurur||'',
-        soru, sure, net, yanlisPct, subMap
+        sosyal, online, toplamEkran,
+        mood:   p.mood||'',
+        negatif:p.negatif||'',
+        pozitif:p.pozitif||p.gurur||'',
+        soru, sure, net, hataOrani
       };
     });
 
-    // Dönem ortalamaları (sadece veri girilen günler)
+    // Dönem istatistikleri
     const veriGunler = gunler.filter(d=>d.enerji>0||d.kaygi>0||d.uyku>0);
-    const aktifGunler= gunler.filter(d=>d.soru>0);
+    const aktifGunler = gunler.filter(d=>d.soru>0);
     const toplamSoru = gunler.reduce((a,d)=>a+d.soru,0);
     const toplamSure = gunler.reduce((a,d)=>a+d.sure,0);
     const ortSoru    = aktifGunler.length>0 ? toplamSoru/aktifGunler.length : 0;
-    const ortEnerji  = veriGunler.filter(d=>d.enerji>0).length > 0
-                       ? veriGunler.filter(d=>d.enerji>0).reduce((a,d)=>a+d.enerji,0) / veriGunler.filter(d=>d.enerji>0).length : 0;
-    const ortKaygi   = veriGunler.filter(d=>d.kaygi>0).length > 0
-                       ? veriGunler.filter(d=>d.kaygi>0).reduce((a,d)=>a+d.kaygi,0) / veriGunler.filter(d=>d.kaygi>0).length : 0;
-    const ortUyku    = veriGunler.filter(d=>d.uyku>0).length > 0
-                       ? veriGunler.filter(d=>d.uyku>0).reduce((a,d)=>a+d.uyku,0) / veriGunler.filter(d=>d.uyku>0).length : 0;
-    const ortOdak    = veriGunler.filter(d=>d.odak>0).length > 0
-                       ? veriGunler.filter(d=>d.odak>0).reduce((a,d)=>a+d.odak,0) / veriGunler.filter(d=>d.odak>0).length : 0;
-    const ortSosyal  = veriGunler.filter(d=>d.sosyal>0).length > 0
-                       ? veriGunler.filter(d=>d.sosyal>0).reduce((a,d)=>a+d.sosyal,0) / veriGunler.filter(d=>d.sosyal>0).length : 0;
-    const yanlisPctGunler = gunler.filter(d=>d.yanlisPct!==null);
-    const ortYanlis  = yanlisPctGunler.length > 0
-                       ? yanlisPctGunler.reduce((a,d)=>a+d.yanlisPct,0) / yanlisPctGunler.length : null;
-    const denNetArr  = denemEntries2.map(e=>e.net||0).filter(v=>v!==0);
-    const ortDenNet  = denNetArr.length>0 ? denNetArr.reduce((a,b)=>a+b,0)/denNetArr.length : null;
+    const fn = (arr, field) => { const v=arr.filter(d=>d[field]>0); return v.length?v.reduce((a,d)=>a+d[field],0)/v.length:0; };
+    const ortEnerji = fn(veriGunler,'enerji');
+    const ortKaygi  = fn(veriGunler,'kaygi');
+    const ortUyku   = fn(veriGunler,'uyku');
+    const ortOdak   = fn(veriGunler,'odak');
+    const ortSosyal = fn(veriGunler,'sosyal');
+    const hataGunler = gunler.filter(d=>d.hataOrani!==null);
+    const ortHata   = hataGunler.length>0 ? hataGunler.reduce((a,d)=>a+d.hataOrani,0)/hataGunler.length : null;
+    const denNetArr = denemEntries2.map(e=>e.net||0).filter(v=>v!==0);
+    const ortDenNet = denNetArr.length>0 ? denNetArr.reduce((a,b)=>a+b,0)/denNetArr.length : null;
     const soruNetArr = gunler.filter(d=>d.net>0).map(d=>d.net);
     const ortSoruNet = soruNetArr.length>0 ? soruNetArr.reduce((a,b)=>a+b,0)/soruNetArr.length : null;
-    const ortNet     = ortDenNet ?? ortSoruNet;
+    const ortNet = ortDenNet ?? ortSoruNet;
 
-    // Renkli analiz kutusu çizici
-    function kutu(baslik, metin, arkaPlan, kenar) {
+    // Ardışık düşük uyku kontrolü
+    let ardisikDusukUyku = 0, maxArdisikUyku = 0, tmp_u = 0;
+    gunler.forEach(d=>{ if(d.uyku>0&&d.uyku<6.5){tmp_u++;maxArdisikUyku=Math.max(maxArdisikUyku,tmp_u);}else{tmp_u=0;} });
+    // Ardışık düşük enerji kontrolü
+    let maxArdisikEnerji = 0, tmp_e = 0;
+    gunler.forEach(d=>{ if(d.enerji>0&&d.enerji<=4){tmp_e++;maxArdisikEnerji=Math.max(maxArdisikEnerji,tmp_e);}else{tmp_e=0;} });
+    // Ardışık yüksek hata kontrolü
+    let maxArdisikHata = 0, tmp_h = 0;
+    gunler.forEach(d=>{ if(d.hataOrani!==null&&d.hataOrani>30){tmp_h++;maxArdisikHata=Math.max(maxArdisikHata,tmp_h);}else{tmp_h=0;} });
+
+    // Kutu çizici
+    function kutu(baslik, metin, bg, kenar) {
       const satirlar = doc.splitTextToSize(tx(metin), 164);
-      const yukseklik = Math.max(satirlar.length * 5 + 14, 20);
-      Y = pdfCheck(doc, Y, yukseklik + 5);
-      doc.setFillColor(arkaPlan[0], arkaPlan[1], arkaPlan[2]);
-      doc.roundedRect(15, Y, 180, yukseklik, 2, 2, 'F');
-      doc.setFillColor(kenar[0], kenar[1], kenar[2]);
-      doc.roundedRect(15, Y, 4, yukseklik, 1, 1, 'F');
-      doc.setFont(PF, 'bold'); doc.setFontSize(7.5);
-      doc.setTextColor(kenar[0], kenar[1], kenar[2]);
-      doc.text(tx(baslik), 22, Y + 6);
-      doc.setFont(PF, 'normal'); doc.setFontSize(7);
-      doc.setTextColor(40, 40, 80);
-      doc.text(satirlar, 22, Y + 12);
-      Y += yukseklik + 5;
+      const bH = Math.max(satirlar.length * 5 + 14, 20);
+      Y = pdfCheck(doc, Y, bH + 5);
+      doc.setFillColor(bg[0],bg[1],bg[2]);
+      doc.roundedRect(15,Y,180,bH,2,2,'F');
+      doc.setFillColor(kenar[0],kenar[1],kenar[2]);
+      doc.roundedRect(15,Y,4,bH,1,1,'F');
+      doc.setFont(PF,'bold'); doc.setFontSize(7.5);
+      doc.setTextColor(kenar[0],kenar[1],kenar[2]);
+      doc.text(tx(baslik), 22, Y+6);
+      doc.setFont(PF,'normal'); doc.setFontSize(7);
+      doc.setTextColor(40,40,80);
+      doc.text(satirlar, 22, Y+12);
+      Y += bH + 5;
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // A. ENERJİ – AKADEMİK HACİM
-    // ──────────────────────────────────────────────────────────────
+    // Acil uyarı etiketi — raporun üst kısmında gösterilecek
+    const acilUyarilar = [];
+
+    // Burnout tespiti (Bütünsel S4): Ardışık 3 gün enerji<=3 + soru>150 + kaygi>=7
+    const burnoutGunler = [];
+    let tmpBurnout = 0;
+    gunler.forEach(d=>{ if(d.enerji>0&&d.enerji<=3&&d.soru>150&&d.kaygi>=7){tmpBurnout++;if(tmpBurnout>=3)burnoutGunler.push(d);}else{tmpBurnout=0;} });
+    if (burnoutGunler.length>0) acilUyarilar.push('BURNOUT');
+
+    // Biyolojik blokaj: uyku<6.5 + ekran>120 + hata>30
+    const biyoBlokaj = gunler.some(d=>d.uyku>0&&d.uyku<6.5&&d.toplamEkran>2&&d.hataOrani!==null&&d.hataOrani>30);
+    if (biyoBlokaj) acilUyarilar.push('BIYO_BLOKAJ');
+
     if (veriGunler.length >= 1) {
       Y = pdfCheck(doc, Y, 14);
       Y = pdfSecHeader(doc, tx('PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ'), Y, 220, 50, 100);
 
-      Y = pdfCheck(doc, Y, 8);
-      doc.setFont(PF, 'bold'); doc.setFontSize(8.5); doc.setTextColor(249, 180, 36);
-      doc.text(tx('A.  Enerji – Akademik Hacim'), 16, Y); Y += 4;
-      doc.setFont(PF, 'normal'); doc.setFontSize(6.5); doc.setTextColor(160, 130, 40);
-      doc.text(tx('Öğrencinin fiziksel enerji durumunun, çözdüğü soru sayısıyla ilişkisi'), 16, Y); Y += 6;
-
-      // Temel gruplar
-      const dusukEnerjiGunler = gunler.filter(d=>d.enerji>0&&d.enerji<=4);
-      const yuksekEnerjiGunler= gunler.filter(d=>d.enerji>=7);
-      const ortaEnerjiGunler  = gunler.filter(d=>d.enerji>4&&d.enerji<7);
-      const ortQDusuk  = dusukEnerjiGunler.length>0 ? dusukEnerjiGunler.reduce((a,d)=>a+d.soru,0)/dusukEnerjiGunler.length : null;
-      const ortQYuksek = yuksekEnerjiGunler.length>0 ? yuksekEnerjiGunler.reduce((a,d)=>a+d.soru,0)/yuksekEnerjiGunler.length : null;
-      const ortQOrta   = ortaEnerjiGunler.length>0   ? ortaEnerjiGunler.reduce((a,d)=>a+d.soru,0)/ortaEnerjiGunler.length : null;
-      const ortQRef    = ortSoru > 0 ? ortSoru : DAILY_GOAL;
-
-      // Hangi senaryo uyuyor — en belirgin birini seç
-      if (veriGunler.some(d=>d.enerji>0)) {
-        if (ortQDusuk !== null && ortQYuksek !== null) {
-          const fark = ortQYuksek - ortQDusuk;
-          if (fark > ortQRef * 0.4) {
-            // Enerji soru sayısını belirgin etkiliyor
-            kutu(
-              'Enerji ile Soru Sayısı Arasında Güçlü Bağ Gözlemlendi',
-              'Yüksek enerji günlerinde ortalama ' + Math.round(ortQYuksek) + ' soru çözülürken, ' +
-              'düşük enerji günlerinde bu sayı ' + Math.round(ortQDusuk) + "'e düşmektedir. " +
-              'Bu fark (%' + Math.round(fark/ortQRef*100) + '), öğrencinin akademik veriminin enerji durumuna ' +
-              'önemli ölçüde bağlı olduğunu göstermektedir. ' +
-              'Düşük enerji günleri için "minimum çalışma hedefi" belirlenmeli; ' +
-              'yüksek enerji günleri ise en zor konular için planlanmalıdır.',
-              [255, 248, 220], [160, 100, 0]
-            );
-          } else if (ortQDusuk !== null && ortQDusuk >= ortQRef * 0.75) {
-            // Düşük enerjide bile iyi performans → güçlü irade
-            kutu(
-              'Enerji Bağımsız Yüksek Disiplin',
-              'Öğrenci enerjisinin düşük olduğu günlerde bile ortalama ' + Math.round(ortQDusuk) + ' soru çözerek ' +
-              'dönem ortalamasının (%' + Math.round(ortQDusuk/ortQRef*100) + ') üzerinde kalmayı başarmaktadır. ' +
-              'Bu durum, çalışma alışkanlığının anlık duygusal durumdan bağımsızlaştığını gösterir. ' +
-              'Sürdürülebilirlik açısından olumlu; ancak fiziksel tükenme sinyalleri yakından izlenmelidir.',
-              [230, 255, 240], [20, 140, 70]
-            );
-          } else if (ortQYuksek !== null && ortQYuksek < ortQRef * 0.5) {
-            // Yüksek enerji var ama soru az → zaman/odak sorunu
-            kutu(
-              'Enerji Potansiyeli Tam Kullanılamıyor',
-              'Enerji yüksek olmasına rağmen çözülen soru sayısı (' + Math.round(ortQYuksek) + ') ' +
-              'dönem ortalamasının (%' + Math.round(ortQYuksek/ortQRef*100) + ') oldukça altında kalmaktadır. ' +
-              'Bu durum zaman yönetimi ya da odaklanma güçlüğüne işaret edebilir. ' +
-              'En enerjik saatlerde "önce en zor ders" yaklaşımı ve süre kısıtlı çalışma seansları önerilir.',
-              [255, 243, 205], [140, 90, 0]
-            );
-          } else {
-            // Enerji ve soru sayısı dengeli
-            kutu(
-              'Enerji – Soru Dengesi Tutarlı',
-              'Dönem genelinde enerji seviyesi (ort. ' + ortEnerji.toFixed(1) + '/10) ile ' +
-              'çözülen soru sayısı (ort. ' + Math.round(ortSoru) + ') birbirine paralel seyretmektedir. ' +
-              'Bu denge sağlıklıdır. Enerji düştüğünde soru hacmini korumak için ' +
-              '"en az " + Math.round(ortQRef * 0.6) + " soru" gibi bir alt sınır belirlenebilir.',
-              [240, 238, 255], [108, 99, 200]
-            );
-          }
-        } else {
-          kutu(
-            'Enerji Verisi Mevcut, Karşılaştırma İçin Yeterli Çeşitlilik Yok',
-            'Bu dönemde enerji verileri girilmiş ancak hem düşük hem yüksek enerji günleri karşılaştırma ' +
-            'yapılmasına yetecek sayıda değil. Günlük veri girişi düzenli tutuldukça bu analiz daha net hale gelecektir.',
-            [245, 243, 255], [130, 120, 200]
-          );
-        }
+      // ACİL UYARILAR — raporun en üstüne bas
+      if (acilUyarilar.includes('BURNOUT')) {
+        kutu('⚠ KRİTİK: Yakın Çöküş Riski — Akut Dinlenme İhtiyacı',
+          'Veriler, merkezi sinir sisteminin aşırı yüklenme (overdrive) modunda olduğunu göstermektedir. ' +
+          'Vücut yorgunluk sinyali verirken akademik hacmin korunması (enerji ort. ' + ortEnerji.toFixed(1) + '/10, soru > 150/gün, kaygı >=7) ' +
+          'sürdürülemez bir tablo oluşturmaktadır. Bu profil, genellikle aniden ders çalışmayı bırakma veya ağır motivasyon kaybıyla sonuçlanır. ' +
+          'Diğer tüm analizlerden önce: minimum 1 günlük tam deşarj ve uyku mimarisinin yeniden kurulması zorunludur.',
+          [255,220,220],[180,20,20]);
+      }
+      if (acilUyarilar.includes('BIYO_BLOKAJ')) {
+        kutu('⚠ KRİTİK: Biyolojik Blokaj — Ek Ders Değil, Biyolojik Onarım Öncelikli',
+          'Akademik başarısızlığın ana kaynağı bilgi eksikliği değil; yetersiz uyku ve dijital yorgunluğun ' +
+          'prefrontal korteksi çift taraflı baskılamasıdır. ' +
+          'Bu tabloda ek akademik yükleme yapmak yerine sadece uyku artırımı ve dijital detoks uygulanması netleri doğrudan yükseltecektir.',
+          [255,235,220],[180,80,0]);
       }
 
-      // Mini grafik: Soru çubuk + Enerji çizgi
+      // ── A. ENERJİ – AKADEMİK HACİM ──────────────────────────────
+      Y = pdfCheck(doc, Y, 8);
+      doc.setFont(PF,'bold'); doc.setFontSize(8.5); doc.setTextColor(249,180,36);
+      doc.text(tx('A.  Enerji – Akademik Hacim'), 16, Y); Y+=4;
+      doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(150,120,40);
+      doc.text(tx('Fizyolojik kaynakların operasyonel süreklilik ve verimlilik üzerindeki etkisi'), 16, Y); Y+=6;
+
+      const avgQRef = ortSoru > 0 ? ortSoru : DAILY_GOAL;
+      const lowEDays  = gunler.filter(d=>d.enerji>0&&d.enerji<=4&&d.soru>0);
+      const highEDays = gunler.filter(d=>d.enerji>=8&&d.soru>0);
+      const avgQLow   = lowEDays.length>0 ? lowEDays.reduce((a,d)=>a+d.soru,0)/lowEDays.length : null;
+      const avgQHigh  = highEDays.length>0 ? highEDays.reduce((a,d)=>a+d.soru,0)/highEDays.length : null;
+
+      // Senaryo 2: Kompansatuar Mekanizma
+      const kompansatuar = gunler.some(d=>d.enerji>0&&d.enerji<=3&&d.soru>180);
+      // Senaryo 5: Bilişsel Yorgunluk Körlüğü
+      const yorgunlukKorlugu = gunler.some(d=>d.enerji<=4&&d.odak>=9&&d.hataOrani!==null&&d.hataOrani>30);
+      // Senaryo 6: Gelişimi Durduran Güvenli Alan (yüksek enerji + çok soru + hata çok düşük)
+      const guvenliAlan_A = gunler.some(d=>d.enerji>=8&&d.soru>180&&d.hataOrani!==null&&d.hataOrani<5);
+      // Senaryo 3: Operasyonel Atalet
+      const operasyonelAtalet = gunler.some(d=>d.enerji>=8&&d.soru<80&&d.soru>0);
+      // Ardışık borçlanma: S4
+      const ardisikBorclanma = maxArdisikEnerji >= 3 && gunler.filter(d=>d.enerji>0&&d.enerji<=4).some(d=>d.soru>=100);
+
+      let enerjiAnaliz = false;
+
+      if (yorgunlukKorlugu) {
+        kutu('Bilişsel Yorgunluk Körlüğü Tespit Edildi',
+          'Bireyin kendi odaklanma kapasitesine dair öznel algısı (yüksek odak skoru) ile nesnel hata payı arasında şiddetli bir çelişki mevcuttur. ' +
+          'Fizyolojik yorgunluk, öğrencinin kendi performansını objektif değerlendirme yetisini bozmuştur. ' +
+          'Öğrenci odaklandığını sanmakta ancak muhakeme hataları yapmaktadır. Verilerin somut olarak öğrenciye gösterilmesi şarttır.',
+          [255,240,230],[180,60,0]);
+        enerjiAnaliz = true;
+      }
+      if (kompansatuar) {
+        kutu('Kompansatuar Mekanizma: Mekanik Çalışma Örüntüsü',
+          'Enerji kritik düşüklükte (<=3/10) iken soru sayısının yüksek seyretmesi bir savunma mekanizması göstergesidir. ' +
+          'Birey, kontrol kaybı ve kaygı hissini bastırmak için niceliksel veriye (soru adedi) sığınmaktadır. ' +
+          'Bu tabloda derin öğrenme gerçekleşmez; işlem hızı artarken kalıcı hafıza kaydı minimuma iner.',
+          [255,245,220],[160,100,0]);
+        enerjiAnaliz = true;
+      }
+      if (ardisikBorclanma && !acilUyarilar.includes('BURNOUT')) {
+        kutu('Ardışık Enerji Borçlanması — Akut Tükenmişlik Riski',
+          'Üst üste gelen düşük enerji girişlerine (>= 3 gün, ort. ' + ortEnerji.toFixed(1) + '/10) rağmen akademik hacmin korunması, ' +
+          'merkezi sinir sisteminin aşırı yüklendiğini göstermektedir. ' +
+          'Fiziksel toparlanma gerçekleşmeden akademik baskının devam etmesi, ani motivasyonel çöküşe zemin hazırlamaktadır.',
+          [255,230,230],[180,30,30]);
+        enerjiAnaliz = true;
+      }
+      if (guvenliAlan_A) {
+        kutu('Gelişimi Durduran Güvenli Alan Tespit Edildi',
+          'İdeal biyolojik şartlarda (enerji >=8) yüksek hacimli üretim yapılmasına rağmen hata oranının çok düşük olması, ' +
+          'öğrencinin kapasitesini zorlamayan, alışık olduğu otomatikleşmiş görevleri yaptığını gösterir. ' +
+          'Gerçek sınavdaki zor ve yeni nesil sorularda ani performans düşüşü riski taşımaktadır. ' +
+          'Soru zorluğu artırılmalı; hata oranı %10-25 bandına çekilmelidir.',
+          [255,248,210],[140,90,0]);
+        enerjiAnaliz = true;
+      }
+      if (operasyonelAtalet && !enerjiAnaliz) {
+        kutu('Operasyonel Atalet: Potansiyel-Performans Uyumsuzluğu',
+          'Biyolojik hazırbulunuşluk (enerji >= 8/10) en üst seviyede olmasına karşın akademik çıktının alt sınırda kalması ' +
+          '"konfor alanı sabitlenmesi" göstergesidir. ' +
+          'Mevcut uyarım seviyesi bireyin bilişsel kapasitesini tetiklemek için yetersiz kalmaktadır. ' +
+          'Daha zorlayıcı hedefler ve dış bir rekabet unsuru öncelikle değerlendirilmelidir.',
+          [255,248,215],[140,90,0]);
+        enerjiAnaliz = true;
+      }
+      if (avgQLow !== null && avgQHigh !== null && (avgQHigh - avgQLow) > avgQRef * 0.4 && !enerjiAnaliz) {
+        kutu('Enerji Bağımlı Akademik Üretim',
+          'Yüksek enerji günlerinde ortalama ' + Math.round(avgQHigh) + ' soru çözülürken düşük enerji günlerinde bu ort. ' + Math.round(avgQLow) + ' olmaktadır. ' +
+          'Bu fark (%' + Math.round((avgQHigh-avgQLow)/avgQRef*100) + '), enerji düştüğünde devreye girecek "duygu bağımsız minimum çalışma rutini" (baseline) henüz kurulmamış olduğunu gösterir.',
+          [255,248,220],[160,100,0]);
+        enerjiAnaliz = true;
+      }
+      if (avgQLow !== null && avgQLow >= avgQRef * 0.8 && !enerjiAnaliz) {
+        kutu('Yüksek Bilişsel Kontrol: Dirençli Performans',
+          'Düşük enerji günlerinde (<=4/10) bile ortalama ' + Math.round(avgQLow) + ' soru çözülmüş; akademik hacim korunmuştur. ' +
+          'Prefrontal korteksin limbik sistemden gelen yorgunluk sinyallerini baskıladığını gösterir. ' +
+          'Bu kısa vadeli disiplin güçlüdür; ancak ardışık 2 günü aşan sürelerde "borçtan harcama" riski izlenmelidir.',
+          [230,255,240],[20,140,70]);
+        enerjiAnaliz = true;
+      }
+      if (!enerjiAnaliz && veriGunler.some(d=>d.enerji>0)) {
+        kutu('Enerji–Hacim Dengesi Stabil',
+          'Dönem genelinde enerji seviyesi (ort. ' + ortEnerji.toFixed(1) + '/10) ile günlük soru sayısı (ort. ' + Math.round(ortSoru) + ') ' +
+          'dengeli bir seyir izlemektedir. Belirgin bir uyumsuzluk tespit edilmemiştir.',
+          [240,248,255],[80,120,200]);
+      }
+
+      // Soru vs Enerji mini grafik
       if (gunler.length >= 2) {
         Y = pdfCheck(doc, Y, 44);
         const gX=15, gW=180, gH=38;
-        doc.setFillColor(248, 247, 255); doc.roundedRect(gX, Y, gW, gH, 2, 2, 'F');
-        doc.setFont(PF, 'bold'); doc.setFontSize(6); doc.setTextColor(80, 80, 130);
-        doc.text(tx('Günlük Soru Sayısı (çubuk, mor)  ve  Enerji Seviyesi (çizgi, sarı)'), gX+gW/2, Y+4, {align:'center'});
-        const qDizi = gunler.map(d=>d.soru);
-        const eDizi = gunler.map(d=>d.enerji);
-        const maxQ  = Math.max(...qDizi, 1);
-        const n     = gunler.length;
-        const sol   = 14, icW = gW-sol*2, icH = gH-12;
-        const cubukW= Math.min(icW/n*0.55, 10);
-        const xAdim = n>1 ? icW/(n-1) : icW;
-        const tabY  = Y+gH-5, tepY = Y+9;
-        qDizi.forEach((v,i)=>{
-          const bx = gX+sol+(n===1?icW/2:i*xAdim)-cubukW/2;
-          const bh = v>0 ? Math.max((v/maxQ)*icH, 2) : 0;
-          doc.setFillColor(160, 152, 255); doc.roundedRect(bx, tabY-bh, cubukW, bh, 0.5, 0.5, 'F');
-          if(v>0){doc.setFont(PF,'normal');doc.setFontSize(4.5);doc.setTextColor(80,70,180);doc.text(String(v),bx+cubukW/2,tabY-bh-1,{align:'center'});}
-        });
-        const ePts = eDizi.map((v,i)=>({x:gX+sol+(n===1?icW/2:i*xAdim), y:v>0?tepY+(1-v/10)*icH:null}));
-        const gecerliE = ePts.filter(p=>p.y!==null);
-        if(gecerliE.length>=2){doc.setDrawColor(249,180,36);doc.setLineWidth(0.9);for(let i=1;i<ePts.length;i++){if(ePts[i-1].y&&ePts[i].y)doc.line(ePts[i-1].x,ePts[i-1].y,ePts[i].x,ePts[i].y);}}
-        gecerliE.forEach(pt=>{doc.setFillColor(249,180,36);doc.circle(pt.x,pt.y,0.9,'F');});
+        doc.setFillColor(248,247,255); doc.roundedRect(gX,Y,gW,gH,2,2,'F');
+        doc.setFont(PF,'bold'); doc.setFontSize(5.5); doc.setTextColor(80,80,120);
+        doc.text(tx('Günlük Soru (çubuk) / Enerji (sarı çizgi) / Kaygı (kırmızı çizgi)'), gX+gW/2, Y+4, {align:'center'});
+        const qV=gunler.map(d=>d.soru); const eV=gunler.map(d=>d.enerji); const kV=gunler.map(d=>d.kaygi);
+        const mxQ=Math.max(...qV,1), n=gunler.length;
+        const pd=14, iW=gW-pd*2, iH=gH-12;
+        const bW=Math.min(iW/n*0.5,9), xS=n>1?iW/(n-1):iW;
+        const tabY=Y+gH-5, tepY=Y+9;
+        qV.forEach((v,i)=>{const bx=gX+pd+(n===1?iW/2:i*xS)-bW/2;const bh=v>0?Math.max((v/mxQ)*iH,2):0;doc.setFillColor(160,152,255);doc.roundedRect(bx,tabY-bh,bW,bh,0.5,0.5,'F');if(v>0){doc.setFont(PF,'normal');doc.setFontSize(4);doc.setTextColor(80,70,180);doc.text(String(v),bx+bW/2,tabY-bh-1,{align:'center'});}});
+        const ePts=eV.map((v,i)=>({x:gX+pd+(n===1?iW/2:i*xS),y:v>0?tepY+(1-v/10)*iH:null}));
+        const kPts=kV.map((v,i)=>({x:gX+pd+(n===1?iW/2:i*xS),y:v>0?tepY+(1-v/10)*iH:null}));
+        const vE=ePts.filter(p=>p.y); const vK=kPts.filter(p=>p.y);
+        if(vE.length>=2){doc.setDrawColor(249,180,36);doc.setLineWidth(0.8);for(let i=1;i<ePts.length;i++){if(ePts[i-1].y&&ePts[i].y)doc.line(ePts[i-1].x,ePts[i-1].y,ePts[i].x,ePts[i].y);}vE.forEach(p=>{doc.setFillColor(249,180,36);doc.circle(p.x,p.y,0.8,'F');});}
+        if(vK.length>=2){doc.setDrawColor(255,107,107);doc.setLineWidth(0.8);for(let i=1;i<kPts.length;i++){if(kPts[i-1].y&&kPts[i].y)doc.line(kPts[i-1].x,kPts[i-1].y,kPts[i].x,kPts[i].y);}vK.forEach(p=>{doc.setFillColor(255,107,107);doc.circle(p.x,p.y,0.8,'F');});}
         doc.setFont(PF,'normal');doc.setFontSize(4);doc.setTextColor(130,130,150);
-        gunler.forEach((d,i)=>{const lx=gX+sol+(n===1?icW/2:i*xAdim);doc.text(new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}),lx,tabY+3,{align:'center'});});
-        Y += gH + 4;
+        gunler.forEach((d,i)=>{const lx=gX+pd+(n===1?iW/2:i*xS);doc.text(new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}),lx,tabY+3,{align:'center'});});
+        Y+=gH+4;
       }
 
-      // ──────────────────────────────────────────────────────────────
-      // B. KAYGI – HATA ORANI
-      // ──────────────────────────────────────────────────────────────
+      // ── B. KAYGI – BİLİŞSEL DOĞRULUK ────────────────────────────
       Y = pdfCheck(doc, Y, 10);
-      doc.setFont(PF, 'bold'); doc.setFontSize(8.5); doc.setTextColor(255, 107, 107);
-      doc.text(tx('B.  Kaygı – Hata Oranı'), 16, Y); Y += 4;
-      doc.setFont(PF, 'normal'); doc.setFontSize(6.5); doc.setTextColor(180, 70, 70);
-      doc.text(tx('Sınav kaygısının, günlük test ve denemelerdeki hata oranına etkisi  (en az 60 soru/gün)'), 16, Y); Y += 6;
+      doc.setFont(PF,'bold'); doc.setFontSize(8.5); doc.setTextColor(255,107,107);
+      doc.text(tx('B.  Kaygı – Bilişsel Doğruluk'), 16, Y); Y+=4;
+      doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(170,60,60);
+      doc.text(tx('Stres faktörünün akademik işlem kapasitesi ve hata payı üzerindeki etkisi  (min. 60 soru/gün gereklidir)'), 16, Y); Y+=6;
 
-      if (yanlisPctGunler.length >= 2 && ortKaygi > 0) {
-        const yuksekKaygiGunler = yanlisPctGunler.filter(d=>d.kaygi>=7);
-        const dusukKaygiGunler  = yanlisPctGunler.filter(d=>d.kaygi<=3);
-        const ortaKaygiGunler   = yanlisPctGunler.filter(d=>d.kaygi>3&&d.kaygi<7);
-        const ortYYuksek = yuksekKaygiGunler.length>0 ? yuksekKaygiGunler.reduce((a,d)=>a+d.yanlisPct,0)/yuksekKaygiGunler.length : null;
-        const ortYDusuk  = dusukKaygiGunler.length>0  ? dusukKaygiGunler.reduce((a,d)=>a+d.yanlisPct,0)/dusukKaygiGunler.length : null;
+      if (ortKaygi > 0 && hataGunler.length >= 2) {
+        const yuksekKG = hataGunler.filter(d=>d.kaygi>=8);
+        const dusukKG  = hataGunler.filter(d=>d.kaygi<=3);
+        const ortaKG   = hataGunler.filter(d=>d.kaygi>=3&&d.kaygi<=6);
+        const ortHataYK = yuksekKG.length>0?yuksekKG.reduce((a,d)=>a+d.hataOrani,0)/yuksekKG.length:null;
+        const ortHataDK = dusukKG.length>0?dusukKG.reduce((a,d)=>a+d.hataOrani,0)/dusukKG.length:null;
+        const ortHataOK = ortaKG.length>0?ortaKG.reduce((a,d)=>a+d.hataOrani,0)/ortaKG.length:null;
 
-        if (ortYanlis !== null) {
-          let analiz = '';
-          if (ortYYuksek !== null && ortYYuksek > ortYanlis * 1.25) {
-            analiz = 'Yüksek kaygı günlerinde hata oranı (%' + ortYYuksek.toFixed(0) + ') dönem ' +
-              'ortalamasının (%' + ortYanlis.toFixed(0) + ') belirgin üzerinde seyretmektedir. ' +
-              'Bu, stresin bilişsel odaklanmayı bozduğunu ve bilinen konularda dahi teknik hatalara ' +
-              'yol açtığını göstermektedir. Sınav öncesi kısa nefes egzersizleri ve "ısınma soruları" ' +
-              'ile kaygının işlem hatasına dönüşmesi önlenebilir.';
-            kutu('Kaygı – Hata Oranı Korelasyonu Pozitif', analiz, [255, 230, 230], [180, 30, 30]);
-          } else if (ortYYuksek !== null && ortYYuksek <= ortYanlis * 1.05) {
-            analiz = 'Kaygı yüksek olmasına rağmen (%' + ortKaygi.toFixed(0) + '/10 ort.) hata oranı ' +
-              '(%' + ortYanlis.toFixed(0) + ') stabil kalmaktadır. Bu, öğrencinin baskı altında ' +
-              'performansını koruyabildiğini gösterir; gerçek sınav için güçlü bir göstergedir. ' +
-              'Kaygı yönetimi çalışmalarıyla bu potansiyel daha da artırılabilir.';
-            kutu('Baskı Altında Stabil Performans', analiz, [230, 255, 240], [20, 140, 70]);
-          } else if (ortYDusuk !== null && ortYDusuk > ortYanlis * 1.3) {
-            analiz = 'Kaygı düşük günlerde hata oranı (%' + ortYDusuk.toFixed(0) + ') ' +
-              'beklenmedik biçimde yükselmektedir. Aşırı rahatlık, dikkat ve özen düzeyini ' +
-              'düşürebilir. Öğrencinin her soruda aynı sistematik yaklaşımı sürdürmesi için ' +
-              'test disiplinini pekiştiren alıştırmalar önerilir.';
-            kutu('Düşük Kaygıda Dikkat Dağınıklığı', analiz, [255, 248, 210], [160, 100, 0]);
-          } else {
-            analiz = 'Bu dönemde kaygı seviyesi (ort. ' + ortKaygi.toFixed(1) + '/10) ile hata oranı ' +
-              '(ort. %' + ortYanlis.toFixed(0) + ') arasında belirgin bir ilişki gözlemlenmemektedir. ' +
-              'Bu dengeli bir profil olarak değerlendirilebilir.';
-            kutu('Kaygı – Hata Oranı Dengeli', analiz, [240, 238, 255], [108, 99, 200]);
-          }
+        // S5: Ardışık yüksek hata (konu eksikliği)
+        if (maxArdisikHata >= 3) {
+          kutu('Bilişsel Yüklenme / Konu Eksiği Tespit Edildi',
+            'Kaygı seviyesinden bağımsız olarak hata oranı ardışık ' + maxArdisikHata + ' gün boyunca %30 üzerinde kalmıştır. ' +
+            'Bu durum öğrenme sürecinde yapısal bir sorun olduğunu göstermektedir. ' +
+            'Mevcut akademik materyalin öğrencinin bilgi seviyesinden çok üstte olduğu veya temel bir konu eksiğinin performansın önünü kestiği saptanmıştır.',
+            [255,230,230],[180,30,30]);
+        }
+        // S1: Akut stres blokajı
+        else if (ortHataYK !== null && ortHataYK > 30) {
+          kutu('Akut Stres Blokajı: Bilişsel Daralma',
+            'Amigdala aktivasyonunun prefrontal korteksteki çalışma belleğini baskıladığı saptanmıştır. ' +
+            'Yüksek kaygı günlerinde hata oranı (%' + ortHataYK.toFixed(0) + ') belirgin biçimde artmaktadır. ' +
+            'Bu tablo bilgi eksikliğinden ziyade stresin yarattığı bilişsel daralma ile ilişkilidir. ' +
+            'Ek akademik yükleme yerine otonom sinir sistemini yatıştırıcı müdahaleler önceliklidir.',
+            [255,230,230],[180,30,30]);
+        }
+        // S2: Mükemmeliyetçi paradoks
+        else if (ortHataYK !== null && ortHataYK < 10 && ortKaygi >= 8) {
+          kutu('Mükemmeliyetçi Performans Paradoksu: Yıpratıcı Başarı',
+            'Akademik doğruluk en üst düzeyde olmasına rağmen kaygı skoru kritik eşik üzerinde kalmaktadır. ' +
+            'Başarının içsel bir rahatlama sağlamadığı, aksine hata yapmama baskısını kronikleştirdiği görülmektedir. ' +
+            'Psikolojik sürdürülebilirliği düşük bu tabloda uzun vadede sınav anı panik riski mevcuttur.',
+            [255,240,220],[180,80,0]);
+        }
+        // S3: İdeal gelişim bölgesi
+        else if (ortHataOK !== null && ortHataOK >= 10 && ortHataOK <= 25 && ortKaygi >= 3 && ortKaygi <= 6) {
+          kutu('İdeal Gelişim Bölgesi: Maksimum Öğrenme Verimi',
+            'Veriler, bireyin zorluk-beceri dengesini yakaladığını göstermektedir. ' +
+            'Kaygı işlevsel aralıkta (' + ortKaygi.toFixed(1) + '/10), hata oranı optimal öğrenme bandında (%' + ortHataOK.toFixed(0) + '). ' +
+            'Bu kesişim, bilişsel gelişim için en sağlıklı aralık olup korunması ve bu dönemdeki çalışma koşullarının standartlaştırılması önerilir.',
+            [230,255,240],[20,140,70]);
+        }
+        // S4: Rehavet kaynaklı odak kaybı
+        else if (ortHataDK !== null && ortHataDK > 25 && ortKaygi <= 3) {
+          kutu('Akademik Rehavet: Kaygı Kaybının Getirdiği Odak Dağılması',
+            'Kaygı seviyesinin işlevsel sınırın (optimal arousal) altında kalmasıyla hata oranı artmıştır. ' +
+            'Dikkatin dağıldığı ve görev ciddiyetinin kaybolduğu saptanmaktadır. ' +
+            'Düşük uyarılma düzeyi basit işlem hatalarını ve dikkatsizliği tetiklemektedir.',
+            [255,248,210],[150,90,0]);
+        }
+        // S6: Güvenli alan - çok düşük kaygı + çok düşük hata
+        else if (ortKaygi <= 4 && ortHata !== null && ortHata < 5) {
+          kutu('Gelişimi Durduran Güvenli Alan',
+            'Çok düşük kaygı ve çok düşük hata oranı kesişimi bilişsel yerinde sayma durumuna işaret eder. ' +
+            'Öğrenci gelişimini sağlayacak zorluk seviyesindeki sorular yerine konfor alanı sorularıyla vakit kaybetmektedir. ' +
+            'Hata oranının %10-25 bandına çekilmesi için soru zorluğu kademeli artırılmalıdır.',
+            [255,248,215],[140,90,0]);
+        }
+        else if (ortHata !== null) {
+          kutu('Kaygı – Hata Oranı Dengeli',
+            'Bu dönemde kaygı seviyesi (ort. ' + ortKaygi.toFixed(1) + '/10) ile hata oranı (ort. %' + ortHata.toFixed(0) + ') arasında ' +
+            'belirgin bir olumsuz korelasyon tespit edilmemiştir. Genel tablo dengeli seyretmektedir.',
+            [240,248,255],[80,120,200]);
         }
       } else if (ortKaygi > 0) {
+        doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(150,120,120);
         Y = pdfCheck(doc, Y, 8);
-        doc.setFont(PF, 'normal'); doc.setFontSize(7.5); doc.setTextColor(150, 120, 120);
-        doc.text(tx('Hata oranı analizi için günde en az 60 soru verisi gerekiyor.'), 16, Y); Y += 8;
-      } else {
-        Y = pdfCheck(doc, Y, 8);
-        doc.setFont(PF, 'normal'); doc.setFontSize(7.5); doc.setTextColor(150, 120, 120);
-        doc.text(tx('Bu dönem kaygı verisi bulunamadı.'), 16, Y); Y += 8;
+        doc.text(tx('Kaygı-hata analizi için en az 60 soru/gün verisi gerekiyor.'), 16, Y); Y+=8;
       }
 
-      // ──────────────────────────────────────────────────────────────
-      // C. UYKU – ODAK – VERİMLİLİK
-      // ──────────────────────────────────────────────────────────────
+      // ── C. UYKU – ODAK – VERİMLİLİK ─────────────────────────────
       Y = pdfCheck(doc, Y, 10);
-      doc.setFont(PF, 'bold'); doc.setFontSize(8.5); doc.setTextColor(162, 155, 254);
-      doc.text(tx('C.  Uyku – Odak – Verimlilik'), 16, Y); Y += 4;
-      doc.setFont(PF, 'normal'); doc.setFontSize(6.5); doc.setTextColor(110, 100, 190);
-      doc.text(tx('Uyku süresinin, odaklanma kalitesi ve akademik verimlilik üzerindeki etkisi'), 16, Y); Y += 6;
+      doc.setFont(PF,'bold'); doc.setFontSize(8.5); doc.setTextColor(162,155,254);
+      doc.text(tx('C.  Uyku – Odak – Verimlilik'), 16, Y); Y+=4;
+      doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(110,90,190);
+      doc.text(tx('Biyolojik onarım süreçlerinin bilişsel keskinlik ve soru çözüm verimi üzerindeki etkisi'), 16, Y); Y+=6;
 
       const uykuGunler = veriGunler.filter(d=>d.uyku>0);
       if (uykuGunler.length >= 2) {
-        const azUyku     = uykuGunler.filter(d=>d.uyku<6.5);
-        const idealUyku  = uykuGunler.filter(d=>d.uyku>=7.5);
-        const ortOdakAz  = azUyku.filter(d=>d.odak>0).length>0
-                           ? azUyku.filter(d=>d.odak>0).reduce((a,d)=>a+d.odak,0)/azUyku.filter(d=>d.odak>0).length : null;
-        const ortOdakIde = idealUyku.filter(d=>d.odak>0).length>0
-                           ? idealUyku.filter(d=>d.odak>0).reduce((a,d)=>a+d.odak,0)/idealUyku.filter(d=>d.odak>0).length : null;
-        const ortQAz     = azUyku.filter(d=>d.soru>0).length>0
-                           ? azUyku.filter(d=>d.soru>0).reduce((a,d)=>a+d.soru,0)/azUyku.filter(d=>d.soru>0).length : null;
-        const ortQIde    = idealUyku.filter(d=>d.soru>0).length>0
-                           ? idealUyku.filter(d=>d.soru>0).reduce((a,d)=>a+d.soru,0)/idealUyku.filter(d=>d.soru>0).length : null;
-
-        let analizC = '';
-        if (ortOdakAz !== null && ortOdakIde !== null && ortOdakIde - ortOdakAz > 1.5) {
-          analizC = 'İdeal uyku (7.5+ saat) günlerinde odaklanma puanı (' + ortOdakIde.toFixed(1) + '/10), ' +
-            'yetersiz uyku (<6.5 saat) günlerine (' + ortOdakAz.toFixed(1) + '/10) göre belirgin biçimde yüksek. ' +
-            (ortQIde&&ortQAz ? 'Benzer şekilde çözülen soru sayısı da ideal uyku günlerinde ' + Math.round(ortQIde) + ', ' +
-            'az uyku günlerinde ' + Math.round(ortQAz) + ' olarak gerçekleşmiş. ' : '') +
-            'Düzenli uyku akademik verimi doğrudan desteklemektedir. Uyku öncesi ekran süresinin kısıtlanması önerilir.';
-          kutu('Uyku Kalitesi Odaklanmayı Doğrudan Etkiliyor', analizC, [230, 225, 255], [100, 80, 200]);
-        } else if (ortUyku >= 7.5 && ortOdak >= 7) {
-          analizC = 'Dönem genelinde uyku süresi (ort. ' + ortUyku.toFixed(1) + ' saat) ve odaklanma puanı ' +
-            '(ort. ' + ortOdak.toFixed(1) + '/10) birlikte yüksek seyrediyor. Bu biyolojik ritim açısından ' +
-            'sağlıklı ve sürdürülebilir bir tablodur. Sınava yaklaştıkça bu düzenin korunması kritik önemdedir.';
-          kutu('İdeal Uyku – Odak Dengesi', analizC, [230, 255, 240], [20, 140, 70]);
-        } else if (ortUyku < 6.5) {
-          analizC = 'Dönem genelinde uyku süresi ortalaması ' + ortUyku.toFixed(1) + ' saat ile yetersiz. ' +
-            'Kronik uyku eksikliği çalışma masasında geçirilen sürenin verimini düşürür; ' +
-            'bilgi edinme ve hafıza pekişmesi sekteye uğrar. ' +
-            'Uyku süresini 7.5 saate çıkarmak, aynı çalışma süresiyle daha yüksek net anlamına gelir.';
-          kutu('Yetersiz Uyku – Verimlilik Riski', analizC, [255, 230, 230], [180, 30, 30]);
-        } else if (ortUyku >= 7.5 && ortOdak < 5) {
-          analizC = 'Uyku süresi yeterli (ort. ' + ortUyku.toFixed(1) + ' saat) ancak odaklanma puanı ' +
-            'düşük (ort. ' + ortOdak.toFixed(1) + '/10). Bu "nicelik yeterli, nitelik düşük" uyku ' +
-            'örüntüsüne işaret ediyor olabilir. Uyku öncesi ekran maruziyeti, kaygı veya düzensiz uyku ' +
-            'saati uyku kalitesini olumsuz etkiliyor olabilir.';
-          kutu('Uyku Yeterli Ama Dinlendirici Değil', analizC, [235, 230, 255], [100, 80, 180]);
-        } else {
-          analizC = 'Uyku süresi (ort. ' + ortUyku.toFixed(1) + ' saat) orta düzeyde. ' +
-            'Odaklanma puanı ort. ' + ortOdak.toFixed(1) + '/10. ' +
-            'Tutarlı uyku rutini kurulması ve uyku öncesi saatin telefonsuz geçirilmesi önerilir.';
-          kutu('Uyku – Odak Orta Denge', analizC, [240, 238, 255], [108, 99, 200]);
+        // S5: Kümülatif uyku borcu — tüm analizleri etkiler
+        if (maxArdisikUyku >= 3) {
+          kutu('Kronik Zihinsel Yorgunluk: Kümülatif Uyku Borcu',
+            'Ardışık ' + maxArdisikUyku + ' gün boyunca uyku süresi 6.5 saatin altında kalmıştır. ' +
+            'Tekil uykusuzluk tolere edilebilirken ardışık eksiklik kümülatif bilişsel borç yaratır; ' +
+            'beyindeki toksinlerin temizlenmesini (glimfatik sistem) engeller. ' +
+            'Bu dönemde akademik hacim ne olursa olsun gerçek öğrenme verimi negatife dönmüştür; ' +
+            'hata yapma eğilimi tahminen %40 artmıştır.',
+            [255,220,220],[180,20,20]);
+        }
+        // S6: Uyku-hata paradoksu
+        else if (gunler.some(d=>d.uyku>0&&d.uyku<6&&d.soru>150&&d.hataOrani!==null&&d.hataOrani>30)) {
+          kutu('Mekanik Çözüm ve Hata Sabitlenmesi',
+            'Yetersiz uyku (<6 saat) ile birleşen yüksek soru sayısı (>150) ve yüksek hata oranı (>%30) kesişimi "yanlış öğrenme" riskini doğurmaktadır. ' +
+            'Öğrenci uykusuzluktan dolayı yanlışlarını analiz edememekte, sadece soru bitirme odaklı hareket ederek hatalı mantık yürütme kalıplarını pekiştirmektedir.',
+            [255,230,225],[180,40,0]);
+        }
+        // S2: Fizyolojik tolerans
+        else if (uykuGunler.filter(d=>d.uyku>=6&&d.uyku<7&&d.odak>=8).length>0) {
+          const tolDays = uykuGunler.filter(d=>d.uyku>=6&&d.uyku<7&&d.odak>=8);
+          kutu('Fizyolojik Tolerans: Sürdürülemez Odak',
+            'Uyku süresi kritik eşiğin (7 saat) altında olmasına rağmen odaklanma puanı yüksek seyretmektedir. ' +
+            'Bu durum stres hormonları aracılığıyla sağlanan geçici bir performanstır. ' +
+            'Biyolojik eksikliğin irade gücüyle kompanse edilmesi, bilişsel sistemde ani yakıt tükenmesi ve ' +
+            'takip eden günlerde ağır odak kayıpları yaratacaktır.',
+            [255,245,220],[160,100,0]);
+        }
+        // S1: Bilişsel restorasyon kaybı
+        else if (ortUyku < 6 && ortOdak <= 5) {
+          kutu('Bilişsel Restorasyon Kaybı: Akut Akademik Zarar',
+            '6 saatin altındaki uyku döngüsü prefrontal korteksteki yürütücü işlevleri (mantık, planlama, hata ayıklama) felç eder. ' +
+            'Hafıza konsolidasyonu gerçekleşmediği için o günkü çalışma "verimsiz girdi" olarak tanımlanmaktadır. ' +
+            'Uyku (ort. ' + ortUyku.toFixed(1) + ' saat), odak (ort. ' + ortOdak.toFixed(1) + '/10). Acil uyku hijyeni düzenlemesi şarttır.',
+            [255,225,225],[180,20,20]);
+        }
+        // S4: Kalitesiz uyku
+        else if (ortUyku >= 8 && ortOdak <= 5) {
+          kutu('Bilişsel Atalet: Sirkadiyen Ritimsizlik',
+            'Uyku süresi niceliksel yeterli (ort. ' + ortUyku.toFixed(1) + ' saat) ancak odaklanma puanı düşük (ort. ' + ortOdak.toFixed(1) + '/10). ' +
+            'Uyku kalitesinin (derin uyku yüzdesi) düşük olduğu veya sirkadiyen ritmin bozulduğu saptanmıştır. ' +
+            'Uyku süresi niceliğe rağmen beyin dinçlik evresine geçememektedir. ' +
+            'Uyku öncesi dijital uyarım veya beslenme alışkanlıkları sorgulanmalıdır.',
+            [235,230,255],[100,80,180]);
+        }
+        // S3: Optimal — zirve verim
+        else if (ortUyku >= 7.5 && ortOdak >= 8) {
+          kutu('Optimal Bilişsel Performans: Maksimum Öğrenme Kapasitesi',
+            'İdeal uyku mimarisi tamamlanmış; REM ve derin uyku evreleri bilişsel onarımı gerçekleştirmiştir. ' +
+            'Uyku (ort. ' + ortUyku.toFixed(1) + ' saat), odak (ort. ' + ortOdak.toFixed(1) + '/10). ' +
+            'Nöronal bağlantıların güçlendiği ve zihinsel berraklığın zirve düzeyde olduğu bu altın bölgenin ' +
+            'sınav öncesi periyotta standartlaştırılması kritik önceliğe taşınmıştır.',
+            [230,255,240],[20,140,70]);
+        }
+        else {
+          kutu('Uyku – Odak Orta Denge',
+            'Uyku (ort. ' + ortUyku.toFixed(1) + ' saat), odak (ort. ' + ortOdak.toFixed(1) + '/10). ' +
+            'Belirgin bir patoloji tespit edilmemiş olmakla birlikte ideal bölgenin (7.5+ saat uyku, 8+ odak) ' +
+            'altında kalınmaktadır. Tutarlı uyku rutini ve uyku öncesi ekran kısıtlaması önerilir.',
+            [240,238,255],[108,99,200]);
         }
       } else {
+        doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(150,140,180);
         Y = pdfCheck(doc, Y, 8);
-        doc.setFont(PF, 'normal'); doc.setFontSize(7.5); doc.setTextColor(150, 140, 180);
-        doc.text(tx('Uyku verisi yetersiz; bu analiz için her gün uyku saati girilmelidir.'), 16, Y); Y += 8;
+        doc.text(tx('Uyku verisi yetersiz; bu analiz için her gün uyku saati girilmelidir.'), 16, Y); Y+=8;
       }
 
-      // ──────────────────────────────────────────────────────────────
-      // D. EKRAN SÜRESİ – AKADEMİK ODAK
-      // ──────────────────────────────────────────────────────────────
-      const ekranGunler = veriGunler.filter(d=>d.sosyal>0||d.online>0);
+      // ── D. EKRAN SÜRESİ – ODAK ────────────────────────────────────
+      const ekranGunler = veriGunler.filter(d=>d.toplamEkran>0);
       if (ekranGunler.length >= 2) {
         Y = pdfCheck(doc, Y, 10);
-        doc.setFont(PF, 'bold'); doc.setFontSize(8.5); doc.setTextColor(69, 183, 209);
-        doc.text(tx('D.  Ekran Süresi – Akademik Odak'), 16, Y); Y += 4;
-        doc.setFont(PF, 'normal'); doc.setFontSize(6.5); doc.setTextColor(40, 110, 150);
-        doc.text(tx('Sosyal medya/diğer ekran kullanımının odak ve soru üretimine etkisi'), 16, Y); Y += 6;
+        doc.setFont(PF,'bold'); doc.setFontSize(8.5); doc.setTextColor(69,183,209);
+        doc.text(tx('D.  Ekran Süresi – Odak'), 16, Y); Y+=4;
+        doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(40,110,150);
+        doc.text(tx('Dijital uyaran maruziyetinin bilişsel odak ve duygusal kaçınma mekanizmaları üzerindeki etkisi'), 16, Y); Y+=6;
 
-        const yuksekSosyal = ekranGunler.filter(d=>d.sosyal>ortSosyal*1.3&&d.sosyal>1);
-        const dusukSosyal  = ekranGunler.filter(d=>d.sosyal<ortSosyal*0.5&&d.sosyal>=0);
-        const ortOdakYS = yuksekSosyal.filter(d=>d.odak>0).length>0
-                          ? yuksekSosyal.filter(d=>d.odak>0).reduce((a,d)=>a+d.odak,0)/yuksekSosyal.filter(d=>d.odak>0).length : null;
-        const ortOdakDS = dusukSosyal.filter(d=>d.odak>0).length>0
-                          ? dusukSosyal.filter(d=>d.odak>0).reduce((a,d)=>a+d.odak,0)/dusukSosyal.filter(d=>d.odak>0).length : null;
-        const ortQYS    = yuksekSosyal.filter(d=>d.soru>0).length>0
-                          ? yuksekSosyal.filter(d=>d.soru>0).reduce((a,d)=>a+d.soru,0)/yuksekSosyal.filter(d=>d.soru>0).length : null;
-        const ortQDS    = dusukSosyal.filter(d=>d.soru>0).length>0
-                          ? dusukSosyal.filter(d=>d.soru>0).reduce((a,d)=>a+d.soru,0)/dusukSosyal.filter(d=>d.soru>0).length : null;
-
-        let analizD = '';
-        if (ortOdakYS !== null && ortOdakDS !== null && ortOdakDS - ortOdakYS > 1.5) {
-          analizD = 'Sosyal medya/diğer ekran süresi düşük kaldığında odaklanma puanı (' + ortOdakDS.toFixed(1) + '/10), ' +
-            'yüksek ekran günlerine (' + ortOdakYS.toFixed(1) + '/10) kıyasla belirgin biçimde daha iyi. ' +
-            (ortQDS&&ortQYS ? 'Soru sayısında da benzer fark gözlemleniyor (' + Math.round(ortQDS) + ' vs ' + Math.round(ortQYS) + ' soru). ' : '') +
-            'Ekran süresini kısıtlamak odaklanma kalitesini doğrudan artırıyor. ' +
-            'Günde 45 dakikanın altında tutmak ideal hedef olarak önerilebilir.';
-          kutu('Ekran Süresi Odaklanmayı Olumsuz Etkiliyor', analizD, [255, 235, 235], [180, 30, 30]);
-        } else if (ortSosyal < 1 && ortOdak >= 7) {
-          analizD = 'Dönem genelinde sosyal medya/diğer ekran süresi düşük (ort. ' + ortSosyal.toFixed(1) + ' saat) ' +
-            've odaklanma puanı yüksek (ort. ' + ortOdak.toFixed(1) + '/10). ' +
-            'Dijital dikkat dağıtıcıların kontrol altında tutulması akademik odağı olumlu destekliyor. ' +
-            'Bu dengenin korunması önerilir.';
-          kutu('Dijital Denge İyi Korunuyor', analizD, [230, 255, 240], [20, 140, 70]);
-        } else if (ortSosyal > 2.5) {
-          // Yüksek sosyal medya ile kaygı ilişkisi
-          const kaygiBirlikte = ekranGunler.filter(d=>d.kaygi>=7&&d.sosyal>2);
-          if (kaygiBirlikte.length >= 2) {
-            analizD = 'Yüksek kaygı günlerinde sosyal medya/diğer ekran süresi de artmaktadır. ' +
-              'Bu, kaygı yönetiminde dijital kaçış refleksinin devreye girdiğini düşündürmektedir. ' +
-              'Kaygılı anlarda ekran yerine kısa yürüyüş, nefes egzersizi gibi alternatifler önerilir.';
-            kutu('Kaygı Ekranı Artırıyor – Kaçış Döngüsü', analizD, [255, 230, 240], [180, 40, 80]);
-          } else {
-            analizD = 'Ekran süresi (ort. ' + ortSosyal.toFixed(1) + ' saat/gün) yüksek seyrediyor. ' +
-              'Bu durum uyku kalitesini ve özellikle uyku öncesi zihinsel sakinleşmeyi olumsuz etkileyebilir. ' +
-              'Ders saatlerinde "ekransız çalışma blokları" oluşturulması ve yatmadan 1 saat önce ekranların kapatılması önerilir.';
-            kutu('Yüksek Ekran Süresi – İzleme Gerekli', analizD, [255, 248, 210], [150, 90, 0]);
-          }
-        } else {
-          const _ortOnline = ekranGunler.filter(d=>d.online>0).length>0
-            ? (ekranGunler.filter(d=>d.online>0).reduce((a,d)=>a+d.online,0)/ekranGunler.filter(d=>d.online>0).length).toFixed(1)
-            : '0';
-          analizD = 'Dönem genelinde ekran süresi (ort. ' + ortSosyal.toFixed(1) + ' saat sosyal medya, ' +
-            _ortOnline + ' saat online ders) makul düzeyde. Belirgin bir olumsuz etki gözlemlenmemektedir.';
-          kutu('Ekran Süresi Dengeli', analizD, [240, 248, 255], [69, 140, 200]);
+        // S5: Ekran-uyku kesişimi
+        if (gunler.some(d=>d.toplamEkran>2&&d.uyku>0&&d.uyku<6.5)) {
+          kutu('Dijital Kaynaklı Biyolojik Blokaj: Ekran–Uyku Kesişimi',
+            'Mavi ışık maruziyetinin melatonin salgısını baskıladığı ve uykuya geçiş süresini uzattığı saptanmıştır. ' +
+            'Yüksek ekran süresi, uyku süresinden çalarak bilişsel onarımı çift taraflı engellemektedir. ' +
+            'Akademik başarısızlığın ana kaynağının ekran kullanımı üzerinden uyku mimarisini bozması olduğu kanıtlanmıştır.',
+            [255,230,220],[180,60,0]);
+        }
+        // S2: Kaçınma mekanizması
+        else if (gunler.some(d=>d.kaygi>=8&&d.toplamEkran>1.5&&d.soru<80)) {
+          kutu('Savunma Amaçlı Dijital Kaçış: Duygusal Regülasyon Aracı',
+            'Yüksek kaygı günlerinde ekran süresinin artması ve soru sayısının azalması, ' +
+            'dijital kullanımın bir başa çıkma stratejisi olarak devreye girdiğini göstermektedir. ' +
+            'Birey, stres yaratan akademik görevden uzaklaşmak için dijital dünyayı anestezik olarak kullanmaktadır. ' +
+            'Bu tablo disiplin değil; stres yönetimi yetersizliğine işaret eder.',
+            [255,230,240],[180,40,80]);
+        }
+        // S4: Dopaminerjik yorgunluk
+        else if (gunler.some(d=>d.enerji<=4&&d.toplamEkran>1.5&&(d.negatif.includes('yorgun')||d.negatif.includes('istek')||d.mood==='tired'))) {
+          kutu('Sahte Dinlenme: Dopaminerjik Yorgunluk',
+            'Birey düşük enerjiyi ekran başında geçirerek dinlendiğini varsaymaktadır. ' +
+            'Oysa dijital uyarım, beyindeki karar verme ve görsel işleme merkezlerini çalıştırmaya devam ederek ' +
+            'merkezi sinir sistemini daha fazla yormaktadır. ' +
+            'Biyolojik onarım için gereken uyarımsız dinlenme yerine aktif dijital tüketim tercih edilmekte; ' +
+            'yorgunluk döngüsü kronikleşmektedir.',
+            [255,245,225],[160,100,0]);
+        }
+        // S3: Dikkat kalıntısı
+        else if (gunler.some(d=>d.toplamEkran>=1&&d.toplamEkran<=1.5&&d.odak<=4&&d.soru>0)) {
+          kutu('Dikkat Parçalanması: Süreksiz Odak (Attention Residue)',
+            'Ekran süresi sağlıklı sınırda görünmesine rağmen odaklanma düşük seyretmektedir. ' +
+            'Bu, dijital kullanımın parçalı (ders aralarında sık kontrol) olduğuna işaret eder. ' +
+            'Her kontrol sonrası oluşan dikkat kalıntısı, bir sonraki göreve tam odaklanmayı 15-20 dakika engellemektedir. ' +
+            'Toplam süreden ziyade kullanım sıklığı bilişsel akışı sabote etmektedir.',
+            [255,248,215],[140,100,0]);
+        }
+        // S1: Nöro-bilişsel odak parçalanması
+        else if (gunler.some(d=>d.toplamEkran>2&&d.odak<=5)) {
+          kutu('Nöro-Bilişsel Odak Parçalanması',
+            'Yüksek dijital uyaran maruziyeti (>120 dk) prefrontal korteksin derin odaklanma yetisini geçici olarak devre dışı bırakmaktadır. ' +
+            'Bireyin zihinsel enerjisinin büyük bölümü pasif tüketimle harcanmış; ' +
+            'akademik görevler için gereken bilişsel derinlik sağlanamamıştır.',
+            [255,230,230],[180,30,30]);
+        }
+        // S6: İdeal dijital hijyen
+        else if (gunler.some(d=>d.toplamEkran<1&&d.odak>=8&&d.soru>ortSoru)) {
+          kutu('Optimal Dijital Hijyen: Nöral Kapasite Maksimumda',
+            'Dijital uyaranların minimumda tutulduğu günlerde (ekran <60 dk) odaklanma ve soru üretimi zirveye ulaşmaktadır. ' +
+            'Nöral ağların akademik görevlere tam kapasiteyle kanalize olmasını sağlayan bu biyokimyasal ortamın ' +
+            'standartlaştırılması önerilir.',
+            [230,255,240],[20,140,70]);
+        }
+        else {
+          kutu('Ekran Süresi Dengeli',
+            'Bu dönemde ekran süresi (ort. ' + ortSosyal.toFixed(1) + ' saat sosyal/diğer) ile odak arasında ' +
+            'belirgin bir olumsuz korelasyon tespit edilmemiştir.',
+            [240,248,255],[69,140,200]);
         }
       }
 
-      // ──────────────────────────────────────────────────────────────
-      // DUYGU – DERS VERİMİ TABLOSU
-      // ──────────────────────────────────────────────────────────────
+      // ── DUYGU – DERS VERİMİ ──────────────────────────────────────
       const moodDers = {};
-      gunler.forEach(d=>{
-        if(!d.mood||!d.subMap) return;
-        if(!moodDers[d.mood]) moodDers[d.mood]={};
-        Object.entries(d.subMap).forEach(([sub,q])=>{
-          if(!moodDers[d.mood][sub]) moodDers[d.mood][sub]=0;
-          moodDers[d.mood][sub]+=q;
-        });
-      });
-      const moodDersGirdi = Object.entries(moodDers).filter(([m,s])=>Object.values(s).some(v=>v>0));
+      gunler.forEach(d=>{ if(!d.mood||!d.soru) return; const sm={}; soruEntries2.filter(e=>e.dateKey===d.dk).forEach(e=>{if(!sm[e.subject])sm[e.subject]=0;sm[e.subject]+=(e.questions||0);}); if(!moodDers[d.mood]) moodDers[d.mood]={}; Object.entries(sm).forEach(([s,q])=>{if(!moodDers[d.mood][s])moodDers[d.mood][s]=0;moodDers[d.mood][s]+=q;}); });
+      const moodDersGirdi = Object.entries(moodDers).filter(([m,ss])=>Object.values(ss).some(v=>v>0));
       if (moodDersGirdi.length > 0) {
         Y = pdfCheck(doc, Y, 12);
-        doc.setFont(PF, 'bold'); doc.setFontSize(7.5); doc.setTextColor(69, 183, 209);
-        doc.text(tx('Duygu Durumu – Ders Verimi Dağılımı'), 16, Y); Y += 5;
+        doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(69,183,209);
+        doc.text(tx('Duygu Durumu – Ders Verimi Dağılımı'), 16, Y); Y+=5;
         const mL={excited:'Heyecanlı',good:'İyiyim',focused:'Odaklı',ok:'İdare Eder',tired:'Yorgunum',anxious:'Kaygılı',sad:'Mutsuzum'};
         const mC={excited:[249,202,36],good:[69,183,209],focused:[108,99,255],ok:[162,155,254],tired:[253,121,168],anxious:[255,107,107],sad:[119,140,163]};
-        moodDersGirdi.forEach(([mood, subs])=>{
-          const en = Object.entries(subs).sort((a,b)=>b[1]-a[1])[0];
-          if(!en) return;
-          Y=pdfCheck(doc,Y,10);
-          const mc=mC[mood]||[150,150,150];
+        moodDersGirdi.forEach(([mood,subs])=>{
+          const en=Object.entries(subs).sort((a,b)=>b[1]-a[1])[0]; if(!en) return;
+          Y=pdfCheck(doc,Y,10); const mc=mC[mood]||[150,150,150];
           doc.setFillColor(Math.round(mc[0]*0.12+240*0.88),Math.round(mc[1]*0.12+240*0.88),Math.round(mc[2]*0.12+240*0.88));
-          doc.roundedRect(15,Y,180,9,1.5,1.5,'F');
-          doc.setFillColor(mc[0],mc[1],mc[2]); doc.roundedRect(15,Y,3,9,1,1,'F');
+          doc.roundedRect(15,Y,180,9,1.5,1.5,'F'); doc.setFillColor(mc[0],mc[1],mc[2]); doc.roundedRect(15,Y,3,9,1,1,'F');
           doc.setFont(PF,'bold');doc.setFontSize(7.5);doc.setTextColor(40,40,80);
-          doc.text(tx(mL[mood]||mood)+' →',20,Y+6);
+          doc.text(tx(mL[mood]||mood)+' ->',20,Y+6);
           doc.setFont(PF,'normal');doc.setFontSize(7.5);doc.setTextColor(60,60,100);
-          doc.text(tx('En çok: ')+tx(en[0])+' ('+en[1]+' soru)',58,Y+6);
+          doc.text(tx('En cok: ')+tx(en[0])+' ('+en[1]+' soru)',56,Y+6);
           const ozet=Object.entries(subs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([s,q])=>tx(dersKisa(s))+'('+q+')').join('  ');
-          doc.setFontSize(6.5);doc.setTextColor(100,100,130);doc.text(ozet,130,Y+6);Y+=11;
+          doc.setFontSize(6.5);doc.setTextColor(100,100,130);doc.text(ozet,128,Y+6);Y+=11;
         });
       }
 
-      // ──────────────────────────────────────────────────────────────
-      // BÜTÜNCÜL KOÇ DEĞERLENDİRMESİ
-      // ──────────────────────────────────────────────────────────────
+      // ── BÜTÜNCÜL KOÇ DEĞERLENDİRMESİ ────────────────────────────
       Y = pdfCheck(doc, Y, 12);
-      Y = pdfSecHeader(doc, tx('BUTUNCEL KOC DEGERLENDIRMESI'), Y, 72, 200, 130);
+      Y = pdfSecHeader(doc, tx('BÜTÜNCÜL KOÇ DEĞERLENDİRMESİ'), Y, 72, 200, 130);
+      doc.setFont(PF,'italic'); doc.setFontSize(6.5); doc.setTextColor(100,100,130);
+      doc.text(tx('Çapraz veri doğrulama ve kök neden analiz motoru — tekil verileri değil, verilerin birbiriyle tutarlılığını analiz eder'), 16, Y); Y+=6;
 
-      const dLgs = Math.max(0, Math.floor((new Date('2026-06-14T09:30:00+03:00') - new Date())/(1000*60*60*24)));
-      const adSoyad = tx(sName.split(' ')[0]);
-      const iyi_basari = ortNet !== null && ortNet > 20;
-      const dusuk_hacim = ortSoru > 0 && ortSoru < DAILY_GOAL * 0.45;
-      const orta_hacim = ortSoru >= DAILY_GOAL * 0.45 && ortSoru < DAILY_GOAL * 0.75;
+      const dLgs = Math.max(0, Math.floor((new Date('2026-06-14T09:30:00+03:00')-new Date())/(1000*60*60*24)));
       const iyi_hacim = ortSoru >= DAILY_GOAL * 0.75;
-      const kritikBurnout2 = ortEnerji > 0 && ortEnerji < 4 && ortUyku > 0 && ortUyku < 6.5;
-      const kritikKaygi2 = ortKaygi >= 7.5;
-      const yuksek_kaygi_basari = ortKaygi >= 7 && iyi_basari;
-      const disiplinli = ortSoru >= DAILY_GOAL * 0.8;
-      const dusuk_uyku2 = ortUyku > 0 && ortUyku < 6.5;
-      const iyi_uyku2 = ortUyku >= 7.5;
-      const yuksek_odak2 = ortOdak >= 7;
-      const dusuk_odak2 = ortOdak > 0 && ortOdak < 5;
-      const potAlti2 = ortEnerji >= 7 && ortKaygi <= 3 && dusuk_hacim;
-      const dengeli2 = ortKaygi > 0 && ortKaygi < 6 && ortUyku >= 7 && !dusuk_hacim && ortEnerji >= 5;
-      const zamanBaski = dLgs < 60 ? 'yogun' : dLgs < 120 ? 'orta' : 'erken';
+      const dusuk_hacim = ortSoru > 0 && ortSoru < DAILY_GOAL * 0.45;
+      const iyi_basari = ortNet !== null && ortNet > 20;
 
-      // 1. GENEL PROFIL
-      {
-        let profil = '';
-        if (kritikBurnout2) {
-          profil = adSoyad + ' bu donemde fiziksel ve zihinsel tukenme sinyalleri veriyor: enerji ort. ' + ortEnerji.toFixed(1) + '/10, uyku ' + ortUyku.toFixed(1) + ' saat. Bu tablo surdurulebilir degil. ' +
-            (iyi_hacim ? 'Dikkat cekici olan soru sayisinin yuksek tutulmus olmasi; bu "borctan harcama" durumunu gosteriyor.' : 'Buna ragmen akademik uretim de dusuk; her iki cephede ciddi sorun var.') +
-            ' Kocun onceligi akademik hedeflerden once biyolojik toparlanmayi saglamak olmalidir.';
-        } else if (kritikKaygi2 && !iyi_basari) {
-          profil = adSoyad + ' bu donemde yuksek kaygi (' + ortKaygi.toFixed(1) + '/10) ve buna bagli gorunen akademik kilitlenme yasiyor. Soru sayisi (ort. ' + Math.round(ortSoru) + '/gun) beklenin altinda. Kaygi ogrenme kapasitesini bloke ediyor; teknik calisma yerine psikolojik stabilizasyon oncelikli olmali. Kucuk hedeflerle "basari hissi" yeniden insa edilmeli.';
-        } else if (yuksek_kaygi_basari) {
-          profil = adSoyad + ' ilginc bir profil sergiliyor: kaygi yuksek (' + ortKaygi.toFixed(1) + '/10) ancak akademik sonuclar iyi. Bu mukemmeliyetcilik oruntusunun klasik gostergesi. Basari geldikce kaygi azalmak yerine yeni kaygilara yer barakiyor. Bu tempo uzun soluklu LGS maratonunda psikolojik yipranmaya zemin hazirlıyor. Kocun gorevi basariyi takdir ederken "yeterince iyi" kavramini da icselletirmesini saglamak.';
-        } else if (dengeli2) {
-          profil = adSoyad + ' bu donemde dengeli ve surdurulebilir bir profil ciziyor. Kaygi kontrollü (' + ortKaygi.toFixed(1) + '/10), uyku yeterli (' + ortUyku.toFixed(1) + ' saat), akademik uretim ' + (iyi_hacim ? 'hedefin uzerinde' : 'kabul edilebilir duzeyde') + '. ' + (zamanBaski === 'yogun' ? 'Sinava ' + dLgs + ' gun kaldiginda bu ritmi korumak ve hata analizine agirlik vermek kritik.' : 'Sinava ' + dLgs + ' gun var; bu dengeyi koruyarak calisma yogunlugunu kademeli artirmak onerilir.');
-        } else {
-          profil = adSoyad + ' bu donemde karma bir profil gosteriyor. ' + (ortKaygi > 5 ? 'Kaygi biraz yuksek (' + ortKaygi.toFixed(1) + '/10). ' : '') + (dusuk_uyku2 ? 'Uyku yetersiz (' + ortUyku.toFixed(1) + ' saat). ' : '') + (dusuk_hacim ? 'Gunluk soru sayisi (' + Math.round(ortSoru) + ') hedefin oldukca altinda. ' : orta_hacim ? 'Soru sayisi makul ama arttirilabilir (' + Math.round(ortSoru) + '/gun). ' : '') + 'Veri girisi duzenli tutuldukca daha net degerlendirme yapilacak.';
-        }
-        if (profil) kutu('1. Genel Profil Degerlendirmesi', profil, [240,238,255], [108,99,200]);
+      // ALTIN KURAL HİYERARŞİSİ
+      // ÖNCELİK KIRMIZI: Burnout veya Biyolojik Blokaj
+      if (acilUyarilar.length > 0) {
+        kutu('Öncelikli Tanı: Biyolojik İyileşme — Tüm Diğer Analizler İkincil',
+          'Sistem verilerinde kırmızı alarm tetiklenmiştir. ' +
+          (acilUyarilar.includes('BURNOUT') ? 'Gizli tükenmişlik eşiğine ulaşılmıştır: düşük enerji + yüksek hacim + yüksek kaygı kombinasyonu ardışık gözlemlenmiştir. ' : '') +
+          (acilUyarilar.includes('BIYO_BLOKAJ') ? 'Prefrontal korteks çift taraflı (uykusuzluk + dijital yorgunluk) baskılanma altındadır. ' : '') +
+          'Bu koşullar altında verilecek ek akademik yüklemeler kontrindikedir. ' +
+          'Tek müdahale: uyku onarımı (min. 8 saat/gece, ardışık 3 gün) ve dijital detoks. Bu sağlanmadan net artışı beklenmemelidir.',
+          [255,215,215],[180,20,20]);
       }
 
-      // 2. AKADEMİK VERİMLİLİK
-      if (toplamSoru > 0) {
-        let akademik = '';
-        const soruPct = Math.round(ortSoru / DAILY_GOAL * 100);
-        const netPct2 = (ortNet !== null && ortSoru > 0) ? Math.round(ortNet / ortSoru * 100) : null;
-        if (iyi_hacim && netPct2 !== null && netPct2 >= 70) {
-          akademik = 'Hem nicelik hem nitelik acisindan guclu tablo: gunluk ort. ' + Math.round(ortSoru) + ' soru (%' + soruPct + ' hedef), net isabet %' + netPct2 + '. LGSde hedeflenen puana ulasmak icin dogru kanalda. Onerimiz: zayif konu odakli calismaya agirlik vererek verimlilik tavanini daha da yukseltmek.';
-        } else if (iyi_hacim && netPct2 !== null && netPct2 < 60) {
-          akademik = 'Soru sayisi iyi (' + Math.round(ortSoru) + '/gun) ancak isabet orani duşuk (%' + netPct2 + '). "Cok calısiyorum ama verim alamiyorum" hissiyle ortusüyor. Hata analizi ve yavask anlayarak cozme yontemi onceliklendirilmeli; soru sayisi gecici olarak azaltilabilir.';
-        } else if (dusuk_hacim) {
-          akademik = 'Gunluk ort. ' + Math.round(ortSoru) + ' soru, hedefin sadece %' + soruPct + 'i. ' + dLgs + ' gun kalan bir surecte bu acigi kapatmak icin acil yapilandirma gerekiyor. Gunluk program sabit calisma bloklarina bolunmeli, her blok icin minimum soru hedefi konulmali.' + (potAlti2 ? ' Enerji ve ruh hali verileri hazir durumda oldugunu gosteriyor; motive edici dis etken eksikligine isaret ediyor.' : '');
-        } else {
-          akademik = 'Bu donemde toplam ' + toplamSoru + ' soru cozulmus (' + aktifGunler.length + ' aktif gun, gunluk ort. ' + Math.round(ortSoru) + '). ' + (orta_hacim ? 'Tempolu ilerliyor ancak hedefin %' + soruPct + 'inde. Bunu %80 uzeri ne tasimak icin gunde bir ek calisma bloku yeterli olacak.' : '');
-        }
-        if (akademik) kutu('2. Akademik Verimlilik Analizi', akademik, [235,248,255], [20,100,180]);
+      // Mekanikleşmiş performans (Gelişim Sarı)
+      const mekanik = gunler.some(d=>d.soru>160&&d.hataOrani!==null&&d.hataOrani<10&&d.uyku>0&&d.uyku<6.5);
+      if (mekanik) {
+        kutu('Yerinde Sayma Faktörü: Verimli Görünümlü Risk',
+          'Uykusuzluğa rağmen hata oranı çok düşük ve hacim yüksek; bu durum öğrencinin kapasitesini zorlamayan ' +
+          'otomatikleşmiş görevleri yaptığını göstermektedir. "Çalışma illüzyonu" söz konusudur. ' +
+          'Gerçek sınavdaki zor ve yeni nesil sorularda ani performans düşüşü riski taşımaktadır. ' +
+          'Soru sayısı değil, soru zorluğu artırılmalı; hata bandı %10-25 aralığına çekilmelidir.',
+          [255,248,215],[140,90,0]);
       }
 
-      // 3. PSİKOLOJİK RİSK VE GÜÇLER
+      // Stres kaçınma döngüsü
+      if (gunler.some(d=>d.kaygi>=8&&d.toplamEkran>2&&d.soru<70)) {
+        kutu('Aktif Kaçınma Mekanizması: Stres Kaynaklı Kaçış Döngüsü',
+          'Yüksek kaygı + yüksek ekran + düşük soru üçlüsü "stres kaçınma döngüsü"nün kanıtıdır. ' +
+          'Öğrenci akademik yetersizlik hissiyle yüzleşmemek için dijital dünyaya sığınmaktadır. ' +
+          'Disiplin müdahalesi değil kaygı yönetimi müdahalesi gerekir. ' +
+          'Koçluk seansında "ekran süresi" değil "onu ekrana iten kaygı" konuşulmalıdır.',
+          [255,230,245],[180,40,100]);
+      }
+
+      // Bilişsel farkındalık körlüğü
+      if (gunler.some(d=>d.odak>=9&&d.hataOrani!==null&&d.hataOrani>30&&d.enerji<=4)) {
+        kutu('Yanılsamalı Verimlilik: Bilişsel Farkındalık Körlüğü',
+          'Öznel odaklanma algısı (>=9/10) ile nesnel hata oranı (>%30) arasındaki uçurum, ' +
+          'bilişsel yorgunluğun öz-değerlendirme yetisini bozduğunu göstermektedir. ' +
+          'Öğrenci çok iyi çalıştığını sanmakta ancak muhakeme hataları yapmaktadır. ' +
+          'Verilerin somut olarak aynalanması ve "farkındalık çarpıcısı" müdahale şarttır.',
+          [255,240,220],[180,80,0]);
+      }
+
+      // Genel profil / Denge
       {
-        const gucler = [];
-        const riskler = [];
-        if (ortEnerji >= 7) gucler.push('yuksek enerji (' + ortEnerji.toFixed(1) + '/10)');
-        if (iyi_uyku2) gucler.push('iyi uyku duzeni (' + ortUyku.toFixed(1) + ' saat)');
-        if (yuksek_odak2) gucler.push('yuksek odaklanma (' + ortOdak.toFixed(1) + '/10)');
-        if (ortKaygi > 0 && ortKaygi < 4) gucler.push('kaygi kontrollü (' + ortKaygi.toFixed(1) + '/10)');
-        if (disiplinli) gucler.push('guclu calisma disiplini');
-        if (ortSosyal > 0 && ortSosyal < 1.5) gucler.push('ekran kullanimi sinirli');
-        if (kritikKaygi2) riskler.push('kronik yuksek kaygi (' + ortKaygi.toFixed(1) + '/10) bilisgs el isleme kapasitesini kisitliyor');
-        if (dusuk_uyku2) riskler.push('yetersiz uyku (' + ortUyku.toFixed(1) + ' saat) hafiza pekismesini olumsuz etkiliyor');
-        if (dusuk_odak2) riskler.push('dusuk odaklanma (' + ortOdak.toFixed(1) + '/10) verimlilik dusuruyor');
-        if (ortSosyal >= 3) riskler.push('yuksek ekran suresi (' + ortSosyal.toFixed(1) + ' saat) dikkat bolunmesine yol aciyor');
-        if (kritikBurnout2) riskler.push('tukenmisglik esigine yakin durum acil mudahale gerektiriyor');
+        const gucler = [], riskler = [];
+        if (ortEnerji >= 7) gucler.push('enerji yüksek (' + ortEnerji.toFixed(1) + '/10)');
+        if (ortUyku >= 7.5) gucler.push('uyku ideal (' + ortUyku.toFixed(1) + ' saat)');
+        if (ortOdak >= 7) gucler.push('odak güçlü (' + ortOdak.toFixed(1) + '/10)');
+        if (ortKaygi > 0 && ortKaygi < 5) gucler.push('kaygı işlevsel (' + ortKaygi.toFixed(1) + '/10)');
+        if (iyi_hacim) gucler.push('akademik hacim hedef bandında');
+        if (ortKaygi >= 7) riskler.push('kronik yüksek kaygı bilişsel kapasiteyi kısıtlıyor');
+        if (ortUyku > 0 && ortUyku < 6.5) riskler.push('yetersiz uyku hafıza pekişmesini engelliyor');
+        if (ortOdak > 0 && ortOdak < 5) riskler.push('düşük odak verimlilik tavanını düşürüyor');
+        if (dusuk_hacim) riskler.push('günlük soru sayısı (' + Math.round(ortSoru) + ') hedefin çok altında');
+
         if (gucler.length > 0 || riskler.length > 0) {
-          let psiko = '';
-          if (gucler.length > 0) psiko += 'Guclu yanlar: ' + gucler.join(', ') + '. ';
-          if (riskler.length > 0) psiko += (gucler.length > 0 ? 'Buna karsin r' : 'R') + 'iskler: ' + riskler.join('; ') + '. ' + (riskler.length >= 2 ? 'Bu risklerin birlikteligi tek tek ele alindiginda gorünenden daha kritik; onceliklendirilmesi gerekiyor.' : '');
-          if (psiko) kutu('3. Psikolojik Risk ve Gucler', psiko, [255,248,235], [160,100,0]);
+          let profil = '';
+          if (gucler.length > 0) profil += 'Güçlü yanlar: ' + gucler.join(', ') + '. ';
+          if (riskler.length > 0) profil += (gucler.length > 0 ? 'Bununla birlikte r' : 'R') + 'iskler: ' + riskler.join('; ') + '. ';
+          if (riskler.length === 0 && acilUyarilar.length === 0) {
+            profil += 'Biyolojik ve psikolojik veriler akademik gelişimi desteklemektedir. ' +
+              'Sınava ' + dLgs + ' gün kala bu denge korunmalı; çalışma yoğunluğu kademeli artırılmalıdır.';
+            kutu('Biyolojik ve Psikolojik Veriler Akademik Gelişimi Desteklemektedir', profil, [230,255,240], [20,140,70]);
+          } else {
+            kutu('Dönem Profil Özeti', profil, [240,238,255], [108,99,200]);
+          }
         }
       }
 
-      // 4. UYKU-KAYGI-PERFORMANS DONGUSU
-      if (ortUyku > 0 && ortKaygi > 0 && toplamSoru > 0) {
-        let dongu = '';
-        if (dusuk_uyku2 && kritikKaygi2) {
-          dongu = 'Kisir dongu gozlemleniyor: yetersiz uyku → artan kaygi → odak kaybi → dusuk verim → daha fazla kaygi. Bu donguyu kirmak icin en kritik giris noktasi uykudur. Uyku ' + ortUyku.toFixed(1) + ' saatten 7.5+ saate cikarilirsa kayginin ve akademik verimin de iyilesmesi ongörülüyor. Uyku oncesi 1 saatlik ekransiz tampon sure onerilir.';
-        } else if (iyi_uyku2 && yuksek_odak2) {
-          dongu = 'Olumlu dongu mevcut: iyi uyku (' + ortUyku.toFixed(1) + ' saat) → yuksek odak (' + ortOdak.toFixed(1) + '/10) → akademik verimlilik. Bu pozitif donguyu korumak sinava yaklasırkca daha da degerli. Sinav stresi bu dengeyi bozabilir; uyku saati rutini sabitlestirilmeli.';
-        } else if (dusuk_uyku2 && yuksek_odak2) {
-          dongu = 'Uyumsuzluk: uyku kisa (' + ortUyku.toFixed(1) + ' saat) ancak odak yuksek (' + ortOdak.toFixed(1) + '/10). Kisa vadeli adaptasyon; uzun vadede bilisgs el performans sekteye ugrayabilir. Uyku arttirilirsa mevcut odak kalitesinin uzeri ne cikilebilir.';
-        }
-        if (dongu) kutu('4. Uyku – Kaygi – Performans Iliskisi', dongu, [235,230,255], [100,80,200]);
-      }
-
-      // 5. STRATEJİK YOL HARİTASI
+      // Öğrencinin sesi
       {
-        const oneri = [];
-        if (kritikBurnout2) oneri.push('Acil dinlenme: en az 1 gun tam desarj; uyku suresini 8+ saate cikar');
-        if (dusuk_uyku2 && !kritikBurnout2) oneri.push('Uyku hijyeni: yatmadan 1 saat once ekranlari kapat, her gece ayni saate uyu');
-        if (kritikKaygi2) oneri.push('Kaygi yonetimi: kocluk seansinda kaygi kaynagini ele al; gunluk 5 dakika nefes egzersizi');
-        if (ortSosyal >= 2.5) oneri.push('Dijital kısitlama: ders saatlerinde telefon uzakta, gunluk sosyal medya ' + Math.round(ortSosyal*60) + ' dkden 30 dkya indir');
-        if (dusuk_hacim) oneri.push('Calisma yapisi: gunu 3 sabit bloga bol; her blok icin min. ' + Math.round(DAILY_GOAL/3) + ' soru hedefi koy');
-        if (dusuk_odak2) oneri.push('Odak derinligi: Pomodoro teknigi (25 dk calisma / 5 dk dinlenme); tek gorev odakli calis');
-        if (iyi_hacim && ortNet !== null && ortSoru > 0 && ortNet/ortSoru < 0.65) oneri.push('Hata analizi: her yanlisin nedenini not et; ayni hatay i ikinci kez yapmama taahhudu');
-        if (yuksek_kaygi_basari) oneri.push('Basari algisi: "sonuc" degil "surec" takdiri; koc her gorusmede gayrete odaklansin');
-        if (zamanBaski === 'yogun') oneri.push('Sinav stratejisi: ' + dLgs + ' gunde yeni konu degil bilinen konularda hata sifirlamaya odaklan');
-        else if (zamanBaski === 'orta') oneri.push('Orta vade: zayif konulari sistematik bitir, sinav oncesi 4 haftada deneme odakli calis');
-        else oneri.push('Uzun vade: temel kavramlari pekistir, gunluk kucuk hedeflerle rutin kur');
-        if (oneri.length > 0) {
-          const oneriMetin = oneri.map((o,i)=>(i+1)+'. '+o).join('\n');
-          const ls2 = doc.splitTextToSize(tx(oneriMetin), 164);
-          const bH2 = Math.max(ls2.length * 5 + 14, 20);
-          Y = pdfCheck(doc, Y, bH2+5);
-          doc.setFillColor(235,255,240); doc.roundedRect(15,Y,180,bH2,2,2,'F');
-          doc.setFillColor(20,140,70); doc.roundedRect(15,Y,4,bH2,1,1,'F');
-          doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(20,140,70);
-          doc.text(tx('5. Stratejik Oneriler ve Yol Haritasi'), 22, Y+6);
-          doc.setFont(PF,'normal'); doc.setFontSize(7); doc.setTextColor(40,80,40);
-          doc.text(ls2, 22, Y+12);
-          Y += bH2+5;
-        }
-      }
-
-      // 6. ÖĞRENCİNİN SESİ
-      {
-        const poz2 = gunler.filter(d=>d.pozitif&&d.pozitif.trim()).slice(0,3).map(d=>d.pozitif.trim());
-        const neg2 = gunler.filter(d=>d.negatif&&d.negatif.trim()).slice(0,3).map(d=>d.negatif.trim());
-        if (poz2.length > 0 || neg2.length > 0) {
-          let sesler = '';
-          if (poz2.length > 0) sesler += 'Olumlu ifadeler: ' + poz2.join(' / ') + '. ';
-          if (neg2.length > 0) sesler += 'Olumsuz ifadeler: ' + neg2.join(' / ') + '. ';
-          sesler += 'Bu ifadeler ogrencinin kendi bakis acisini yansıtıyor; kocluk seanslarinda bu konulara ozellikle yer verilmesi onerilir.';
-          kutu('6. Ogrencinin Sesi — Kendi Ifadelerinden', sesler, [248,240,255], [130,80,180]);
+        const poz = gunler.filter(d=>d.pozitif&&d.pozitif.trim()).slice(0,3).map(d=>d.pozitif.trim());
+        const neg = gunler.filter(d=>d.negatif&&d.negatif.trim()).slice(0,3).map(d=>d.negatif.trim());
+        if (poz.length > 0 || neg.length > 0) {
+          let ses = '';
+          if (poz.length > 0) ses += 'Olumlu: ' + poz.join(' / ') + '. ';
+          if (neg.length > 0) ses += 'Olumsuz: ' + neg.join(' / ') + '. ';
+          ses += 'Bu ifadeler koçluk seanslarında doğrudan ele alınmalıdır.';
+          kutu('Öğrencinin Sesi — Kendi İfadelerinden', ses, [248,240,255], [130,80,180]);
         }
       }
 
@@ -3739,14 +3777,14 @@ async function exportPsychPDF(sName) {
         Y = pdfCheck(doc, Y, 10);
         doc.setFillColor(235,245,255); doc.roundedRect(15,Y,180,9,1.5,1.5,'F');
         doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(40,60,120);
-        doc.text(tx('Donem: '+toplamSoru+' soru  |  '+toplamSure+' dk calisma  |  '+aktifGunler.length+' aktif gun  |  Gunluk ort. '+Math.round(ortSoru)+' soru (Hedef: '+DAILY_GOAL+')  |  LGS: '+dLgs+' gun'),19,Y+5.5);
-        Y += 11;
+        doc.text(tx('Dönem: '+toplamSoru+' soru | '+toplamSure+' dk | '+aktifGunler.length+' aktif gün | Günlük ort. '+Math.round(ortSoru)+' soru (Hedef: '+DAILY_GOAL+') | LGS: '+dLgs+' gün'),19,Y+5.5);
+        Y+=11;
       }
 
       // Görüşmeler PDF
       if (data.gorusmeler && data.gorusmeler.length > 0) {
         Y = pdfCheck(doc, Y, 12);
-        Y = pdfSecHeader(doc, tx('KOC GORUSMELERI'), Y, 108, 99, 255);
+        Y = pdfSecHeader(doc, tx('KOÇ GÖRÜŞMELERİ'), Y, 108, 99, 255);
         data.gorusmeler.forEach(g => {
           const ls3 = g.not ? doc.splitTextToSize(tx(g.not), 164) : [];
           const gH = 12 + (ls3.length > 0 ? ls3.length*4+4 : 0);
@@ -3754,10 +3792,10 @@ async function exportPsychPDF(sName) {
           doc.setFillColor(240,238,255); doc.roundedRect(15,Y,180,gH,1.5,1.5,'F');
           doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(72,58,180);
           doc.text(tx(g.tarih||''), 19, Y+5.5);
-          const gRenk = g.durum==='yapildi' ? [20,140,70] : [249,180,36];
+          const gRenk = g.durum==='yapildi'?[20,140,70]:[249,180,36];
           doc.setFillColor(gRenk[0],gRenk[1],gRenk[2]); doc.roundedRect(155,Y+1,38,7,2,2,'F');
           doc.setFont(PF,'bold'); doc.setFontSize(6.5); doc.setTextColor(255,255,255);
-          doc.text(tx(g.durum==='yapildi'?'Gorüsme Yapildi':'Planlandiğ'), 174, Y+5.5, {align:'center'});
+          doc.text(tx(g.durum==='yapildi'?'Görüşme Yapıldı':'Planlandı'), 174, Y+5.5, {align:'center'});
           if (ls3.length > 0) { doc.setFont(PF,'normal'); doc.setFontSize(7); doc.setTextColor(60,50,100); doc.text(ls3,19,Y+11); }
           Y += gH+4;
         });
@@ -3766,6 +3804,7 @@ async function exportPsychPDF(sName) {
     } // end veriGunler
 
     } // end sortedDays
+
 
 
 
