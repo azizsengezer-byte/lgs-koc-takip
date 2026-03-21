@@ -867,14 +867,14 @@
         <label class="form-label">📝 Toplam Soru</label>
         <input class="form-input" type="number" id="entryQuestions" placeholder="20" min="0">
       </div>
-      <div class="grid-2">
-        <div class="form-group">
+      <div class="grid-2" style="gap:8px;margin-bottom:12px">
+        <div class="form-group" style="margin-bottom:0">
           <label class="form-label">✅ Doğru</label>
-          <input class="form-input" type="number" id="entryCorrect" placeholder="0" min="0">
+          <input class="form-input" type="number" id="entryCorrect" placeholder="0" min="0" style="text-align:center">
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom:0">
           <label class="form-label">❌ Yanlış</label>
-          <input class="form-input" type="number" id="entryWrong" placeholder="0" min="0">
+          <input class="form-input" type="number" id="entryWrong" placeholder="0" min="0" style="text-align:center">
         </div>
       </div>
     </div>
@@ -3340,7 +3340,7 @@ async function exportPsychPDF(sName) {
       Y = pdfCheck(doc, Y, bH+4);
       doc.setFillColor(248,247,253); doc.roundedRect(15,Y,180,bH,1.5,1.5,'F');
       doc.setFillColor(150,140,185); doc.roundedRect(15,Y,3,bH,1,1,'F');
-      doc.setFont(PF,'italic'); doc.setFontSize(6.5); doc.setTextColor(110,100,155);
+      doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(110,100,155);
       doc.text(mSat, 21, Y+5); Y += bH+4;
     }
 
@@ -3359,7 +3359,7 @@ async function exportPsychPDF(sName) {
     if (veriGunler.length >= 1) {
       Y = pdfCheck(doc, Y, 14);
       Y = pdfSecHeader(doc, 'PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ', Y, 220, 50, 100);
-      doc.setFont(PF,'italic'); doc.setFontSize(6.5); doc.setTextColor(100,90,140);
+      doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(100,90,140);
       doc.text('T-0: Son 48 saat  /  T-Geçmiş: Önceki günler  /  Bakiye: Geçmişte görüldü, izleniyor', 16, Y); Y+=7;
 
       // ── A. ENERJİ – AKADEMİK HACİM ─────────────────────────────
@@ -3597,7 +3597,7 @@ async function exportPsychPDF(sName) {
       // ── BÜTÜNCÜL KOÇ DEĞERLENDİRMESİ ─────────────────────────
       Y=pdfCheck(doc,Y,12);
       Y=pdfSecHeader(doc,'BÜTÜNCÜL KOÇ DEĞERLENDİRMESİ',Y,72,200,130);
-      doc.setFont(PF,'italic');doc.setFontSize(6.5);doc.setTextColor(100,90,140);
+      doc.setFont(PF,'normal');doc.setFontSize(6.5);doc.setTextColor(100,90,140);
       doc.text('Katman 1: Anlık durum  /  Katman 2: Geçmiş risk bakiyesi  /  Katman 3: İletişim stratejisi',16,Y);Y+=7;
 
       // Katman 1
@@ -5528,7 +5528,7 @@ function studentDailyEntry() {
           <span>📊 Deneme Sınavı Ekle</span>
           ${denemeCount>0
             ? `<span style="font-size:0.78rem;color:var(--accent);font-weight:700">${denemeCount} deneme • Net: ${denemeNet.toFixed(1)}</span>`
-            : `<span style="font-size:0.75rem;color:var(--text2);font-weight:400">Bugün sonuç girmedin</span>`}
+            : ``}
         </button>`;
       })()}
       
