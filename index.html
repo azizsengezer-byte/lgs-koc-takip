@@ -174,6 +174,19 @@
     width: 100%;
     border: none;
   }
+  @keyframes heartBeat {
+    0%   { transform: scale(1); }
+    14%  { transform: scale(1.25); }
+    28%  { transform: scale(1); }
+    42%  { transform: scale(1.18); }
+    70%  { transform: scale(1); }
+    100% { transform: scale(1); }
+  }
+  .wellness-heart-beat {
+    display: inline-block;
+    animation: heartBeat 1.4s ease infinite;
+    transform-origin: center;
+  }
   .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
 
   /* STAT CARDS */
@@ -2916,8 +2929,8 @@ async function psychReportPage() {
         </button>
       </div>
     </div>`;
-  } else if (period === 'daily' && todayMood) {
-    // Günlük sekmede bugünün duygu bandı — görüşmeden bağımsız her zaman göster
+  } else if (period === 'daily' && todayMood && days[todayKey]?.mood) {
+    // Günlük sekmede sadece bugüne ait veri varsa duygu bandı göster
     alertHtml = `<div style="background:${todayMoodColor}22;border:1.5px solid ${todayMoodColor}66;border-radius:12px;padding:11px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
       <span style="font-size:1.3rem">${todayMoodEmoji}</span>
       <div style="font-weight:700;color:${todayMoodColor};font-size:0.88rem">${todayMoodLabel}</div>
@@ -5362,7 +5375,7 @@ function studentDashboard() {
 
     ${lgsCountdownWidget()}
 
-    <!-- Nasıl Hissediyorum — bugün giriş varsa duygu göster -->
+    <!-- Nasıl Hissediyorum — bugün giriş varsa duygu göster, yoksa animasyonlu banner -->
     ${todayMoodVal ? `
     <div style="background:${moodColorsD[todayMoodVal]}18;border:1.5px solid ${moodColorsD[todayMoodVal]}55;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="showPage('wellness')">
       <span style="font-size:1.8rem">${moodEmojisD[todayMoodVal]||'💙'}</span>
@@ -5374,7 +5387,7 @@ function studentDashboard() {
     </div>` : `
     <div class="wellness-banner-wrap">
       <button class="wellness-banner-inner" onclick="showPage('wellness')">
-        <span style="font-size:1.8rem">💙</span>
+        <span class="wellness-heart-beat" style="font-size:1.8rem">💙</span>
         <div style="flex:1">
           <div style="font-weight:800;font-size:0.95rem">Nasıl Hissediyorum?</div>
           <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Bugünkü duygu, enerji ve hedeflerini kaydet</div>
@@ -6266,7 +6279,12 @@ function wellnessPage() {
   try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
 
   const todayKey = new Date().toISOString().split('T')[0];
+
+  // Gün değişince bugünün verisi boş olmalı — dünün verisini inputlara doldurma
   const today = data.days?.[todayKey] || {};
+
+  // Global cache güncelle
+  window._wellnessCache = data;
 
   // Son 7 gün mood geçmişi
   const last7 = Array.from({length:7},(_,i)=>{
