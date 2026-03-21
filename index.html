@@ -6562,10 +6562,8 @@ function openTopicPicker(target) {
   const isHiyerarsik = rawList.length > 0 && typeof rawList[0] === 'object';
 
   if (isHiyerarsik) {
-    // Fen: topicPickerModal'ı kullan - diğer derslerle aynı görünüm
     const modal = document.getElementById('topicPickerModal');
     document.getElementById('topicPickerTitle').textContent = sub + ' — Konu Seç';
-    // Arama kutusunu gizle
     const searchWrap = document.getElementById('topicPickerSearch')?.parentElement;
     if (searchWrap) searchWrap.style.display = 'none';
 
@@ -6574,40 +6572,46 @@ function openTopicPicker(target) {
       const hasAlt = item.alt && item.alt.length > 0;
       const cbArg = cbName || '';
       const uniteEsc = item.unite.replace(/'/g, "\'");
-      // Ünite satırı - tıklanınca direkt seç
-      listHTML += `<button onclick="fenSecVeKapat('${uniteEsc}','${uniteEsc}','${targetId}','${labelId}','${cbArg}')"
-        style="width:100%;padding:14px 18px;background:transparent;border:none;border-bottom:1px solid var(--border);
-               color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
-        <span style="font-weight:600">${item.unite}</span>
-        ${hasAlt ? `<span style="color:var(--text2);font-size:0.8rem" id="fenArrow_${ui}">›</span>` : `<span style="color:var(--text2);font-size:0.8rem">›</span>`}
-      </button>`;
+
+      // Ünite satırı: sol kısım = seç, sağ ok = alt konuları aç/kapat
+      listHTML += `<div style="display:flex;border-bottom:1px solid var(--border);align-items:stretch">
+        <button onclick="fenSecVeKapat('${uniteEsc}','${uniteEsc}','${targetId}','${labelId}','${cbArg}')"
+          style="flex:1;padding:14px 18px;background:transparent;border:none;
+                 color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;font-weight:600">
+          ${item.unite}
+        </button>
+        ${hasAlt ? `<button onclick="fenUniteToggle(${ui})" 
+          style="padding:14px 16px;background:transparent;border:none;border-left:1px solid var(--border);
+                 color:var(--text2);cursor:pointer;font-size:0.9rem;min-width:44px;text-align:center"
+          title="Alt konuları göster">
+          <span id="fenArrow_${ui}" style="display:inline-block;transition:transform .2s">›</span>
+        </button>` : ''}
+      </div>`;
+
       if (hasAlt) {
-        // Alt konular başlangıçta gizli, ok ile açılır
         listHTML += `<div id="fenAlt_${ui}" style="display:none">`;
         item.alt.forEach(alt => {
           const altEsc = alt.replace(/'/g, "\'");
           listHTML += `<button onclick="fenSecVeKapat('${uniteEsc}','${altEsc}','${targetId}','${labelId}','${cbArg}')"
-            style="width:100%;padding:11px 18px 11px 36px;background:var(--surface2)44;border:none;border-bottom:1px solid var(--border)22;
-                   color:var(--text2);text-align:left;cursor:pointer;font-size:0.86rem;display:flex;align-items:center;gap:8px">
+            style="width:100%;padding:11px 18px 11px 36px;background:var(--surface2)33;border:none;
+                   border-bottom:1px solid var(--border)22;color:var(--text2);text-align:left;
+                   cursor:pointer;font-size:0.86rem;display:flex;align-items:center;gap:8px">
             <span style="color:var(--accent);font-size:0.65rem">●</span><span>${alt}</span>
           </button>`;
         });
         listHTML += `</div>`;
-        // Ok butonunu ünite butonunun onclick'ine de ekle - toggle için
-        listHTML = listHTML.replace(
-          `onclick="fenSecVeKapat('${uniteEsc}','${uniteEsc}','${targetId}','${labelId}','${cbArg}')"`,
-          `onclick="fenToggleAlt(${ui}, '${uniteEsc}', '${targetId}', '${labelId}', '${cbArg}')"`
-        );
       }
     });
+
     if (type === 'tekrar') {
       const cbArg = cbName || '';
       listHTML += `<button onclick="fenSecVeKapat('Genel Tekrar','Genel Tekrar','${targetId}','${labelId}','${cbArg}')"
         style="width:100%;padding:14px 18px;background:transparent;border:none;border-bottom:1px solid var(--border);
-               color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
-        <span>🔁 Genel Tekrar</span><span style="color:var(--text2);font-size:0.8rem">›</span>
+               color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;gap:8px">
+        🔁 Genel Tekrar
       </button>`;
     }
+
     document.getElementById('topicPickerList').innerHTML = listHTML;
     modal.style.display = 'flex';
     modal.onclick = (e) => { if(e.target===modal) closeTopicPicker(); };
