@@ -267,7 +267,6 @@
   }
   .student-row:hover { background:var(--surface2); }
   .student-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; flex-shrink:0; }
-  .kademe-badge { display:inline-flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:800;padding:2px 6px;border-radius:6px;letter-spacing:0.02em;vertical-align:middle;margin-left:5px;line-height:1.3; }
   .student-info { flex:1; }
   .student-name { font-weight:700; font-size:0.95rem; }
   .student-meta { font-size:0.78rem; color:var(--text2); margin-top:2px; }
@@ -732,13 +731,13 @@
     </div>
     <div id="studentFields" style="display:none">
       <div class="form-group">
-        <label class="form-label">Sınıf</label>
-        <select class="form-select" id="regClass">
-          <option>5-A</option><option>5-B</option><option>5-C</option>
-          <option>6-A</option><option>6-B</option><option>6-C</option>
-          <option>7-A</option><option>7-B</option><option>7-C</option>
-          <option>8-A</option><option>8-B</option><option>8-C</option>
-        </select>
+        <label class="form-label">Sınıf Kademesi</label>
+        <button type="button" id="regClassBtn" onclick="openKademePickerFor('regClass','regClassLabel')"
+          style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+          <span id="regClassLabel">8. Sınıf</span>
+          <span style="color:var(--text2)">▼</span>
+        </button>
+        <input type="hidden" id="regClass" value="8">
       </div>
     </div>
     <div id="regError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
@@ -759,13 +758,13 @@
       <input class="form-input" type="text" id="setupSchool" readonly style="opacity:0.6">
     </div>
     <div class="form-group">
-      <label class="form-label">Sınıf</label>
-      <select class="form-select" id="setupClass">
-        <option>5-A</option><option>5-B</option><option>5-C</option>
-        <option>6-A</option><option>6-B</option><option>6-C</option>
-        <option>7-A</option><option>7-B</option><option>7-C</option>
-        <option>8-A</option><option>8-B</option><option>8-C</option>
-      </select>
+      <label class="form-label">Sınıf Kademesi</label>
+      <button type="button" onclick="openKademePickerFor('setupClass','setupClassLabel')"
+        style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+        <span id="setupClassLabel">8. Sınıf</span>
+        <span style="color:var(--text2)">▼</span>
+      </button>
+      <input type="hidden" id="setupClass" value="8">
     </div>
     <div class="modal-actions">
       <button class="btn btn-primary" style="width:100%" onclick="saveClassSetup()">Kaydet ✓</button>
@@ -1366,7 +1365,8 @@ async function doRegister() {
   if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
   const branch = role==='teacher' ? (document.getElementById('regBranch').value || '') : '';
   const school = role==='teacher' ? (document.getElementById('regSchool').value.trim() || '') : '';
-  const classroom = role==='student' ? (document.getElementById('regClass').value || '') : '';
+  const classRaw = role==='student' ? (document.getElementById('regClass').value || '8') : '';
+  const classroom = classRaw ? classRaw + '. Sınıf' : '';
   if (role==='teacher' && !school) { errEl.textContent = 'Okul adı giriniz.'; errEl.style.display='block'; return; }
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
@@ -1391,7 +1391,8 @@ function toggleRegFields() {
 }
 
 async function saveClassSetup() {
-  const cls = document.getElementById('setupClass').value;
+  const clsRaw = document.getElementById('setupClass').value || '8';
+  const cls = clsRaw + '. Sınıf';
   const user = auth.currentUser;
   if (user) {
     await db.collection('users').doc(user.uid).update({ classroom: cls });
@@ -1676,7 +1677,7 @@ function teacherDashboard() {
               ? `<img src="${s.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">`
               : `<div class="student-avatar" style="background:${s.color}20;color:${s.color};cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">${s.name[0]}</div>`}
             <div class="student-info">
-              <div class="student-name">${s.name}${kademeBadge(s.classroom)}</div>
+              <div class="student-name">${s.name}</div>
               <div class="student-meta">${sTasks} görev • ${totalQ} soru • Bu hafta: ${weekDays2}g</div>
             </div>
             <div style="text-align:right">
@@ -1776,7 +1777,7 @@ function teacherStudents() {
             ? `<img src="${s.photo}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">`
             : `<div class="student-avatar" style="background:${s.color}20;color:${s.color};font-size:1.1rem;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">${s.name[0]}</div>`}
           <div class="student-info" style="flex:1">
-            <div class="student-name">${s.name}${kademeBadge(s.classroom)}</div>
+            <div class="student-name">${s.name}</div>
             <div class="student-meta">Bu hafta ${activeDays} gün • ${totalQ} soru • Net ort: ${avgNet}</div>
             <div style="font-size:0.72rem;color:var(--text2)">${pendingTasks} bekleyen görev • ${isActiveToday?'✅ Bugün aktif':'⏳ Bugün giriş yok'}</div>
           </div>
@@ -2372,7 +2373,7 @@ function studentDetailAnalysis() {
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
       <button onclick="showPage('students')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
-      <div class="page-title" style="margin:0">📊 ${sName}${kademeBadge(sObj.classroom,'font-size:0.6rem;padding:2px 7px')}</div>
+      <div class="page-title" style="margin:0">📊 ${sName}</div>
     </div>
     <div class="page-sub">Bireysel Analiz Raporu</div>
 
@@ -2908,7 +2909,7 @@ async function psychReportPage() {
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
       <button onclick="showPage('students')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
-      <div class="page-title" style="margin:0">💙 ${sName}${kademeBadge(sObj.classroom,'font-size:0.6rem;padding:2px 7px')}</div>
+      <div class="page-title" style="margin:0">💙 ${sName}</div>
     </div>
     <div class="page-sub">Psikolojik Takip Raporu</div>
 
@@ -4239,20 +4240,6 @@ function calcLGSScore(subStats) {
 // ts() — PDF için: Türkçe→ASCII + emoji/özel karakter temizle
 // ts() — PDF için: font yüklüyse Türkçe orijinal, yoksa ASCII
 // _PF global değişkeni font durumunu tutar
-function kademeBadge(classroom, style='') {
-  if (!classroom) return '';
-  const n = String(classroom).match(/\d+/)?.[0];
-  if (!n) return '';
-  const cfg = {
-    '5': { bg:'#3d8bcd22', border:'#3d8bcd55', color:'#3d8bcd', label:'5.Sınıf' },
-    '6': { bg:'#20c99722', border:'#20c99755', color:'#20c997', label:'6.Sınıf' },
-    '7': { bg:'#fd7e1422', border:'#fd7e1455', color:'#fd7e14', label:'7.Sınıf' },
-    '8': { bg:'#6c63ff22', border:'#6c63ff55', color:'#6c63ff', label:'8.Sınıf' },
-  };
-  const c = cfg[n] || cfg['8'];
-  return `<span class="kademe-badge" style="background:${c.bg};border:1px solid ${c.border};color:${c.color};${style}">${c.label}</span>`;
-}
-
 function ts(v) {
   if (v == null) return '';
   // Türkçe font yüklüyse orijinal metni döndür
@@ -7566,8 +7553,8 @@ async function saveProfile() {
   }
 }
 
-function openKademePicker() {
-  const mevcut = document.getElementById('profileClass')?.value || '8';
+function openKademePickerFor(inputId, labelId) {
+  const mevcut = document.getElementById(inputId)?.value || '8';
   const kademe = ['5','6','7','8'];
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
@@ -7576,12 +7563,13 @@ function openKademePicker() {
     <div style="background:var(--surface);border-radius:18px 18px 0 0;width:100%;padding:20px;max-height:60vh;overflow-y:auto">
       <div style="font-size:1rem;font-weight:700;margin-bottom:16px;text-align:center">Sınıf Kademesi Seç</div>
       ${kademe.map(k=>`
-        <div onclick="secKademe('${k}')" style="padding:16px 20px;border-radius:12px;margin-bottom:8px;cursor:pointer;
+        <div onclick="secKademeFor('${k}','${inputId}','${labelId}',this.closest('.modal-overlay'))"
+          style="padding:16px 20px;border-radius:12px;margin-bottom:8px;cursor:pointer;
           background:${k===mevcut?'var(--accent)22':'var(--surface2)'};
           border:1.5px solid ${k===mevcut?'var(--accent)':'var(--border)'};
           display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:1.1rem;font-weight:${k===mevcut?'700':'400'}">${k}. Sınıf</span>
-          ${k===mevcut?'<span style="color:var(--accent);font-size:1.2rem">✓</span>':''}
+          <span style="font-size:1.1rem;font-weight:${k===mevcut?'700':'400'}">${k}. Sınıf (LGS)</span>
+          ${k===mevcut?`<span style="color:var(--accent);font-size:1.2rem">✓</span>`:''}
         </div>`).join('')}
       <button class="btn btn-outline" style="width:100%;margin-top:8px" onclick="this.closest('.modal-overlay').remove()">İptal</button>
     </div>`;
@@ -7589,11 +7577,20 @@ function openKademePicker() {
   modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
 }
 
-function secKademe(k) {
-  document.getElementById('profileClass').value = k;
-  const lbl = document.getElementById('kademeLabel');
+function secKademeFor(k, inputId, labelId, modalEl) {
+  const inp = document.getElementById(inputId);
+  const lbl = document.getElementById(labelId);
+  if(inp) inp.value = k;
   if(lbl) lbl.textContent = k + '. Sınıf';
-  document.querySelector('.modal-overlay:last-child')?.remove();
+  modalEl?.remove();
+}
+
+function openKademePicker() {
+  openKademePickerFor('profileClass','kademeLabel');
+}
+
+function secKademe(k) {
+  secKademeFor(k,'profileClass','kademeLabel', document.querySelector('.modal-overlay:last-child'));
 }
 
 function checkPassMatch() {
