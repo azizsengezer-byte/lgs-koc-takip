@@ -1145,9 +1145,11 @@ function renderMobileNav() {
   ];
   const items = currentRole==='teacher' ? teacherNav : studentNav;
   const unreadMsg = (currentRole==='teacher' ? teacherNotifs : studentNotifs).filter(n=>!n.read&&n.type==='message').length;
+  const pendingTaskCount = currentRole==='student' ? tasks.filter(t=>!t.done).length : 0;
   nav.innerHTML = `<div class="mobile-nav-inner">${items.map(n=>{
     let badge = '';
     if(n.id==='messages' && unreadMsg>0) badge=`<span style="position:absolute;top:2px;right:8px;background:var(--accent2);color:#fff;font-size:0.55rem;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 3px">${unreadMsg>9?'9+':unreadMsg}</span>`;
+    if(n.id==='my-tasks' && pendingTaskCount>0) badge=`<span style="position:absolute;top:2px;right:8px;background:#ff6584;color:#fff;font-size:0.55rem;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 3px">${pendingTaskCount>9?'9+':pendingTaskCount}</span>`;
     return `<button class="mobile-nav-item ${currentPage===n.id?'active':''}" onclick="showPage('${n.id}')" style="position:relative">
       <span>${n.icon}</span>${badge}<span>${n.label}</span>
     </button>`;
@@ -5314,7 +5316,16 @@ function studentDashboard() {
   const weekQ = weekEntries.reduce((a,e)=>a+(e.questions||0),0);
   const weekDurMin = weekEntries.reduce((a,e)=>a+(e.duration||0),0);
   const weekDurH = (weekDurMin/60).toFixed(1);
+  // Bugünkü wellness verisi
+  const wellnessData = window._wellnessCache || {};
+  const wDays = wellnessData.days || {};
+  const todayMoodVal = wDays[todayKey]?.mood || null;
+  const moodLabelsD = {excited:'Heyecanlı',good:'İyiyim',focused:'Odaklı',ok:'İdare Eder',tired:'Yorgunum',anxious:'Kaygılı',sad:'Mutsuzum'};
+  const moodEmojisD = {excited:'🤩',good:'😊',focused:'🎯',ok:'😐',tired:'😴',anxious:'😰',sad:'😢'};
+  const moodColorsD = {excited:'#f9ca24',good:'#43e97b',focused:'#6c63ff',ok:'#b0b0b0',tired:'#fd7e14',anxious:'#ff6584',sad:'#74b9ff'};
+
   const pendingTasks = tasks.filter(t=>!t.done).length;
+  const unseenTasks = tasks.filter(t=>!t.done && !t.seen).length;
 
   // Bugünkü girişler
   const todayEntries = studyEntries.filter(e=>e.dateKey===todayKey);
@@ -5351,7 +5362,16 @@ function studentDashboard() {
 
     ${lgsCountdownWidget()}
 
-    <!-- Nasıl Hissediyorum — animasyonlu banner -->
+    <!-- Nasıl Hissediyorum — bugün giriş varsa duygu göster -->
+    ${todayMoodVal ? `
+    <div style="background:${moodColorsD[todayMoodVal]}18;border:1.5px solid ${moodColorsD[todayMoodVal]}55;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="showPage('wellness')">
+      <span style="font-size:1.8rem">${moodEmojisD[todayMoodVal]||'💙'}</span>
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:0.95rem;color:${moodColorsD[todayMoodVal]}">${moodLabelsD[todayMoodVal]}</div>
+        <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Bugünkü duygu durumu · Güncelle</div>
+      </div>
+      <span style="color:var(--text2);font-size:1rem">›</span>
+    </div>` : `
     <div class="wellness-banner-wrap">
       <button class="wellness-banner-inner" onclick="showPage('wellness')">
         <span style="font-size:1.8rem">💙</span>
@@ -5361,7 +5381,7 @@ function studentDashboard() {
         </div>
         <span style="color:var(--accent);font-size:1rem">›</span>
       </button>
-    </div>
+    </div>`}
 
     <div class="grid-3">
       <div class="stat-card">
@@ -6707,6 +6727,7 @@ function _getW() {
 
 function _syncW(myUid, storageKey, data) {
   localStorage.setItem(storageKey, JSON.stringify(data));
+  window._wellnessCache = data; // dashboard cache güncelle
   if (myUid !== 'local' && db) {
     db.collection('wellness').doc(myUid).set(data)
       .catch(e => console.log('Wellness sync:', e.message));
@@ -7080,7 +7101,11 @@ async function loadWellnessFromFirestore() {
   if (!myUid || !db) return;
   try {
     const snap = await db.collection('wellness').doc(myUid).get();
-    if (snap.exists) localStorage.setItem('wellness_'+myUid, JSON.stringify(snap.data()));
+    if (snap.exists) {
+      const data = snap.data();
+      localStorage.setItem('wellness_'+myUid, JSON.stringify(data));
+      window._wellnessCache = data; // global cache - dashboard için
+    }
   } catch(e) {}
 }
 
@@ -7866,16 +7891,27 @@ function notificationsPage() {
             <div style="font-size:2.5rem;margin-bottom:12px">🔔</div>
             <div>Henüz bildirim yok</div>
            </div>`
-        : taskNotifs.map(n=>`
-          <div class="notif-item ${n.read ? '' : 'unread'}">
+        : taskNotifs.map(n=>{
+          // Bildirim tipine göre hedef sayfa
+          const hedef = n.type==='task' ? (currentRole==='student'?'my-tasks':'tasks-teacher')
+                      : n.type==='message' ? 'messages'
+                      : n.type==='gorusme' ? (currentRole==='student'?'wellness':'students')
+                      : null;
+          return `
+          <div class="notif-item ${n.read ? '' : 'unread'}" 
+            onclick="${hedef?`showPage('${hedef}')`:''}" 
+            style="${hedef?'cursor:pointer':''};display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)22">
             <div class="notif-dot ${n.read ? 'read' : ''}"></div>
             <div style="flex:1">
               <div class="notif-text">${n.text}</div>
               <div class="notif-time">${n.time||''}</div>
             </div>
-            ${!n.read ? '<span style="font-size:0.65rem;font-weight:800;color:var(--accent);background:var(--accent)22;padding:2px 7px;border-radius:99px;flex-shrink:0">YENİ</span>' : ''}
-          </div>
-        `).join('')}
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+              ${!n.read ? '<span style="font-size:0.65rem;font-weight:800;color:var(--accent);background:var(--accent)22;padding:2px 7px;border-radius:99px">YENİ</span>' : ''}
+              ${hedef ? '<span style="color:var(--text2);font-size:0.9rem">›</span>' : ''}
+            </div>
+          </div>`;
+        }).join('')}
     </div>
     <div style="text-align:center;margin-top:12px;font-size:0.8rem;color:var(--text2)">
       💬 Mesaj bildirimleri için <button onclick="showPage('messages')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-weight:700">Mesajlar</button> bölümüne git
