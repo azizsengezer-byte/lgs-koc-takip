@@ -825,7 +825,7 @@
     <div class="modal-title">📚 Günlük Çalışma Ekle</div>
     <div class="form-group">
       <label class="form-label">Çalışma Türü</label>
-      <button type="button" onclick="openOptionPicker('entryType','Çalışma Türü Seç',[{v:'soru',l:'📝 Soru Çözümü'},{v:'konu',l:'📖 Konu Çalışma'},{v:'tekrar',l:'🔁 Tekrar'},{v:'deneme',l:'📊 Deneme Sınavı'}], toggleEntryFields)"
+      <button type="button" onclick="openOptionPicker('entryType','Çalışma Türü Seç',[{v:'soru',l:'📝 Soru Çözümü'},{v:'konu',l:'📖 Konu Çalışma'},{v:'tekrar',l:'🔁 Tekrar'},{v:'ozet',l:'✏️ Özet Çıkarma'}], toggleEntryFields)"
         id="entryTypeBtn" style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
         <span id="entryTypeLabel">📝 Soru Çözümü</span>
         <span style="color:var(--text2)">▼</span>
@@ -3588,7 +3588,7 @@ async function exportPsychPDF(sName) {
 
       // Bakiye riskler
       if(bakiyeRiskler.length>0){
-        Y=pdfCheck(doc,Y,10);
+        Y=pdfCheck(doc,Y, bakiyeRiskler.length * 20 + 15); // başlık + tüm dipnotlar için yer
         doc.setFont(PF,'bold');doc.setFontSize(6.5);doc.setTextColor(130,120,175);
         doc.text('Geçmişten Gelen Bakiye Riskler (izleniyor):',16,Y);Y+=5;
         bakiyeRiskler.forEach((r,i)=>dipnot((i+1)+'. '+r));
@@ -3656,10 +3656,29 @@ async function exportPsychPDF(sName) {
         const neg=gunler.filter(d=>d.negatif&&d.negatif.trim()).slice(0,3).map(d=>d.negatif.trim());
         if(poz.length>0||neg.length>0){
           let ses='';
-          if(poz.length>0) ses+='Olumlu: '+poz.join(' / ')+'. ';
-          if(neg.length>0) ses+='Olumsuz: '+neg.join(' / ')+'. ';
-          ses+='Bu ifadeler koçluk seanslarında doğrudan ele alınmalıdır.';
-          kutu('Öğrencinin Sesi — Kendi İfadelerinden', ses, [248,242,255],[115,75,178]);
+          const bSatS = ['Öğrencinin Sesi — Kendi İfadelerinden'];
+          const pozSat = poz.length>0 ? doc.splitTextToSize('Olumlu: '+poz.join(' / '), 156) : [];
+          const negSat = neg.length>0 ? doc.splitTextToSize('Olumsuz: '+neg.join(' / '), 156) : [];
+          const notSat = doc.splitTextToSize('Bu ifadeler koçluk seanslarında doğrudan ele alınmalıdır.', 156);
+          const sesH = Math.max(bSatS.length*5.5 + (pozSat.length+negSat.length+notSat.length+1)*5 + 22, 28);
+          Y = pdfCheck(doc, Y, sesH+8);
+          doc.setFillColor(248,242,255); doc.roundedRect(15,Y,180,sesH,2,2,'F');
+          doc.setFillColor(115,75,178); doc.roundedRect(15,Y,4,sesH,1,1,'F');
+          doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(115,75,178);
+          doc.text(bSatS, 22, Y+6);
+          let sY = Y+6+bSatS.length*5.5+2;
+          doc.setFont(PF,'normal'); doc.setFontSize(7);
+          if(pozSat.length>0){
+            doc.setTextColor(20,140,70);
+            doc.text(pozSat, 22, sY); sY+=pozSat.length*5+3;
+          }
+          if(negSat.length>0){
+            doc.setTextColor(180,40,40);
+            doc.text(negSat, 22, sY); sY+=negSat.length*5+3;
+          }
+          doc.setTextColor(100,90,140);
+          doc.text(notSat, 22, sY);
+          Y += sesH+8;
         }
       }
 
@@ -5512,7 +5531,7 @@ function studentDailyEntry() {
             : `<span style="font-size:0.75rem;color:var(--text2);font-weight:400">Bugün sonuç girmedin</span>`}
         </button>`;
       })()}
-      <button class="btn btn-outline" style="width:100%;margin-top:8px;font-size:0.82rem" onclick="openEntryFor(null)">+ Diğer Çalışma Ekle</button>
+      
     </div>
 
     <div class="card">
@@ -7689,7 +7708,8 @@ function updateEntryTopics() {
 }
 
 function openDenemeSinaviEntry() {
-  // Deneme türünü seçili olarak modalı aç
+  const subBtn = document.getElementById('entrySubjectBtn');
+  if (subBtn) { subBtn.disabled = false; subBtn.style.opacity=''; subBtn.style.cursor='pointer'; }
   document.getElementById('entryType').value = 'deneme';
   const typeLbl = document.getElementById('entryTypeLabel');
   if (typeLbl) typeLbl.textContent = '📊 Deneme Sınavı';
@@ -7706,17 +7726,20 @@ function openDenemeSinaviEntry() {
 }
 
 function openEntryFor(subjectName) {
-  // Ders seç
+  const subBtn = document.getElementById('entrySubjectBtn');
   if (subjectName) {
     document.getElementById('entrySubject').value = subjectName;
-    // Label'ı da güncelle
     const sub = subjects.find(s=>s.name===subjectName);
     const lbl = document.getElementById('entrySubjectLabel');
     if (lbl && sub) lbl.textContent = sub.icon + ' ' + sub.name;
+    // Ders kartından açıldıysa ders değiştirilemez
+    if (subBtn) { subBtn.disabled = true; subBtn.style.opacity='0.65'; subBtn.style.cursor='default'; }
+  } else {
+    // Deneme veya genel açılışta ders değiştirilebilir
+    if (subBtn) { subBtn.disabled = false; subBtn.style.opacity=''; subBtn.style.cursor='pointer'; }
   }
   updateEntryTopics();
   document.getElementById('entryType').value = 'soru';
-  // Tür label'ını sıfırla
   const typeLbl = document.getElementById('entryTypeLabel');
   if (typeLbl) typeLbl.textContent = '📝 Soru Çözümü';
   toggleEntryFields();
