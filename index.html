@@ -267,6 +267,7 @@
   }
   .student-row:hover { background:var(--surface2); }
   .student-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; flex-shrink:0; }
+  .kademe-badge { display:inline-flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:800;padding:2px 6px;border-radius:6px;letter-spacing:0.02em;vertical-align:middle;margin-left:5px;line-height:1.3; }
   .student-info { flex:1; }
   .student-name { font-weight:700; font-size:0.95rem; }
   .student-meta { font-size:0.78rem; color:var(--text2); margin-top:2px; }
@@ -1675,7 +1676,7 @@ function teacherDashboard() {
               ? `<img src="${s.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">`
               : `<div class="student-avatar" style="background:${s.color}20;color:${s.color};cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">${s.name[0]}</div>`}
             <div class="student-info">
-              <div class="student-name">${s.name}</div>
+              <div class="student-name">${s.name}${kademeBadge(s.classroom)}</div>
               <div class="student-meta">${sTasks} görev • ${totalQ} soru • Bu hafta: ${weekDays2}g</div>
             </div>
             <div style="text-align:right">
@@ -1775,7 +1776,7 @@ function teacherStudents() {
             ? `<img src="${s.photo}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">`
             : `<div class="student-avatar" style="background:${s.color}20;color:${s.color};font-size:1.1rem;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">${s.name[0]}</div>`}
           <div class="student-info" style="flex:1">
-            <div class="student-name">${s.name}</div>
+            <div class="student-name">${s.name}${kademeBadge(s.classroom)}</div>
             <div class="student-meta">Bu hafta ${activeDays} gün • ${totalQ} soru • Net ort: ${avgNet}</div>
             <div style="font-size:0.72rem;color:var(--text2)">${pendingTasks} bekleyen görev • ${isActiveToday?'✅ Bugün aktif':'⏳ Bugün giriş yok'}</div>
           </div>
@@ -2371,7 +2372,7 @@ function studentDetailAnalysis() {
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
       <button onclick="showPage('students')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
-      <div class="page-title" style="margin:0">📊 ${sName}</div>
+      <div class="page-title" style="margin:0">📊 ${sName}${kademeBadge(sObj.classroom,'font-size:0.6rem;padding:2px 7px')}</div>
     </div>
     <div class="page-sub">Bireysel Analiz Raporu</div>
 
@@ -2907,7 +2908,7 @@ async function psychReportPage() {
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
       <button onclick="showPage('students')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
-      <div class="page-title" style="margin:0">💙 ${sName}</div>
+      <div class="page-title" style="margin:0">💙 ${sName}${kademeBadge(sObj.classroom,'font-size:0.6rem;padding:2px 7px')}</div>
     </div>
     <div class="page-sub">Psikolojik Takip Raporu</div>
 
@@ -4238,6 +4239,20 @@ function calcLGSScore(subStats) {
 // ts() — PDF için: Türkçe→ASCII + emoji/özel karakter temizle
 // ts() — PDF için: font yüklüyse Türkçe orijinal, yoksa ASCII
 // _PF global değişkeni font durumunu tutar
+function kademeBadge(classroom, style='') {
+  if (!classroom) return '';
+  const n = String(classroom).match(/\d+/)?.[0];
+  if (!n) return '';
+  const cfg = {
+    '5': { bg:'#3d8bcd22', border:'#3d8bcd55', color:'#3d8bcd', label:'5.Sınıf' },
+    '6': { bg:'#20c99722', border:'#20c99755', color:'#20c997', label:'6.Sınıf' },
+    '7': { bg:'#fd7e1422', border:'#fd7e1455', color:'#fd7e14', label:'7.Sınıf' },
+    '8': { bg:'#6c63ff22', border:'#6c63ff55', color:'#6c63ff', label:'8.Sınıf' },
+  };
+  const c = cfg[n] || cfg['8'];
+  return `<span class="kademe-badge" style="background:${c.bg};border:1px solid ${c.border};color:${c.color};${style}">${c.label}</span>`;
+}
+
 function ts(v) {
   if (v == null) return '';
   // Türkçe font yüklüyse orijinal metni döndür
@@ -7250,14 +7265,18 @@ function profilePage() {
       <div style="font-size:1.2rem;font-weight:800;margin-bottom:4px">${name}</div>
       <div style="color:var(--accent);font-size:0.88rem;font-weight:600">${roleLabel}</div>
       <div style="color:var(--text2);font-size:0.82rem;margin-top:4px">${user ? user.email : ''}</div>
-      <label style="margin-top:14px;display:inline-block;cursor:pointer">
-        <span class="btn btn-outline" style="font-size:0.82rem;padding:8px 16px">📷 Fotoğraf Değiştir</span>
-        <input type="file" accept="image/*" style="display:none" onchange="uploadPhoto(this)">
-      </label>
-      ${data.photo ? `
-      <div style="margin-top:8px">
-        <button class="btn" onclick="removePhoto()" style="font-size:0.78rem;padding:6px 14px;background:var(--surface2);border:1px solid var(--border);color:#ff6584">🗑️ Fotoğrafı Kaldır</button>
-      </div>` : ''}
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">
+        <label style="cursor:pointer">
+          <span class="btn btn-outline" style="font-size:0.82rem;padding:8px 18px;display:flex;align-items:center;gap:6px">
+            <span>📷</span><span>Fotoğraf Değiştir</span>
+          </span>
+          <input type="file" accept="image/*" style="display:none" onchange="uploadPhoto(this)">
+        </label>
+        ${data.photo ? `
+        <button onclick="removePhoto()" style="padding:8px 18px;border-radius:10px;border:1.5px solid #ff658444;background:#ff658412;color:#ff6584;font-size:0.82rem;cursor:pointer;display:flex;align-items:center;gap:6px">
+          <span>✕</span><span>Kaldır</span>
+        </button>` : ''}
+      </div>
     </div>
     <div class="card" style="margin-top:16px">
       <div class="card-title">✏️ Bilgilerimi Düzenle</div>
@@ -7284,32 +7303,39 @@ function profilePage() {
       <div class="form-group">
         <label class="form-label">Sınıf Kademesi</label>
         <button type="button" onclick="openKademePicker()" style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
-          <span id="kademeLabel">${(data.classroom||'8').replace(/-[A-Z]/,'').replace(/[^0-9]/,'')}. Sınıf</span>
+          <span id="kademeLabel">${(()=>{const c=data.classroom||'8';const n=c.match(/\d+/)?.[0]||'8';return n+'. Sınıf';})()}</span>
           <span style="color:var(--text2)">▼</span>
         </button>
-        <input type="hidden" id="profileClass" value="${(data.classroom||'8').replace(/-[A-Z]/g,'').replace(/[^0-9]/g,'')}">
+        <input type="hidden" id="profileClass" value="${(data.classroom||'8').match(/\d+/)?.[0]||'8'}">
       </div>
       `}
       <div id="profileError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
       <button class="btn btn-primary" style="width:100%" onclick="saveProfile()">Kaydet ✓</button>
     </div>
     <div class="card" style="margin-top:16px">
-      <div class="card-title">🔒 Şifre Değiştir</div>
-      <div class="form-group">
-        <label class="form-label">Mevcut Şifre</label>
-        <input class="form-input" type="password" id="currentPassword" placeholder="Mevcut şifrenizi girin">
+      <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.sifre-arrow').style.transform=this.nextElementSibling.style.display==='block'?'rotate(180deg)':'rotate(0deg)'"
+        style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;user-select:none">
+        <span class="card-title" style="margin-bottom:0">🔒 Şifre Değiştir</span>
+        <span class="sifre-arrow" style="color:var(--text2);transition:transform 0.2s;font-size:0.8rem">▼</span>
       </div>
-      <div class="form-group">
-        <label class="form-label">Yeni Şifre</label>
-        <input class="form-input" type="password" id="newPassword" placeholder="En az 6 karakter" oninput="checkPassMatch()">
+      <div style="display:none">
+        <div style="height:1px;background:var(--border);margin:14px 0"></div>
+        <div class="form-group">
+          <label class="form-label">Mevcut Şifre</label>
+          <input class="form-input" type="password" id="currentPassword" placeholder="Mevcut şifrenizi girin">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Yeni Şifre</label>
+          <input class="form-input" type="password" id="newPassword" placeholder="En az 6 karakter" oninput="checkPassMatch()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Yeni Şifre (Tekrar)</label>
+          <input class="form-input" type="password" id="newPassword2" placeholder="Şifreyi tekrar girin" oninput="checkPassMatch()">
+          <div id="passMatchHint" style="font-size:0.78rem;margin-top:4px;display:none"></div>
+        </div>
+        <div id="passwordError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
+        <button class="btn btn-outline" style="width:100%" onclick="changePassword()">Şifreyi Güncelle</button>
       </div>
-      <div class="form-group">
-        <label class="form-label">Yeni Şifre (Tekrar)</label>
-        <input class="form-input" type="password" id="newPassword2" placeholder="Şifreyi tekrar girin" oninput="checkPassMatch()">
-        <div id="passMatchHint" style="font-size:0.78rem;margin-top:4px;display:none"></div>
-      </div>
-      <div id="passwordError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
-      <button class="btn btn-outline" style="width:100%" onclick="changePassword()">Şifreyi Güncelle</button>
     </div>
   `;
 }
@@ -8055,7 +8081,7 @@ function populateTaskStudents() {
   const btn = document.getElementById('taskStudentBtn');
   if (btn) {
     const opts = students.length > 0
-      ? students.map(s=>({v:s.name, l:s.name}))
+      ? students.map(s=>({v:s.name, l:s.name + (s.classroom ? ' · '+(s.classroom.match(/\d+/)?.[0]||'')+'.Sınıf' : '')}))
       : [{v:'', l:'Henüz öğrenci eklenmedi'}];
     btn.setAttribute('onclick', `openOptionPicker('taskStudent','Öğrenci Seç',${JSON.stringify(opts)},null)`);
   }
