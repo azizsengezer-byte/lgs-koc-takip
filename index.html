@@ -1280,12 +1280,19 @@ auth.onAuthStateChanged(async (user) => {
           studyEntries.sort((a,b)=>(b.dateKey||'').localeCompare(a.dateKey||''));
         } catch(e) { console.log('Giriş çekme hatası:', e.message); studyEntries = []; }
 
-        // Kendine atanan görevleri çek
+        // Kendine atanan görevleri çek - UID üzerinden (güvenli)
         try {
           const tSnap = await db.collection('tasks')
-            .where('studentName','==',data.name).get();
+            .where('studentUid','==',user.uid).get();
           tasks = [];
           tSnap.forEach(d => tasks.push({ ...d.data(), id: d.id }));
+          // Eski kayıtlar için fallback: studentName ile de dene
+          if (tasks.length === 0) {
+            const tSnapOld = await db.collection('tasks')
+              .where('studentName','==',data.name)
+              .where('teacherId','==',data.teacherId||'').get();
+            tSnapOld.forEach(d => tasks.push({ ...d.data(), id: d.id }));
+          }
         } catch(e) { console.log('Görev çekme hatası:', e.message); tasks = []; }
 
         // Wellness verisini Firestore'dan yükle
@@ -8378,10 +8385,14 @@ async function saveTask() {
   const typeLabels = {soru:'📝 Soru Çözümü', konu:'📖 Konu Çalışma', test:'📊 Test', ozet:'✏️ Özet', tekrar:'🔁 Tekrar', diger:'📌 Diğer'};
   const fullDesc = (count ? `${count} soru — ` : '') + desc;
   const user = auth.currentUser;
+  const studentObj = students.find(s => s.name === student);
+  const studentUid = studentObj?.uid || '';
   const taskData = {
     title, subject: sub, unit, type,
     typeLabel: typeLabels[type]||'Görev',
-    desc: fullDesc, due, studentName: student,
+    desc: fullDesc, due,
+    studentName: student,
+    studentUid: studentUid,
     teacherId: user ? user.uid : '',
     teacherName: document.getElementById('menuName')?.textContent,
     done: false,
@@ -8391,10 +8402,10 @@ async function saveTask() {
     const ref = await db.collection('tasks').add(taskData);
     tasks.unshift({ ...taskData, id: ref.id });
     // Öğrenciye bildirim gönder
-    const studentObj = students.find(s => s.name === student);
-    if (studentObj && studentObj.uid) {
+    if (studentUid) {
       await db.collection('notifications').add({
-        toUid: studentObj.uid,
+        toUid: studentUid,
+        fromUid: user ? user.uid : '',
         text: `📋 Yeni görev: "${title}" — ${sub} (Son: ${due})`,
         type: 'task', read: false,
         time: new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
