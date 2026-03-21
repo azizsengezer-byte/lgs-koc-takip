@@ -2770,14 +2770,14 @@ async function psychReportPage() {
   // Görüşme yapıldıysa uyarı kalkıyor
   const gorusmYapildi = gorusmeler.some(g => g.durum === 'yapildi');
 
-  // Uyarı banner
+  // Uyarı banner — görüşme yapıldıysa hiç gösterme
   const alertHtml = (alertDays >= 3 && !gorusmYapildi) ?
     `<div style="background:#ff6b6b22;border:1.5px solid #ff6b6b66;border-radius:12px;padding:14px;margin-bottom:14px">
       <div style="display:flex;gap:10px;align-items:flex-start">
         <span>⚠️</span>
         <div style="flex:1">
           <div style="font-weight:800;color:#ff6b6b;margin-bottom:3px">Psikolojik Uyarı</div>
-          <div style="font-size:0.82rem">${sName.split(' ')[0]} bu dönemde ${alertDays} kez olumsuz duygu bildirdi. Görüşme önerilir.</div>
+          <div style="font-size:0.82rem">${sName.split(' ')[0]} son 30 günde ${alertDays} kez olumsuz duygu bildirdi. Görüşme önerilir.</div>
         </div>
         <button onclick="openGorusmeModal('${sName}','${sUid}')"
           style="padding:7px 12px;border-radius:9px;background:#ff6b6b;border:none;color:#fff;font-size:0.78rem;font-weight:700;cursor:pointer;white-space:nowrap">
@@ -2785,14 +2785,11 @@ async function psychReportPage() {
         </button>
       </div>
     </div>` :
-    (alertDays >= 3 && gorusmYapildi) ?
-    `<div style="background:#43e97b22;border:1.5px solid #43e97b66;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;gap:10px;align-items:center">
-      <span>✅</span><div style="font-size:0.82rem;font-weight:700;color:#43e97b">Görüşme yapıldı — uyarı kapatıldı.</div></div>` :
-    alertDays >= 2 ?
+    alertDays >= 2 && !gorusmYapildi ?
     `<div style="background:#f9ca2422;border:1.5px solid #f9ca2466;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;gap:10px">
-      <span>💛</span><div style="font-size:0.82rem">${sName.split(' ')[0]} bu dönemde ${alertDays} gün düşük duygu bildirdi.</div></div>` :
+      <span>💛</span><div style="font-size:0.82rem">${sName.split(' ')[0]} son 30 günde ${alertDays} gün düşük duygu bildirdi.</div></div>` :
     `<div style="background:#45b7d122;border:1.5px solid #45b7d144;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;gap:10px">
-      <span>✅</span><div style="font-size:0.82rem">${sName.split(' ')[0]}'in psikolojik durumu bu dönemde iyi görünüyor.</div></div>`;
+      <span>✅</span><div style="font-size:0.82rem">${sName.split(' ')[0]}'in psikolojik durumu iyi görünüyor.</div></div>`;
 
   // Görüşmeler kartı — silme butonu ile
   const gorusmelerHtml = gorusmeler.length > 0 ? `
@@ -3390,7 +3387,7 @@ async function exportPsychPDF(sName) {
         qV.forEach((v,i)=>{const bx=gX+pd+(n===1?iW/2:i*xS)-bW/2,bh=v>0?Math.max((v/mxQ)*iH,2):0;doc.setFillColor(160,152,255);doc.roundedRect(bx,tabY-bh,bW,bh,0.5,0.5,'F');if(v>0){doc.setFont(PF,'normal');doc.setFontSize(4);doc.setTextColor(80,70,180);doc.text(String(v),bx+bW/2,tabY-bh-1,{align:'center'});}});
         const ePts=eV.map((v,i)=>({x:gX+pd+(n===1?iW/2:i*xS),y:v>0?tepY+(1-v/10)*iH:null}));
         const kPts=kV.map((v,i)=>({x:gX+pd+(n===1?iW/2:i*xS),y:v>0?tepY+(1-v/10)*iH:null}));
-        [ePts,[249,180,36]],[kPts,[255,107,107]].forEach(([pts,c])=>{const vp=pts.filter(p=>p.y);if(vp.length>=2){doc.setDrawColor(c[0],c[1],c[2]);doc.setLineWidth(0.8);for(let i=1;i<pts.length;i++){if(pts[i-1].y&&pts[i].y)doc.line(pts[i-1].x,pts[i-1].y,pts[i].x,pts[i].y);}vp.forEach(p=>{doc.setFillColor(c[0],c[1],c[2]);doc.circle(p.x,p.y,0.8,'F');});}});
+        [[ePts,[249,180,36]],[kPts,[255,107,107]]].forEach(([pts,c])=>{const vp=pts.filter(p=>p.y);if(vp.length>=2){doc.setDrawColor(c[0],c[1],c[2]);doc.setLineWidth(0.8);for(let i=1;i<pts.length;i++){if(pts[i-1].y&&pts[i].y)doc.line(pts[i-1].x,pts[i-1].y,pts[i].x,pts[i].y);}vp.forEach(p=>{doc.setFillColor(c[0],c[1],c[2]);doc.circle(p.x,p.y,0.8,'F');});}});
         doc.setFont(PF,'normal');doc.setFontSize(4);doc.setTextColor(130,130,150);
         gunler.forEach((d,i)=>{const lx=gX+pd+(n===1?iW/2:i*xS);doc.text(new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}),lx,tabY+3,{align:'center'});});
         Y+=gH+5;
