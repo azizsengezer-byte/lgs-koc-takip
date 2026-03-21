@@ -588,6 +588,10 @@
       </div>
     </div>
     <div class="login-sub">Koçluk &amp; Takip Sistemi</div>
+    <div class="role-btns">
+      <button class="role-btn active" onclick="selectRole('teacher')" id="roleTeacher">👨‍🏫 Öğretmen</button>
+      <button class="role-btn" onclick="selectRole('student')" id="roleStudent">🎒 Öğrenci</button>
+    </div>
     <input class="login-input" type="email" placeholder="E-posta adresi" id="loginUser">
     <input class="login-input" type="password" placeholder="Şifre" id="loginPass">
     <div id="loginError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none;text-align:left;padding:0 4px"></div>
@@ -1324,20 +1328,40 @@ function selectRole(r) {
 }
 
 function showRegister() {
-  document.getElementById('regRole').value = currentRole;
+  // Kayıt formunu sıfırla - varsayılan seçim yok
+  document.getElementById('regRole').value = '';
+  document.getElementById('regRoleLabel').textContent = '— Rol seçin —';
+  document.getElementById('teacherFields').style.display = 'none';
+  document.getElementById('studentFields').style.display = 'none';
   openModal('registerModal');
 }
 
 async function doLogin() {
   const email = document.getElementById('loginUser').value.trim();
   const pass = document.getElementById('loginPass').value;
+  const secilenRol = document.getElementById('roleTeacher').classList.contains('active') ? 'teacher' : 'student';
   const errEl = document.getElementById('loginError');
   const btn = document.getElementById('loginBtn');
   errEl.style.display = 'none';
   if (!email || !pass) { errEl.textContent = 'E-posta ve şifre giriniz.'; errEl.style.display='block'; return; }
   btn.textContent = 'Giriş yapılıyor...'; btn.disabled = true;
   try {
-    await auth.signInWithEmailAndPassword(email, pass);
+    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    // Firestore'dan gerçek rolü kontrol et
+    const doc = await db.collection('users').doc(cred.user.uid).get();
+    if (doc.exists) {
+      const gercekRol = doc.data().role || 'student';
+      if (gercekRol !== secilenRol) {
+        // Rol uyuşmuyor - çıkış yap ve hata ver
+        await auth.signOut();
+        btn.textContent = 'Giriş Yap →'; btn.disabled = false;
+        const rolAd = gercekRol === 'teacher' ? 'Öğretmen' : 'Öğrenci';
+        errEl.textContent = `Bu hesap bir ${rolAd} hesabıdır. Lütfen doğru rolü seçin.`;
+        errEl.style.display = 'block';
+        return;
+      }
+    }
+    // Rol doğru, giriş başarılı (onAuthStateChanged devam eder)
   } catch(e) {
     btn.textContent = 'Giriş Yap →'; btn.disabled = false;
     const msgs = {
@@ -1359,6 +1383,7 @@ async function doRegister() {
   const errEl = document.getElementById('regError');
   errEl.style.display = 'none';
   if (!name || !email || !pass) { errEl.textContent = 'Tüm alanları doldurunuz.'; errEl.style.display='block'; return; }
+  if (!role) { errEl.textContent = 'Lütfen öğretmen veya öğrenci rolünü seçiniz.'; errEl.style.display='block'; return; }
   if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
   const branch = role==='teacher' ? (document.getElementById('regBranch').value || '') : '';
   const school = role==='teacher' ? (document.getElementById('regSchool').value.trim() || '') : '';
@@ -6535,30 +6560,37 @@ function openTopicPicker(target) {
   const isHiyerarsik = rawList.length > 0 && typeof rawList[0] === 'object';
 
   if (isHiyerarsik) {
+    // Flat liste görünümü - ünite başlık, altında alt konular gizli/açık
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.style.cssText = 'display:flex;align-items:flex-end;z-index:9999';
-    let html = `<div style="background:var(--surface);border-radius:18px 18px 0 0;width:100%;padding:20px;max-height:75vh;overflow-y:auto">
-      <div style="font-size:1rem;font-weight:700;margin-bottom:16px;text-align:center">${sub} — Konu Seç</div>`;
+    let html = `<div style="background:var(--surface);border-radius:18px 18px 0 0;width:100%;max-height:75vh;overflow-y:auto">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1">
+        <span style="font-size:1rem;font-weight:700">${sub} — Konu Seç</span>
+        <button onclick="this.closest('.modal-overlay').remove()" style="background:none;border:none;color:var(--text2);font-size:1.2rem;cursor:pointer;padding:4px">✕</button>
+      </div>`;
     rawList.forEach((item, ui) => {
       const hasAlt = item.alt && item.alt.length > 0;
       const cbArg = cbName ? `,'${cbName}'` : '';
-      html += `<div style="margin-bottom:8px">
-        <div onclick="fenUniteToggle(${ui})" style="padding:12px 16px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
-          <span style="font-weight:700;font-size:0.92rem">📂 ${item.unite}</span>
-          <div style="display:flex;align-items:center;gap:8px">
-            <button onclick="event.stopPropagation();fenSec('${item.unite.replace(/'/g,"\\'")}','${item.unite.replace(/'/g,"\\'")}','${targetId}','${labelId}',this.closest('.modal-overlay')${cbArg})" style="padding:3px 10px;border-radius:7px;background:var(--accent)22;border:1px solid var(--accent)44;color:var(--accent);font-size:0.75rem;cursor:pointer">Genel</button>
-            ${hasAlt ? `<span id="fenArrow_${ui}" style="color:var(--text2);transition:.2s;font-size:0.8rem">▼</span>` : ''}
+      const uniteEsc = item.unite.replace(/'/g, "\'");
+      // Ünite satırı - tıklayarak seçilebilir, ok ile alt konular açılabilir
+      html += `<div style="border-bottom:1px solid var(--border)22">
+        <div style="display:flex;align-items:center">
+          <div onclick="fenSec('${uniteEsc}','${uniteEsc}','${targetId}','${labelId}',this.closest('.modal-overlay')${cbArg})"
+            style="flex:1;padding:14px 20px;cursor:pointer;font-size:0.92rem;font-weight:600">
+            ${item.unite}
           </div>
+          ${hasAlt ? `<button onclick="fenUniteToggle(${ui})" style="padding:14px 16px;background:none;border:none;cursor:pointer;color:var(--text2);transition:.2s" id="fenArrowBtn_${ui}">
+            <span id="fenArrow_${ui}" style="display:inline-block;transition:transform .2s">›</span>
+          </button>` : ''}
         </div>`;
       if (hasAlt) {
-        html += `<div id="fenAlt_${ui}" style="display:none;padding-left:12px;margin-top:4px">`;
+        html += `<div id="fenAlt_${ui}" style="display:none;background:var(--surface2)22">`;
         item.alt.forEach(alt => {
-          const altEsc = alt.replace(/'/g,"\'");
-          const uniteEsc = item.unite.replace(/'/g,"\'");
+          const altEsc = alt.replace(/'/g, "\'");
           html += `<div onclick="fenSec('${uniteEsc}','${altEsc}','${targetId}','${labelId}',this.closest('.modal-overlay')${cbArg})"
-            style="padding:10px 14px;border-radius:8px;margin-bottom:4px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:8px;font-size:0.88rem">
-            <span style="color:var(--accent)">◦</span><span>${alt}</span>
+            style="padding:11px 20px 11px 36px;cursor:pointer;font-size:0.86rem;color:var(--text2);border-top:1px solid var(--border)22;display:flex;align-items:center;gap:8px">
+            <span style="color:var(--accent);font-size:0.7rem">●</span>${alt}
           </div>`;
         });
         html += `</div>`;
@@ -6568,10 +6600,10 @@ function openTopicPicker(target) {
     if (type === 'tekrar') {
       const cbArg = cbName ? `,'${cbName}'` : '';
       html += `<div onclick="fenSec('Genel Tekrar','Genel Tekrar','${targetId}','${labelId}',this.closest('.modal-overlay')${cbArg})"
-        style="padding:12px 16px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;margin-bottom:8px;font-weight:700">
+        style="padding:14px 20px;cursor:pointer;font-size:0.92rem;font-weight:600;border-bottom:1px solid var(--border)22">
         🔁 Genel Tekrar</div>`;
     }
-    html += `<button class="btn btn-outline" style="width:100%;margin-top:4px" onclick="this.closest('.modal-overlay').remove()">İptal</button></div>`;
+    html += `</div>`;
     modal.innerHTML = html;
     document.body.appendChild(modal);
     modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
@@ -6589,7 +6621,7 @@ function fenUniteToggle(ui) {
   if (!altEl) return;
   const open = altEl.style.display !== 'none';
   altEl.style.display = open ? 'none' : 'block';
-  if (arrowEl) arrowEl.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
+  if (arrowEl) arrowEl.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
 }
 
 function fenSec(unite, alt, targetId, labelId, modalEl, cbName) {
