@@ -2557,6 +2557,63 @@ function showPsychReport(sName) {
   showPage('psych-report');
 }
 
+function openGorusmeModal(sName, sUid) {
+  const existing = document.getElementById('_gorusmeModal');
+  if (existing) existing.remove();
+  const today = new Date().toISOString().split('T')[0];
+  const modal = document.createElement('div');
+  modal.id = '_gorusmeModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:22px 18px 36px;width:100%;max-width:480px">
+      <div style="font-weight:800;font-size:1rem;margin-bottom:16px">🗣️ Görüşme Kaydı — ${sName.split(' ')[0]}</div>
+      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:6px">Görüşme Tarihi</div>
+      <input type="date" id="_gorusmeTarih" value="${today}"
+        style="width:100%;padding:9px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.92rem;margin-bottom:12px;box-sizing:border-box;outline:none">
+      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:6px">Durum</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button id="_gBtn_yapildi" onclick="document.getElementById('_gorusmeDurum').value='yapildi';document.getElementById('_gBtn_yapildi').style.background='var(--accent)';document.getElementById('_gBtn_yapildi').style.color='#fff';document.getElementById('_gBtn_planlandi').style.background='transparent';document.getElementById('_gBtn_planlandi').style.color='var(--text2)'"
+          style="flex:1;padding:9px;border-radius:10px;background:var(--accent);border:1px solid var(--border);color:#fff;font-weight:700;font-size:0.82rem;cursor:pointer">✅ Görüşme Yapıldı</button>
+        <button id="_gBtn_planlandi" onclick="document.getElementById('_gorusmeDurum').value='planlandi';document.getElementById('_gBtn_planlandi').style.background='var(--accent)';document.getElementById('_gBtn_planlandi').style.color='#fff';document.getElementById('_gBtn_yapildi').style.background='transparent';document.getElementById('_gBtn_yapildi').style.color='var(--text2)'"
+          style="flex:1;padding:9px;border-radius:10px;background:transparent;border:1px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">📅 Planlandı</button>
+      </div>
+      <input type="hidden" id="_gorusmeDurum" value="yapildi">
+      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:6px">Görüşme Notu (opsiyonel)</div>
+      <textarea id="_gorusmeNot" placeholder="Görüşme içeriği, öğrencinin durumu, alınan kararlar..."
+        style="width:100%;padding:9px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.85rem;resize:none;height:80px;box-sizing:border-box;outline:none;margin-bottom:16px"></textarea>
+      <div style="display:flex;gap:8px">
+        <button onclick="saveGorusme('${sName}','${sUid}')"
+          style="flex:1;padding:12px;border-radius:12px;background:var(--accent);border:none;color:#fff;font-weight:800;font-size:0.92rem;cursor:pointer">💾 Kaydet</button>
+        <button onclick="document.getElementById('_gorusmeModal').remove()"
+          style="padding:12px 16px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-weight:700;cursor:pointer">İptal</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+}
+
+async function saveGorusme(sName, sUid) {
+  const tarihRaw = document.getElementById('_gorusmeTarih').value;
+  const durum = document.getElementById('_gorusmeDurum').value;
+  const not = document.getElementById('_gorusmeNot').value.trim();
+  const tarih = tarihRaw ? new Date(tarihRaw+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'}) : '';
+  const sObj = students.find(s=>s.name===sName) || {};
+  const uid = sUid || sObj.uid || '';
+  if (!uid) { showToast('⚠️','Öğrenci UID bulunamadı'); return; }
+  const yeniGorusme = { tarih, durum, not, olusturma: new Date().toISOString() };
+  try {
+    const snap = await db.collection('wellness').doc(uid).get();
+    const mevcut = snap.exists ? (snap.data().gorusmeler || []) : [];
+    mevcut.push(yeniGorusme);
+    await db.collection('wellness').doc(uid).set({ gorusmeler: mevcut }, { merge: true });
+    document.getElementById('_gorusmeModal').remove();
+    showToast('✅', 'Görüşme kaydedildi!');
+    renderTeacherPage('psych-report', document.getElementById('mainContent'));
+  } catch(e) {
+    showToast('❌', 'Hata: ' + e.message);
+  }
+}
+
 async function psychReportPage() {
   const sName = selectedStudentName;
   const sObj = students.find(s=>s.name===sName) || {};
@@ -2606,16 +2663,62 @@ async function psychReportPage() {
     return {dk,col,hasData,emoji:moodEmojis[mood]||'',label:d.getDate()};
   });
 
+  // Görüşmeler
+  const gorusmeler = Array.isArray(data.gorusmeler) ? data.gorusmeler : [];
+
   // Uyarı banner
   const alertHtml = alertDays >= 3 ?
-    `<div style="background:#ff6b6b22;border:1.5px solid #ff6b6b66;border-radius:12px;padding:14px;margin-bottom:14px;display:flex;gap:10px">
-      <span>⚠️</span><div><div style="font-weight:800;color:#ff6b6b;margin-bottom:3px">Psikolojik Uyarı</div>
-      <div style="font-size:0.82rem">${sName.split(' ')[0]} bu dönemde ${alertDays} kez olumsuz duygu bildirdi. Görüşme önerilir.</div></div></div>` :
+    `<div style="background:#ff6b6b22;border:1.5px solid #ff6b6b66;border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <span>⚠️</span>
+        <div style="flex:1">
+          <div style="font-weight:800;color:#ff6b6b;margin-bottom:3px">Psikolojik Uyarı</div>
+          <div style="font-size:0.82rem">${sName.split(' ')[0]} bu dönemde ${alertDays} kez olumsuz duygu bildirdi. Görüşme önerilir.</div>
+        </div>
+        <button onclick="openGorusmeModal('${sName}','${sUid}')"
+          style="padding:7px 12px;border-radius:9px;background:#ff6b6b;border:none;color:#fff;font-size:0.78rem;font-weight:700;cursor:pointer;white-space:nowrap">
+          ✅ Görüşme Yap
+        </button>
+      </div>
+    </div>` :
     alertDays >= 2 ?
     `<div style="background:#f9ca2422;border:1.5px solid #f9ca2466;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;gap:10px">
       <span>💛</span><div style="font-size:0.82rem">${sName.split(' ')[0]} bu dönemde ${alertDays} gün düşük duygu bildirdi.</div></div>` :
     `<div style="background:#45b7d122;border:1.5px solid #45b7d144;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;gap:10px">
       <span>✅</span><div style="font-size:0.82rem">${sName.split(' ')[0]}'in psikolojik durumu bu dönemde iyi görünüyor.</div></div>`;
+
+  // Görüşmeler kartı
+  const gorusmelerHtml = gorusmeler.length > 0 ? `
+    <div class="card" style="margin-bottom:14px;border:1px solid #6c63ff44">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>🗣️ Koç Görüşmeleri</span>
+        <button onclick="openGorusmeModal('${sName}','${sUid}')"
+          style="padding:5px 10px;border-radius:8px;background:var(--accent)22;border:1px solid var(--accent)44;color:var(--accent);font-size:0.75rem;font-weight:700;cursor:pointer">
+          + Görüşme Ekle
+        </button>
+      </div>
+      ${gorusmeler.slice().reverse().map((g,i)=>`
+        <div style="padding:10px 0;border-bottom:1px solid var(--border);${i===gorusmeler.length-1?'border-bottom:none':''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div style="font-size:0.78rem;font-weight:700;color:var(--accent)">${g.tarih||''}</div>
+            <div style="font-size:0.7rem;padding:2px 8px;border-radius:6px;background:${g.durum==='yapildi'?'#43e97b22':'#f9ca2422'};color:${g.durum==='yapildi'?'#43e97b':'#f9ca24'};font-weight:700">
+              ${g.durum==='yapildi'?'✅ Görüşme Yapıldı':'📅 Planlandı'}
+            </div>
+          </div>
+          ${g.not?`<div style="font-size:0.8rem;color:var(--text2);line-height:1.5">${g.not}</div>`:''}
+          ${g.uyariNeden?`<div style="font-size:0.72rem;color:#ff6b6b;margin-top:3px">Tetikleyen: ${g.uyariNeden}</div>`:''}
+        </div>`).join('')}
+    </div>` :
+    `<div class="card" style="margin-bottom:14px;border:1px solid var(--border)">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>🗣️ Koç Görüşmeleri</span>
+        <button onclick="openGorusmeModal('${sName}','${sUid}')"
+          style="padding:5px 10px;border-radius:8px;background:var(--accent)22;border:1px solid var(--accent)44;color:var(--accent);font-size:0.75rem;font-weight:700;cursor:pointer">
+          + Görüşme Ekle
+        </button>
+      </div>
+      <div style="text-align:center;padding:16px;color:var(--text2);font-size:0.85rem">Henüz görüşme kaydı yok.</div>
+    </div>`;
 
   // Hedefler (en son kaydedilen)
   const hedefHtml = (data.hedef||data.hedefOkul) ? `
@@ -2697,6 +2800,7 @@ async function psychReportPage() {
     ` : `
       ${alertHtml}
       ${hedefHtml}
+      ${gorusmelerHtml}
 
       <div class="grid-4" style="margin-bottom:14px">
         <div class="stat-card"><div class="stat-label">⚡ Ort. Enerji</div><div class="stat-value" style="color:#f9ca24">${avg('enerji')}/10</div></div>
@@ -3392,108 +3496,173 @@ async function exportPsychPDF(sName) {
       // BÜTÜNCÜL KOÇ DEĞERLENDİRMESİ
       // ──────────────────────────────────────────────────────────────
       Y = pdfCheck(doc, Y, 12);
-      Y = pdfSecHeader(doc, tx('BÜTÜNCÜL KOÇ DEĞERLENDİRMESİ'), Y, 72, 200, 130);
+      Y = pdfSecHeader(doc, tx('BUTUNCEL KOC DEGERLENDIRMESI'), Y, 72, 200, 130);
 
-      // Tespitler — veri odaklı, çelişkisiz, öncelikli sıralı
-      const kocNotu = [];
+      const dLgs = Math.max(0, Math.floor((new Date('2026-06-14T09:30:00+03:00') - new Date())/(1000*60*60*24)));
+      const adSoyad = tx(sName.split(' ')[0]);
+      const iyi_basari = ortNet !== null && ortNet > 20;
+      const dusuk_hacim = ortSoru > 0 && ortSoru < DAILY_GOAL * 0.45;
+      const orta_hacim = ortSoru >= DAILY_GOAL * 0.45 && ortSoru < DAILY_GOAL * 0.75;
+      const iyi_hacim = ortSoru >= DAILY_GOAL * 0.75;
+      const kritikBurnout2 = ortEnerji > 0 && ortEnerji < 4 && ortUyku > 0 && ortUyku < 6.5;
+      const kritikKaygi2 = ortKaygi >= 7.5;
+      const yuksek_kaygi_basari = ortKaygi >= 7 && iyi_basari;
+      const disiplinli = ortSoru >= DAILY_GOAL * 0.8;
+      const dusuk_uyku2 = ortUyku > 0 && ortUyku < 6.5;
+      const iyi_uyku2 = ortUyku >= 7.5;
+      const yuksek_odak2 = ortOdak >= 7;
+      const dusuk_odak2 = ortOdak > 0 && ortOdak < 5;
+      const potAlti2 = ortEnerji >= 7 && ortKaygi <= 3 && dusuk_hacim;
+      const dengeli2 = ortKaygi > 0 && ortKaygi < 6 && ortUyku >= 7 && !dusuk_hacim && ortEnerji >= 5;
+      const zamanBaski = dLgs < 60 ? 'yogun' : dLgs < 120 ? 'orta' : 'erken';
 
-      // Önce en kritik olanı belirle
-      const kritikBurnout = ortEnerji < 4 && ortUyku < 6.5 && ortSosyal > 2;
-      const kritikKaygi   = ortKaygi >= 7.5 && (ortNet === null || ortNet < 30);
-      const iyi_basari    = ortNet !== null && ortNet > 20;
-      const dusuk_hacim   = ortSoru < DAILY_GOAL * 0.5 && toplamSoru > 0;
-      const yuksekkaygi_basari = ortKaygi >= 7 && iyi_basari;
-      const disiplinli    = ortSoru >= DAILY_GOAL * 0.8;
-      const dengeli       = ortKaygi > 0 && ortKaygi < 6 && ortUyku >= 7 && !dusuk_hacim;
-      const potAlti       = ortEnerji >= 7 && ortKaygi <= 3 && dusuk_hacim;
-
-      if (kritikBurnout) {
-        kocNotu.push({
-          baslik: 'Tükenmişlik Riski — Acil Müdahale',
-          metin: 'Düşük enerji, yetersiz uyku ve yüksek ekran süresi üçlüsü kritik bir yorgunluk sinyali veriyor. ' +
-            'Şu anki tempo sürdürülürse yakın vadede motivasyon kaybı ya da ani performans düşüşü yaşanabilir. ' +
-            'Bir günlük tam dinlenme, uyku süresini 8 saate çıkarma ve uyku öncesi ekran kısıtlaması ' +
-            'acil olarak uygulanmalıdır.',
-          bg:[255,225,225], kenar:[180,20,20]
-        });
-      }
-      if (kritikKaygi && !kritikBurnout) {
-        kocNotu.push({
-          baslik: 'Yüksek Kaygı – Akademik Üretim Riski',
-          metin: 'Kaygı seviyesi (ort. ' + ortKaygi.toFixed(1) + '/10) sistematik olarak yüksek ve ' +
-            'akademik üretimi kısıtlıyor görünüyor. Bu noktada teknik hazırlık yerine kaygı yönetimi ' +
-            'öncelik kazanmalıdır. Koçluk seanslarında "kaygıyı performansa dönüştürme" teknikleri ele alınabilir.',
-          bg:[255,235,235], kenar:[180,30,30]
-        });
-      }
-      if (yuksekkaygi_basari) {
-        kocNotu.push({
-          baslik: 'Yüksek Başarı – Yüksek Kaygı Paradoksu',
-          metin: 'Öğrenci iyi sonuçlar almasına karşın kaygı düzeyi yüksek (ort. ' + ortKaygi.toFixed(1) + '/10) ' +
-            'seyretmeye devam ediyor. Bu, "başarı kaygıyı azaltmıyor" örüntüsüdür; mükemmeliyetçi bir ' +
-            'yaklaşımın işareti olabilir. Başarı ölçütünün sonuçtan sürece kayması, ' +
-            '"iyi çalıştım" hissini pekiştirecektir.',
-          bg:[255,245,220], kenar:[180,80,0]
-        });
-      }
-      if (potAlti) {
-        kocNotu.push({
-          baslik: 'Potansiyel Altı Performans',
-          metin: 'Enerji ve kaygı dengesi iyi olmasına rağmen günlük soru sayısı ' +
-            '(ort. ' + Math.round(ortSoru) + ') hedefin oldukça altında kalıyor. ' +
-            'Bu durum zaman yönetimi, odaklanma güçlüğü veya motivasyon eksikliğinden kaynaklanıyor olabilir. ' +
-            'Günlük sabit çalışma blokları ve artan hedefler ile ivme yakalanabilir.',
-          bg:[255,248,215], kenar:[140,90,0]
-        });
-      }
-      if (disiplinli && !kritikBurnout) {
-        kocNotu.push({
-          baslik: 'Güçlü Çalışma Disiplini',
-          metin: 'Dönem genelinde günlük soru sayısı hedefin %' + Math.round(ortSoru/DAILY_GOAL*100) + '\'ini karşılıyor. ' +
-            'Bu tutarlılık LGS hazırlığının temel yapı taşıdır. ' +
-            'Sınava kalan sürede bu disiplini korumak ve hata analizine ağırlık vermek önerilir.',
-          bg:[230,255,240], kenar:[20,140,70]
-        });
-      }
-      if (dengeli && kocNotu.length === 0) {
-        kocNotu.push({
-          baslik: 'Dengeli ve Sürdürülebilir Profil',
-          metin: 'Bu dönem psikolojik ve akademik veriler birlikte değerlendirildiğinde ' +
-            'dengeli ve sürdürülebilir bir tablo ortaya çıkmaktadır. Enerji, uyku ve kaygı değerleri ' +
-            'çalışmayı destekler nitelikte. Sınava yaklaştıkça bu ritmi korumak ve ' +
-            'çalışma yoğunluğunu kademeli artırmak yeterli olacaktır.',
-          bg:[230,255,240], kenar:[20,140,70]
-        });
-      }
-      if (kocNotu.length === 0) {
-        kocNotu.push({
-          baslik: 'Analiz İçin Daha Fazla Veri Gerekiyor',
-          metin: 'Bu dönem için kapsamlı bir değerlendirme yapılabilmesi adına daha fazla günlük veri ' +
-            'gerekmektedir. "Nasıl Hissediyorum" bölümünün her gün düzenli doldurulması, ' +
-            'sonraki dönemlerde çok daha zengin içgörüler sunacaktır.',
-          bg:[240,240,250], kenar:[100,100,150]
-        });
+      // 1. GENEL PROFIL
+      {
+        let profil = '';
+        if (kritikBurnout2) {
+          profil = adSoyad + ' bu donemde fiziksel ve zihinsel tukenme sinyalleri veriyor: enerji ort. ' + ortEnerji.toFixed(1) + '/10, uyku ' + ortUyku.toFixed(1) + ' saat. Bu tablo surdurulebilir degil. ' +
+            (iyi_hacim ? 'Dikkat cekici olan soru sayisinin yuksek tutulmus olmasi; bu "borctan harcama" durumunu gosteriyor.' : 'Buna ragmen akademik uretim de dusuk; her iki cephede ciddi sorun var.') +
+            ' Kocun onceligi akademik hedeflerden once biyolojik toparlanmayi saglamak olmalidir.';
+        } else if (kritikKaygi2 && !iyi_basari) {
+          profil = adSoyad + ' bu donemde yuksek kaygi (' + ortKaygi.toFixed(1) + '/10) ve buna bagli gorunen akademik kilitlenme yasiyor. Soru sayisi (ort. ' + Math.round(ortSoru) + '/gun) beklenin altinda. Kaygi ogrenme kapasitesini bloke ediyor; teknik calisma yerine psikolojik stabilizasyon oncelikli olmali. Kucuk hedeflerle "basari hissi" yeniden insa edilmeli.';
+        } else if (yuksek_kaygi_basari) {
+          profil = adSoyad + ' ilginc bir profil sergiliyor: kaygi yuksek (' + ortKaygi.toFixed(1) + '/10) ancak akademik sonuclar iyi. Bu mukemmeliyetcilik oruntusunun klasik gostergesi. Basari geldikce kaygi azalmak yerine yeni kaygilara yer barakiyor. Bu tempo uzun soluklu LGS maratonunda psikolojik yipranmaya zemin hazirlıyor. Kocun gorevi basariyi takdir ederken "yeterince iyi" kavramini da icselletirmesini saglamak.';
+        } else if (dengeli2) {
+          profil = adSoyad + ' bu donemde dengeli ve surdurulebilir bir profil ciziyor. Kaygi kontrollü (' + ortKaygi.toFixed(1) + '/10), uyku yeterli (' + ortUyku.toFixed(1) + ' saat), akademik uretim ' + (iyi_hacim ? 'hedefin uzerinde' : 'kabul edilebilir duzeyde') + '. ' + (zamanBaski === 'yogun' ? 'Sinava ' + dLgs + ' gun kaldiginda bu ritmi korumak ve hata analizine agirlik vermek kritik.' : 'Sinava ' + dLgs + ' gun var; bu dengeyi koruyarak calisma yogunlugunu kademeli artirmak onerilir.');
+        } else {
+          profil = adSoyad + ' bu donemde karma bir profil gosteriyor. ' + (ortKaygi > 5 ? 'Kaygi biraz yuksek (' + ortKaygi.toFixed(1) + '/10). ' : '') + (dusuk_uyku2 ? 'Uyku yetersiz (' + ortUyku.toFixed(1) + ' saat). ' : '') + (dusuk_hacim ? 'Gunluk soru sayisi (' + Math.round(ortSoru) + ') hedefin oldukca altinda. ' : orta_hacim ? 'Soru sayisi makul ama arttirilabilir (' + Math.round(ortSoru) + '/gun). ' : '') + 'Veri girisi duzenli tutuldukca daha net degerlendirme yapilacak.';
+        }
+        if (profil) kutu('1. Genel Profil Degerlendirmesi', profil, [240,238,255], [108,99,200]);
       }
 
-      kocNotu.forEach((n, i) => {
-        kutu(String(i+1) + '. ' + n.baslik, n.metin, n.bg, n.kenar);
-      });
+      // 2. AKADEMİK VERİMLİLİK
+      if (toplamSoru > 0) {
+        let akademik = '';
+        const soruPct = Math.round(ortSoru / DAILY_GOAL * 100);
+        const netPct2 = (ortNet !== null && ortSoru > 0) ? Math.round(ortNet / ortSoru * 100) : null;
+        if (iyi_hacim && netPct2 !== null && netPct2 >= 70) {
+          akademik = 'Hem nicelik hem nitelik acisindan guclu tablo: gunluk ort. ' + Math.round(ortSoru) + ' soru (%' + soruPct + ' hedef), net isabet %' + netPct2 + '. LGSde hedeflenen puana ulasmak icin dogru kanalda. Onerimiz: zayif konu odakli calismaya agirlik vererek verimlilik tavanini daha da yukseltmek.';
+        } else if (iyi_hacim && netPct2 !== null && netPct2 < 60) {
+          akademik = 'Soru sayisi iyi (' + Math.round(ortSoru) + '/gun) ancak isabet orani duşuk (%' + netPct2 + '). "Cok calısiyorum ama verim alamiyorum" hissiyle ortusüyor. Hata analizi ve yavask anlayarak cozme yontemi onceliklendirilmeli; soru sayisi gecici olarak azaltilabilir.';
+        } else if (dusuk_hacim) {
+          akademik = 'Gunluk ort. ' + Math.round(ortSoru) + ' soru, hedefin sadece %' + soruPct + 'i. ' + dLgs + ' gun kalan bir surecte bu acigi kapatmak icin acil yapilandirma gerekiyor. Gunluk program sabit calisma bloklarina bolunmeli, her blok icin minimum soru hedefi konulmali.' + (potAlti2 ? ' Enerji ve ruh hali verileri hazir durumda oldugunu gosteriyor; motive edici dis etken eksikligine isaret ediyor.' : '');
+        } else {
+          akademik = 'Bu donemde toplam ' + toplamSoru + ' soru cozulmus (' + aktifGunler.length + ' aktif gun, gunluk ort. ' + Math.round(ortSoru) + '). ' + (orta_hacim ? 'Tempolu ilerliyor ancak hedefin %' + soruPct + 'inde. Bunu %80 uzeri ne tasimak icin gunde bir ek calisma bloku yeterli olacak.' : '');
+        }
+        if (akademik) kutu('2. Akademik Verimlilik Analizi', akademik, [235,248,255], [20,100,180]);
+      }
+
+      // 3. PSİKOLOJİK RİSK VE GÜÇLER
+      {
+        const gucler = [];
+        const riskler = [];
+        if (ortEnerji >= 7) gucler.push('yuksek enerji (' + ortEnerji.toFixed(1) + '/10)');
+        if (iyi_uyku2) gucler.push('iyi uyku duzeni (' + ortUyku.toFixed(1) + ' saat)');
+        if (yuksek_odak2) gucler.push('yuksek odaklanma (' + ortOdak.toFixed(1) + '/10)');
+        if (ortKaygi > 0 && ortKaygi < 4) gucler.push('kaygi kontrollü (' + ortKaygi.toFixed(1) + '/10)');
+        if (disiplinli) gucler.push('guclu calisma disiplini');
+        if (ortSosyal > 0 && ortSosyal < 1.5) gucler.push('ekran kullanimi sinirli');
+        if (kritikKaygi2) riskler.push('kronik yuksek kaygi (' + ortKaygi.toFixed(1) + '/10) bilisgs el isleme kapasitesini kisitliyor');
+        if (dusuk_uyku2) riskler.push('yetersiz uyku (' + ortUyku.toFixed(1) + ' saat) hafiza pekismesini olumsuz etkiliyor');
+        if (dusuk_odak2) riskler.push('dusuk odaklanma (' + ortOdak.toFixed(1) + '/10) verimlilik dusuruyor');
+        if (ortSosyal >= 3) riskler.push('yuksek ekran suresi (' + ortSosyal.toFixed(1) + ' saat) dikkat bolunmesine yol aciyor');
+        if (kritikBurnout2) riskler.push('tukenmisglik esigine yakin durum acil mudahale gerektiriyor');
+        if (gucler.length > 0 || riskler.length > 0) {
+          let psiko = '';
+          if (gucler.length > 0) psiko += 'Guclu yanlar: ' + gucler.join(', ') + '. ';
+          if (riskler.length > 0) psiko += (gucler.length > 0 ? 'Buna karsin r' : 'R') + 'iskler: ' + riskler.join('; ') + '. ' + (riskler.length >= 2 ? 'Bu risklerin birlikteligi tek tek ele alindiginda gorünenden daha kritik; onceliklendirilmesi gerekiyor.' : '');
+          if (psiko) kutu('3. Psikolojik Risk ve Gucler', psiko, [255,248,235], [160,100,0]);
+        }
+      }
+
+      // 4. UYKU-KAYGI-PERFORMANS DONGUSU
+      if (ortUyku > 0 && ortKaygi > 0 && toplamSoru > 0) {
+        let dongu = '';
+        if (dusuk_uyku2 && kritikKaygi2) {
+          dongu = 'Kisir dongu gozlemleniyor: yetersiz uyku → artan kaygi → odak kaybi → dusuk verim → daha fazla kaygi. Bu donguyu kirmak icin en kritik giris noktasi uykudur. Uyku ' + ortUyku.toFixed(1) + ' saatten 7.5+ saate cikarilirsa kayginin ve akademik verimin de iyilesmesi ongörülüyor. Uyku oncesi 1 saatlik ekransiz tampon sure onerilir.';
+        } else if (iyi_uyku2 && yuksek_odak2) {
+          dongu = 'Olumlu dongu mevcut: iyi uyku (' + ortUyku.toFixed(1) + ' saat) → yuksek odak (' + ortOdak.toFixed(1) + '/10) → akademik verimlilik. Bu pozitif donguyu korumak sinava yaklasırkca daha da degerli. Sinav stresi bu dengeyi bozabilir; uyku saati rutini sabitlestirilmeli.';
+        } else if (dusuk_uyku2 && yuksek_odak2) {
+          dongu = 'Uyumsuzluk: uyku kisa (' + ortUyku.toFixed(1) + ' saat) ancak odak yuksek (' + ortOdak.toFixed(1) + '/10). Kisa vadeli adaptasyon; uzun vadede bilisgs el performans sekteye ugrayabilir. Uyku arttirilirsa mevcut odak kalitesinin uzeri ne cikilebilir.';
+        }
+        if (dongu) kutu('4. Uyku – Kaygi – Performans Iliskisi', dongu, [235,230,255], [100,80,200]);
+      }
+
+      // 5. STRATEJİK YOL HARİTASI
+      {
+        const oneri = [];
+        if (kritikBurnout2) oneri.push('Acil dinlenme: en az 1 gun tam desarj; uyku suresini 8+ saate cikar');
+        if (dusuk_uyku2 && !kritikBurnout2) oneri.push('Uyku hijyeni: yatmadan 1 saat once ekranlari kapat, her gece ayni saate uyu');
+        if (kritikKaygi2) oneri.push('Kaygi yonetimi: kocluk seansinda kaygi kaynagini ele al; gunluk 5 dakika nefes egzersizi');
+        if (ortSosyal >= 2.5) oneri.push('Dijital kısitlama: ders saatlerinde telefon uzakta, gunluk sosyal medya ' + Math.round(ortSosyal*60) + ' dkden 30 dkya indir');
+        if (dusuk_hacim) oneri.push('Calisma yapisi: gunu 3 sabit bloga bol; her blok icin min. ' + Math.round(DAILY_GOAL/3) + ' soru hedefi koy');
+        if (dusuk_odak2) oneri.push('Odak derinligi: Pomodoro teknigi (25 dk calisma / 5 dk dinlenme); tek gorev odakli calis');
+        if (iyi_hacim && ortNet !== null && ortSoru > 0 && ortNet/ortSoru < 0.65) oneri.push('Hata analizi: her yanlisin nedenini not et; ayni hatay i ikinci kez yapmama taahhudu');
+        if (yuksek_kaygi_basari) oneri.push('Basari algisi: "sonuc" degil "surec" takdiri; koc her gorusmede gayrete odaklansin');
+        if (zamanBaski === 'yogun') oneri.push('Sinav stratejisi: ' + dLgs + ' gunde yeni konu degil bilinen konularda hata sifirlamaya odaklan');
+        else if (zamanBaski === 'orta') oneri.push('Orta vade: zayif konulari sistematik bitir, sinav oncesi 4 haftada deneme odakli calis');
+        else oneri.push('Uzun vade: temel kavramlari pekistir, gunluk kucuk hedeflerle rutin kur');
+        if (oneri.length > 0) {
+          const oneriMetin = oneri.map((o,i)=>(i+1)+'. '+o).join('\n');
+          const ls2 = doc.splitTextToSize(tx(oneriMetin), 164);
+          const bH2 = Math.max(ls2.length * 5 + 14, 20);
+          Y = pdfCheck(doc, Y, bH2+5);
+          doc.setFillColor(235,255,240); doc.roundedRect(15,Y,180,bH2,2,2,'F');
+          doc.setFillColor(20,140,70); doc.roundedRect(15,Y,4,bH2,1,1,'F');
+          doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(20,140,70);
+          doc.text(tx('5. Stratejik Oneriler ve Yol Haritasi'), 22, Y+6);
+          doc.setFont(PF,'normal'); doc.setFontSize(7); doc.setTextColor(40,80,40);
+          doc.text(ls2, 22, Y+12);
+          Y += bH2+5;
+        }
+      }
+
+      // 6. ÖĞRENCİNİN SESİ
+      {
+        const poz2 = gunler.filter(d=>d.pozitif&&d.pozitif.trim()).slice(0,3).map(d=>d.pozitif.trim());
+        const neg2 = gunler.filter(d=>d.negatif&&d.negatif.trim()).slice(0,3).map(d=>d.negatif.trim());
+        if (poz2.length > 0 || neg2.length > 0) {
+          let sesler = '';
+          if (poz2.length > 0) sesler += 'Olumlu ifadeler: ' + poz2.join(' / ') + '. ';
+          if (neg2.length > 0) sesler += 'Olumsuz ifadeler: ' + neg2.join(' / ') + '. ';
+          sesler += 'Bu ifadeler ogrencinin kendi bakis acisini yansıtıyor; kocluk seanslarinda bu konulara ozellikle yer verilmesi onerilir.';
+          kutu('6. Ogrencinin Sesi — Kendi Ifadelerinden', sesler, [248,240,255], [130,80,180]);
+        }
+      }
 
       // Dönem özeti
       if (toplamSoru > 0) {
         Y = pdfCheck(doc, Y, 10);
-        doc.setFillColor(235, 245, 255); doc.roundedRect(15, Y, 180, 9, 1.5, 1.5, 'F');
-        doc.setFont(PF, 'normal'); doc.setFontSize(7.5); doc.setTextColor(40, 60, 120);
-        doc.text(
-          tx('Dönem: ' + toplamSoru + ' soru  |  ' + toplamSure + ' dk çalışma  |  ' + aktifGunler.length + ' aktif gün  |  Günlük ort. ' + Math.round(ortSoru) + ' soru  (Hedef: ' + DAILY_GOAL + ')'),
-          19, Y + 5.5
-        );
+        doc.setFillColor(235,245,255); doc.roundedRect(15,Y,180,9,1.5,1.5,'F');
+        doc.setFont(PF,'normal'); doc.setFontSize(7.5); doc.setTextColor(40,60,120);
+        doc.text(tx('Donem: '+toplamSoru+' soru  |  '+toplamSure+' dk calisma  |  '+aktifGunler.length+' aktif gun  |  Gunluk ort. '+Math.round(ortSoru)+' soru (Hedef: '+DAILY_GOAL+')  |  LGS: '+dLgs+' gun'),19,Y+5.5);
         Y += 11;
+      }
+
+      // Görüşmeler PDF
+      if (data.gorusmeler && data.gorusmeler.length > 0) {
+        Y = pdfCheck(doc, Y, 12);
+        Y = pdfSecHeader(doc, tx('KOC GORUSMELERI'), Y, 108, 99, 255);
+        data.gorusmeler.forEach(g => {
+          const ls3 = g.not ? doc.splitTextToSize(tx(g.not), 164) : [];
+          const gH = 12 + (ls3.length > 0 ? ls3.length*4+4 : 0);
+          Y = pdfCheck(doc, Y, gH+4);
+          doc.setFillColor(240,238,255); doc.roundedRect(15,Y,180,gH,1.5,1.5,'F');
+          doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(72,58,180);
+          doc.text(tx(g.tarih||''), 19, Y+5.5);
+          const gRenk = g.durum==='yapildi' ? [20,140,70] : [249,180,36];
+          doc.setFillColor(gRenk[0],gRenk[1],gRenk[2]); doc.roundedRect(155,Y+1,38,7,2,2,'F');
+          doc.setFont(PF,'bold'); doc.setFontSize(6.5); doc.setTextColor(255,255,255);
+          doc.text(tx(g.durum==='yapildi'?'Gorüsme Yapildi':'Planlandiğ'), 174, Y+5.5, {align:'center'});
+          if (ls3.length > 0) { doc.setFont(PF,'normal'); doc.setFontSize(7); doc.setTextColor(60,50,100); doc.text(ls3,19,Y+11); }
+          Y += gH+4;
+        });
       }
 
     } // end veriGunler
 
     } // end sortedDays
+
 
 
   // Eğitim Koçu / Öğrenci bilgi alanı (PDF sonu)
