@@ -2560,27 +2560,82 @@ function showPsychReport(sName) {
 function openGorusmeModal(sName, sUid) {
   const existing = document.getElementById('_gorusmeModal');
   if (existing) existing.remove();
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  // Seçili tarih state
+  let seciliYil = now.getFullYear();
+  let seciliAy  = now.getMonth();
+  let seciliGun = now.getDate();
+
+  function takvimHtml(yil, ay, secGun) {
+    const ayAdlari = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+    const ilkGun = new Date(yil, ay, 1).getDay(); // 0=Pazar
+    const pazartesiOffset = ilkGun === 0 ? 6 : ilkGun - 1;
+    const sonGun = new Date(yil, ay + 1, 0).getDate();
+    let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <button onclick="gorusmeTakvimAy(-1)" style="background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:4px 10px">‹</button>
+      <div style="font-weight:700;font-size:0.9rem">${ayAdlari[ay]} ${yil}</div>
+      <button onclick="gorusmeTakvimAy(1)" style="background:none;border:none;color:var(--text);font-size:1.2rem;cursor:pointer;padding:4px 10px">›</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px">
+      ${['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(g=>`<div style="text-align:center;font-size:0.65rem;color:var(--text2);padding:3px 0;font-weight:700">${g}</div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">`;
+    for (let i = 0; i < pazartesiOffset; i++) html += `<div></div>`;
+    for (let g = 1; g <= sonGun; g++) {
+      const isSecili = g === secGun;
+      const isToday  = g === now.getDate() && ay === now.getMonth() && yil === now.getFullYear();
+      html += `<button onclick="gorusmeTakvimGun(${g})"
+        style="aspect-ratio:1;border-radius:50%;border:none;cursor:pointer;font-size:0.78rem;font-weight:${isSecili||isToday?'800':'400'};
+               background:${isSecili?'var(--accent)':'transparent'};
+               color:${isSecili?'#fff':isToday?'var(--accent)':'var(--text)'}">${g}</button>`;
+    }
+    html += `</div>`;
+    return html;
+  }
+
+  function tarihStr(y, m, d) {
+    const ayAdlari = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+    return `${d} ${ayAdlari[m]} ${y}`;
+  }
+
   const modal = document.createElement('div');
   modal.id = '_gorusmeModal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
-  modal.innerHTML = `
-    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:22px 18px 36px;width:100%;max-width:480px">
+  function render() {
+    modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:22px 18px 36px;width:100%;max-width:480px;max-height:92vh;overflow-y:auto">
       <div style="font-weight:800;font-size:1rem;margin-bottom:16px">🗣️ Görüşme Kaydı — ${sName.split(' ')[0]}</div>
-      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:6px">Görüşme Tarihi</div>
-      <input type="date" id="_gorusmeTarih" value="${today}"
-        style="width:100%;padding:9px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.92rem;margin-bottom:12px;box-sizing:border-box;outline:none">
+
+      <!-- Tarih seçici -->
+      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:6px">📅 Görüşme Tarihi</div>
+      <div id="_gorusmeTakvimWrap" style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px">
+        ${takvimHtml(seciliYil, seciliAy, seciliGun)}
+      </div>
+      <div style="text-align:center;font-size:0.82rem;font-weight:700;color:var(--accent);margin-bottom:12px">
+        Seçilen: ${tarihStr(seciliYil, seciliAy, seciliGun)}
+      </div>
+
+      <!-- Durum -->
       <div style="font-size:0.78rem;color:var(--text2);margin-bottom:6px">Durum</div>
       <div style="display:flex;gap:8px;margin-bottom:12px">
-        <button id="_gBtn_yapildi" onclick="document.getElementById('_gorusmeDurum').value='yapildi';document.getElementById('_gBtn_yapildi').style.background='var(--accent)';document.getElementById('_gBtn_yapildi').style.color='#fff';document.getElementById('_gBtn_planlandi').style.background='transparent';document.getElementById('_gBtn_planlandi').style.color='var(--text2)'"
-          style="flex:1;padding:9px;border-radius:10px;background:var(--accent);border:1px solid var(--border);color:#fff;font-weight:700;font-size:0.82rem;cursor:pointer">✅ Görüşme Yapıldı</button>
-        <button id="_gBtn_planlandi" onclick="document.getElementById('_gorusmeDurum').value='planlandi';document.getElementById('_gBtn_planlandi').style.background='var(--accent)';document.getElementById('_gBtn_planlandi').style.color='#fff';document.getElementById('_gBtn_yapildi').style.background='transparent';document.getElementById('_gBtn_yapildi').style.color='var(--text2)'"
-          style="flex:1;padding:9px;border-radius:10px;background:transparent;border:1px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">📅 Planlandı</button>
+        <button id="_gBtn_yapildi" onclick="
+          document.getElementById('_gorusmeDurum').value='yapildi';
+          this.style.background='var(--accent)';this.style.color='#fff';this.style.borderColor='var(--accent)';
+          document.getElementById('_gBtn_planlandi').style.background='transparent';document.getElementById('_gBtn_planlandi').style.color='var(--text2)';document.getElementById('_gBtn_planlandi').style.borderColor='var(--border)'"
+          style="flex:1;padding:9px;border-radius:10px;background:var(--accent);border:1.5px solid var(--accent);color:#fff;font-weight:700;font-size:0.82rem;cursor:pointer">✅ Görüşme Yapıldı</button>
+        <button id="_gBtn_planlandi" onclick="
+          document.getElementById('_gorusmeDurum').value='planlandi';
+          this.style.background='var(--accent)';this.style.color='#fff';this.style.borderColor='var(--accent)';
+          document.getElementById('_gBtn_yapildi').style.background='transparent';document.getElementById('_gBtn_yapildi').style.color='var(--text2)';document.getElementById('_gBtn_yapildi').style.borderColor='var(--border)'"
+          style="flex:1;padding:9px;border-radius:10px;background:transparent;border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">📅 Planlandı</button>
       </div>
       <input type="hidden" id="_gorusmeDurum" value="yapildi">
+
+      <!-- Not -->
       <div style="font-size:0.78rem;color:var(--text2);margin-bottom:6px">Görüşme Notu (opsiyonel)</div>
       <textarea id="_gorusmeNot" placeholder="Görüşme içeriği, öğrencinin durumu, alınan kararlar..."
-        style="width:100%;padding:9px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.85rem;resize:none;height:80px;box-sizing:border-box;outline:none;margin-bottom:16px"></textarea>
+        style="width:100%;padding:9px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.85rem;resize:none;height:80px;box-sizing:border-box;outline:none;margin-bottom:16px;font-family:inherit"></textarea>
+
       <div style="display:flex;gap:8px">
         <button onclick="saveGorusme('${sName}','${sUid}')"
           style="flex:1;padding:12px;border-radius:12px;background:var(--accent);border:none;color:#fff;font-weight:800;font-size:0.92rem;cursor:pointer">💾 Kaydet</button>
@@ -2588,15 +2643,35 @@ function openGorusmeModal(sName, sUid) {
           style="padding:12px 16px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-weight:700;cursor:pointer">İptal</button>
       </div>
     </div>`;
+  }
+
+  // Global fonksiyonlar — takvim navigasyonu
+  window.gorusmeTakvimAy = (yon) => {
+    seciliAy += yon;
+    if (seciliAy > 11) { seciliAy = 0; seciliYil++; }
+    if (seciliAy < 0)  { seciliAy = 11; seciliYil--; }
+    render();
+  };
+  window.gorusmeTakvimGun = (gun) => {
+    seciliGun = gun;
+    render();
+    // Seçili tarihi hidden input'a yaz
+    window._gorusmeTarihVal = { y: seciliYil, m: seciliAy, d: gun };
+  };
+
+  window._gorusmeTarihVal = { y: seciliYil, m: seciliAy, d: seciliGun };
+
   document.body.appendChild(modal);
+  render();
   modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
 }
 
 async function saveGorusme(sName, sUid) {
-  const tarihRaw = document.getElementById('_gorusmeTarih').value;
   const durum = document.getElementById('_gorusmeDurum').value;
   const not = document.getElementById('_gorusmeNot').value.trim();
-  const tarih = tarihRaw ? new Date(tarihRaw+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'}) : '';
+  const tv = window._gorusmeTarihVal || {};
+  const ayAdlari = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const tarih = tv.d ? `${tv.d} ${ayAdlari[tv.m]} ${tv.y}` : new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
   const sObj = students.find(s=>s.name===sName) || {};
   const uid = sUid || sObj.uid || '';
   if (!uid) { showToast('⚠️','Öğrenci UID bulunamadı'); return; }
@@ -2608,6 +2683,24 @@ async function saveGorusme(sName, sUid) {
     await db.collection('wellness').doc(uid).set({ gorusmeler: mevcut }, { merge: true });
     document.getElementById('_gorusmeModal').remove();
     showToast('✅', 'Görüşme kaydedildi!');
+    renderTeacherPage('psych-report', document.getElementById('mainContent'));
+  } catch(e) {
+    showToast('❌', 'Hata: ' + e.message);
+  }
+}
+
+async function deleteGorusme(sName, sUid, idx) {
+  const ok = await appConfirm('Görüşmeyi Sil', 'Bu görüşme kaydını silmek istediğinize emin misiniz?', true);
+  if (!ok) return;
+  const sObj = students.find(s=>s.name===sName) || {};
+  const uid = sUid || sObj.uid || '';
+  if (!uid) { showToast('⚠️','Öğrenci UID bulunamadı'); return; }
+  try {
+    const snap = await db.collection('wellness').doc(uid).get();
+    const mevcut = snap.exists ? (snap.data().gorusmeler || []) : [];
+    mevcut.splice(idx, 1);
+    await db.collection('wellness').doc(uid).set({ gorusmeler: mevcut }, { merge: true });
+    showToast('🗑️', 'Görüşme silindi!');
     renderTeacherPage('psych-report', document.getElementById('mainContent'));
   } catch(e) {
     showToast('❌', 'Hata: ' + e.message);
@@ -2665,9 +2758,11 @@ async function psychReportPage() {
 
   // Görüşmeler
   const gorusmeler = Array.isArray(data.gorusmeler) ? data.gorusmeler : [];
+  // Görüşme yapıldıysa uyarı kalkıyor
+  const gorusmYapildi = gorusmeler.some(g => g.durum === 'yapildi');
 
   // Uyarı banner
-  const alertHtml = alertDays >= 3 ?
+  const alertHtml = (alertDays >= 3 && !gorusmYapildi) ?
     `<div style="background:#ff6b6b22;border:1.5px solid #ff6b6b66;border-radius:12px;padding:14px;margin-bottom:14px">
       <div style="display:flex;gap:10px;align-items:flex-start">
         <span>⚠️</span>
@@ -2681,13 +2776,16 @@ async function psychReportPage() {
         </button>
       </div>
     </div>` :
+    (alertDays >= 3 && gorusmYapildi) ?
+    `<div style="background:#43e97b22;border:1.5px solid #43e97b66;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;gap:10px;align-items:center">
+      <span>✅</span><div style="font-size:0.82rem;font-weight:700;color:#43e97b">Görüşme yapıldı — uyarı kapatıldı.</div></div>` :
     alertDays >= 2 ?
     `<div style="background:#f9ca2422;border:1.5px solid #f9ca2466;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;gap:10px">
       <span>💛</span><div style="font-size:0.82rem">${sName.split(' ')[0]} bu dönemde ${alertDays} gün düşük duygu bildirdi.</div></div>` :
     `<div style="background:#45b7d122;border:1.5px solid #45b7d144;border-radius:12px;padding:12px;margin-bottom:14px;display:flex;gap:10px">
       <span>✅</span><div style="font-size:0.82rem">${sName.split(' ')[0]}'in psikolojik durumu bu dönemde iyi görünüyor.</div></div>`;
 
-  // Görüşmeler kartı
+  // Görüşmeler kartı — silme butonu ile
   const gorusmelerHtml = gorusmeler.length > 0 ? `
     <div class="card" style="margin-bottom:14px;border:1px solid #6c63ff44">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
@@ -2697,17 +2795,23 @@ async function psychReportPage() {
           + Görüşme Ekle
         </button>
       </div>
-      ${gorusmeler.slice().reverse().map((g,i)=>`
-        <div style="padding:10px 0;border-bottom:1px solid var(--border);${i===gorusmeler.length-1?'border-bottom:none':''}">
+      ${gorusmeler.slice().reverse().map((g,i)=>{
+        const gercekIdx = gorusmeler.length - 1 - i;
+        return `
+        <div style="padding:10px 0;border-bottom:1px solid var(--border)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
             <div style="font-size:0.78rem;font-weight:700;color:var(--accent)">${g.tarih||''}</div>
-            <div style="font-size:0.7rem;padding:2px 8px;border-radius:6px;background:${g.durum==='yapildi'?'#43e97b22':'#f9ca2422'};color:${g.durum==='yapildi'?'#43e97b':'#f9ca24'};font-weight:700">
-              ${g.durum==='yapildi'?'✅ Görüşme Yapıldı':'📅 Planlandı'}
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="font-size:0.7rem;padding:2px 8px;border-radius:6px;background:${g.durum==='yapildi'?'#43e97b22':'#f9ca2422'};color:${g.durum==='yapildi'?'#43e97b':'#f9ca24'};font-weight:700">
+                ${g.durum==='yapildi'?'✅ Görüşme Yapıldı':'📅 Planlandı'}
+              </div>
+              <button onclick="deleteGorusme('${sName}','${sUid}',${gercekIdx})"
+                style="width:26px;height:26px;border-radius:7px;background:#ff658420;border:1px solid #ff658444;color:#ff6584;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center">🗑️</button>
             </div>
           </div>
           ${g.not?`<div style="font-size:0.8rem;color:var(--text2);line-height:1.5">${g.not}</div>`:''}
-          ${g.uyariNeden?`<div style="font-size:0.72rem;color:#ff6b6b;margin-top:3px">Tetikleyen: ${g.uyariNeden}</div>`:''}
-        </div>`).join('')}
+        </div>`;
+      }).join('')}
     </div>` :
     `<div class="card" style="margin-bottom:14px;border:1px solid var(--border)">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
