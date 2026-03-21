@@ -867,7 +867,7 @@
         <label class="form-label">📝 Toplam Soru</label>
         <input class="form-input" type="number" id="entryQuestions" placeholder="20" min="0">
       </div>
-      <div class="grid-2" style="gap:8px;margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">✅ Doğru</label>
           <input class="form-input" type="number" id="entryCorrect" placeholder="0" min="0" style="text-align:center">
@@ -7254,6 +7254,10 @@ function profilePage() {
         <span class="btn btn-outline" style="font-size:0.82rem;padding:8px 16px">📷 Fotoğraf Değiştir</span>
         <input type="file" accept="image/*" style="display:none" onchange="uploadPhoto(this)">
       </label>
+      ${data.photo ? `
+      <div style="margin-top:8px">
+        <button class="btn" onclick="removePhoto()" style="font-size:0.78rem;padding:6px 14px;background:var(--surface2);border:1px solid var(--border);color:#ff6584">🗑️ Fotoğrafı Kaldır</button>
+      </div>` : ''}
     </div>
     <div class="card" style="margin-top:16px">
       <div class="card-title">✏️ Bilgilerimi Düzenle</div>
@@ -7452,6 +7456,26 @@ async function saveCroppedPhoto() {
     students.forEach(s => { if (s.uid === user.uid) s.photo = dataUrl; });
     showToast('✅','Profil fotoğrafı güncellendi!');
     showPage('profile');
+  }
+}
+
+async function removePhoto() {
+  const user = auth.currentUser;
+  if (!user) return;
+  if (!confirm('Profil fotoğrafını kaldırmak istiyor musunuz?')) return;
+  try {
+    await db.collection('users').doc(user.uid).update({ photo: '' });
+    window.currentUserData = {...(window.currentUserData||{}), photo: ''};
+    // Header avatarı güncelle
+    const ha = document.getElementById('headerAvatar');
+    if (ha) {
+      ha.style.backgroundImage = '';
+      ha.textContent = (window.currentUserData.name||'?')[0].toUpperCase();
+    }
+    showToast('✅', 'Fotoğraf kaldırıldı.');
+    showPage('profile');
+  } catch(e) {
+    showToast('❌', 'Hata: ' + e.message);
   }
 }
 
