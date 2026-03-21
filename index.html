@@ -2678,15 +2678,16 @@ async function saveGorusme(sName, sUid) {
   const yeniGorusme = { tarih, durum, not, olusturma: new Date().toISOString() };
   try {
     const snap = await db.collection('wellness').doc(uid).get();
-    const mevcut = snap.exists ? (snap.data().gorusmeler || []) : [];
+    const eskiData = snap.exists ? snap.data() : {};
+    const mevcut = eskiData.gorusmeler || [];
     mevcut.push(yeniGorusme);
+    const yeniData = { ...eskiData, gorusmeler: mevcut };
     await db.collection('wellness').doc(uid).set({ gorusmeler: mevcut }, { merge: true });
+    // localStorage'ı da güncelle — render anında güncel veri gelsin
+    localStorage.setItem('wellness_'+uid, JSON.stringify(yeniData));
     document.getElementById('_gorusmeModal').remove();
     showToast('✅', 'Görüşme kaydedildi!');
-    // 1.5 saniye bekleyip sayfayı yenile — uyarı kapanması için
-    setTimeout(() => {
-      renderTeacherPage('psych-report', document.getElementById('mainContent'));
-    }, 1500);
+    renderTeacherPage('psych-report', document.getElementById('mainContent'));
   } catch(e) {
     showToast('❌', 'Hata: ' + e.message);
   }
@@ -3271,20 +3272,35 @@ async function exportPsychPDF(sName) {
 
     // Kutu çizici
     function kutu(baslik, metin, bg, kenar) {
-      const satirlar = doc.splitTextToSize(tx(metin), 164);
-      const bH = Math.max(satirlar.length * 5 + 14, 20);
-      Y = pdfCheck(doc, Y, bH + 5);
+      const baslikSatir = doc.splitTextToSize(tx(baslik), 160);
+      const satirlar = doc.splitTextToSize(tx(metin), 160);
+      const bH = Math.max(baslikSatir.length * 5 + satirlar.length * 5 + 16, 22);
+      // Başlık + içerik birlikte sayfaya sığmazsa yeni sayfa aç
+      Y = pdfCheck(doc, Y, bH + 6);
       doc.setFillColor(bg[0],bg[1],bg[2]);
       doc.roundedRect(15,Y,180,bH,2,2,'F');
       doc.setFillColor(kenar[0],kenar[1],kenar[2]);
       doc.roundedRect(15,Y,4,bH,1,1,'F');
       doc.setFont(PF,'bold'); doc.setFontSize(7.5);
       doc.setTextColor(kenar[0],kenar[1],kenar[2]);
-      doc.text(tx(baslik), 22, Y+6);
+      doc.text(baslikSatir, 22, Y+6);
       doc.setFont(PF,'normal'); doc.setFontSize(7);
       doc.setTextColor(40,40,80);
-      doc.text(satirlar, 22, Y+12);
-      Y += bH + 5;
+      doc.text(satirlar, 22, Y + 6 + baslikSatir.length * 5 + 2);
+      Y += bH + 6;
+    }
+
+    // Bölüm başlığı + boşluk garantili helper
+    function bolumBaslik(doc, PF, metin, renk, altMetin) {
+      Y = pdfCheck(doc, Y, 22); // başlık + alt metin + ilk kutu için yer garantisi
+      doc.setFont(PF,'bold'); doc.setFontSize(8.5);
+      doc.setTextColor(renk[0],renk[1],renk[2]);
+      doc.text(tx(metin), 16, Y); Y+=5;
+      if (altMetin) {
+        doc.setFont(PF,'normal'); doc.setFontSize(6.5);
+        doc.setTextColor(renk[0]+40,renk[1]+40,renk[2]+40);
+        doc.text(tx(altMetin), 16, Y); Y+=7;
+      }
     }
 
     // Acil uyarı etiketi — raporun üst kısmında gösterilecek
@@ -3322,11 +3338,7 @@ async function exportPsychPDF(sName) {
       }
 
       // ── A. ENERJİ – AKADEMİK HACİM ──────────────────────────────
-      Y = pdfCheck(doc, Y, 8);
-      doc.setFont(PF,'bold'); doc.setFontSize(8.5); doc.setTextColor(249,180,36);
-      doc.text(tx('A.  Enerji – Akademik Hacim'), 16, Y); Y+=4;
-      doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(150,120,40);
-      doc.text(tx('Fizyolojik kaynakların operasyonel süreklilik ve verimlilik üzerindeki etkisi'), 16, Y); Y+=6;
+      bolumBaslik(doc, PF, 'A.  Enerji – Akademik Hacim', [249,180,36], 'Fizyolojik kaynaklarin operasyonel sureklilik ve verimlilik uzerindeki etkisi');
 
       const avgQRef = ortSoru > 0 ? ortSoru : DAILY_GOAL;
       const lowEDays  = gunler.filter(d=>d.enerji>0&&d.enerji<=4&&d.soru>0);
@@ -3435,11 +3447,7 @@ async function exportPsychPDF(sName) {
       }
 
       // ── B. KAYGI – BİLİŞSEL DOĞRULUK ────────────────────────────
-      Y = pdfCheck(doc, Y, 10);
-      doc.setFont(PF,'bold'); doc.setFontSize(8.5); doc.setTextColor(255,107,107);
-      doc.text(tx('B.  Kaygı – Bilişsel Doğruluk'), 16, Y); Y+=4;
-      doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(170,60,60);
-      doc.text(tx('Stres faktörünün akademik işlem kapasitesi ve hata payı üzerindeki etkisi  (min. 60 soru/gün gereklidir)'), 16, Y); Y+=6;
+      bolumBaslik(doc, PF, 'B.  Kaygi – Bilisses el Dogruluk', [255,107,107], 'Stres faktörunun akademik islem kapasitesi ve hata payi uzerindeki etkisi  (min. 60 soru/gun)'); 
 
       if (ortKaygi > 0 && hataGunler.length >= 2) {
         const yuksekKG = hataGunler.filter(d=>d.kaygi>=8);
@@ -3511,13 +3519,10 @@ async function exportPsychPDF(sName) {
       }
 
       // ── C. UYKU – ODAK – VERİMLİLİK ─────────────────────────────
-      Y = pdfCheck(doc, Y, 10);
-      doc.setFont(PF,'bold'); doc.setFontSize(8.5); doc.setTextColor(162,155,254);
-      doc.text(tx('C.  Uyku – Odak – Verimlilik'), 16, Y); Y+=4;
-      doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(110,90,190);
-      doc.text(tx('Biyolojik onarım süreçlerinin bilişsel keskinlik ve soru çözüm verimi üzerindeki etkisi'), 16, Y); Y+=6;
+      bolumBaslik(doc, PF, 'C.  Uyku – Odak – Verimlilik', [162,155,254], 'Biyolojik onarim sureclerinin bilisges el keskinlik ve soru cozum verimi uzerindeki etkisi');
 
       const uykuGunler = veriGunler.filter(d=>d.uyku>0);
+      let uykuDurumuIyi = false; // D bölümünde çelişki önleme için
       if (uykuGunler.length >= 2) {
         // S5: Kümülatif uyku borcu — tüm analizleri etkiler
         if (maxArdisikUyku >= 3) {
@@ -3565,6 +3570,7 @@ async function exportPsychPDF(sName) {
         }
         // S3: Optimal — zirve verim
         else if (ortUyku >= 7.5 && ortOdak >= 8) {
+          uykuDurumuIyi = true;
           kutu('Optimal Bilişsel Performans: Maksimum Öğrenme Kapasitesi',
             'İdeal uyku mimarisi tamamlanmış; REM ve derin uyku evreleri bilişsel onarımı gerçekleştirmiştir. ' +
             'Uyku (ort. ' + ortUyku.toFixed(1) + ' saat), odak (ort. ' + ortOdak.toFixed(1) + '/10). ' +
@@ -3588,14 +3594,10 @@ async function exportPsychPDF(sName) {
       // ── D. EKRAN SÜRESİ – ODAK ────────────────────────────────────
       const ekranGunler = veriGunler.filter(d=>d.toplamEkran>0);
       if (ekranGunler.length >= 2) {
-        Y = pdfCheck(doc, Y, 10);
-        doc.setFont(PF,'bold'); doc.setFontSize(8.5); doc.setTextColor(69,183,209);
-        doc.text(tx('D.  Ekran Süresi – Odak'), 16, Y); Y+=4;
-        doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(40,110,150);
-        doc.text(tx('Dijital uyaran maruziyetinin bilişsel odak ve duygusal kaçınma mekanizmaları üzerindeki etkisi'), 16, Y); Y+=6;
+        bolumBaslik(doc, PF, 'D.  Ekran Suresi – Odak', [69,183,209], 'Dijital uyaran maruziyetinin bilisges el odak ve duygusal kacinma mekanizmalari uzerindeki etkisi');
 
-        // S5: Ekran-uyku kesişimi
-        if (gunler.some(d=>d.toplamEkran>2&&d.uyku>0&&d.uyku<6.5)) {
+        // S5: Ekran-uyku kesişimi — sadece uyku gerçekten kötüyse göster (C ile çelişmesin)
+        if (!uykuDurumuIyi && ortUyku > 0 && ortUyku < 6.5 && gunler.some(d=>d.toplamEkran>2&&d.uyku>0&&d.uyku<6.5)) {
           kutu('Dijital Kaynaklı Biyolojik Blokaj: Ekran–Uyku Kesişimi',
             'Mavi ışık maruziyetinin melatonin salgısını baskıladığı ve uykuya geçiş süresini uzattığı saptanmıştır. ' +
             'Yüksek ekran süresi, uyku süresinden çalarak bilişsel onarımı çift taraflı engellemektedir. ' +
