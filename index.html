@@ -3040,6 +3040,7 @@ async function exportPsychPDF(sName) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'p', unit:'mm', format:'a4' });
   const PF = registerFontIfAvailable(doc);
+  _PF = PF; // ts() fonksiyonu _PF'ye bakıyor — Türkçe karakterler için kritik
   const dateStr = now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
 
   let Y = pdfHeader(doc, tx(sName)+' \u2014 '+tx(periodTitle), tx('PSİKOLOJİK TAKİP RAPORU'), tx(dateStr));
@@ -3354,13 +3355,15 @@ async function exportPsychPDF(sName) {
     // Bölüm başlığı — başlık+alt metin birlikte sayfa kontrolü
     function bolumBaslik(renk, baslik, altMetin) {
       const altSat = doc.splitTextToSize(tx(altMetin), 170);
-      Y = pdfCheck(doc, Y, 20 + altSat.length*5);
+      // Başlık + alt metin + ilk kutu için yeterli alan garantisi (minimum 55mm)
+      Y = pdfCheck(doc, Y, 55);
+      Y += 3; // bölümler arası boşluk
       doc.setFont(PF,'bold'); doc.setFontSize(8.5);
       doc.setTextColor(renk[0],renk[1],renk[2]);
       doc.text(tx(baslik), 16, Y); Y+=5;
       doc.setFont(PF,'normal'); doc.setFontSize(6.5);
       doc.setTextColor(Math.min(renk[0]+20,200),Math.min(renk[1]+20,200),Math.min(renk[2]+20,200));
-      doc.text(altSat, 16, Y); Y += altSat.length*5+4;
+      doc.text(altSat, 16, Y); Y += altSat.length*5+5;
     }
 
     if (veriGunler.length >= 1) {
@@ -3668,7 +3671,7 @@ async function exportPsychPDF(sName) {
         if(dLgs<60) oneri.push('Sinava ' + dLgs + ' gun: yeni konu degil bilinen konularda hata sifirlamaya odaklan');
 
         const kat3Metin = strateji + ' | Eylem onerileri: ' + oneri.map((o,i)=>(i+1)+'. '+o).join('; ') + '.';
-        kutu('Katman 3 \u2014 İletisim Stratejisi ve Eylem Plani',kat3Metin,[245,250,255],[55,90,160]);
+        kutu('Katman 3 \u2014 \u0130letisim Stratejisi',kat3Metin,[245,250,255],[55,90,160]);
       }
 
       // Öğrencinin sesi
@@ -5532,7 +5535,7 @@ function studentDailyEntry() {
             : `<span style="font-size:0.75rem;color:var(--text2);font-weight:400">Bugün sonuç girmedin</span>`}
         </button>`;
       })()}
-      <button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="openEntryFor(null)">+ Diğer Çalışma Ekle</button>
+      <button class="btn btn-outline" style="width:100%;margin-top:8px;font-size:0.82rem" onclick="openEntryFor(null)">+ Diğer Çalışma Ekle</button>
     </div>
 
     <div class="card">
