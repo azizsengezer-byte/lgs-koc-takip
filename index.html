@@ -7282,10 +7282,12 @@ function profilePage() {
         <input class="form-input" type="text" id="profileSchool" value="${data.school||''}" readonly style="opacity:0.6">
       </div>
       <div class="form-group">
-        <label class="form-label">Sınıf</label>
-        <select class="form-select" id="profileClass">
-          ${['5-A','5-B','5-C','6-A','6-B','6-C','7-A','7-B','7-C','8-A','8-B','8-C'].map(c=>`<option ${data.classroom===c?'selected':''}>${c}</option>`).join('')}
-        </select>
+        <label class="form-label">Sınıf Kademesi</label>
+        <button type="button" onclick="openKademePicker()" style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+          <span id="kademeLabel">${(data.classroom||'8').replace(/-[A-Z]/,'').replace(/[^0-9]/,'')}. Sınıf</span>
+          <span style="color:var(--text2)">▼</span>
+        </button>
+        <input type="hidden" id="profileClass" value="${(data.classroom||'8').replace(/-[A-Z]/g,'').replace(/[^0-9]/g,'')}">
       </div>
       `}
       <div id="profileError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
@@ -7294,8 +7296,17 @@ function profilePage() {
     <div class="card" style="margin-top:16px">
       <div class="card-title">🔒 Şifre Değiştir</div>
       <div class="form-group">
+        <label class="form-label">Mevcut Şifre</label>
+        <input class="form-input" type="password" id="currentPassword" placeholder="Mevcut şifrenizi girin">
+      </div>
+      <div class="form-group">
         <label class="form-label">Yeni Şifre</label>
-        <input class="form-input" type="password" id="newPassword" placeholder="En az 6 karakter">
+        <input class="form-input" type="password" id="newPassword" placeholder="En az 6 karakter" oninput="checkPassMatch()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Yeni Şifre (Tekrar)</label>
+        <input class="form-input" type="password" id="newPassword2" placeholder="Şifreyi tekrar girin" oninput="checkPassMatch()">
+        <div id="passMatchHint" style="font-size:0.78rem;margin-top:4px;display:none"></div>
       </div>
       <div id="passwordError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
       <button class="btn btn-outline" style="width:100%" onclick="changePassword()">Şifreyi Güncelle</button>
@@ -7514,7 +7525,7 @@ async function saveProfile() {
       updates.branch = document.getElementById('profileBranch').value;
       updates.school = document.getElementById('profileSchool').value.trim();
     } else {
-      updates.classroom = document.getElementById('profileClass').value;
+      updates.classroom = document.getElementById('profileClass').value + '. Sınıf';
     }
     await db.collection('users').doc(user.uid).update(updates);
     window.currentUserData = {...(window.currentUserData||{}), ...updates};
@@ -7529,17 +7540,80 @@ async function saveProfile() {
   }
 }
 
+function openKademePicker() {
+  const mevcut = document.getElementById('profileClass')?.value || '8';
+  const kademe = ['5','6','7','8'];
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.cssText = 'display:flex;align-items:flex-end;z-index:9999';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:18px 18px 0 0;width:100%;padding:20px;max-height:60vh;overflow-y:auto">
+      <div style="font-size:1rem;font-weight:700;margin-bottom:16px;text-align:center">Sınıf Kademesi Seç</div>
+      ${kademe.map(k=>`
+        <div onclick="secKademe('${k}')" style="padding:16px 20px;border-radius:12px;margin-bottom:8px;cursor:pointer;
+          background:${k===mevcut?'var(--accent)22':'var(--surface2)'};
+          border:1.5px solid ${k===mevcut?'var(--accent)':'var(--border)'};
+          display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:1.1rem;font-weight:${k===mevcut?'700':'400'}">${k}. Sınıf</span>
+          ${k===mevcut?'<span style="color:var(--accent);font-size:1.2rem">✓</span>':''}
+        </div>`).join('')}
+      <button class="btn btn-outline" style="width:100%;margin-top:8px" onclick="this.closest('.modal-overlay').remove()">İptal</button>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+}
+
+function secKademe(k) {
+  document.getElementById('profileClass').value = k;
+  const lbl = document.getElementById('kademeLabel');
+  if(lbl) lbl.textContent = k + '. Sınıf';
+  document.querySelector('.modal-overlay:last-child')?.remove();
+}
+
+function checkPassMatch() {
+  const p1 = document.getElementById('newPassword')?.value || '';
+  const p2 = document.getElementById('newPassword2')?.value || '';
+  const hint = document.getElementById('passMatchHint');
+  if(!hint) return;
+  if(!p1 || !p2) { hint.style.display='none'; return; }
+  hint.style.display = 'block';
+  if(p1 === p2) {
+    hint.textContent = '✅ Şifreler eşleşiyor';
+    hint.style.color = '#43e97b';
+  } else {
+    hint.textContent = '❌ Şifreler eşleşmiyor';
+    hint.style.color = '#ff6584';
+  }
+}
+
 async function changePassword() {
-  const pass = document.getElementById('newPassword').value;
-  const errEl = document.getElementById('passwordError');
+  const current = document.getElementById('currentPassword')?.value || '';
+  const pass1   = document.getElementById('newPassword')?.value || '';
+  const pass2   = document.getElementById('newPassword2')?.value || '';
+  const errEl   = document.getElementById('passwordError');
   errEl.style.display = 'none';
-  if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
+
+  if (!current) { errEl.textContent = 'Mevcut şifrenizi girin.'; errEl.style.display='block'; return; }
+  if (pass1.length < 6) { errEl.textContent = 'Yeni şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
+  if (pass1 !== pass2) { errEl.textContent = 'Yeni şifreler eşleşmiyor.'; errEl.style.display='block'; return; }
+
   try {
-    await auth.currentUser.updatePassword(pass);
+    const user = auth.currentUser;
+    // Önce mevcut şifre ile yeniden kimlik doğrula
+    const cred = firebase.auth.EmailAuthProvider.credential(user.email, current);
+    await user.reauthenticateWithCredential(cred);
+    await user.updatePassword(pass1);
     showToast('✅', 'Şifre güncellendi!');
+    document.getElementById('currentPassword').value = '';
     document.getElementById('newPassword').value = '';
+    document.getElementById('newPassword2').value = '';
+    document.getElementById('passMatchHint').style.display = 'none';
   } catch(e) {
-    errEl.textContent = 'Şifre güncellenemedi. Tekrar giriş yapıp deneyin.';
+    if(e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+      errEl.textContent = 'Mevcut şifre yanlış.';
+    } else {
+      errEl.textContent = 'Hata: ' + (e.message||'Tekrar giriş yapıp deneyin.');
+    }
     errEl.style.display = 'block';
   }
 }
