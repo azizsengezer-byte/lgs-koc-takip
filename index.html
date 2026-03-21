@@ -8191,29 +8191,40 @@ function saveEntry() {
 
 async function deleteStudent(i) {
   const s = students[i];
-  const ok = await appConfirm('Öğrenciyi Sil', `${s.name} silinsin mi? Öğrencinin hesabı devre dışı bırakılacak ve bir daha giriş yapamayacak. Bu işlem geri alınamaz.`, true);
+  const ok = await appConfirm('Öğrenciyi Sil', `${s.name} silinsin mi? Öğrencinin hesabı devre dışı bırakılacak. Bu işlem geri alınamaz.`, true);
   if (!ok) return;
 
   try {
-    // 1. users koleksiyonundan sil - giriş yapınca hesap bulunamayacak
+    const teacherUser = auth.currentUser;
+
+    // 1. users koleksiyonundan sil
     if (s.uid) {
       await db.collection('users').doc(s.uid).delete();
-      // wellness verisini de sil
       await db.collection('wellness').doc(s.uid).delete().catch(()=>{});
     }
 
-    // 2. pendingStudents'tan sil
-    const user = auth.currentUser;
-    if (user) {
+    // 2. Silinen hesabı işaretle - aynı e-posta ile yeniden eklenmeye çalışılırsa bilgi ver
+    if (s.email || s.uid) {
+      await db.collection('deletedStudents').add({
+        uid: s.uid || '',
+        name: s.name,
+        email: s.email || '',
+        deletedBy: teacherUser?.uid || '',
+        deletedAt: new Date()
+      });
+    }
+
+    // 3. pendingStudents'tan sil
+    if (teacherUser) {
       const snap = await db.collection('pendingStudents')
-        .where('teacherId','==',user.uid)
+        .where('teacherId','==',teacherUser.uid)
         .where('name','==',s.name).get();
       snap.forEach(doc => doc.ref.delete());
     }
 
-    // 3. Lokal diziden çıkar
+    // 4. Lokal diziden çıkar
     students.splice(i, 1);
-    showToast('🗑️', `${s.name} silindi. Hesabına bir daha erişemeyecek.`);
+    showToast('🗑️', `${s.name} silindi.`);
     showPage('students');
   } catch(e) {
     showToast('❌', 'Silme hatası: ' + e.message);
@@ -8237,7 +8248,14 @@ async function saveNewStudent() {
     const teacherUser = auth.currentUser;
     const teacherData = window.currentUserData || {};
 
-    // İkinci bir Firebase App instance'ı oluşturarak öğrenci hesabı açıyoruz
+    // Silinmiş hesap kontrolü
+    const deletedSnap = await db.collection('deletedStudents').where('email','==',email).get();
+    if (!deletedSnap.empty) {
+      errEl.textContent = 'Bu e-posta daha önce silinmiş bir öğrenciye ait. Farklı bir e-posta kullanın.';
+      errEl.style.display = 'block';
+      if (errBtn) { errBtn.textContent = 'Ekle ✓'; errBtn.disabled = false; }
+      return;
+    }
     // Bu sayede öğretmenin oturumu kapanmıyor
     let secondaryApp;
     try {
@@ -8279,7 +8297,7 @@ async function saveNewStudent() {
 
   } catch(e) {
     const msgs = {
-      'auth/email-already-in-use': 'Bu e-posta zaten kayıtlı.',
+      'auth/email-already-in-use': 'Bu e-posta başka bir hesapta kullanılıyor. Farklı bir e-posta deneyin.',
       'auth/invalid-email': 'Geçersiz e-posta adresi.',
       'auth/weak-password': 'Şifre çok zayıf, en az 6 karakter olmalı.',
     };
