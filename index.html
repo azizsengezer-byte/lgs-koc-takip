@@ -3231,6 +3231,7 @@ async function exportPsychPDF(sName) {
 
 
 
+
     // ============================================================
     // PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ
     // ============================================================
@@ -3242,7 +3243,6 @@ async function exportPsychPDF(sName) {
     const denemEntries2  = allAcadEntries.filter(e=>e.type==='deneme');
     const DAILY_GOAL = 200;
 
-    // Gün bazlı veri
     const gunler = sortedDays.slice().reverse().map(dk => {
       const p = days[dk] || {};
       const sg = soruEntries2.filter(e=>e.dateKey===dk);
@@ -3257,7 +3257,6 @@ async function exportPsychPDF(sName) {
       const hataOrani = topQ >= 60 ? (topY/topQ*100) : null;
       const sosyal = parseFloat(p.ekranSosyal)||parseFloat(p.ekran)||0;
       const online = parseFloat(p.ekranOnline)||0;
-      // Ders bazlı hata
       const dersHata = {};
       sg.forEach(e=>{ if(!dersHata[e.subject]) dersHata[e.subject]={q:0,y:0}; dersHata[e.subject].q+=(e.questions||0); dersHata[e.subject].y+=(e.wrong||0); });
       dg.forEach(e=>{ if(!dersHata[e.subject]) dersHata[e.subject]={q:0,y:0}; dersHata[e.subject].q+=(e.correct||0)+(e.wrong||0); dersHata[e.subject].y+=(e.wrong||0); });
@@ -3269,20 +3268,17 @@ async function exportPsychPDF(sName) {
       };
     });
 
-    // Dönem istatistikleri
     const veriGunler  = gunler.filter(d=>d.enerji>0||d.kaygi>0||d.uyku>0);
     const aktifGunler = gunler.filter(d=>d.soru>0);
     const toplamSoru  = gunler.reduce((a,d)=>a+d.soru,0);
     const toplamSure  = gunler.reduce((a,d)=>a+d.sure,0);
     const ortSoru     = aktifGunler.length>0 ? toplamSoru/aktifGunler.length : 0;
     const fn = (arr,f) => { const v=arr.filter(d=>d[f]>0); return v.length?v.reduce((a,d)=>a+d[f],0)/v.length:0; };
-    const ortEnerji = fn(veriGunler,'enerji');
-    const ortKaygi  = fn(veriGunler,'kaygi');
-    const ortUyku   = fn(veriGunler,'uyku');
-    const ortOdak   = fn(veriGunler,'odak');
+    const ortEnerji = fn(veriGunler,'enerji'); const ortKaygi = fn(veriGunler,'kaygi');
+    const ortUyku = fn(veriGunler,'uyku');     const ortOdak = fn(veriGunler,'odak');
     const ortSosyal = fn(veriGunler,'sosyal');
     const hataGunler = gunler.filter(d=>d.hataOrani!==null);
-    const ortHata   = hataGunler.length>0 ? hataGunler.reduce((a,d)=>a+d.hataOrani,0)/hataGunler.length : null;
+    const ortHata = hataGunler.length>0 ? hataGunler.reduce((a,d)=>a+d.hataOrani,0)/hataGunler.length : null;
     const denNetArr = denemEntries2.map(e=>e.net||0).filter(v=>v!==0);
     const ortDenNet = denNetArr.length>0 ? denNetArr.reduce((a,b)=>a+b,0)/denNetArr.length : null;
     const soruNetArr = gunler.filter(d=>d.net>0).map(d=>d.net);
@@ -3290,7 +3286,7 @@ async function exportPsychPDF(sName) {
     const ortNet = ortDenNet ?? ortSoruNet;
     const dLgs = Math.max(0,Math.floor((new Date('2026-06-14T09:30:00+03:00')-new Date())/(1000*60*60*24)));
 
-    // T-0 ve T-gecmis
+    // T-0 (son 48 saat) ve T-geçmiş
     const son2 = [...veriGunler].sort((a,b)=>b.dk.localeCompare(a.dk)).slice(0,2);
     const tGecmis = [...veriGunler].sort((a,b)=>b.dk.localeCompare(a.dk)).slice(2);
     const t0E = fn(son2,'enerji'), t0O = fn(son2,'odak'), t0K = fn(son2,'kaygi'), t0U = fn(son2,'uyku');
@@ -3306,10 +3302,10 @@ async function exportPsychPDF(sName) {
     const gecmisKaygiYuksek = tGecmis.some(d=>d.kaygi>=8);
     const gecmisUykuDusuk = tGecmis.filter(d=>d.uyku>0).some(d=>d.uyku<6.5);
     const gecmisEkranYuksek = son7.slice(2).some(d=>d.toplamEkran>3);
-    let maxArdisikUyku=0,_tu=0; gunler.forEach(d=>{if(d.uyku>0&&d.uyku<6.5){_tu++;maxArdisikUyku=Math.max(maxArdisikUyku,_tu);}else{_tu=0;}});
-    let maxArdisikHata=0,_th=0; gunler.forEach(d=>{if(d.hataOrani!==null&&d.hataOrani>30){_th++;maxArdisikHata=Math.max(maxArdisikHata,_th);}else{_th=0;}});
 
-    // Ders bazlı kümülatif hata
+    let maxArdisikUyku=0,_tu=0; gunler.forEach(d=>{if(d.uyku>0&&d.uyku<6.5){_tu++;maxArdisikUyku=Math.max(maxArdisikUyku,_tu);}else{_tu=0;}});
+
+    // Ders bazlı hata ve korelasyon
     const dersToplamHata = {};
     gunler.forEach(d=>{ Object.entries(d.dersHata).forEach(([ders,v])=>{ if(!dersToplamHata[ders]) dersToplamHata[ders]={q:0,y:0}; dersToplamHata[ders].q+=v.q; dersToplamHata[ders].y+=v.y; }); });
     const dersHataArr = Object.entries(dersToplamHata).filter(([d,v])=>v.q>=30).map(([d,v])=>({d,pct:v.y/v.q*100,q:v.q})).sort((a,b)=>b.pct-a.pct);
@@ -3317,19 +3313,16 @@ async function exportPsychPDF(sName) {
     // Standart sapma (gürültü/sinyal filtresi)
     const stdSapma = (arr) => { if(arr.length<3) return 0; const m=arr.reduce((a,b)=>a+b,0)/arr.length; return Math.sqrt(arr.reduce((a,b)=>a+(b-m)**2,0)/arr.length); };
     const ekranDizi = gunler.filter(d=>d.toplamEkran>0).map(d=>d.toplamEkran);
-    const ekranStd  = stdSapma(ekranDizi);
-    const ekranOrt  = ekranDizi.length>0?ekranDizi.reduce((a,b)=>a+b,0)/ekranDizi.length:0;
-    const kaygiDizi = veriGunler.filter(d=>d.kaygi>0).map(d=>d.kaygi);
-    const kaygiStd  = stdSapma(kaygiDizi);
+    const ekranStd = stdSapma(ekranDizi);
+    const ekranOrt = ekranDizi.length>0?ekranDizi.reduce((a,b)=>a+b,0)/ekranDizi.length:0;
 
-    // Aktif negatif teşhisler ve bakiye riskler
     const aktifNegatifler = [];
     const bakiyeRiskler   = [];
 
-    // Kutu — başlık+metin birlikte sayfa kontrolü
+    // ── Yardımcı fonksiyonlar ──
     function kutu(baslik, metin, bg, kenar) {
-      const bSat = doc.splitTextToSize(tx(baslik), 156);
-      const mSat = doc.splitTextToSize(tx(metin), 156);
+      const bSat = doc.splitTextToSize(baslik, 156);
+      const mSat = doc.splitTextToSize(metin, 156);
       const bH   = Math.max(bSat.length*5.5 + mSat.length*4.8 + 20, 24);
       Y = pdfCheck(doc, Y, bH+8);
       doc.setFillColor(bg[0],bg[1],bg[2]); doc.roundedRect(15,Y,180,bH,2,2,'F');
@@ -3341,9 +3334,8 @@ async function exportPsychPDF(sName) {
       Y += bH+8;
     }
 
-    // Dipnot — soluk, geçmişe ait
     function dipnot(metin) {
-      const mSat = doc.splitTextToSize(tx(metin), 158);
+      const mSat = doc.splitTextToSize(metin, 158);
       const bH   = Math.max(mSat.length*4.5+10, 12);
       Y = pdfCheck(doc, Y, bH+4);
       doc.setFillColor(248,247,253); doc.roundedRect(15,Y,180,bH,1.5,1.5,'F');
@@ -3352,15 +3344,13 @@ async function exportPsychPDF(sName) {
       doc.text(mSat, 21, Y+5); Y += bH+4;
     }
 
-    // Bölüm başlığı — başlık+alt metin birlikte sayfa kontrolü
     function bolumBaslik(renk, baslik, altMetin) {
-      const altSat = doc.splitTextToSize(tx(altMetin), 170);
-      // Başlık + alt metin + ilk kutu için yeterli alan garantisi (minimum 55mm)
+      const altSat = doc.splitTextToSize(altMetin, 170);
       Y = pdfCheck(doc, Y, 55);
-      Y += 3; // bölümler arası boşluk
+      Y += 3;
       doc.setFont(PF,'bold'); doc.setFontSize(8.5);
       doc.setTextColor(renk[0],renk[1],renk[2]);
-      doc.text(tx(baslik), 16, Y); Y+=5;
+      doc.text(baslik, 16, Y); Y+=5;
       doc.setFont(PF,'normal'); doc.setFontSize(6.5);
       doc.setTextColor(Math.min(renk[0]+20,200),Math.min(renk[1]+20,200),Math.min(renk[2]+20,200));
       doc.text(altSat, 16, Y); Y += altSat.length*5+5;
@@ -3368,54 +3358,52 @@ async function exportPsychPDF(sName) {
 
     if (veriGunler.length >= 1) {
       Y = pdfCheck(doc, Y, 14);
-      Y = pdfSecHeader(doc, tx('PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ'), Y, 220, 50, 100);
+      Y = pdfSecHeader(doc, 'PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ', Y, 220, 50, 100);
       doc.setFont(PF,'italic'); doc.setFontSize(6.5); doc.setTextColor(100,90,140);
-      doc.text(tx('T-0: Son 48 saat / T-Gecmis: Onceki gunler / Bakiye: Gecmiste goruldu, izleniyor'), 16, Y); Y+=7;
+      doc.text('T-0: Son 48 saat  /  T-Geçmiş: Önceki günler  /  Bakiye: Geçmişte görüldü, izleniyor', 16, Y); Y+=7;
 
       // ── A. ENERJİ – AKADEMİK HACİM ─────────────────────────────
-      bolumBaslik([150,95,0],'A.  Enerji - Akademik Hacim','Fiziksel kapasite, sureklililik ve kumulatif yorgunluk analizi');
+      bolumBaslik([150,95,0],'A.  Enerji – Akademik Hacim','Fiziksel kapasite, süreklilik ve kümülatif yorgunluk analizi');
 
       {
+        const avgQRef   = ortSoru>0?ortSoru:DAILY_GOAL;
         const lowEDays  = gunler.filter(d=>d.enerji>0&&d.enerji<=4&&d.soru>0);
         const highEDays = gunler.filter(d=>d.enerji>=8&&d.soru>0);
         const avgQLow   = lowEDays.length>0?lowEDays.reduce((a,d)=>a+d.soru,0)/lowEDays.length:null;
         const avgQHigh  = highEDays.length>0?highEDays.reduce((a,d)=>a+d.soru,0)/highEDays.length:null;
-        const avgQRef   = ortSoru>0?ortSoru:DAILY_GOAL;
 
         if (t0E>=8 && tgE>0 && tgE<=4) {
           aktifNegatifler.push('Reaktif Toparlanma');
-          kutu('T-0: Reaktif Toparlanma Fazinda',
-            'Son 48 saatte enerji yukseliste (' + t0E.toFixed(1) + '/10). Ancak onceki periyottaki dusuk enerji ortalamasinin (ort. ' + tgE.toFixed(1) + '/10) yarattigi CNS yorgunlugu henuz sifirlanmamistir. Soru acigini kapatma baskisiyla asiri yuklenmeye egilim yuksek; doz kademeli arttirilmalidir.',
+          kutu('T-0: Reaktif Toparlanma Fazında',
+            'Son 48 saatte enerji yükselişe geçmiştir (' + t0E.toFixed(1) + '/10). Ancak önceki periyottaki düşük enerji ortalamasının (ort. ' + tgE.toFixed(1) + '/10) yarattığı merkezi sinir sistemi yorgunluğu henüz sıfırlanmamıştır. Soru açığını kapatma baskısıyla aşırı yüklenme eğilimi yüksektir; doz kademeli artırılmalıdır.',
             [255,248,220],[160,100,0]);
-          bakiyeRiskler.push('Onceki dusuk enerji doneminin CNS yorgunlugu: izleniyor');
+          bakiyeRiskler.push('Önceki düşük enerji döneminin yorgunluğu izleniyor');
         } else if (t0E>0&&t0E<=4&&tgE>=7) {
-          aktifNegatifler.push('Nukseden Atalet');
-          kutu('T-0: Nukseden Atalet — Geri Gelen Risk',
-            'Onceki gunlerde enerji iyilesme gostermisti (' + tgE.toFixed(1) + '/10) ancak son 48 saatte tekrar dusus (' + t0E.toFixed(1) + '/10). Bu dalgali tablo sahte toparlanmayi gosterir. Uyku, beslenme ve ekran tekrar denetlenmelidir.',
+          aktifNegatifler.push('Nükseden Atalet');
+          kutu('T-0: Nükseden Atalet — Geri Gelen Risk',
+            'Önceki günlerde enerji iyileşme göstermişti (' + tgE.toFixed(1) + '/10) ancak son 48 saatte tekrar düşmüştür (' + t0E.toFixed(1) + '/10). Bu dalgalı tablo sahte toparlanmaya işaret eder. Uyku, beslenme ve ekran süresi yeniden denetlenmelidir.',
             [255,235,220],[180,60,0]);
         } else if (avgQLow!==null&&avgQHigh!==null&&(avgQHigh-avgQLow)>avgQRef*0.4) {
-          kutu('Enerji-Bagimsiz Minimum Rutin Henuz Kurulmamis',
-            'Yuksek enerji gunlerinde ort. ' + Math.round(avgQHigh) + ' soru, dusuk enerji gunlerinde ort. ' + Math.round(avgQLow) + ' soru. Fark %' + Math.round((avgQHigh-avgQLow)/avgQRef*100) + '. Duygudan bagimsiz "gunluk minimum baseline" (en az ' + Math.round(avgQLow*1.3) + ' soru) hedeflenmeli.',
+          kutu('Duygudan Bağımsız Minimum Rutin Henüz Kurulmamış',
+            'Yüksek enerji günlerinde ort. ' + Math.round(avgQHigh) + ' soru, düşük enerji günlerinde ort. ' + Math.round(avgQLow) + ' soru. Fark %' + Math.round((avgQHigh-avgQLow)/avgQRef*100) + '. Duygudan bağımsız günlük minimum çalışma rutini (baseline) oluşturulması önerilir.',
             [255,248,230],[150,95,0]);
         } else if (t0E>=7||t0E===0) {
-          kutu('T-0: Enerji-Hacim Dengeli',
-            'Son 48 saatte enerji' + (t0E>0?' (' + t0E.toFixed(1) + '/10)':'') + ' ve akademik hacim dengeli.' +
-            (avgQLow!==null&&avgQLow<avgQRef*0.6&&tGecmis.length>0?' Onceki periyotta dusuk enerji gunlerinde dusus gozlemlenmisti; bu dongu izlenmelidir.':''),
+          kutu('T-0: Enerji–Hacim Dengeli',
+            'Son 48 saatte enerji' + (t0E>0?' (' + t0E.toFixed(1) + '/10)':'') + ' ve akademik hacim dengeli seyretmektedir.' +
+            (avgQLow!==null&&avgQLow<avgQRef*0.6&&tGecmis.length>0?' Önceki periyotta düşük enerji günlerinde üretim belirgin biçimde düşmüştü; bu döngü izlenmelidir.':''),
             [230,255,240],[20,140,70]);
         } else {
-          kutu('Enerji-Hacim Verisi Yetersiz',
-            'Daha kapsamli analiz icin enerji ve soru verisi birikimi gereklidir.',
-            [245,243,255],[130,120,200]);
+          kutu('Enerji–Hacim Verisi Yetersiz','Daha kapsamlı analiz için enerji ve soru verisi birikimi gereklidir.',[245,243,255],[130,120,200]);
         }
       }
 
-      // Soru/Enerji/Kaygı grafiği
+      // Grafik
       if (gunler.length >= 2) {
         Y = pdfCheck(doc, Y, 44);
         const gX=15,gW=180,gH=38;
         doc.setFillColor(248,247,255); doc.roundedRect(gX,Y,gW,gH,2,2,'F');
         doc.setFont(PF,'bold'); doc.setFontSize(5.5); doc.setTextColor(70,70,120);
-        doc.text(tx('Gunluk Soru (mor cubuk) / Enerji (turuncu) / Kaygi (kirmizi)'),gX+gW/2,Y+4,{align:'center'});
+        doc.text('Günlük Soru (mor çubuk) / Enerji (turuncu) / Kaygı (kırmızı)',gX+gW/2,Y+4,{align:'center'});
         const qV=gunler.map(d=>d.soru),eV=gunler.map(d=>d.enerji),kV=gunler.map(d=>d.kaygi);
         const mxQ=Math.max(...qV,1),n=gunler.length;
         const pd=14,iW=gW-pd*2,iH=gH-12,bW=Math.min(iW/n*0.5,9),xS=n>1?iW/(n-1):iW;
@@ -3431,45 +3419,42 @@ async function exportPsychPDF(sName) {
         Y+=gH+6;
       }
 
-      // ── B. KAYGI – BİLİŞSEL DOĞRULUK ──────────────────────────
-      bolumBaslik([150,30,30],'B.  Kaygi - Bilisses el Dogruluk ve Brans Analizi','T-0 tespiti + gecmis kaygi bakiyesi + brans bazli kaygi tetikleyicileri (min. 60 soru/gun)');
+      // ── B. KAYGI – BİLİŞSEL DOĞRULUK ───────────────────────────
+      bolumBaslik([150,30,30],'B.  Kaygı – Bilişsel Doğruluk ve Branş Analizi','T-0 tespiti + geçmiş kaygı bakiyesi + branş bazlı kaygı tetikleyicileri (min. 60 soru/gün)');
 
       if (ortKaygi > 0 || t0K > 0) {
         const t0KaygiIyi = t0K > 0 && t0K <= 4;
         const t0HataIdeal = t0Hata !== null && t0Hata >= 10 && t0Hata <= 25;
 
         if (t0KaygiIyi && t0HataIdeal) {
-          kutu('T-0: Fonksiyonel Stabilite — Bilisses el Berraklik',
-            'Son 48 saatte kaygi dusuk (' + t0K.toFixed(1) + '/10), hata ideal bant (%' + t0Hata.toFixed(0) + '). Oz-degerlendirme ile akademik cikti tam uyumlu.' +
-            (gecmisKaygiYuksek?' Onceki kaygi donemi sonemulenmisstir. Bununla birlikte o donemde cozulen sorularin hafiza konsolidasyonu sorgulanmalidir.':''),
+          kutu('T-0: Fonksiyonel Stabilite — Bilişsel Berraklık',
+            'Son 48 saatte kaygı düşük (' + t0K.toFixed(1) + '/10), hata oranı ideal öğrenme bandında (%' + t0Hata.toFixed(0) + '). Öz-değerlendirme ile akademik çıktı tam uyumlu.' +
+            (gecmisKaygiYuksek?' Önceki yüksek kaygı dönemi sönemlendi. Bununla birlikte o dönemde çözülen soruların hafıza konsolidasyonu sorgulanmalıdır.':''),
             [230,255,240],[20,140,70]);
-          if (gecmisKaygiYuksek) bakiyeRiskler.push('Kaygi doneminde (%' + (tgHata!==null?tgHata.toFixed(0):'?') + ' hata) calisilan konularda "hasar tespiti" onerilir');
+          if (gecmisKaygiYuksek) bakiyeRiskler.push('Kaygı döneminde (%' + (tgHata!==null?tgHata.toFixed(0):'?') + ' hata) çalışılan konularda "hasar tespiti" önerilir');
         } else if (t0K >= 7) {
-          aktifNegatifler.push('Aktif Stres Blokaji');
-          kutu('T-0: Aktif Stres Blokaji',
-            'Son 48 saatte kaygi (' + t0K.toFixed(1) + '/10) kritik esik uzerinde. Amigdala aktivasyonu calisma bellegini kisitiyor. Bu tabloda ek akademik yukleme yerine kaygiy i azaltici mudahaleler onceliklidir.',
+          aktifNegatifler.push('Aktif Stres Blokajı');
+          kutu('T-0: Aktif Stres Blokajı',
+            'Son 48 saatte kaygı (' + t0K.toFixed(1) + '/10) kritik eşik üzerinde. Amigdala aktivasyonu çalışma belleğini kısıtlıyor. Bu tabloda ek akademik yükleme yerine kaygıyı azaltıcı müdahaleler önceliklidir.',
             [255,225,225],[175,20,20]);
         } else if (gecmisKaygiYuksek && t0KaygiIyi) {
-          kutu('T-0: Kaygi Normallesme Egitiminde — Bakiye Risk Var',
-            'Son 48 saatte kaygi normale dondu (' + t0K.toFixed(1) + '/10). Ancak kaygili donemde hata orani ' + (tgHata!==null?'%'+tgHata.toFixed(0):'-') + ' ile yuksekti; o donemde yanlislarin kaynagi incelenmeden gecilmemelidir. Mevcut durum olumlu ancak bakiye risk izleniyor.',
+          kutu('T-0: Kaygı Normalleşme Eğiliminde — Bakiye Risk Var',
+            'Son 48 saatte kaygı normale döndü (' + t0K.toFixed(1) + '/10). Ancak kaygılı dönemde hata oranı ' + (tgHata!==null?'%'+tgHata.toFixed(0):'-') + ' ile yüksekti; o dönemin yanlışları incelenmeden geçilmemelidir. Mevcut durum olumlu ancak bakiye risk izleniyor.',
             [235,255,240],[30,150,80]);
-          bakiyeRiskler.push('Kaygi doneminde kaydedilen calismalarin kaliciligi dusuk olabilir; tekrar onerilir');
+          bakiyeRiskler.push('Kaygılı dönemde kaydedilen çalışmaların kalıcılığı düşük olabilir; tekrar önerilir');
         } else if (ortKaygi >= 8 && ortHata !== null && ortHata < 10) {
-          aktifNegatifler.push('Mukemmeliyetci Paradoks');
-          kutu('Mukemmeliyetci Paradoks: Yipratici Basari',
-            'Dogruluk yuksek (%' + ortHata.toFixed(0) + ' hata) ancak kaygi kritik esik uzerinde (ort. ' + ortKaygi.toFixed(1) + '/10). Basari icsel rahatlamayi saglamiyor; uzun vadede sinav ani panik riski var.',
+          aktifNegatifler.push('Mükemmeliyetçi Paradoks');
+          kutu('Mükemmeliyetçi Paradoks: Yıpratıcı Başarı',
+            'Doğruluk yüksek (%' + ortHata.toFixed(0) + ' hata) ancak kaygı kritik eşik üzerinde (ort. ' + ortKaygi.toFixed(1) + '/10). Başarı içsel rahatlama sağlamıyor; uzun vadede sınav anı panik riski taşır.',
             [255,240,220],[175,75,0]);
         } else {
-          kutu('Kaygi-Dogruluk Dengesi',
-            'Kaygi ort. ' + ortKaygi.toFixed(1) + '/10, hata ort. ' + (ortHata!==null?'%'+ortHata.toFixed(0):'-') + '. Belirgin patoloji yok.',
-            [240,248,255],[75,115,195]);
+          kutu('Kaygı–Doğruluk Dengesi','Kaygı ort. ' + ortKaygi.toFixed(1) + '/10, hata ort. ' + (ortHata!==null?'%'+ortHata.toFixed(0):'-') + '. Belirgin patoloji tespit edilmemiştir.',[240,248,255],[75,115,195]);
         }
 
-        // Brans bazli kaygi tetikleyicisi
+        // Branş bazlı kaygı tetikleyicisi
         if (dersHataArr.length > 0) {
           const yuksekHataDers = dersHataArr.filter(d=>d.pct>25);
           if (yuksekHataDers.length > 0) {
-            // Kaygı-ders korelasyonu: o ders cözülen günlerde kaygı yüksek mi?
             const korelasyonlar = yuksekHataDers.map(item=>{
               const dersDays = gunler.filter(d=>d.dersHata[item.d]&&d.dersHata[item.d].q>=10&&d.kaygi>0);
               const dersOrtKaygi = dersDays.length>0?dersDays.reduce((a,d)=>a+d.kaygi,0)/dersDays.length:0;
@@ -3477,26 +3462,25 @@ async function exportPsychPDF(sName) {
             }).filter(c=>c.dersOrtKaygi>ortKaygi*1.15).sort((a,b)=>b.dersOrtKaygi-a.dersOrtKaygi);
 
             korelasyonlar.forEach(k=>{
-              aktifNegatifler.push('Duygusal Brans Baraji: '+k.d);
-              kutu('Duygusal Brans Baraji: ' + tx(k.d),
-                tx(k.d) + ' dersinde hata orani %' + k.pct.toFixed(0) + ' ile yuksek; bu ders cozuldugu gunlerde kaygi ortalamasi ' + k.dersOrtKaygi.toFixed(1) + '/10 ile genel ortalamanin (' + ortKaygi.toFixed(1) + '/10) uzerinde. ' +
-                tx(k.d) + ' ogrel nci icin salt akademik degil duygusal bir baraj haline gelmistir. ' +
-                'Recete: ' + tx(k.d) + ' calismasina baslamadan once 5 dk nefes, ardindan kolay-zor sirali set ile "basari hissi" tetiklenmeli.',
+              aktifNegatifler.push('Duygusal Branş Barajı: '+k.d);
+              kutu('Duygusal Branş Barajı: ' + k.d,
+                k.d + ' dersinde hata oranı %' + k.pct.toFixed(0) + ' ile yüksek; bu ders çözüldüğü günlerde kaygı ortalaması ' + k.dersOrtKaygi.toFixed(1) + '/10 ile genel ortalamanın (' + ortKaygi.toFixed(1) + '/10) üzerinde. ' +
+                k.d + ' öğrenci için salt akademik değil duygusal bir baraj haline gelmiştir. ' +
+                'Reçete: ' + k.d + ' çalışmasına başlamadan önce 5 dk nefes, ardından kolay–zor sıralı set ile "başarı hissi" tetiklenmeli.',
                 [255,242,242],[160,30,30]);
             });
-
             if (korelasyonlar.length === 0 && yuksekHataDers.length > 0) {
-              dipnot('Yuksek hata oranlari: ' + yuksekHataDers.map(d=>tx(d.d)+' %'+d.pct.toFixed(0)).join(', ') + '. Kaygi korelasyonu dogrulanmamistir ancak konu eksigi arastirılmalidir.');
+              dipnot('Yüksek hata oranları: ' + yuksekHataDers.map(d=>d.d+' %'+d.pct.toFixed(0)).join(', ') + '. Kaygı korelasyonu doğrulanmamıştır ancak konu eksiği araştırılmalıdır.');
             }
           }
         }
       } else {
         Y=pdfCheck(doc,Y,8); doc.setFont(PF,'normal');doc.setFontSize(7.5);doc.setTextColor(140,120,120);
-        doc.text(tx('Kaygi-hata analizi icin en az 60 soru/gun verisi gereklidir.'),16,Y);Y+=8;
+        doc.text('Kaygı–hata analizi için en az 60 soru/gün verisi gereklidir.',16,Y);Y+=8;
       }
 
-      // ── C. UYKU – ODAK – VERİMLİLİK ────────────────────────────
-      bolumBaslik([75,55,175],'C.  Uyku - Odak - Verimlilik','Biyolojik onarim ve kumulatif uyku borcu tespiti');
+      // ── C. UYKU – ODAK – VERİMLİLİK ───────────────────────────
+      bolumBaslik([75,55,175],'C.  Uyku – Odak – Verimlilik','Biyolojik onarım ve kümülatif uyku borcu tespiti');
 
       const uykuGunler = veriGunler.filter(d=>d.uyku>0);
       let uykuIyi = false;
@@ -3505,96 +3489,88 @@ async function exportPsychPDF(sName) {
         const t0UykuOrt = son2U.length>0?son2U.reduce((a,d)=>a+d.uyku,0)/son2U.length:0;
 
         if (t0O >= 8 && son5UykuOrt > 0 && son5UykuOrt < 6.5) {
-          aktifNegatifler.push('Yanilsamali Stabilite');
-          kutu('T-0: Yanilsamali Stabilite — Kumulatif Uyku Borcu Maskeliyor',
-            'Son 48 saatte odak yuksek (' + t0O.toFixed(1) + '/10) ancak son 5 gunun uyku ortalamasi ' + son5UykuOrt.toFixed(1) + ' saat ile yetersiz. Adrenal baskiyla saglanan sahte odak; kumulatif borcun muhakeme hatalarini maskeledigi gozlemlenmektedir. Verilere guvenilirlik serhi dusulmelidir.',
+          aktifNegatifler.push('Yanılsamalı Stabilite');
+          kutu('T-0: Yanılsamalı Stabilite — Kümülatif Uyku Borcu Maskeliyor',
+            'Son 48 saatte odak yüksek (' + t0O.toFixed(1) + '/10) ancak son 5 günün uyku ortalaması ' + son5UykuOrt.toFixed(1) + ' saat ile yetersiz. Adrenal baskıyla sağlanan geçici odak; kümülatif borcun muhakeme hatalarını maskelediği gözlemlenmektedir. Verilere güvenilirlik şerhi düşülmelidir.',
             [255,240,215],[155,75,0]);
-          bakiyeRiskler.push('Son 5 gun uyku ortalamasi ' + son5UykuOrt.toFixed(1) + ' saat; o donem calismalarinin kaliciligi sorgulanmali');
+          bakiyeRiskler.push('Son 5 gün uyku ortalaması ' + son5UykuOrt.toFixed(1) + ' saat; o dönem çalışmalarının kalıcılığı sorgulanmalı');
         } else if (maxArdisikUyku >= 3) {
-          aktifNegatifler.push('Kumulatif Uyku Borcu');
-          kutu('Kumulatif Uyku Borcu: Kronik Bilissel Yorgunluk',
-            'Ardicisik ' + maxArdisikUyku + ' gun uyku 6.5 saatin altinda. Glimatik sistem calismadiginda hafiza konsolidasyonu ve muhakeme kapasitesi tikanma noktasina gelir. Bu donem hacim ne olursa olsun verim negatife donmustur.',
+          aktifNegatifler.push('Kümülatif Uyku Borcu');
+          kutu('Kümülatif Uyku Borcu: Kronik Bilişsel Yorgunluk',
+            'Ardışık ' + maxArdisikUyku + ' gün uyku 6.5 saatin altında. Glimfatik sistem çalışmadığında hafıza konsolidasyonu ve muhakeme kapasitesi tıkanma noktasına gelir. Bu dönem hacim ne olursa olsun verim negatife dönmüştür.',
             [255,220,220],[175,20,20]);
         } else if (t0UykuOrt >= 7.5 && t0O >= 8) {
           uykuIyi = true;
           kutu('T-0: Optimal Biyolojik Ritim',
-            'Son 48 saatte uyku (' + t0UykuOrt.toFixed(1) + ' saat) ve odak (' + t0O.toFixed(1) + '/10) ideal bolge. REM ve derin uyku evreleri bilissel onarimi tamamlamistir.' +
-            (gecmisUykuDusuk?' Not: Onceki periyotta dusuk uyku gunleri gozlemlenmisti; o gunlerin calismalarinda hafiza konsolidasyonu tam olmayabilir.':''),
+            'Son 48 saatte uyku (' + t0UykuOrt.toFixed(1) + ' saat) ve odak (' + t0O.toFixed(1) + '/10) ideal bölgede. REM ve derin uyku evreleri bilişsel onarımı tamamlamıştır.' +
+            (gecmisUykuDusuk?' Not: Önceki periyotta düşük uyku günleri gözlemlenmişti; o günlerin çalışmalarında hafıza konsolidasyonu tam olmayabilir.':''),
             [230,255,240],[20,140,70]);
-          if (gecmisUykuDusuk) bakiyeRiskler.push('Onceki dusuk uyku gunlerinde calisilan konularin tekrar edilmesi onerilir');
+          if (gecmisUykuDusuk) bakiyeRiskler.push('Önceki düşük uyku günlerinde çalışılan konuların tekrar edilmesi önerilir');
         } else if (ortUyku < 6.5 && ortOdak <= 5) {
-          aktifNegatifler.push('Bilissel Restorasyon Kaybi');
-          kutu('T-0: Bilissel Restorasyon Kaybi',
-            'Uyku (ort. ' + ortUyku.toFixed(1) + ' saat) ve odak (ort. ' + ortOdak.toFixed(1) + '/10) birlikte dusuk. Yurutucuu islevler sekteye ugramistir. Acil uyku hijyeni duzenlemesi sarttir.',
+          aktifNegatifler.push('Bilişsel Restorasyon Kaybı');
+          kutu('T-0: Bilişsel Restorasyon Kaybı',
+            'Uyku (ort. ' + ortUyku.toFixed(1) + ' saat) ve odak (ort. ' + ortOdak.toFixed(1) + '/10) birlikte düşük. Yürütücü işlevler sekteye uğramıştır. Acil uyku hijyeni düzenlemesi şarttır.',
             [255,225,225],[175,20,20]);
         } else {
-          kutu('Uyku-Odak Orta Denge',
-            'Uyku ort. ' + ortUyku.toFixed(1) + ' saat, odak ort. ' + ortOdak.toFixed(1) + '/10. Ideal (7.5+ saat / 8+ odak) altinda ama kritik patoloji yok.',
-            [240,238,255],[100,90,175]);
+          kutu('Uyku–Odak Orta Denge','Uyku ort. ' + ortUyku.toFixed(1) + ' saat, odak ort. ' + ortOdak.toFixed(1) + '/10. İdeal (7.5+ saat / 8+ odak) altında ama kritik patoloji yok.',[240,238,255],[100,90,175]);
         }
       } else {
         Y=pdfCheck(doc,Y,8);doc.setFont(PF,'normal');doc.setFontSize(7.5);doc.setTextColor(150,140,180);
-        doc.text(tx('Uyku verisi yetersiz.'),16,Y);Y+=8;
+        doc.text('Uyku verisi yetersiz.',16,Y);Y+=8;
       }
 
-      // ── D. EKRAN – ODAK – KAÇIŞ ──────────────────────────────────
+      // ── D. EKRAN SÜRESİ – ODAK ─────────────────────────────────
       const ekranGunler = veriGunler.filter(d=>d.toplamEkran>0);
       if (ekranGunler.length >= 2) {
-        bolumBaslik([20,95,145],'D.  Ekran Suresi - Odak ve Kacis','Dijital aliskanlik dongusu — pusuya yatmis risk, aktif kacis ve gurultu/sinyal filtresi');
+        bolumBaslik([20,95,145],'D.  Ekran Süresi – Odak ve Kaçış','Dijital alışkanlık döngüsü — pusuda yatan risk, aktif kaçış ve gürültü/sinyal filtresi');
 
         const t0EkranIyi = t0EkranFn < 1.5;
-        // Son 48 saatte anomali: rutinin 2+ std sapma uzerinde mi?
         const sonGunEkran = son2.length>0?son2[0].toplamEkran:0;
         const anomaliEkran = ekranStd > 0 && (sonGunEkran - ekranOrt) > 2*ekranStd;
 
         if (anomaliEkran) {
-          // Gurultu/sinyal filtresi: tek seferlik mi yoksa tekrar mı?
           const tekrar = son2.filter(d=>d.toplamEkran>ekranOrt+ekranStd).length >= 2;
           if (tekrar) {
-            aktifNegatifler.push('Aktif Dijital Kacis');
+            aktifNegatifler.push('Aktif Dijital Kaçış');
             kutu('Karakteristik Sapma: Sinyal Tespit Edildi',
-              'Son 2 gunde ekran suresi (' + son2.filter(d=>d.toplamEkran>0).map(d=>d.toplamEkran.toFixed(1)).join(', ') + ' saat) rutinin belirgin uzerinde (ort. ' + ekranOrt.toFixed(1) + ' ± ' + ekranStd.toFixed(1) + ' saat). Bu "anlık duygusal bosalik" degil, sureklilik kazanan bir davranis sinyal idir. Mudahale gereklidir.',
+              'Son 2 günde ekran süresi (' + son2.filter(d=>d.toplamEkran>0).map(d=>d.toplamEkran.toFixed(1)).join(', ') + ' saat) rutinin belirgin üzerinde (ort. ' + ekranOrt.toFixed(1) + ' ± ' + ekranStd.toFixed(1) + ' saat). Bu "anlık duygusal boşalma" değil, süreklilik kazanan bir davranış sinyalidir. Müdahale gereklidir.',
               [255,228,230],[170,30,60]);
           } else {
-            kutu('Karakteristik Sapma: Gurultu (Anlık Sapma)',
-              'Dunun ekran suresi (' + sonGunEkran.toFixed(1) + ' saat) rutinin uzerinde (ort. ' + ekranOrt.toFixed(1) + ' ± ' + ekranStd.toFixed(1) + ' saat). Bu sistem colkusu degil anlık duygusal bosalma olarak degerlendirilmektedir. Yarin da tekrar ederse "sinyal" kabul edilerek mudahale edilmelidir.',
+            kutu('Karakteristik Sapma: Gürültü (Anlık Sapma)',
+              'Dünün ekran süresi (' + sonGunEkran.toFixed(1) + ' saat) rutinin üzerinde (ort. ' + ekranOrt.toFixed(1) + ' ± ' + ekranStd.toFixed(1) + ' saat). Bu sistem çöküşü değil anlık duygusal boşalma olarak değerlendirilmektedir. Yarın da tekrar ederse "sinyal" kabul edilerek müdahale edilmelidir.',
               [255,248,225],[150,90,0]);
           }
         } else if (!uykuIyi && ortUyku < 6.5 && gunler.some(d=>d.toplamEkran>2&&d.uyku>0&&d.uyku<6.5)) {
           aktifNegatifler.push('Dijital Biyolojik Blokaj');
-          kutu('Dijital-Biyolojik Blokaj: Ekran-Uyku Kesisimi',
-            'Yuksek ekran suresi mavi isik araciligiyla melatonin salgisini baskilarak uyku mimarisini bozuyor. Uyku oncesi 1 saat ekransiz tampon sure kritiktir.',
+          kutu('Dijital–Biyolojik Blokaj: Ekran–Uyku Kesişimi',
+            'Yüksek ekran süresi mavi ışık aracılığıyla melatonin salgısını baskılıyor ve uyku mimarisini bozuyor. Uyku öncesi 1 saat ekransız tampon süre kritiktir.',
             [255,232,220],[175,55,0]);
         } else if (!uykuIyi && t0K >= 7 && t0EkranFn > 2 && t0Soru < ortSoru * 0.6) {
-          aktifNegatifler.push('Aktif Dijital Kacis');
-          kutu('T-0: Aktif Savunma Amacli Dijital Kacis',
-            'Yuksek kaygi (' + t0K.toFixed(1) + '/10) + yuksek ekran (' + t0EkranFn.toFixed(1) + ' saat) + dusuk uretim. Bu disiplin degil kaygi yonetimi sorunudur.',
+          aktifNegatifler.push('Aktif Dijital Kaçış');
+          kutu('T-0: Aktif Savunma Amaçlı Dijital Kaçış',
+            'Yüksek kaygı (' + t0K.toFixed(1) + '/10) + yüksek ekran (' + t0EkranFn.toFixed(1) + ' saat) + düşük üretim. Bu disiplin değil kaygı yönetimi sorunudur.',
             [255,232,240],[175,35,80]);
         } else if (t0EkranIyi && gecmisEkranYuksek) {
-          kutu('T-0: Pasifize Kacis — Pusuya Yatmis Risk',
-            'Son 48 saatte ekran kontrol altinda (' + t0EkranFn.toFixed(1) + ' saat). Ancak son 7 gun icinde yuksek ekran goruldugundan stres aninda dijital kaçis refleksi tetiklenebilir. İlk yogun sinav donemi kritik.',
+          kutu('T-0: Pasife Alınmış Kaçış — Pusuda Yatan Risk',
+            'Son 48 saatte ekran kontrol altında (' + t0EkranFn.toFixed(1) + ' saat). Ancak son 7 gün içinde yüksek ekran görüldüğünden stres anında dijital kaçış refleksi tetiklenebilir. İlk yoğun sınav dönemi kritiktir.',
             [255,248,225],[150,90,0]);
-          bakiyeRiskler.push('Dijital kacis egilimi latent; stres anlarinda tetiklenebilir');
+          bakiyeRiskler.push('Dijital kaçış eğilimi latent; stres anlarında tetiklenebilir');
         } else if (t0EkranIyi && t0O >= 8) {
-          kutu('T-0: Optimal Dijital Hijyen',
-            'Son 48 saatte ekran dusuk (' + t0EkranFn.toFixed(1) + ' saat), odak yuksek (' + t0O.toFixed(1) + '/10). Noyal agnlar akademik gorevlere tam kapasiteyle kanalize.',
-            [230,255,240],[20,140,70]);
+          kutu('T-0: Optimal Dijital Hijyen','Son 48 saatte ekran düşük (' + t0EkranFn.toFixed(1) + ' saat), odak yüksek (' + t0O.toFixed(1) + '/10). Nöral ağlar akademik görevlere tam kapasiteyle kanalize.',[230,255,240],[20,140,70]);
         } else {
-          kutu('Ekran Suresi Dengeli',
-            'Ekran kullanimi ile odak arasinda belirgin olumsuz korelasyon tespit edilmemistir.',
-            [240,248,255],[70,130,195]);
+          kutu('Ekran Süresi Dengeli','Ekran kullanımı ile odak arasında belirgin olumsuz korelasyon tespit edilmemiştir.',[240,248,255],[70,130,195]);
         }
       }
 
-      // ── DUYGU – DERS VERİMİ ─────────────────────────────────────
+      // ── DUYGU – DERS VERİMİ ──────────────────────────────────────
       const moodDers = {};
       gunler.forEach(d=>{if(!d.mood||!d.soru)return;const sm={};soruEntries2.filter(e=>e.dateKey===d.dk).forEach(e=>{if(!sm[e.subject])sm[e.subject]=0;sm[e.subject]+=(e.questions||0);});if(!moodDers[d.mood])moodDers[d.mood]={};Object.entries(sm).forEach(([s,q])=>{if(!moodDers[d.mood][s])moodDers[d.mood][s]=0;moodDers[d.mood][s]+=q;});});
       const moodDersGirdi=Object.entries(moodDers).filter(([m,ss])=>Object.values(ss).some(v=>v>0));
       if(moodDersGirdi.length>0){
         Y=pdfCheck(doc,Y,12);
         doc.setFont(PF,'bold');doc.setFontSize(7.5);doc.setTextColor(40,115,155);
-        doc.text(tx('Duygu Durumu \u2013 Ders Verimi Dagilimi'),16,Y);Y+=5;
-        const mL={excited:'Heyecanli',good:'İyiyim',focused:'Odakli',ok:'İdare Eder',tired:'Yorgunum',anxious:'Kaygili',sad:'Mutsuzum'};
+        doc.text('Duygu Durumu – Ders Verimi Dağılımı',16,Y);Y+=5;
+        const mL={excited:'Heyecanlı',good:'İyiyim',focused:'Odaklı',ok:'İdare Eder',tired:'Yorgunum',anxious:'Kaygılı',sad:'Mutsuzum'};
         const mC={excited:[170,120,0],good:[35,145,175],focused:[75,55,195],ok:[115,105,195],tired:[195,75,115],anxious:[175,35,35],sad:[75,85,105]};
         moodDersGirdi.forEach(([mood,subs])=>{
           const en=Object.entries(subs).sort((a,b)=>b[1]-a[1])[0];if(!en)return;
@@ -3602,76 +3578,76 @@ async function exportPsychPDF(sName) {
           doc.setFillColor(Math.round(mc[0]*0.08+238*0.92),Math.round(mc[1]*0.08+238*0.92),Math.round(mc[2]*0.08+238*0.92));
           doc.roundedRect(15,Y,180,9,1.5,1.5,'F');doc.setFillColor(mc[0],mc[1],mc[2]);doc.roundedRect(15,Y,3,9,1,1,'F');
           doc.setFont(PF,'bold');doc.setFontSize(7.5);doc.setTextColor(40,40,80);
-          doc.text(tx(mL[mood]||mood)+' ->',20,Y+6);
+          doc.text((mL[mood]||mood)+' ->',20,Y+6);
           doc.setFont(PF,'normal');doc.setFontSize(7.5);doc.setTextColor(60,60,100);
-          doc.text(tx('En cok: ')+tx(en[0])+' ('+en[1]+' soru)',56,Y+6);
-          const ozet=Object.entries(subs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([s,q])=>tx(dersKisa(s))+'('+q+')').join('  ');
+          doc.text('En çok: '+en[0]+' ('+en[1]+' soru)',56,Y+6);
+          const ozet=Object.entries(subs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([s,q])=>dersKisa(s)+'('+q+')').join('  ');
           doc.setFontSize(6.5);doc.setTextColor(100,100,130);doc.text(ozet,128,Y+6);Y+=11;
         });
       }
 
-      // Bakiye riskler dipnotu
+      // Bakiye riskler
       if(bakiyeRiskler.length>0){
         Y=pdfCheck(doc,Y,10);
         doc.setFont(PF,'bold');doc.setFontSize(6.5);doc.setTextColor(130,120,175);
-        doc.text(tx('Gecmisten Gelen Bakiye Riskler (izleniyor):'),16,Y);Y+=5;
+        doc.text('Geçmişten Gelen Bakiye Riskler (izleniyor):',16,Y);Y+=5;
         bakiyeRiskler.forEach((r,i)=>dipnot((i+1)+'. '+r));
       }
 
-      // ── BÜTÜNCÜL KOÇ DEĞERLENDİRMESİ ──────────────────────────
+      // ── BÜTÜNCÜL KOÇ DEĞERLENDİRMESİ ─────────────────────────
       Y=pdfCheck(doc,Y,12);
-      Y=pdfSecHeader(doc,tx('BUTUNCEL KOC DEGERLENDIRMESI'),Y,72,200,130);
+      Y=pdfSecHeader(doc,'BÜTÜNCÜL KOÇ DEĞERLENDİRMESİ',Y,72,200,130);
       doc.setFont(PF,'italic');doc.setFontSize(6.5);doc.setTextColor(100,90,140);
-      doc.text(tx('Katman 1: Anlik durum / Katman 2: Gecmis risk bakiyesi / Katman 3: İletisim stratejisi'),16,Y);Y+=7;
+      doc.text('Katman 1: Anlık durum  /  Katman 2: Geçmiş risk bakiyesi  /  Katman 3: İletişim stratejisi',16,Y);Y+=7;
 
-      // KATMAN 1: T-0 manşet
+      // Katman 1
       const t0OzetIyi = (t0E>=6||t0E===0)&&(t0K<6||t0K===0)&&(t0O>=6||t0O===0);
       const kat1Metin = t0OzetIyi
-        ? 'Son 48 saatte biyolojik ve psikolojik veriler akademik gelisimi destekler niteliktedir.'
-          +(t0E>0?' Enerji: '+t0E.toFixed(1)+'/10.':'')+(t0O>0?' Odak: '+t0O.toFixed(1)+'/10.':'')+(t0K>0?' Kaygi: '+t0K.toFixed(1)+'/10.':'')
-        : 'Son 48 saatte ' + aktifNegatifler.slice(0,3).join(', ') + ' teshisi aktif. Guncel veriler tam verime ulasmayi engelleyen faktorler icermektedir.';
-      kutu('Katman 1 \u2014 Anlik Durum (T-0)',kat1Metin,
+        ? 'Son 48 saatte biyolojik ve psikolojik veriler akademik gelişimi destekler niteliktedir.'
+          +(t0E>0?' Enerji: '+t0E.toFixed(1)+'/10.':'')+(t0O>0?' Odak: '+t0O.toFixed(1)+'/10.':'')+(t0K>0?' Kaygı: '+t0K.toFixed(1)+'/10.':'')
+        : 'Son 48 saatte ' + aktifNegatifler.slice(0,3).join(', ') + ' teşhisi aktif. Güncel veriler tam verimi engelleyen faktörler içermektedir.';
+      kutu('Katman 1 — Anlık Durum (T-0)', kat1Metin,
         t0OzetIyi?[230,255,240]:[255,225,225],
         t0OzetIyi?[20,140,70]:[175,20,20]);
 
-      // KATMAN 2: Geçmiş risk bakiyesi
+      // Katman 2
       if(bakiyeRiskler.length>0||(aktifNegatifler.length===0&&(gecmisKaygiYuksek||gecmisUykuDusuk||gecmisEkranYuksek))){
         const gecmisler=[];
-        if(gecmisKaygiYuksek) gecmisler.push('yuksek kaygi donemi yasandi');
-        if(gecmisUykuDusuk) gecmisler.push('uyku eksikligi gozlemlendi');
-        if(gecmisEkranYuksek) gecmisler.push('dijital kacis egilimi goruldu');
-        const kat2Metin = 'Guncel durum olumlu olmakla birlikte, gecmiste: ' + gecmisler.join(', ') +
-          '. Bu alanlardaki kazanim pekistirilmeli; olumsuz habituellere geri donulmemesi icin bilinc duzeyi yuksek tutulmalidir.' +
-          (bakiyeRiskler.length>0?' Izlenmesi gereken noktalar dipnotta belirtilmistir.':'');
-        kutu('Katman 2 \u2014 Gecmis Risk Bakiyesi',kat2Metin,[248,245,255],[115,95,195]);
+        if(gecmisKaygiYuksek) gecmisler.push('yüksek kaygı dönemi yaşandı');
+        if(gecmisUykuDusuk) gecmisler.push('uyku eksikliği gözlemlendi');
+        if(gecmisEkranYuksek) gecmisler.push('dijital kaçış eğilimi görüldü');
+        const kat2Metin = 'Güncel durum olumlu olmakla birlikte geçmişte: ' + gecmisler.join(', ') +
+          '. Bu alanlardaki kazanım pekiştirilmeli; olumsuz alışkanlıklara geri dönülmemesi için bilinç düzeyi yüksek tutulmalıdır.' +
+          (bakiyeRiskler.length>0?' İzlenmesi gereken noktalar dipnotta belirtilmiştir.':'');
+        kutu('Katman 2 — Geçmiş Risk Bakiyesi', kat2Metin, [248,245,255],[115,95,195]);
       }
 
-      // KATMAN 3: İletişim stratejisi + Eylem planı
+      // Katman 3
       {
         let strateji = '';
-        const kritikRiskVar = aktifNegatifler.some(r=>r.includes('Aktif')||r.includes('Kumulatif')||r.includes('Bilissel Restorasyon'));
+        const kritikRiskVar = aktifNegatifler.some(r=>r.includes('Aktif')||r.includes('Kümülatif')||r.includes('Bilişsel Restorasyon'));
         const rehavetVar    = aktifNegatifler.includes('Operasyonel Atalet');
 
         if(kritikRiskVar){
-          strateji = 'İletisim stratejisi (Kaygili/Yorgun profil): Akademik baskidan kacinin. Gorusmede netlerden ziyade fiziksel yorgunluk ve uyku kalitesi uzerine sefkatli denetim yapilmalidir. Ogrenciye "simdi dinlenmek, yarin daha verimli calismak demektir" mesaji verilmeli.';
+          strateji = 'İletişim stratejisi (Kaygılı/Yorgun profil): Akademik baskıdan kaçının. Görüşmede netlerden ziyade fiziksel yorgunluk ve uyku kalitesi üzerine şefkatli denetim yapılmalıdır.';
         } else if(rehavetVar){
-          strateji = 'İletisim stratejisi (Rehavet/Konfor alani profili): Hedefleri yukari cek. Gorusmede yeni nesil zorlayici sorularla bilisges el uyarim saglanmali; mevcut rutinin "tavan dusugu" oldugu fark ettirilmelidir.';
+          strateji = 'İletişim stratejisi (Rehavet/Konfor alanı profili): Hedefleri yukarı çek. Görüşmede yeni nesil zorlayıcı sorularla bilişsel uyarım sağlanmalıdır.';
         } else if(t0OzetIyi && bakiyeRiskler.length>0){
-          strateji = 'İletisim stratejisi (Toparlanma profili): Olumlu ilerlemeyi pekistir. Gorusmede mevcut iyilesme taktiklendirilmeli; ancak bakiye risk alanlari (ozellikle konu tekrari) sefkatle gundeme getirilmelidir.';
+          strateji = 'İletişim stratejisi (Toparlanma profili): Olumlu ilerlemeyi pekiştir. Bakiye risk alanları (özellikle konu tekrarı) şefkatle gündeme getirilmelidir.';
         } else {
-          strateji = 'İletisim stratejisi (Dengeli profil): Mevcut ritmi koru ve dozu artir. Gorusmede yeni hedef koyarak motivasyonu taze tut; hata analizine agirlik vererek net artisi hedefle.';
+          strateji = 'İletişim stratejisi (Dengeli profil): Mevcut ritmi koru ve dozu artır. Hata analizine ağırlık vererek net artışını hedefle.';
         }
 
         const oneri=[];
-        if(aktifNegatifler.includes('Aktif Stres Blokaji')||aktifNegatifler.includes('Aktif Dijital Kacis')) oneri.push('Kocluk seansinda kaygiyi tetikleyen bransi veya durumu konuş; mikro hedefler (15 dk) devreye al');
-        if(aktifNegatifler.includes('Kumulatif Uyku Borcu')||aktifNegatifler.includes('Yanilsamali Stabilite')) oneri.push('Ardisik 3 gece 8+ saat uyku; uyku oncesi 1 saat ekransiz');
-        if(aktifNegatifler.some(r=>r.includes('Brans Baraji'))) oneri.push('Duygusal brans baraji olan ders icin: basa nefes + kolay-zor siralamasi ile basari hissi tetikle');
-        if(bakiyeRiskler.some(r=>r.includes('hasar')||r.includes('kalicilik')||r.includes('tekrar'))) oneri.push('Kaygi veya uykusuz donemde calisilan konular tekrar edilmeli (hasar tespiti)');
-        if(aktifNegatifler.length===0&&!bakiyeRiskler.length) oneri.push('Mevcut ritmi koru; sinava ' + dLgs + ' gun kala hata analizine agirlik ver');
-        if(dLgs<60) oneri.push('Sinava ' + dLgs + ' gun: yeni konu degil bilinen konularda hata sifirlamaya odaklan');
+        if(aktifNegatifler.includes('Aktif Stres Blokajı')||aktifNegatifler.includes('Aktif Dijital Kaçış')) oneri.push('Kaygıyı tetikleyen branşı veya durumu konuş; mikro hedefler (15 dk) devreye al');
+        if(aktifNegatifler.includes('Kümülatif Uyku Borcu')||aktifNegatifler.includes('Yanılsamalı Stabilite')) oneri.push('Ardışık 3 gece 8+ saat uyku; uyku öncesi 1 saat ekransız');
+        if(aktifNegatifler.some(r=>r.includes('Branş Barajı'))) oneri.push('Duygusal branş barajı olan ders için: başa nefes + kolay–zor sıralama ile başarı hissi tetikle');
+        if(bakiyeRiskler.some(r=>r.includes('hasar')||r.includes('kalıcılık')||r.includes('tekrar'))) oneri.push('Kaygı veya uykusuz dönemde çalışılan konular tekrar edilmeli (hasar tespiti)');
+        if(aktifNegatifler.length===0&&!bakiyeRiskler.length) oneri.push('Mevcut ritmi koru; sınava ' + dLgs + ' gün kala hata analizine ağırlık ver');
+        if(dLgs<60) oneri.push('Sınava ' + dLgs + ' gün: yeni konu değil bilinen konularda hata sıfırlamaya odaklan');
 
-        const kat3Metin = strateji + ' | Eylem onerileri: ' + oneri.map((o,i)=>(i+1)+'. '+o).join('; ') + '.';
-        kutu('Katman 3 \u2014 \u0130letisim Stratejisi',kat3Metin,[245,250,255],[55,90,160]);
+        const kat3Metin = strateji + ' | Eylem önerileri: ' + oneri.map((o,i)=>(i+1)+'. '+o).join('; ') + '.';
+        kutu('Katman 3 — İletişim Stratejisi', kat3Metin, [245,250,255],[55,90,160]);
       }
 
       // Öğrencinin sesi
@@ -3682,8 +3658,8 @@ async function exportPsychPDF(sName) {
           let ses='';
           if(poz.length>0) ses+='Olumlu: '+poz.join(' / ')+'. ';
           if(neg.length>0) ses+='Olumsuz: '+neg.join(' / ')+'. ';
-          ses+='Bu ifadeler kocluk seanslarinda dogrudan ele alinmalidir.';
-          kutu('Ogrencinin Sesi \u2014 Kendi İfadelerinden',ses,[248,242,255],[115,75,178]);
+          ses+='Bu ifadeler koçluk seanslarında doğrudan ele alınmalıdır.';
+          kutu('Öğrencinin Sesi — Kendi İfadelerinden', ses, [248,242,255],[115,75,178]);
         }
       }
 
@@ -3692,25 +3668,25 @@ async function exportPsychPDF(sName) {
         Y=pdfCheck(doc,Y,10);
         doc.setFillColor(235,245,255);doc.roundedRect(15,Y,180,9,1.5,1.5,'F');
         doc.setFont(PF,'normal');doc.setFontSize(7.5);doc.setTextColor(40,60,120);
-        doc.text(tx('Donem: '+toplamSoru+' soru | '+toplamSure+' dk | '+aktifGunler.length+' aktif gun | Ort. '+Math.round(ortSoru)+'/gun (Hedef: '+DAILY_GOAL+') | LGS: '+dLgs+' gun'),19,Y+5.5);
+        doc.text('Dönem: '+toplamSoru+' soru | '+toplamSure+' dk | '+aktifGunler.length+' aktif gün | Ort. '+Math.round(ortSoru)+'/gün (Hedef: '+DAILY_GOAL+') | LGS: '+dLgs+' gün',19,Y+5.5);
         Y+=11;
       }
 
       // Görüşmeler
       if(data.gorusmeler&&data.gorusmeler.length>0){
         Y=pdfCheck(doc,Y,12);
-        Y=pdfSecHeader(doc,tx('KOC GORUSMELERI'),Y,108,99,255);
+        Y=pdfSecHeader(doc,'KOÇ GÖRÜŞMELERİ',Y,108,99,255);
         data.gorusmeler.forEach(g=>{
-          const ls3=g.not?doc.splitTextToSize(tx(g.not),156):[];
+          const ls3=g.not?doc.splitTextToSize(g.not,156):[];
           const gH=12+(ls3.length>0?ls3.length*4.5+4:0);
           Y=pdfCheck(doc,Y,gH+5);
           doc.setFillColor(240,238,255);doc.roundedRect(15,Y,180,gH,1.5,1.5,'F');
           doc.setFont(PF,'bold');doc.setFontSize(7.5);doc.setTextColor(72,58,180);
-          doc.text(tx(g.tarih||''),19,Y+5.5);
+          doc.text(g.tarih||'',19,Y+5.5);
           const gR=g.durum==='yapildi'?[20,130,60]:[175,125,0];
           doc.setFillColor(gR[0],gR[1],gR[2]);doc.roundedRect(155,Y+1,38,7,2,2,'F');
           doc.setFont(PF,'bold');doc.setFontSize(6.5);doc.setTextColor(255,255,255);
-          doc.text(tx(g.durum==='yapildi'?'Gorusme Yapildi':'Planlandiği'),174,Y+5.5,{align:'center'});
+          doc.text(g.durum==='yapildi'?'Görüşme Yapıldı':'Planlandı',174,Y+5.5,{align:'center'});
           if(ls3.length>0){doc.setFont(PF,'normal');doc.setFontSize(7);doc.setTextColor(60,50,100);doc.text(ls3,19,Y+11);}
           Y+=gH+5;
         });
@@ -3719,6 +3695,7 @@ async function exportPsychPDF(sName) {
     } // end veriGunler
 
     } // end sortedDays
+
 
 
 
