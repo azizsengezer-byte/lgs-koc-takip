@@ -1814,7 +1814,7 @@ function teacherStudents() {
 
 /* ========== ÖĞRENCI DETAY ANALİZİ ========== */
 let selectedStudentName = '';
-let studentAnalysisPeriod = 'weekly';
+let studentAnalysisPeriod = 'daily';
 
 // Profil görüntüleme — hem öğretmen hem öğrenci tıklayabilir
 async function showUserProfile(uid, fallbackName, fallbackColor) {
@@ -3617,9 +3617,9 @@ async function exportPsychPDF(sName) {
 
       // ── BÜTÜNCÜL KOÇ DEĞERLENDİRMESİ ──────────────────────────
       Y=pdfCheck(doc,Y,12);
-      Y=pdfSecHeader(doc,tx('BUTUNCEL KOC DEGERLENDIRMESI — EYLEM PLANI'),Y,72,200,130);
+      Y=pdfSecHeader(doc,tx('BUTUNCEL KOC DEGERLENDIRMESI'),Y,72,200,130);
       doc.setFont(PF,'italic');doc.setFontSize(6.5);doc.setTextColor(100,90,140);
-      doc.text(tx('Katman 1: Anlik durum / Katman 2: Gecmis risk bakiyesi / Katman 3: İletisim stratejisi ve eylem plani'),16,Y);Y+=7;
+      doc.text(tx('Katman 1: Anlik durum / Katman 2: Gecmis risk bakiyesi / Katman 3: İletisim stratejisi'),16,Y);Y+=7;
 
       // KATMAN 1: T-0 manşet
       const t0OzetIyi = (t0E>=6||t0E===0)&&(t0K<6||t0K===0)&&(t0O>=6||t0O===0);
@@ -5019,7 +5019,9 @@ function exportStudentDetailPDF(sName) {
   // Güçlü / Zayıf dersler
   const sortedSubs=subStats.filter(s=>s.q>0).sort((a,b)=>b.pct-a.pct);
   const strong=sortedSubs.slice(0,2);
-  const weak=[...subStats].filter(s=>s.q>0).sort((a,b)=>a.pct-b.pct).slice(0,2);
+  // Zayıf: güçlülerle çakışmayan, en düşük isabet oranlı dersler
+  const weakCandidates=[...subStats].filter(s=>s.q>0&&!strong.find(st=>st.name===s.name)).sort((a,b)=>a.pct-b.pct);
+  const weak=weakCandidates.slice(0,2);
   if(strong.length>0||weak.length>0) {
     Y=pdfCheck(doc,Y,10);
     const colW=87;
@@ -5515,7 +5517,22 @@ function studentDailyEntry() {
               : `<div style="font-size:0.75rem;color:var(--text2)">${girisCount} giriş</div>`}
           </div>`;}).join('')}
       </div>
-      <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="openEntryFor(null)">+ Çalışma Ekle</button>
+      <!-- Deneme Sınavı butonu -->
+      ${(()=>{
+        const denemeCount = todayEntries.filter(e=>e.type==='deneme').length;
+        const denemeNet   = todayEntries.filter(e=>e.type==='deneme').reduce((a,e)=>a+(e.net||0),0);
+        return `<button onclick="openDenemeSinaviEntry()"
+          style="width:100%;margin-top:12px;padding:12px;border-radius:12px;
+                 background:linear-gradient(135deg,#6c63ff22,#45b7d122);
+                 border:1.5px solid #6c63ff66;color:var(--text);cursor:pointer;
+                 display:flex;align-items:center;justify-content:space-between;font-size:0.88rem;font-weight:700">
+          <span>📊 Deneme Sınavı Ekle</span>
+          ${denemeCount>0
+            ? `<span style="font-size:0.78rem;color:var(--accent);font-weight:700">${denemeCount} deneme • Net: ${denemeNet.toFixed(1)}</span>`
+            : `<span style="font-size:0.75rem;color:var(--text2);font-weight:400">Bugün sonuç girmedin</span>`}
+        </button>`;
+      })()}
+      <button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="openEntryFor(null)">+ Diğer Çalışma Ekle</button>
     </div>
 
     <div class="card">
@@ -7689,6 +7706,23 @@ function updateEntryTopics() {
   // Konu seçici label'ı sıfırla
   const topicLbl = document.getElementById('entryTopicLabel');
   if (topicLbl) topicLbl.textContent = '— Konu seç —';
+}
+
+function openDenemeSinaviEntry() {
+  // Deneme türünü seçili olarak modalı aç
+  document.getElementById('entryType').value = 'deneme';
+  const typeLbl = document.getElementById('entryTypeLabel');
+  if (typeLbl) typeLbl.textContent = '📊 Deneme Sınavı';
+  document.getElementById('entryDuration').value = '';
+  document.getElementById('entryNote').value = '';
+  subjects.forEach(s => {
+    const d = document.getElementById('deneme_d_'+s.name);
+    const y = document.getElementById('deneme_y_'+s.name);
+    if(d) d.value='';
+    if(y) y.value='';
+  });
+  toggleEntryFields();
+  openModal('addEntryModal');
 }
 
 function openEntryFor(subjectName) {
