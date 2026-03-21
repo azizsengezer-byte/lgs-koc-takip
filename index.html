@@ -1178,6 +1178,8 @@ auth.onAuthStateChanged(async (user) => {
     try {
       const doc = await db.collection('users').doc(user.uid).get();
       if (!doc.exists) {
+        // Hesap Firestore'dan silinmiş - Auth'tan da çıkış yap
+        await auth.signOut();
         document.getElementById('app').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
         return;
@@ -6560,59 +6562,89 @@ function openTopicPicker(target) {
   const isHiyerarsik = rawList.length > 0 && typeof rawList[0] === 'object';
 
   if (isHiyerarsik) {
-    // Flat liste görünümü - ünite başlık, altında alt konular gizli/açık
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.style.cssText = 'display:flex;align-items:flex-end;z-index:9999';
-    let html = `<div style="background:var(--surface);border-radius:18px 18px 0 0;width:100%;max-height:75vh;overflow-y:auto">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1">
-        <span style="font-size:1rem;font-weight:700">${sub} — Konu Seç</span>
-        <button onclick="this.closest('.modal-overlay').remove()" style="background:none;border:none;color:var(--text2);font-size:1.2rem;cursor:pointer;padding:4px">✕</button>
-      </div>`;
+    // Fen: topicPickerModal'ı kullan - diğer derslerle aynı görünüm
+    const modal = document.getElementById('topicPickerModal');
+    document.getElementById('topicPickerTitle').textContent = sub + ' — Konu Seç';
+    // Arama kutusunu gizle
+    const searchWrap = document.getElementById('topicPickerSearch')?.parentElement;
+    if (searchWrap) searchWrap.style.display = 'none';
+
+    let listHTML = '';
     rawList.forEach((item, ui) => {
       const hasAlt = item.alt && item.alt.length > 0;
-      const cbArg = cbName ? `,'${cbName}'` : '';
+      const cbArg = cbName || '';
       const uniteEsc = item.unite.replace(/'/g, "\'");
-      // Ünite satırı - tıklayarak seçilebilir, ok ile alt konular açılabilir
-      html += `<div style="border-bottom:1px solid var(--border)22">
-        <div style="display:flex;align-items:center">
-          <div onclick="fenSec('${uniteEsc}','${uniteEsc}','${targetId}','${labelId}',this.closest('.modal-overlay')${cbArg})"
-            style="flex:1;padding:14px 20px;cursor:pointer;font-size:0.92rem;font-weight:600">
-            ${item.unite}
-          </div>
-          ${hasAlt ? `<button onclick="fenUniteToggle(${ui})" style="padding:14px 16px;background:none;border:none;cursor:pointer;color:var(--text2);transition:.2s" id="fenArrowBtn_${ui}">
-            <span id="fenArrow_${ui}" style="display:inline-block;transition:transform .2s">›</span>
-          </button>` : ''}
-        </div>`;
+      // Ünite satırı - tıklanınca direkt seç
+      listHTML += `<button onclick="fenSecVeKapat('${uniteEsc}','${uniteEsc}','${targetId}','${labelId}','${cbArg}')"
+        style="width:100%;padding:14px 18px;background:transparent;border:none;border-bottom:1px solid var(--border);
+               color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-weight:600">${item.unite}</span>
+        ${hasAlt ? `<span style="color:var(--text2);font-size:0.8rem" id="fenArrow_${ui}">›</span>` : `<span style="color:var(--text2);font-size:0.8rem">›</span>`}
+      </button>`;
       if (hasAlt) {
-        html += `<div id="fenAlt_${ui}" style="display:none;background:var(--surface2)22">`;
+        // Alt konular başlangıçta gizli, ok ile açılır
+        listHTML += `<div id="fenAlt_${ui}" style="display:none">`;
         item.alt.forEach(alt => {
           const altEsc = alt.replace(/'/g, "\'");
-          html += `<div onclick="fenSec('${uniteEsc}','${altEsc}','${targetId}','${labelId}',this.closest('.modal-overlay')${cbArg})"
-            style="padding:11px 20px 11px 36px;cursor:pointer;font-size:0.86rem;color:var(--text2);border-top:1px solid var(--border)22;display:flex;align-items:center;gap:8px">
-            <span style="color:var(--accent);font-size:0.7rem">●</span>${alt}
-          </div>`;
+          listHTML += `<button onclick="fenSecVeKapat('${uniteEsc}','${altEsc}','${targetId}','${labelId}','${cbArg}')"
+            style="width:100%;padding:11px 18px 11px 36px;background:var(--surface2)44;border:none;border-bottom:1px solid var(--border)22;
+                   color:var(--text2);text-align:left;cursor:pointer;font-size:0.86rem;display:flex;align-items:center;gap:8px">
+            <span style="color:var(--accent);font-size:0.65rem">●</span><span>${alt}</span>
+          </button>`;
         });
-        html += `</div>`;
+        listHTML += `</div>`;
+        // Ok butonunu ünite butonunun onclick'ine de ekle - toggle için
+        listHTML = listHTML.replace(
+          `onclick="fenSecVeKapat('${uniteEsc}','${uniteEsc}','${targetId}','${labelId}','${cbArg}')"`,
+          `onclick="fenToggleAlt(${ui}, '${uniteEsc}', '${targetId}', '${labelId}', '${cbArg}')"`
+        );
       }
-      html += `</div>`;
     });
     if (type === 'tekrar') {
-      const cbArg = cbName ? `,'${cbName}'` : '';
-      html += `<div onclick="fenSec('Genel Tekrar','Genel Tekrar','${targetId}','${labelId}',this.closest('.modal-overlay')${cbArg})"
-        style="padding:14px 20px;cursor:pointer;font-size:0.92rem;font-weight:600;border-bottom:1px solid var(--border)22">
-        🔁 Genel Tekrar</div>`;
+      const cbArg = cbName || '';
+      listHTML += `<button onclick="fenSecVeKapat('Genel Tekrar','Genel Tekrar','${targetId}','${labelId}','${cbArg}')"
+        style="width:100%;padding:14px 18px;background:transparent;border:none;border-bottom:1px solid var(--border);
+               color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+        <span>🔁 Genel Tekrar</span><span style="color:var(--text2);font-size:0.8rem">›</span>
+      </button>`;
     }
-    html += `</div>`;
-    modal.innerHTML = html;
-    document.body.appendChild(modal);
-    modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+    document.getElementById('topicPickerList').innerHTML = listHTML;
+    modal.style.display = 'flex';
+    modal.onclick = (e) => { if(e.target===modal) closeTopicPicker(); };
   } else {
     const showGenel = type === 'tekrar';
     const allTopics = showGenel ? [...rawList, 'Genel Tekrar'] : rawList;
     const opts = allTopics.map(t=>({v:t, l:t}));
     openOptionPicker(targetId, (sub||'Konu')+' — Seç', opts, cbName ? {name:cbName} : null);
   }
+}
+
+function fenToggleAlt(ui, unite, targetId, labelId, cbName) {
+  const altEl = document.getElementById('fenAlt_'+ui);
+  const arrowEl = document.getElementById('fenArrow_'+ui);
+  if (!altEl) {
+    // Alt konu yok, direkt seç
+    fenSecVeKapat(unite, unite, targetId, labelId, cbName);
+    return;
+  }
+  const open = altEl.style.display !== 'none';
+  altEl.style.display = open ? 'none' : 'block';
+  if (arrowEl) arrowEl.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
+}
+
+function fenSecVeKapat(unite, alt, targetId, labelId, cbName) {
+  const val = (alt && alt !== unite) ? unite + ' / ' + alt : unite;
+  const inp = document.getElementById(targetId);
+  const lbl = document.getElementById(labelId);
+  if (inp) inp.value = val;
+  if (lbl) lbl.textContent = val;
+  closeTopicPicker();
+  if (cbName && window[cbName]) window[cbName]();
+}
+
+function fenSec(unite, alt, targetId, labelId, modalEl, cbName) {
+  fenSecVeKapat(unite, alt, targetId, labelId, cbName||'');
+  modalEl?.remove();
 }
 
 function fenUniteToggle(ui) {
@@ -8151,19 +8183,33 @@ function saveEntry() {
 
 async function deleteStudent(i) {
   const s = students[i];
-  const ok = await appConfirm('Öğrenciyi Sil', `${s.name} silinsin mi? Bu işlem geri alınamaz.`, true);
+  const ok = await appConfirm('Öğrenciyi Sil', `${s.name} silinsin mi? Öğrencinin hesabı devre dışı bırakılacak ve bir daha giriş yapamayacak. Bu işlem geri alınamaz.`, true);
   if (!ok) return;
-  students.splice(i, 1);
-  // Firestore'dan da sil
-  const user = auth.currentUser;
-  if (user) {
-    const snap = await db.collection('pendingStudents')
-      .where('teacherId','==',user.uid)
-      .where('name','==',s.name).get();
-    snap.forEach(doc => doc.ref.delete());
+
+  try {
+    // 1. users koleksiyonundan sil - giriş yapınca hesap bulunamayacak
+    if (s.uid) {
+      await db.collection('users').doc(s.uid).delete();
+      // wellness verisini de sil
+      await db.collection('wellness').doc(s.uid).delete().catch(()=>{});
+    }
+
+    // 2. pendingStudents'tan sil
+    const user = auth.currentUser;
+    if (user) {
+      const snap = await db.collection('pendingStudents')
+        .where('teacherId','==',user.uid)
+        .where('name','==',s.name).get();
+      snap.forEach(doc => doc.ref.delete());
+    }
+
+    // 3. Lokal diziden çıkar
+    students.splice(i, 1);
+    showToast('🗑️', `${s.name} silindi. Hesabına bir daha erişemeyecek.`);
+    showPage('students');
+  } catch(e) {
+    showToast('❌', 'Silme hatası: ' + e.message);
   }
-  showToast('🗑️', `${s.name} silindi.`);
-  showPage('students');
 }
 
 async function saveNewStudent() {
