@@ -3836,7 +3836,9 @@ async function exportPsychPDF(sName) {
           if(bugunPozitif){doc.setTextColor(20,140,70);const ls=doc.splitTextToSize(tx('(+) '+bugunPozitif),152);doc.text(ls,22,sy+=5);sy+=ls.length*4;}
           if(bugunNegatif){doc.setTextColor(175,30,30);const ls=doc.splitTextToSize(tx('(-) '+bugunNegatif),152);doc.text(ls,22,sy+=2);sy+=ls.length*4;}
           Y+=bugunPozitif&&bugunNegatif?26:18;
-        }
+        } // end ogr sesi
+
+      } // end period daily
 
       // ═══════════════════════════════════════════════════════════
       // HAFTALIK veya AYLIK RAPOR
@@ -5594,8 +5596,6 @@ async function exportPsychPDF(sName) {
     } // end sortedDays
 
   showToast('📄','PDF indiriliyor!');
-
-  } // end try block
 
   } catch(err) {
     window._pdfDateOverride = null;
