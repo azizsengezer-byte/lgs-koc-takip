@@ -1147,6 +1147,18 @@ const kazanimlar = {
 
 let kazanimDone = {};
 
+// Türkiye saatine göre bugünün tarihini döndürür (UTC+3)
+function getTodayKey() {
+  const now = new Date();
+  const tr = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  return tr.toISOString().split('T')[0];
+}
+function getDateKey(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  const tr = new Date(d.getTime() + 3 * 60 * 60 * 1000);
+  return tr.toISOString().split('T')[0];
+}
+
 function renderMobileNav() {
   const nav = document.getElementById('mobileNav');
   if(!nav) return;
@@ -1223,7 +1235,7 @@ auth.onAuthStateChanged(async (user) => {
         document.getElementById('headerAvatar').textContent = (data.name||user.email)[0].toUpperCase();
       }
 
-      const todayKey = new Date().toISOString().split('T')[0];
+      const todayKey = getTodayKey();
 
       if (currentRole === 'teacher') {
         // Öğrencileri çek
@@ -1756,7 +1768,7 @@ function renderTeacherPage(id, el) {
 function teacherDashboard() {
   const name = document.getElementById('menuName')?.textContent || 'Hoca';
   const studentCount = students.length;
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = getTodayKey();
   const todayEntries = studyEntries.filter(e=>e.dateKey===todayKey);
   const activeToday = new Set(todayEntries.map(e=>e.studentName)).size;
   return `
@@ -1790,7 +1802,7 @@ function teacherDashboard() {
         students.map(s=>{
           const sEntries = studyEntries.filter(e=>e.studentName===s.name);
           const sTasks = tasks.filter(t=>t.studentName===s.name && !t.done).length;
-          const todayKey2 = new Date().toISOString().split('T')[0];
+          const todayKey2 = getTodayKey();
           const activeToday2 = sEntries.some(e=>e.dateKey===todayKey2);
           const totalQ = sEntries.reduce((a,e)=>a+(e.questions||0),0);
           const weekAgo2 = new Date(); weekAgo2.setDate(weekAgo2.getDate()-7);
@@ -1853,7 +1865,7 @@ function teacherDashboard() {
 }
 
 function teacherStudents() {
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = getTodayKey();
   const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
   const weekKey = weekAgo.toISOString().split('T')[0];
 
@@ -2355,7 +2367,7 @@ function studentDetailAnalysis() {
   const sObj = students.find(s=>s.name===sName) || { color:'#6c63ff' };
   const sUid = sObj.uid || '';
   const now = new Date();
-  const todayKey = now.toISOString().split('T')[0];
+  const todayKey = getDateKey(now);
   const matchE = e => e.studentName===sName || (sUid && e.userId===sUid);
 
   // Dönem filtresi
@@ -2541,7 +2553,7 @@ function studentDetailAnalysis() {
       </button>
       <div id="raporAlPanel_${sName.replace(/\s/g,'_')}" style="display:none;margin-top:6px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
         <div style="display:flex;gap:8px">
-          <button onclick="(()=>{const now=new Date();const dk=now.toISOString().split('T')[0];const dateStr=now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});window._pdfDateOverride={mode:'daily',startKey:dk,endKey:dk,label:'Günlük',title:dateStr+' Günlük Rapor'};preparePdfLink('${sName}',this).finally(()=>{window._pdfDateOverride=null;});})()"
+          <button onclick="(()=>{const now=new Date();const dk=getDateKey(now);const dateStr=now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});window._pdfDateOverride={mode:'daily',startKey:dk,endKey:dk,label:'Günlük',title:dateStr+' Günlük Rapor'};preparePdfLink('${sName}',this).finally(()=>{window._pdfDateOverride=null;});})()"
             class="dp-btn-pdf"
             style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
             📋 Günlük
@@ -2848,7 +2860,7 @@ async function psychReportPage() {
 
   // Dönem filtresi
   const now = new Date();
-  const todayKey = now.toISOString().split('T')[0];
+  const todayKey = getDateKey(now);
   let startKey, endKey;
   if (period === 'daily') {
     startKey = todayKey; endKey = todayKey;
@@ -3139,7 +3151,7 @@ async function exportPsychPDF(sName) {
     startKey = ov.startKey; endKey = ov.endKey;
     periodLabel = ov.label; periodTitle = ov.title;
   } else if (period === 'daily') {
-    startKey = now.toISOString().split('T')[0];
+    startKey = getDateKey(now);
     endKey = startKey;
     periodLabel = 'Günlük';
     periodTitle = now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'}) + ' Günlük Raporu';
@@ -3153,8 +3165,8 @@ async function exportPsychPDF(sName) {
     periodLabel = 'Haftalık';
     periodTitle = s + ' – ' + e + ' Haftalık Raporu';
   } else {
-    startKey = now.toISOString().split('T')[0].substring(0,7)+'-01';
-    endKey = now.toISOString().split('T')[0];
+    startKey = getDateKey(now).substring(0,7)+'-01';
+    endKey = getDateKey(now);
     const monthName = now.toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
     periodLabel = 'Aylık';
     periodTitle = monthName + ' Aylık Raporu';
@@ -3468,7 +3480,9 @@ async function exportPsychPDF(sName) {
       const bSat = doc.splitTextToSize(baslik, 156);
       const mSat = doc.splitTextToSize(metin, 156);
       const bH   = Math.max(bSat.length*5.5 + mSat.length*4.8 + 20, 24);
-      Y = pdfCheck(doc, Y, bH+8);
+      // bolumBaslik yeni sayfaya geçmişse kutu pdfCheck yapmaz (başlık ve kutu aynı sayfada kalır)
+      if (!_bolumYeniSayfa) Y = pdfCheck(doc, Y, bH+8);
+      _bolumYeniSayfa = false;
       doc.setFillColor(bg[0],bg[1],bg[2]); doc.roundedRect(15,Y,180,bH,2,2,'F');
       doc.setFillColor(kenar[0],kenar[1],kenar[2]); doc.roundedRect(15,Y,4,bH,1,1,'F');
       doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(kenar[0],kenar[1],kenar[2]);
@@ -3490,7 +3504,11 @@ async function exportPsychPDF(sName) {
 
     function bolumBaslik(renk, baslik, altMetin) {
       const altSat = doc.splitTextToSize(altMetin, 170);
-      Y = pdfCheck(doc, Y, altSat.length*5 + 14 + 35); // başlık + altMetin + min kutu için yer
+      // Başlık + altMetin + ilk kutu min yüksekliği — sayfa sonuna yakınsa yeni sayfaya taşı
+      const needed = altSat.length*5 + 14 + 50;
+      const oncekiY = Y;
+      Y = pdfCheck(doc, Y, needed);
+      _bolumYeniSayfa = (Y < oncekiY || oncekiY > 250); // yeni sayfaya geçildiyse işaretle
       Y += 3;
       doc.setFont(PF,'bold'); doc.setFontSize(8.5);
       doc.setTextColor(renk[0],renk[1],renk[2]);
@@ -3535,6 +3553,7 @@ async function exportPsychPDF(sName) {
       // ───────────────────────────────────────────────────────────
       // ORTAK ALTYAPI — 3 mod için paylaşılan yardımcılar
       // ───────────────────────────────────────────────────────────
+      let _bolumYeniSayfa = false;
       const sozelDersler  = ['Türkçe','İnkılap Tarihi','Din Kültürü','İngilizce'];
       const sayisalDersler= ['Matematik','Fen Bilimleri'];
       const std = (arr) => {
@@ -5703,7 +5722,7 @@ async function exportPsychPDF(sName) {
     } // end sortedDays
 
   pdfFooter(doc, doc.internal.getNumberOfPages(), tx(sName)+' | Psikolojik Takip');
-  doc.save(ts(sName.replace(/\s+/g,'_'))+'_Psikolojik_'+periodLabel+'_'+now.toISOString().split('T')[0]+'.pdf');
+  doc.save(ts(sName.replace(/\s+/g,'_'))+'_Psikolojik_'+periodLabel+'_'+getDateKey(now)+'.pdf');
   window._pdfDateOverride = null;
   showToast('📄','PDF indiriliyor!');
 
@@ -6262,7 +6281,7 @@ async function preparePdfLink(sName, btn) {
     if (!doc) { if(btn){btn.textContent=origText;btn.disabled=false;} return; }
     const ov = window._pdfDateOverride;
     const period = ov?.label || studentAnalysisPeriod || 'haftalik';
-    const fname = ts(sName.replace(/\s+/g,'_')) + '_' + period + '_' + new Date().toISOString().split('T')[0] + '.pdf';
+    const fname = ts(sName.replace(/\s+/g,'_')) + '_' + period + '_' + getTodayKey() + '.pdf';
     // Direkt indir — yeşil buton yok
     const blob = doc.output('blob');
     const url = URL.createObjectURL(blob);
@@ -6584,7 +6603,7 @@ function exportStudentDetailPDF(sName) {
   const PF = registerFontIfAvailable(doc);
 
   const now = new Date();
-  const todayKey = now.toISOString().split('T')[0];
+  const todayKey = getDateKey(now);
 
   // Dönem bilgisi
   const pLabels = { daily:'Günlük', weekly:'Haftalık', monthly:'Aylık' };
@@ -7164,7 +7183,7 @@ function renderStudentPage(id, el) {
 function studentDashboard() {
   const userName = document.getElementById('menuName')?.textContent || 'Öğrenci';
   const firstName = userName.split(' ')[0];
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = getTodayKey();
 
   // Gerçek verilerden hesapla
   const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
@@ -7314,7 +7333,7 @@ function studentDashboard() {
 
 function studentDailyEntry() {
   const todayStr = new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'long'});
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = getTodayKey();
   const todayEntries = studyEntries.filter(e => e.isToday || e.dateKey === todayKey);
   const totalDur = todayEntries.reduce((a,e)=>a+(e.duration||0),0);
   const totalQ = todayEntries.filter(e=>e.type!=='deneme').reduce((a,e)=>a+(e.questions||0),0);
@@ -7514,7 +7533,7 @@ let analysisPeriod = 'weekly'; // 'daily' | 'weekly' | 'monthly'
 
 function studentAnalysis() {
   const now = new Date();
-  const todayKey = now.toISOString().split('T')[0];
+  const todayKey = getDateKey(now);
 
   // Period filtre
   let filtered = [];
@@ -7803,7 +7822,7 @@ function exportStudentPDF() {
 
   // Özet kutuları
   const now = new Date();
-  const todayKey = now.toISOString().split('T')[0];
+  const todayKey = getDateKey(now);
   let filtered = [];
   if (analysisPeriod === 'daily') filtered = studyEntries.filter(e=>e.dateKey===todayKey);
   else if (analysisPeriod === 'weekly') {
@@ -8104,7 +8123,7 @@ function wellnessPage() {
   let data = {};
   try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
 
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = getTodayKey();
 
   // Gün değişince: dünün günlük verileri silindi, bugün boş başlar
   // Kalıcı veriler (hedef, hedefOkul) korunur, sadece days[bugün] yok ise boş
@@ -8587,7 +8606,7 @@ function saveWellnessField(field, value) {
 
 function saveWellnessDay(field, value, btn) {
   const { myUid, storageKey, data } = _getW();
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = getTodayKey();
   if (!data.days) data.days = {};
   if (!data.days[todayKey]) data.days[todayKey] = {};
   data.days[todayKey][field] = value;
@@ -8607,7 +8626,7 @@ function saveWellnessDay(field, value, btn) {
 
 function saveWellnessAll(btn) {
   const { myUid, storageKey, data } = _getW();
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = getTodayKey();
   if (!data.days) data.days = {};
   if (!data.days[todayKey]) data.days[todayKey] = {};
 
@@ -8897,7 +8916,7 @@ async function sendWellnessNotification(studentUid, text, type) {
   try {
     const teacherId = (window.currentUserData||{}).teacherId;
     if (!teacherId) return;
-    const todayKey = new Date().toISOString().split('T')[0];
+    const todayKey = getTodayKey();
     const existing = await db.collection('notifications')
       .where('toUid','==',teacherId)
       .where('fromUid','==',studentUid)
@@ -9214,7 +9233,7 @@ async function sendMessage(role) {
   const cId = convId(myUid, activeChat);
   const now = new Date();
   const time = now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
-  const dateKey = now.toISOString().split('T')[0];
+  const dateKey = getDateKey(now);
   const msgId = Date.now().toString();
   const msg = {
     id: msgId, text, senderUid: myUid, senderName: myData.name||'',
@@ -10200,7 +10219,7 @@ function saveEntry() {
   const now = new Date();
   const time = now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
   // Geçmiş gün seçiliyse o tarihe kaydet, yoksa bugün
-  const dateKey = window._selectedEntryDate || now.toISOString().split('T')[0];
+  const dateKey = window._selectedEntryDate || getDateKey(now);
   const isToday = !window._selectedEntryDate;
   window._selectedEntryDate = null; // kullandıktan sonra sıfırla
   const user = auth.currentUser;
@@ -10484,7 +10503,7 @@ async function saveTask() {
   const count = document.getElementById('taskCount').value;
   const desc = document.getElementById('taskDesc').value || `${unit} konusunda görev`;
   const dueRaw = document.getElementById('taskDue').value;
-  const due = dueRaw ? new Date(dueRaw).toLocaleDateString('tr-TR',{day:'numeric',month:'short'}) : '—';
+  const due = dueRaw ? new Date(dueRaw).toLocaleDateString('tr-TR',{day:'numeric',month:'long'}) : '—';
   const typeLabels = {soru:'📝 Soru Çözümü', konu:'📖 Konu Çalışma', test:'📊 Test', ozet:'✏️ Özet', tekrar:'🔁 Tekrar', diger:'📌 Diğer'};
   const fullDesc = (count ? `${count} soru — ` : '') + desc;
   const user = auth.currentUser;
@@ -10554,7 +10573,7 @@ function exportPDF(role) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
       const now = new Date();
-      const todayKey = now.toISOString().split('T')[0];
+      const todayKey = getDateKey(now);
       const nowStr = now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
 
       const period = role==='teacher'
@@ -10609,7 +10628,7 @@ function exportPDF(role) {
       function getPLabel() {
         if (period==='weekly') {
           const sun = new Date(monday); sun.setDate(monday.getDate()+6);
-          return monday.toLocaleDateString('tr-TR',{day:'numeric',month:'short'})+' - '+sun.toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'})+' Haftalık Rapor';
+          return monday.toLocaleDateString('tr-TR',{day:'numeric',month:'long'})+' - '+sun.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'})+' Haftalık Rapor';
         }
         if (period==='monthly') {
           const d = new Date(monthStart+'T12:00:00');
@@ -10736,7 +10755,7 @@ function showToast(icon, msg) {
 /* =================== CHARTS =================== */
 function drawCharts() {
   const now = new Date();
-  const todayKey = now.toISOString().split('T')[0];
+  const todayKey = getDateKey(now);
 
   // Son 7 günlük veri
   const last7 = [];
@@ -10760,7 +10779,7 @@ function drawCharts() {
   if(wTable && students.length > 0) {
     const weekAgo = new Date(now); weekAgo.setDate(now.getDate()-7);
     const weekKey = weekAgo.toISOString().split('T')[0];
-    const todayK = now.toISOString().split('T')[0];
+    const todayK = getDateKey(now);
     wTable.innerHTML = students.map((s,i) => {
       const se = studyEntries.filter(e=>e.studentName===s.name && e.dateKey>=weekKey);
       const soru = se.reduce((a,e)=>a+(e.questions||0),0);
