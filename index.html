@@ -5329,14 +5329,6 @@ function studentDashboard() {
   const weekQ = weekEntries.reduce((a,e)=>a+(e.questions||0),0);
   const weekDurMin = weekEntries.reduce((a,e)=>a+(e.duration||0),0);
   const weekDurH = (weekDurMin/60).toFixed(1);
-  // Bugünkü wellness verisi
-  const wellnessData = window._wellnessCache || {};
-  const wDays = wellnessData.days || {};
-  const todayMoodVal = wDays[todayKey]?.mood || null;
-  const moodLabelsD = {excited:'Heyecanlı',good:'İyiyim',focused:'Odaklı',ok:'İdare Eder',tired:'Yorgunum',anxious:'Kaygılı',sad:'Mutsuzum'};
-  const moodEmojisD = {excited:'🤩',good:'😊',focused:'🎯',ok:'😐',tired:'😴',anxious:'😰',sad:'😢'};
-  const moodColorsD = {excited:'#f9ca24',good:'#43e97b',focused:'#6c63ff',ok:'#b0b0b0',tired:'#fd7e14',anxious:'#ff6584',sad:'#74b9ff'};
-
   const pendingTasks = tasks.filter(t=>!t.done).length;
   const unseenTasks = tasks.filter(t=>!t.done && !t.seen).length;
 
@@ -5375,16 +5367,7 @@ function studentDashboard() {
 
     ${lgsCountdownWidget()}
 
-    <!-- Nasıl Hissediyorum — bugün giriş varsa duygu göster, yoksa animasyonlu banner -->
-    ${todayMoodVal ? `
-    <div style="background:${moodColorsD[todayMoodVal]}18;border:1.5px solid ${moodColorsD[todayMoodVal]}55;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="showPage('wellness')">
-      <span style="font-size:1.8rem">${moodEmojisD[todayMoodVal]||'💙'}</span>
-      <div style="flex:1">
-        <div style="font-weight:800;font-size:0.95rem;color:${moodColorsD[todayMoodVal]}">${moodLabelsD[todayMoodVal]}</div>
-        <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Bugünkü duygu durumu · Güncelle</div>
-      </div>
-      <span style="color:var(--text2);font-size:1rem">›</span>
-    </div>` : `
+    <!-- Nasıl Hissediyorum — her zaman animasyonlu banner -->
     <div class="wellness-banner-wrap">
       <button class="wellness-banner-inner" onclick="showPage('wellness')">
         <span class="wellness-heart-beat" style="font-size:1.8rem">💙</span>
@@ -5394,7 +5377,7 @@ function studentDashboard() {
         </div>
         <span style="color:var(--accent);font-size:1rem">›</span>
       </button>
-    </div>`}
+    </div>
 
     <div class="grid-3">
       <div class="stat-card">
@@ -6280,7 +6263,8 @@ function wellnessPage() {
 
   const todayKey = new Date().toISOString().split('T')[0];
 
-  // Gün değişince bugünün verisi boş olmalı — dünün verisini inputlara doldurma
+  // Gün değişince: dünün günlük verileri silindi, bugün boş başlar
+  // Kalıcı veriler (hedef, hedefOkul) korunur, sadece days[bugün] yok ise boş
   const today = data.days?.[todayKey] || {};
 
   // Global cache güncelle
@@ -6406,7 +6390,7 @@ function wellnessPage() {
           <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:7px">🛌 Uyku (saat)</div>
           <input type="number" min="2" max="12" step="0.5" id="wellnessUyku" placeholder="0"
             value="${today.uyku||''}"
-            onchange="saveWellnessDay('uyku',this.value)"
+            oninput="saveWellnessDay('uyku',this.value)"
             style="width:100%;padding:7px 9px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
         </div>
         <!-- Ekran Süresi grubu -->
@@ -6417,14 +6401,14 @@ function wellnessPage() {
               <div style="font-size:0.65rem;color:var(--text2);margin-bottom:4px">💻 Online ders</div>
               <input type="number" min="0" max="12" step="0.5" id="wellnessEkranOnline" placeholder="0"
                 value="${today.ekranOnline||''}"
-                onchange="saveWellnessDay('ekranOnline',this.value)"
+                oninput="saveWellnessDay('ekranOnline',this.value)"
                 style="width:100%;padding:7px 9px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
             </div>
             <div style="flex:1">
               <div style="font-size:0.65rem;color:var(--text2);margin-bottom:4px">📵 Sosyal medya</div>
               <input type="number" min="0" max="12" step="0.5" id="wellnessEkranSosyal" placeholder="0"
                 value="${today.ekranSosyal||''}"
-                onchange="saveWellnessDay('ekranSosyal',this.value)"
+                oninput="saveWellnessDay('ekranSosyal',this.value)"
                 style="width:100%;padding:7px 9px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
             </div>
           </div>
@@ -6789,13 +6773,26 @@ function saveWellnessAll(btn) {
   if (hedef)     data.hedef = hedef;
   if (hedefOkul) data.hedefOkul = hedefOkul;
 
-  const ids = ['wellnessKelime','wellnessEnerji','wellnessOdak','wellnessKaygi',
-               'wellnessGurur','wellnessUyku','wellnessEkran','wellnessNegatif',
-               'wellnessPozitif','wellnessNot','zorDers'];
-  const keys = ['kelime','enerji','odak','kaygi','gurur','uyku','ekran','ekranOnline','ekranSosyal','negatif','pozitif','not','zorDers'];
-  ids.forEach((id, i) => {
-    const v = document.getElementById(id)?.value;
-    if (v !== undefined && v !== null && v !== '') data.days[todayKey][keys[i]] = v;
+  // Alan-ID eşleştirmesi — her key için doğru input ID'si
+  const fieldMap = [
+    ['wellnessKelime',      'kelime'],
+    ['wellnessEnerji',      'enerji'],
+    ['wellnessOdak',        'odak'],
+    ['wellnessKaygi',       'kaygi'],
+    ['wellnessGurur',       'gurur'],
+    ['wellnessUyku',        'uyku'],
+    ['wellnessEkranOnline', 'ekranOnline'],
+    ['wellnessEkranSosyal', 'ekranSosyal'],
+    ['wellnessNegatif',     'negatif'],
+    ['wellnessPozitif',     'pozitif'],
+    ['wellnessNot',         'not'],
+    ['zorDers',             'zorDers'],
+  ];
+  fieldMap.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const v = el.value;
+    if (v !== undefined && v !== null && v !== '') data.days[todayKey][key] = v;
   });
 
   // Mood butonu seçiliyse onu da al
