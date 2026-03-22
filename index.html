@@ -3896,12 +3896,10 @@ async function exportPsychPDF(sName) {
           Y+=bugunPozitif&&bugunNegatif?26:18;
         } // end ogr sesi
 
-      } // end period daily
-
       // ═══════════════════════════════════════════════════════════
       // HAFTALIK veya AYLIK RAPOR
       // ═══════════════════════════════════════════════════════════
-      } else {
+      } else { // end daily → start weekly/monthly
         Y = pdfCheck(doc, Y, 20);
         Y = pdfSecHeader(doc, 'PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ', Y, 220, 50, 100);
 
@@ -5699,6 +5697,7 @@ async function exportPsychPDF(sName) {
   Y += 30;
 
       } // end weekly/monthly
+      } // end if daily / else weekly-monthly
     } // end veriGunler
 
     } // end sortedDays
