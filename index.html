@@ -3418,7 +3418,8 @@ async function exportPsychPDF(sName) {
     const veriGunler  = gunler.filter(d=>d.enerji>0||d.kaygi>0||d.uyku>0);
     const aktifGunler = gunler.filter(d=>d.soru>0);
     const toplamSoru  = gunler.reduce((a,d)=>a+d.soru,0);
-    const toplamSure  = gunler.reduce((a,d)=>a+d.sure,0);
+    // Süre: sadece soru tipinden değil tüm akademik girişlerden (konu/tekrar dahil)
+    const toplamSure  = allAcadEntries.filter(e=>e.type!=='deneme').reduce((a,e)=>a+(e.duration||0),0);
     const ortSoru     = aktifGunler.length>0 ? toplamSoru/aktifGunler.length : 0;
     // fn: sıfır olmayan değerlerin ortalaması, veri yoksa null döner (0 değil — önemli!)
     const fn = (arr,f) => { const v=arr.filter(d=>d[f]>0); return v.length ? v.reduce((a,d)=>a+d[f],0)/v.length : null; };
@@ -3979,7 +3980,7 @@ async function exportPsychPDF(sName) {
           Y = pdfCheck(doc, Y, 8);
           doc.setDrawColor(180,170,220); doc.setLineWidth(0.3);
           doc.line(15, Y, 195, Y); Y += 6;
-          doc.setFont(PF,'italic'); doc.setFontSize(6); doc.setTextColor(160,150,200);
+          doc.setFont(PF,'normal'); doc.setFontSize(6); doc.setTextColor(160,150,200);
           doc.text(tx('Aşağıdaki istatistiksel analiz AI yorumunu destekler niteliktedir.'), 16, Y); Y += 8;
         }
 
@@ -6448,7 +6449,7 @@ function pdfFooter(doc, totalPages, subtitle) {
 }
 
 function pdfSecHeader(doc, title, Y, r=90, g=72, b=200) {
-  Y = pdfCheck(doc, Y, 16); // Sadece başlık kutusu için yer yeterli
+  Y = pdfCheck(doc, Y, 30); // Başlık + hemen altındaki ilk içerik için yer
   // Yumuşak renk + sol çizgi aksanı
   doc.setFillColor(Math.min(255,Math.round(r*0.12+255*0.88)),Math.min(255,Math.round(g*0.12+255*0.88)),Math.min(255,Math.round(b*0.12+255*0.88))); doc.roundedRect(14,Y,182,8,1.5,1.5,'F');
   doc.setFillColor(r,g,b); doc.roundedRect(14,Y,3,8,1,1,'F');
@@ -9802,11 +9803,11 @@ ${wellnessData.slice(0,14).map(d=>d.tarih+': Kaygi='+d.kaygi+' Enerji='+d.enerji
 KRIZ GUNLERI (Kaygi>=8 veya Uyku<6 veya AkademikFelc):
 ${krizGunler.length > 0 ? krizGunler.map(d=>d.tarih+': Kaygi='+(d.kaygi||0)+' Uyku='+(d.uyku||'-')+' Soru='+(d.soru||0)+(!d.akademikVar&&d.kaygi>=7?' AKADEMIK FELC':'')).join('\n') : 'Yok'}
 
-AKADEMIK VERI:
+AKADEMIK VERI (SORU COZUMU - deneme sinavi degil):
 ${academicData.toplamSoru} soru, ${academicData.ortIsabet!==null?'%'+academicData.ortIsabet+' isabet':'isabet verisi yok'}, ${academicData.aktifGun} aktif gun
 ${academicData.dersBazli&&academicData.dersBazli.length>0?'Ders bazli: '+academicData.dersBazli.map(d=>d.d+' %'+d.isabet).join(', '):''}
 
-${denemeler.length>0?'DENEME NETLERI: '+denemeler.map(d=>d.tarih+': '+d.net+' net').join(', '):''}
+${denemeler.length>0?'DENEME SINAVI NETLERI (konu soru cozumu degil, resmi sinav sonuclari): '+denemeler.map(d=>d.tarih+': '+d.net+' net').join(', '):''}
 
 OGRENCININ KENDI SESI:
 ${ogrSesi.length>0?ogrSesi.map(n=>n.tarih+': '+(n.pozitif?'(+)'+n.pozitif:'')+' '+(n.negatif?'(-)'+n.negatif:'')).join('\n'):'Giris yok'}
@@ -9814,6 +9815,8 @@ ${ogrSesi.length>0?ogrSesi.map(n=>n.tarih+': '+(n.pozitif?'(+)'+n.pozitif:'')+' 
 KURALLAR:
 1. Kaygi>=7 + Soru=0 olan gunler "Amigdala Blokaji / Akademik Felc" olarak adlandir, asla "dinlenme" yazma
 2. Yuksek kaygi + yuksek enerji = "Kirilgan Hiper-Aktivasyon" asla olumlu yazma
+3. Tum teshis ve yorum ifadelerini TURKCE yaz. Ingilizce terim kullanma: "avoidance" degil "kacis", "denial" degil "inkar", "over-compensation" degil "asiri telafi", "dysregulation" degil "duzensizlik"
+4. Italik veya ozel karakter kullanma - sadece duz metin
 3. Kriz gunlerini tarih tarih adlandir
 4. Ogrencinin negatif ifadelerini dogrudan klinik analize dahil et
 5. Ay/hafta ortalamasi iyi gorunse dahi kriz gunleri varsa "maskelenmis kriz" uyarisi ver
