@@ -5,12 +5,18 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LGS Koç Takip Sistemi v3.1</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#6c63ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LGSKoç">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
 <style>
   :root {
     --bg: #0f1117;
@@ -7959,6 +7965,10 @@ function startNotifListener() {
   const myUid = (window.currentUserData||{}).uid || '';
   if (!myUid) return;
   if (notifUnsubscribe) { notifUnsubscribe(); notifUnsubscribe = null; }
+  // FCM push token kayıt — sadece öğrenci için
+  if (currentRole === 'student') {
+    registerFCMToken(myUid);
+  }
   try {
     notifUnsubscribe = db.collection('notifications')
       .where('toUid','==',myUid)
@@ -7976,6 +7986,35 @@ function startNotifListener() {
         updateNotifBadge();
       }, () => loadNotificationsOnce());
   } catch(e) { loadNotificationsOnce(); }
+}
+
+// FCM Push Token Kaydı
+const VAPID_KEY = 'BNbQhKCJmfDzfz_U9lL2L2t3WgfBhsLVqJpzYGnT5K8vR2mX4eQwYzN6oP1rD3sH7iM9aK5fE8cJ2nW0tI4u';
+
+async function registerFCMToken(uid) {
+  try {
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+    // Service Worker kayıt
+    const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    const messaging = firebase.messaging();
+    // İzin iste (henüz verilmediyse)
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+    // Token al
+    const token = await messaging.getToken({ 
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: reg
+    });
+    if (!token) return;
+    // Mevcut token ile aynıysa kaydetme
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (userDoc.data()?.fcmToken === token) return;
+    // Firestore'a kaydet
+    await db.collection('users').doc(uid).update({ fcmToken: token });
+    window._fcmToken = token;
+  } catch(e) {
+    // Sessiz hata — bildirim desteklenmiyor veya reddedildi
+  }
 }
 
 async function loadNotificationsOnce() {
