@@ -1749,7 +1749,7 @@ function renderTeacherPage(id, el) {
     el.innerHTML = messagesPage('teacher');
   }
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
-  else if(id==='profile') el.innerHTML = profilePage();
+  else if(id==='profile') { el.innerHTML = profilePage(); setTimeout(initApiSettings, 50); }
   setTimeout(()=>drawCharts(), 50);
 }
 
@@ -7158,7 +7158,7 @@ function renderStudentPage(id, el) {
     el.innerHTML = messagesPage('student');
   }
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
-  else if(id==='profile') el.innerHTML = profilePage();
+  else if(id==='profile') { el.innerHTML = profilePage(); setTimeout(initApiSettings, 50); }
   setTimeout(()=>drawCharts(), 50);
 }
 
@@ -9393,9 +9393,9 @@ function profilePage() {
       <div id="profileError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
       <button class="btn btn-primary" style="width:100%" onclick="saveProfile()">Kaydet ✓</button>
     </div>
-    \${isTeacher ? \`
+    ${isTeacher ? `
     <div class="card" style="margin-top:16px;border:1.5px solid #6c63ff33">
-      <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.api-arrow').style.transform=this.nextElementSibling.style.display==='block'?'rotate(180deg)':'rotate(0deg)'"
+      <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.api-arrow\').style.transform=this.nextElementSibling.style.display===\'block\'?\'rotate(180deg)\':\'rotate(0deg)\'"
         style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;user-select:none">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:1.3rem">🤖</span>
@@ -9409,40 +9409,34 @@ function profilePage() {
       <div style="display:none">
         <div style="height:1px;background:var(--border);margin:14px 0"></div>
         <div style="background:#6c63ff12;border-radius:10px;padding:12px;margin-bottom:14px;font-size:0.8rem;color:var(--text2);line-height:1.6">
-          API anahtarı girdiğinde psikolojik raporlardaki korelasyon analizi Claude AI tarafından yazılır.
-          Kriz günleri, öğrencinin kendi ifadeleri ve çelişkili veriler gerçek klinik dille yorumlanır.<br>
-          <span style="color:#ff6584">⚠ Anahtarı kimseyle paylaşma. GitHub'a push etmeden önce temizle.</span>
+          API anahtarı girdiğinde korelasyon analizi Claude AI tarafından yazılır. Kriz günleri, öğrencinin ifadeleri ve çelişkili veriler klinik dille yorumlanır.<br>
+          <span style="color:#ff6584">⚠ Anahtarı kimseyle paylaşma. GitHub\'a push etmeden önce temizle.</span>
         </div>
         <div class="form-group">
           <label class="form-label">Anthropic API Anahtarı</label>
           <div style="position:relative">
             <input class="form-input" type="password" id="apiKeyInput"
               placeholder="sk-ant-api03-..."
-              value="\${localStorage.getItem('lgs_anthropic_key')||''}"
               style="padding-right:48px;font-family:monospace;font-size:0.82rem">
-            <button onclick="document.getElementById('apiKeyInput').type=document.getElementById('apiKeyInput').type==='password'?'text':'password'"
+            <button type="button" onclick="toggleApiKeyVis()"
               style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text2)">👁</button>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;color:var(--text)">
-            <input type="checkbox" id="apiEnabled" \${localStorage.getItem('lgs_api_enabled')==='true'?'checked':''}
-              style="width:18px;height:18px;accent-color:#6c63ff;cursor:pointer">
+            <input type="checkbox" id="apiEnabled" style="width:18px;height:18px;accent-color:#6c63ff;cursor:pointer">
             AI analizini aktif et
           </label>
-          <span id="apiStatusBadge" style="font-size:0.72rem;padding:2px 8px;border-radius:20px;font-weight:700;
-            \${localStorage.getItem('lgs_api_enabled')==='true'?'background:#6c63ff22;color:#6c63ff':'background:#ff658422;color:#ff6584'}">
-            \${localStorage.getItem('lgs_api_enabled')==='true'?'AKTİF':'KAPALI'}
-          </span>
+          <span id="apiStatusBadge" style="font-size:0.72rem;padding:2px 8px;border-radius:20px;font-weight:700;background:#ff658422;color:#ff6584">KAPALI</span>
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-primary" style="flex:1" onclick="saveApiSettings()">Kaydet ✓</button>
-          <button class="btn btn-outline" style="padding:10px 14px;font-size:0.8rem" onclick="testApiKey()">Test Et</button>
-          <button onclick="clearApiKey()" style="padding:10px 14px;border-radius:10px;border:1.5px solid #ff658444;background:#ff658412;color:#ff6584;font-size:0.8rem;cursor:pointer">Sil</button>
+          <button type="button" class="btn btn-outline" style="padding:10px 14px;font-size:0.8rem" onclick="testApiKey()">Test Et</button>
+          <button type="button" onclick="clearApiKey()" style="padding:10px 14px;border-radius:10px;border:1.5px solid #ff658444;background:#ff658412;color:#ff6584;font-size:0.8rem;cursor:pointer">Sil</button>
         </div>
         <div id="apiTestResult" style="margin-top:10px;font-size:0.8rem;display:none"></div>
       </div>
-    </div>\` : ''}
+    </div></div>` : ''}
     <div class="card" style="margin-top:16px">
       <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.sifre-arrow').style.transform=this.nextElementSibling.style.display==='block'?'rotate(180deg)':'rotate(0deg)'"
         style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;user-select:none">
@@ -9671,6 +9665,26 @@ async function uploadPhoto(input) {
 }
 
 // ========== CLAUDE API YÖNETİMİ ==========
+
+function toggleApiKeyVis() {
+  const inp = document.getElementById('apiKeyInput');
+  if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function initApiSettings() {
+  const key  = localStorage.getItem('lgs_anthropic_key') || '';
+  const enabled = localStorage.getItem('lgs_api_enabled') === 'true';
+  const inp  = document.getElementById('apiKeyInput');
+  const cb   = document.getElementById('apiEnabled');
+  const badge= document.getElementById('apiStatusBadge');
+  if (inp)  inp.value = key;
+  if (cb)   cb.checked = enabled;
+  if (badge) {
+    badge.textContent = enabled ? 'AKTİF' : 'KAPALI';
+    badge.style.background = enabled ? '#6c63ff22' : '#ff658422';
+    badge.style.color = enabled ? '#6c63ff' : '#ff6584';
+  }
+}
 
 function saveApiSettings() {
   const key = (document.getElementById('apiKeyInput')?.value || '').trim();
