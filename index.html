@@ -1748,7 +1748,10 @@ async function clearAllMessageNotifs() {
 /* =================== TEACHER PAGES =================== */
 function renderTeacherPage(id, el) {
   if(id==='dashboard') el.innerHTML = teacherDashboard();
-  else if(id==='students') el.innerHTML = teacherStudents();
+  else if(id==='students') {
+    el.innerHTML = teacherStudents();
+    loadAllStudentsMoodCache().then(() => { el.innerHTML = teacherStudents(); });
+  }
   else if(id==='student-detail') el.innerHTML = studentDetailAnalysis();
   else if(id==='psych-report') {
     el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">💙 Yükleniyor...</div>';
@@ -1908,6 +1911,11 @@ function teacherStudents() {
           : status==='normal'
           ? `<span class="badge badge-yellow">📊 Normal</span>`
           : `<span class="badge badge-red">⚠️ Dikkat!</span>`;
+        // Bugünkü wellness cache'den mood al
+        const sMoodToday = (window._wellnessCache||{})[s.name]?.mood || null;
+        const sMoodColors = {excited:'#f9ca24',good:'#45b7d1',focused:'#6c63ff',ok:'#a29bfe',tired:'#fd79a8',anxious:'#ff6b6b',sad:'#778ca3'};
+        const sMoodLabels = {excited:'🔥 Heyecanlı',good:'😊 İyiyim',focused:'🎯 Odaklı',ok:'😐 İdare Eder',tired:'😔 Yorgun',anxious:'😰 Kaygılı',sad:'😢 Mutsuz'};
+        const moodBadge = sMoodToday ? `<span style="font-size:0.7rem;padding:2px 7px;border-radius:10px;background:${sMoodColors[sMoodToday]}22;color:${sMoodColors[sMoodToday]};font-weight:700">${sMoodLabels[sMoodToday]}</span>` : '';
         return `
         <div class="student-row student-card-item" data-name="${s.name.toLowerCase()}" onclick="openStudentAnalysis('${s.name}')" style="cursor:pointer">
           ${s.photo
@@ -1917,6 +1925,7 @@ function teacherStudents() {
             <div class="student-name">${s.name}</div>
             <div class="student-meta">Bu hafta ${activeDays} gün • ${totalQ} soru • Net ort: ${avgNet}</div>
             <div style="font-size:0.72rem;color:var(--text2)">${pendingTasks} bekleyen görev • ${isActiveToday?'✅ Bugün aktif':'⏳ Bugün giriş yok'}</div>
+            ${moodBadge}
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
             ${statusBadge}
@@ -2913,7 +2922,7 @@ async function psychReportPage() {
   // Psikolojik ısı haritası — son 30 gün (max-width grid)
   const heatMapDays = Array.from({length:30},(_,i)=>{
     const d=new Date(now); d.setDate(now.getDate()-29+i);
-    const dk=d.toISOString().split('T')[0];
+    const dk=getDateKey(d);
     const dayData=days[dk]||{};
     const mood=dayData.mood;
     const col=mood?moodColors[mood]:'transparent';
@@ -8954,6 +8963,21 @@ function _updateWellnessButtons(field, value, activeBtn) {
     const lbl = b.querySelector('span:last-child');
     if (lbl) lbl.style.color = isActive ? col : 'var(--text2)';
   });
+}
+
+
+async function loadAllStudentsMoodCache() {
+  if (!window._wellnessCache) window._wellnessCache = {};
+  const todayKey = getTodayKey();
+  for (const s of students) {
+    try {
+      const uid = s.uid || s.name;
+      const data = await getWellnessData(uid);
+      if (data?.days?.[todayKey]?.mood) {
+        window._wellnessCache[s.name] = data.days[todayKey];
+      }
+    } catch(e) {}
+  }
 }
 
 async function getWellnessData(uid) {
