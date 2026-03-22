@@ -4346,7 +4346,7 @@ async function exportPsychPDF(sName) {
             kullanılanOlaylar.add('C_yanilsamali_yetersizlik');
             kutu('Yanılsamalı Yetersizlik — Bilişsel Çarpıtma',
               'Bu haftaki isabet oranı %' + toplamIsabet.toFixed(0) + ' ile yüksek; ancak duygu girişleri olumsuz seyretti. ' +
-              'Nesnel veriler uzmanlık seviyesini gösterirken öğrenci yapamadığı %' + (100-toplamIsabet).toFixed(0) + ''lik kısma odaklanarak tüm emeğini değersizleştiriyor. ' +
+              'Nesnel veriler uzmanlık seviyesini gösterirken öğrenci yapamadığı %' + (100-toplamIsabet).toFixed(0) + '\'lik kısma odaklanarak tüm emeğini değersizleştiriyor. ' +
               'Mükemmeliyetçi blokaj riski.' +
               (olumsuzNotlar.length>0?' Öğrencinin sesi: "'+olumsuzNotlar[0].substring(0,60)+(olumsuzNotlar[0].length>60?'...':'')+'"':''),
               [255,240,220],[170,75,0]);
@@ -4374,7 +4374,7 @@ async function exportPsychPDF(sName) {
               aktifNegatifler.push('Deneme Sonrası Paralizi');
               kullanılanOlaylar.add('C_paralizi');
               kutu('Deneme Sonrası Şok — Akademik Paralizi',
-                'Deneme performansı öğrencinin duygusal eşiğini aşmış; ertesi gün kaygı '+denemeSonrasiSifir.ertesi.kaygi+'/10'a çıkarak akademik veri girişi sıfırlanmış. ' +
+                'Deneme performansı öğrencinin duygusal eşiğini aşmış; ertesi gün kaygı '+denemeSonrasiSifir.ertesi.kaygi+'/10\'a çıkarak akademik veri girişi sıfırlanmış. ' +
                 'Bu total akademik ketlenme biyolojik bir tepkidir; koç bu noktayı "hatalı öğrenme" değil "eşik kalibrasyonu" olarak ele almalıdır.',
                 [255,218,218],[175,15,15]);
 
@@ -4447,7 +4447,7 @@ async function exportPsychPDF(sName) {
             aktifNegatifler.push('Felaketleştirme Trendi');
             kullanılanOlaylar.add('C_felaketlestirme');
             kutu('Felaketleştirme (Catastrophizing)',
-              'Ay genelindeki %'+(toplamIsabet??0).toFixed(0)+' isabet başarısına rağmen, bir günlük yüksek hata (%'+felaketlesmeGunu.hataOrani.toFixed(0)+') anında kaygı '+felaketlesmeGunu.kaygi+'/10'a çıktı. ' +
+              'Ay genelindeki %'+(toplamIsabet??0).toFixed(0)+' isabet başarısına rağmen, bir günlük yüksek hata (%'+felaketlesmeGunu.hataOrani.toFixed(0)+') anında kaygı '+felaketlesmeGunu.kaygi+'/10\'a çıktı. ' +
               'Tek günlük başarısızlık ay boyunca biriken tüm başarıyı sildi. ' +
               'Duygusal dayanıklılık (resilience) kritik derecede düşük. Reçete: "başarı günlüğü" tutturulmalı.',
               [255,222,215],[170,30,20]);
@@ -4733,7 +4733,7 @@ async function exportPsychPDF(sName) {
             kullanılanOlaylar.add('D_golgelenme');
             const digerBranslar = dersHataArr.filter(d=>d.d!==dominantBrans.d).slice(0,2);
             kutu('Bilişsel Gölgelenme — Dominant Branş Etkisi',
-              dominantBrans.d + ' branşına ay boyunca toplam soruların %' + Math.round(dominantBrans.q/toplamSoru*100) + ''i ayrıldı. ' +
+              dominantBrans.d + ' branşına ay boyunca toplam soruların %' + Math.round(dominantBrans.q/toplamSoru*100) + '\'i ayrıldı. ' +
               'Bu branşa harcanan aşırı mesai ve duygusal yük, diğer branşlardaki nöral ağları zayıflattı. ' +
               (digerBranslar.length>0 ? digerBranslar.map(d=>d.d+' (%'+d.pct.toFixed(0)+' hata)').join(', ') + ' branşlarında buna paralel yüksek hata gözlemleniyor. ' : '') +
               'Ay sonunda tek taraflı akademik gelişim ve diğer alanlarda çöküş riski aktif.',
@@ -4743,7 +4743,7 @@ async function exportPsychPDF(sName) {
           } else if (aktifGunler.length < veriGunler.length*0.5 && ortHata!==null && ortHata<20 && !kullanılanOlaylar.has('D_parca_bellek')) {
             kullanılanOlaylar.add('D_parca_bellek');
             kutu('Parçalı Bellek (Fragmentation) — Öğrenme Süreksizliği',
-              'Wellness verisi olan ' + veriGunler.length + ' günün yalnızca ' + aktifGunler.length + ''inde akademik çalışma yapılmış. ' +
+              'Wellness verisi olan ' + veriGunler.length + ' günün yalnızca ' + aktifGunler.length + '\'inde akademik çalışma yapılmış. ' +
               'Aktif olmayan günlerdeki boşluklar, konular arasındaki mantıksal köprülerin kurulmasını engelledi. ' +
               'Bilgiler "adacıklar" halinde duruyor; bütünsel muhakeme gerektiren deneme sınavında bu adacıklar bağlanamayabilir.',
               [240,238,255],[100,90,175]);
