@@ -3486,6 +3486,25 @@ async function exportPsychPDF(sName) {
     const kullanılanOlaylar = new Set(); // Bağlamsal izolasyon: aynı olay iki başlıkta kullanılmaz
 
     // ── Yardımcı fonksiyonlar ──
+    // AI yorumunu kod metnine güvenli şekilde ekleyen yardımcı
+    // aiAnaliz yoksa veya alan boşsa sadece kod metni döner
+    function aiEkle(kodMetni, aiAlan) {
+      if (!aiAnaliz || !aiAlan || aiAlan.trim().length < 10) return kodMetni;
+      const separator = kodMetni.endsWith(' ') ? '' : ' ';
+      return kodMetni + separator + '◆ ' + aiAlan.trim();
+    }
+
+    // AI kriz günlerini metin olarak döndür
+    function aiKrizGunleri() {
+      if (!aiAnaliz?.kriz_gunleri?.length) return null;
+      return aiAnaliz.kriz_gunleri.join(' | ');
+    }
+
+    // Belirli bir alanı güvenli al
+    function aiAl(alan) {
+      return aiAnaliz?.[alan] || null;
+    }
+
     function kutu(baslik, metin, bg, kenar) {
       const bSat = doc.splitTextToSize(baslik, 156);
       const mSat = doc.splitTextToSize(metin, 156);
@@ -3546,9 +3565,23 @@ async function exportPsychPDF(sName) {
         ortIsabet: ortHata!==null ? Math.round(100-ortHata) : null,
         dersBazli: dersHataArr.slice(0,5).map(d=>({d:d.d, isabet:Math.round(100-d.pct)}))
       };
-      const aiDenemeler = denemEntries2.slice(-5).map(e=>({
-        tarih: new Date(e.dateKey+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}),
-        net: e.net||0
+      // Deneme verisi — examId bazlı grupla, ders bazlı net göster
+      const denemGrup = {};
+      denemEntries2.forEach(e=>{
+        const k = e.examId||e.dateKey;
+        if(!denemGrup[k]) denemGrup[k] = {tarih:e.dateKey, baslik:e.examTitle||e.topic||'Deneme', dersler:[]};
+        denemGrup[k].dersler.push({ders:e.subject, net:Math.round((e.net||0)*10)/10, dogru:e.correct||0, yanlis:e.wrong||0});
+      });
+      const lgsSoruSayisiAI = {'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,'İnkılap Tarihi':10,'Din Kültürü':10,'İngilizce':10};
+      const aiDenemeler = Object.values(denemGrup).slice(-3).map(g=>({
+        tarih: new Date(g.tarih+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long'}),
+        baslik: g.baslik,
+        dersler: g.dersler.map(d=>{
+          const max = lgsSoruSayisiAI[d.ders]||20;
+          const doluluk = Math.round(d.net/max*100);
+          return d.ders+': '+d.net+' net ('+d.dogru+' doğru/'+d.yanlis+' yanlış, %'+doluluk+' doluluk)';
+        }).join(' | '),
+        toplamNet: Math.round(g.dersler.reduce((a,d)=>a+(d.net||0),0)*10)/10
       }));
       const aiNotlar = sortedDays.map(dk=>({
         tarih: new Date(dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}),
@@ -3566,6 +3599,22 @@ async function exportPsychPDF(sName) {
       let _bolumYeniSayfa = false;
       const sozelDersler  = ['Türkçe','İnkılap Tarihi','Din Kültürü','İngilizce'];
       const sayisalDersler= ['Matematik','Fen Bilimleri'];
+      // LGS soru sayıları (resmi dağılım)
+      const lgsSoruSayisi = {
+        'Türkçe': 20, 'Matematik': 20, 'Fen Bilimleri': 20,
+        'İnkılap Tarihi': 10, 'Din Kültürü': 10, 'İngilizce': 10
+      };
+      // Net hesabı: doğru - yanlış/4, maksimum o dersin soru sayısı
+      const dersNetHesapla = (dogru, yanlis, dersAdi) => {
+        const net = (dogru||0) - (yanlis||0)/4;
+        return Math.max(0, Math.round(net * 10) / 10);
+      };
+      // İsabet oranı yerine net ve doluluk oranı
+      const dersMaxSoru = (dersAdi) => lgsSoruSayisi[dersAdi] || 20;
+      const dersDoluluk = (dogru, yanlis, dersAdi) => {
+        const net = dersNetHesapla(dogru, yanlis, dersAdi);
+        return Math.round(net / dersMaxSoru(dersAdi) * 100);
+      };
       const std = (arr) => {
         if (arr.length<2) return 0;
         const m=arr.reduce((a,b)=>a+b,0)/arr.length;
@@ -3664,11 +3713,14 @@ async function exportPsychPDF(sName) {
           doc.text(tx('⚠  ACİL: BİLİŞSEL BLOKAJ — AKADEMİK FELÇ'), 24, Y+9.5);
           Y+=18;
           kutu('Amigdala Blokajı (Modül A-Vaka 6 + Modül 2.5-Vaka 2)',
-            'Bugün kaygı ' + bugunKaygi.toFixed(1) + '/10 ' + (bugunMoodTr?'('+bugunMoodTr+') ':'') + 'iken hiç akademik çalışma yapılmamış. ' +
-            'Bu bir disiplin sorunu değil biyolojik bir savunmadır: prefrontal korteks devre dışı, öğrenci doğrudan donmuştur. ' +
-            (bugunSosyal>0?'Sosyal medya '+bugunSosyal.toFixed(1)+' sa kullanımı → dijital anestezi (kaygı + kaçış kombinasyonu). ':'') +
-            (ardisikBosDays>1?'Son '+ardisikBosDays+' gün üst üste akademik giriş yok — kaçınma örüntüsü kemikleşiyor. ':'') +
-            'Koç eylemi: akademik baskı yok, önce duygusal regülasyon. Mikro hedef: 5 soru, en sevdiği ders.',
+            aiEkle(
+              'Bugün kaygı ' + bugunKaygi.toFixed(1) + '/10 ' + (bugunMoodTr?'('+bugunMoodTr+') ':'') + 'iken hiç akademik çalışma yapılmamış. ' +
+              'Bu bir disiplin sorunu değil biyolojik bir savunmadır: prefrontal korteks devre dışı, öğrenci doğrudan donmuştur. ' +
+              (bugunSosyal>0?'Sosyal medya '+bugunSosyal.toFixed(1)+' sa kullanımı → dijital anestezi (kaygı + kaçış kombinasyonu). ':'') +
+              (ardisikBosDays>1?'Son '+ardisikBosDays+' gün üst üste akademik giriş yok — kaçınma örüntüsü kemikleşiyor. ':'') +
+              'Koç eylemi: akademik baskı yok, önce duygusal regülasyon. Mikro hedef: 5 soru, en sevdiği ders.',
+              aiAl('duygusal_yorum')
+            ),
             [255,210,210],[175,0,0]);
           gunlukBakiye.push('Dün çalışılan konularda unutma eğrisi hızlandı — yarın 10 dk tekrar zorunlu');
           if (dunKaygi>7) gunlukBakiye.push('Dün de kaygı '+dunKaygi.toFixed(1)+'/10 idi — 2 günlük blokaj birikimi');
@@ -3768,7 +3820,22 @@ async function exportPsychPDF(sName) {
               (akademikVar?'Bugün çözülen '+bugunSoru+' sorunun öğrenme kalitesi yüksek olmalı.':'Bu pencereyi aktif çalışmaya dönüştür.'),
               [222,250,232],[14,128,62]);
           } else {
-            kutu('Duygusal Durum: '+(bugunMoodTr||'Orta'),
+            // SANİTİZASYON TESPİTİ: "olumsuz düşüncem yok" + önceki gün negatif var
+          const sanitizasyonKelimeler = ['yok','hiçbir','yoğum','olumsuz değil','sıkıntım yok','sorunum yok'];
+          const sanitizasyonBugün = bugunNegatif && sanitizasyonKelimeler.some(k=>bugunNegatif.toLowerCase().includes(k));
+          const dunNegatifVar = (dunW.negatif||'').trim().length > 5;
+          if (sanitizasyonBugün && dunNegatifVar && !kullanılanOlaylar.has('G_sanitizasyon')) {
+            gunlukAktifler.push('Olumsuzluğu Önemsizleştirme');
+            kullanılanOlaylar.add('G_sanitizasyon');
+            kutu('Olumsuzluğu Önemsizleştirme — Öğrencinin Sesi',
+              '"' + bugunNegatif + '" ifadesi bugün girilmiş; ancak dün "' + (dunW.negatif||'').substring(0,50) + '" diye negatif bir düşünce bildirilmişti. ' +
+              'Olumsuzluğu önemsizleştirme (sanitizasyon): öğrenci sorununu kapatmaya çalışıyor, gerçek sıkıntı bastırılmış olabilir. ' +
+              'Koç görüşmesinde dünkü ifade doğrudan ele alınmalı — "Dün ne hissediyordun?" sorusuyla başla.',
+              [248,222,255],[115,45,180]);
+            gunlukBakiye.push('Dün bildirilen negatif düşünce bugün inkâr edildi — koç seansında ele alınmalı');
+          }
+
+          kutu('Duygusal Durum: '+(bugunMoodTr||'Orta'),
               (bugunKaygi>0?'Kaygı: '+bugunKaygi.toFixed(1)+'/10. ':'') +
               (bugunMoodTr?'Duygu: '+bugunMoodTr+'. ':'') +
               (akademikVar?bugunSoru+' soru çözüldü. ':'') +
@@ -3798,6 +3865,20 @@ async function exportPsychPDF(sName) {
             [255,228,215],[155,70,0]);
           gunlukBakiye.push('Her geçen boş gün önceki çalışmaların kalıcılığını %20-30 azaltıyor');
         } else {
+          // AKTİVİTE YOLUYLA KAÇIŞ: kaygı>8 + aşırı soru + kalite düşük
+          if (bugunKaygi>=8 && bugunSoru>ortSoru*1.4 && bugunIsabet!==null && bugunIsabet<70
+              && !kullanılanOlaylar.has('G_aktivite_kacis')) {
+            gunlukAktifler.push('Çalışma Görüntüsüyle Kaçınma');
+            kullanılanOlaylar.add('G_aktivite_kacis');
+            kutu('Çalışma Görüntüsüyle Kaçınma — Sahte Verimlilik',
+              'Kaygı ' + bugunKaygi.toFixed(1) + '/10 iken bugün ' + bugunSoru + ' soru çözüldü (ort. ' + Math.round(ortSoru) + '). ' +
+              'Ancak isabet %' + bugunIsabet + ' — yüksek hacim düşük kalite. ' +
+              'Öğrenci kaygıyla yüzleşmek yerine "çalışıyor" maskesi takarak soru sayısını artırıyor. ' +
+              'Bu sorular belleğe hatalı kodlanma riski taşır; sayı değil kalite öncelikli.',
+              [255,232,210],[160,55,0]);
+            gunlukBakiye.push('Bugün çalışma görüntüsüyle kaçınma: yüksek hacim+düşük kalite kombinasyonu');
+          }
+
           // Kriz altında çalışma kontrolü
           const krizAltinda = (bugunKaygi>=8)||(bugunUyku>0&&bugunUyku<6)||(bugunEnerji>0&&bugunEnerji<3);
           if (krizAltinda) {
@@ -3867,9 +3948,12 @@ async function exportPsychPDF(sName) {
 
         if (acilDurum) {
           kutu('GÜNLÜK TANI: Akademik Felç — Acil Müdahale',
-            'Bugün tüm göstergeler kritik: kaygı '+bugunKaygi.toFixed(1)+'/10, akademik üretim sıfır. ' +
-            (bugunSosyal>0?'Dijital anestezi '+bugunSosyal.toFixed(1)+' sa. ':'') +
-            'Koç eylem planı: ① Akademik baskı yok; ② "Nasıl hissediyorsun?" sorusuyla başla; ③ Tek bir derse 5 soru mikro hedefi koy; ④ Yarın sabah takip et.',
+            aiEkle(
+              'Bugün tüm göstergeler kritik: kaygı '+bugunKaygi.toFixed(1)+'/10, akademik üretim sıfır. ' +
+              (bugunSosyal>0?'Dijital anestezi '+bugunSosyal.toFixed(1)+' sa. ':'') +
+              'Koç eylem planı: ① Akademik baskı yok; ② "Nasıl hissediyorsun?" sorusuyla başla; ③ Tek bir derse 5 soru mikro hedefi koy; ④ Yarın sabah takip et.',
+              aiAl('koc_stratejisi')
+            ),
             [255,205,205],[175,0,0]);
         } else if (krizDurum) {
           kutu('GÜNLÜK TANI: Kriz Koşullarında Çalışma',
@@ -3954,13 +4038,16 @@ async function exportPsychPDF(sName) {
 
           // AI bölüm kutuları
           const aiBolumler = [
-            aiAnaliz.kriz_ozeti   ? ['Kriz Hafızası',         aiAnaliz.kriz_ozeti,   [255,215,215],[172,15,15]] : null,
-            aiAnaliz.fizyolojik   ? ['Fizyolojik Analiz',     aiAnaliz.fizyolojik,   [255,232,215],[162,55,0]]  : null,
-            aiAnaliz.duygusal     ? ['Duygusal & Branş',       aiAnaliz.duygusal,     [248,222,255],[115,45,180]]: null,
-            aiAnaliz.akademik     ? ['Akademik & Hafıza',      aiAnaliz.akademik,     [220,235,255],[40,80,160]] : null,
-            aiAnaliz.ogr_sesi&&aiAnaliz.ogr_sesi.length>5
-              ? ['Öğrencinin Sesi (Klinik Yorum)', aiAnaliz.ogr_sesi, [248,242,255],[115,75,178]] : null,
-            aiAnaliz.koc_stratejisi ? ['Koç Eylem Planı',     aiAnaliz.koc_stratejisi,[220,252,232],[14,128,62]] : null,
+            aiAnaliz.kriz_ozeti||aiAnaliz.kriz_gunleri?.length
+              ? ['Kriz Hafızası', aiAnaliz.kriz_ozeti||(aiAnaliz.kriz_gunleri||[]).join(' | '), [255,215,215],[172,15,15]] : null,
+            aiAnaliz.fizyolojik_yorum ? ['Fizyolojik Analiz', aiAnaliz.fizyolojik_yorum, [255,232,215],[162,55,0]] : null,
+            aiAnaliz.duygusal_yorum   ? ['Duygusal & Branş Analizi', aiAnaliz.duygusal_yorum, [248,222,255],[115,45,180]] : null,
+            aiAnaliz.soru_cozumu_yorum ? ['Günlük Soru Çözümü Analizi', aiAnaliz.soru_cozumu_yorum, [220,235,255],[40,80,160]] : null,
+            aiAnaliz.deneme_yorum&&aiAnaliz.deneme_yorum.length>5
+              ? ['Deneme Sınavı Analizi', aiAnaliz.deneme_yorum, [215,235,255],[20,70,160]] : null,
+            aiAnaliz.ogr_sesi_yorum&&aiAnaliz.ogr_sesi_yorum.length>5
+              ? ['Öğrencinin Sesi (Klinik Yorum)', aiAnaliz.ogr_sesi_yorum, [248,242,255],[115,75,178]] : null,
+            aiAnaliz.koc_stratejisi ? ['Koç Eylem Planı', aiAnaliz.koc_stratejisi, [220,252,232],[14,128,62]] : null,
           ].filter(Boolean);
 
           aiBolumler.forEach(([baslik, metin, bgRenk, kenarRenk]) => {
@@ -4125,13 +4212,26 @@ async function exportPsychPDF(sName) {
                     'Hafta sonu görülen başarısızlık o günkü değil, hafta başındaki uyku borcunun tahsilatıdır. ' +
                     'Bir sonraki hafta bu döngüyü kırmak için Pazartesi-Salı uykusu önceliklendirilmeli.',
                     [255,238,215],[155,75,0]);
-                } else if (ortUykuH!==null && ortEnerjiH!==null && ortUykuH>=7 && ortEnerjiH>=6 && ortOdakH!==null && ortOdakH>=7) {
+                } else if (ortUykuH!==null && ortEnerjiH!==null && ortUykuH>=7 && ortEnerjiH>=6 && ortOdakH!==null && ortOdakH>=7
+                       && (ortKaygiH===null || ortKaygiH<7)) { // Kaygı düşükse gerçekten dengeli
                   kullanılanOlaylar.add('A_dengeli');
                   kutu('Bilişsel Kapasite: Bu Hafta Dengeli',
                     'Uyku ort. ' + ortUykuH.toFixed(1) + ' sa, enerji ort. ' + ortEnerjiH.toFixed(1) + '/10, odak ort. ' + ortOdakH.toFixed(1) + '/10. ' +
                     'Yönetici fonksiyonlar (planlama, karar verme, hata denetimi) desteklenmiş durumda. ' +
                     (ortSoru>0 ? 'Günlük ort. ' + Math.round(ortSoru) + ' soru ile akademik hacim fizyolojik kapasiteye paralel.' : ''),
                     [230,255,240],[20,140,70]);
+                } else if (ortKaygiH!==null && ortKaygiH>=7 && ortEnerjiH!==null && ortEnerjiH>=6) {
+                  aktifNegatifler.push('Kırılgan Hiper-Aktivasyon');
+                  kullanılanOlaylar.add('A_kirilgan_hiper');
+                  kutu('Kırılgan Hiper-Aktivasyon — Bu Hafta',
+                    aiEkle(
+                      'Enerji ort. ' + ortEnerjiH.toFixed(1) + '/10 yüksek ama kaygı ort. ' + ortKaygiH.toFixed(1) + '/10 ile kritik eşikte. ' +
+                      'Kortizol kaynaklı geçici enerji illüzyonu; yüksek üretim "öğrenme" değil "kaygıyla çalışma" refleksini gösterir. ' +
+                      'Bu tablo olumlu değil — sürdürülemez bir tempo işaretidir.',
+                      aiAl('fizyolojik_yorum')
+                    ),
+                    [255,228,210],[160,55,0]);
+                  bakiyeRiskler.push('Bu hafta kaygı+enerji eş zamanlı yüksek: kırılgan performans');
                 } else {
                   kullanılanOlaylar.add('A_veri_yetersiz');
                   kutu('Bilişsel Kapasite: Veri Yetersiz',
@@ -4253,9 +4353,22 @@ async function exportPsychPDF(sName) {
               'Öğrenci için akademik gelişimden ziyade "sürece bağlılık" sorunu öncelikli hale gelmiştir.',
               [245,235,255],[120,80,180]);
 
-          // Vaka 7: Dengeli Ay
-          } else if (ortUykuA!==null && ortUykuA>=7 && ortEnerjiA!==null && ortEnerjiA>=6) {
+          // Vaka 7: Dengeli Ay (kaygı 7'nin altındaysa gerçekten dengeli)
+          } else if (ortUykuA!==null && ortUykuA>=7 && ortEnerjiA!==null && ortEnerjiA>=6
+                  && (ortKaygi===null || ortKaygi<7)) {
+            // MASKELENMIŞ KRİZ: ortalama iyi ama kriz günleri var
+            const krizGunSayisiMask = gunler.filter(d=>(d.kaygi>=8)||(d.uyku>0&&d.uyku<6)).length;
             kullanılanOlaylar.add('A_dengeli_ay');
+            if (krizGunSayisiMask >= 3) {
+              aktifNegatifler.push('Maskelenmiş Kriz');
+              kutu('Maskelenmiş Kriz — Ortalama Aldatıcı',
+                'Uyku ve enerji ortalamaları dengeli görünse de ay içinde ' + krizGunSayisiMask + ' kriz günü (kaygı≥8 veya uyku<6) yaşandı. ' +
+                'Ay ortalaması bu krizleri görünmez kılıyor. ' +
+                'Öğrencinin "genel olarak iyi" profili, gerçekte kronik kırılganlık üzerine kurulu. ' +
+                'Sınav günü kaygı yükselirse kriz moduna geçiş ani ve sert olabilir.',
+                [255,232,210],[160,55,0]);
+              bakiyeRiskler.push(krizGunSayisiMask + ' kriz günü aylık ortalamaya gömülmüş — gerçek kırılganlık maskelenmiş');
+            }
             const trend = enerjiiRegresyon!==null ? (enerjiiRegresyon>0.5?' Enerji ay boyunca yükseliş eğiliminde (' + (enerjiiRegresyon>0?'+':'') + enerjiiRegresyon.toFixed(1) + ' puan). Bu ivme korunmalı.' : enerjiiRegresyon<-0.5?' Enerji hafif düşüş eğiliminde; izlenmeli.' : ' Enerji stabil seyretmiştir.') : '';
             kutu('Bilişsel Kapasite: Bu Ay Dengeli',
               'Uyku ort. ' + ortUykuA.toFixed(1) + ' sa, enerji ort. ' + ortEnerjiA.toFixed(1) + '/10. ' +
@@ -4264,6 +4377,20 @@ async function exportPsychPDF(sName) {
               (ortSoru>0 ? ' Aylık akademik ort. ' + Math.round(ortSoru) + ' soru/gün.' : ''),
               [230,255,240],[20,140,70]);
 
+          } else if (ortKaygi!==null && ortKaygi>=7 && ortEnerjiA!==null && ortEnerjiA>=6) {
+            // Kaygı yüksek + enerji yüksek = kırılgan performans, asla olumlu değil
+            aktifNegatifler.push('Kırılgan Hiper-Aktivasyon');
+            kullanılanOlaylar.add('A_kirilgan_hiper_ay');
+            kutu('Kırılgan Hiper-Aktivasyon — Maskelenmiş Kriz',
+              aiEkle(
+                'Enerji ort. ' + ortEnerjiA.toFixed(1) + '/10 yüksek görünse de kaygı ort. ' + ortKaygi.toFixed(1) + '/10 ile kritik eşikte. ' +
+                'Bu tablo "iyi performans" değildir. Kortizol ve adrenalin geçici bir enerji illüzyonu yaratmakta; ' +
+                'prefrontal korteks kronik baskı altında çalışmaktadır. ' +
+                'Yüksek soru üretimi varsa "öğrenme" değil "kaygıyla çalışma" refleksidir. Sürdürülemez.',
+                aiAl('fizyolojik_yorum')
+              ),
+              [255,228,210],[160,55,0]);
+            bakiyeRiskler.push('Kaygı+enerji eş zamanlı yüksek: tükenmişlik öncesi sinyal — tempo düşürülmeli');
           } else {
             kullanılanOlaylar.add('A_veri_yetersiz_ay');
             kutu('Bilişsel Kapasite: Veri Yetersiz',
@@ -4472,10 +4599,13 @@ async function exportPsychPDF(sName) {
             aktifNegatifler.push('Kemikleşmiş Savunma Karakteristiği');
             kullanılanOlaylar.add('B_kemiklesme');
             kutu('Kemikleşmiş Savunma Karakteristiği',
-              'Ay boyunca ' + kaygiGunler.length + ' yüksek kaygı gününde tutarlı bir patern gözlemlendi: ' +
-              siginakDers.d + ' branşı "duygusal tampon" (kaygıda ort. ' + (siginakDers.oran*100).toFixed(0) + '% soru artışı), ' +
-              kacisaDers.d + ' branşı ise "tehdit" olarak kodlanmış (kaygıda ' + Math.round((1-kacisaDers.oran)*100) + '% azalış). ' +
-              'Bu bir alışkanlık değil, karakteristik bir reflekstir. Sınav gününde kaygı yükselirse bu örüntü aktive olacaktır.',
+              aiEkle(
+                'Ay boyunca ' + kaygiGunler.length + ' yüksek kaygı gününde tutarlı bir patern gözlemlendi: ' +
+                siginakDers.d + ' branşı "duygusal tampon" (kaygıda ort. ' + (siginakDers.oran*100).toFixed(0) + '% soru artışı), ' +
+                kacisaDers.d + ' branşı ise "tehdit" olarak kodlanmış (kaygıda ' + Math.round((1-kacisaDers.oran)*100) + '% azalış). ' +
+                'Bu bir alışkanlık değil, karakteristik bir reflekstir. Sınav gününde kaygı yükselirse bu örüntü aktive olacaktır.',
+                aiAl('duygusal_yorum')
+              ),
               [255,220,220],[170,25,25]);
             bakiyeRiskler.push('Sınav anı ' + kacisaDers.d + ' performansı kaygı düzeyine kritik bağımlı — özel müdahale gerekli');
 
@@ -5169,10 +5299,13 @@ async function exportPsychPDF(sName) {
             kullanılanOlaylar.add('D_aylik_borc');
             const topBorclar = borcKonular.slice(0,4);
             kutu('Aylık Bilişsel Borç Bakiyesi — Hasar Kaydı',
-              'Ay içinde ' + ayKrizGunSayisi + ' kriz günü tespit edildi. Bu günlerde çalışılan konulardan hasar riski taşıyanlar: ' +
-              topBorclar.map(k=>k.konu+' ('+k.soru+' soru, %'+(100-k.hataPct).toFixed(0)+' isabet)').join('; ') + '. ' +
-              'Bu konular akademik birer borçtur: "öğrenilmiş" sayılmamalı. ' +
-              'Gelecek ayın ilk 10 gününde "Bilişsel Check-up" uygulanmalı — temiz zihin + düşük kaygı koşullarında tekrar edilmeli.',
+              aiEkle(
+                'Ay içinde ' + ayKrizGunSayisi + ' kriz günü tespit edildi. Bu günlerde çalışılan konulardan hasar riski taşıyanlar: ' +
+                topBorclar.map(k=>k.konu+' ('+k.soru+' soru, %'+(100-k.hataPct).toFixed(0)+' isabet)').join('; ') + '. ' +
+                'Bu konular akademik birer borçtur: "öğrenilmiş" sayılmamalı. ' +
+                'Gelecek ayın ilk 10 gününde "Bilişsel Check-up" uygulanmalı — temiz zihin + düşük kaygı koşullarında tekrar edilmeli.',
+                aiAl('hafiza_borcu')
+              ),
               [255,215,215],[175,15,15]);
             topBorclar.forEach(k=>bakiyeRiskler.push(k.konu+': kriz döneminde (%'+(100-k.hataPct).toFixed(0)+' isabet) çalışıldı — tekrar zorunlu'));
 
@@ -5196,12 +5329,22 @@ async function exportPsychPDF(sName) {
             aktifNegatifler.push('Niteliksiz Nicelik Kemikleşmesi');
             kullanılanOlaylar.add('D_niteliksiz_nicelik');
             const enKemikBrans = dersHataArr[0];
-            kutu('Niteliksiz Nicelik Kemikleşmesi',
+            // Hata oranının haftalar içinde değişip değişmediğini kontrol et
+            const haftaHataOranlari = [0,1,2,3].map(w=>{
+              const wEnd = new Date(endKey+'T12:00:00'); wEnd.setDate(wEnd.getDate()-w*7);
+              const wStart = new Date(wEnd); wStart.setDate(wEnd.getDate()-7);
+              const wKey = wStart.toISOString().split('T')[0];
+              const wEKey = wEnd.toISOString().split('T')[0];
+              const wG = gunler.filter(d=>d.dk>=wKey&&d.dk<=wEKey&&d.hataOrani!==null);
+              return wG.length>0?wG.reduce((a,d)=>a+d.hataOrani,0)/wG.length:null;
+            }).filter(v=>v!==null);
+            const hataSabit = haftaHataOranlari.length>=2 &&
+              Math.max(...haftaHataOranlari)-Math.min(...haftaHataOranlari) < 5;
+            kutu('Niteliksiz Nicelik Kemikleşmesi' + (hataSabit?' — Hata Farkındalığı Kaybı':''),
               'Ay boyunca toplam ' + toplamSoru + ' soru çözüldü ancak hata oranı sürekli %30+ seviyesinde kaldı. ' +
-              (enKemikBrans?enKemikBrans.d+' branşında %'+enKemikBrans.pct.toFixed(0)+' hata oranıyla hatalı mantık yolları "otomatize" ediliyor. ':'')+
-              'Öğrenci ay boyunca hatalı mantık yollarını soru çözerek pekiştirmiştir. ' +
-              'Bu kemikleşmiş hataları kırmak konuyu ilk kez öğrenmekten daha zordur. ' +
-              'Reçete: hacim yerine önce hata analizi — yanlışların neden yanlış olduğunu anlamadan yeni soru çözme.',
+              (hataSabit?'Hata oranı haftalara göre değişmiyor — öğrenci aynı yanlışları tekrarlıyor, fark etmiyor. Bu "Hata Farkındalığı Kaybı" dur. ':'')+
+              (enKemikBrans?enKemikBrans.d+' branşında %'+enKemikBrans.pct.toFixed(0)+' hata oranıyla hatalı mantık otomatize ediliyor. ':'')+
+              'Reçete: hacmi kes, önce hata analizi — her yanlış için "neden yanlış?" sorusu.',
               [255,218,218],[172,18,18]);
 
           // Vaka 4: Veri Çöplüğü Sendromu
@@ -5358,6 +5501,18 @@ async function exportPsychPDF(sName) {
           // HAFTALIK BÜTÜNCÜL
           // ═══════════════════════════════════════════════════
 
+          // AI varsa kodlu bütüncül vakayı atla — AI zaten kapsamlı analiz yaptı
+          if (aiAnaliz) {
+            // Sadece koç stratejisi ve eylem önerilerini göster
+            Y=pdfCheck(doc,Y,12);
+            doc.setFont(PF,'bold');doc.setFontSize(7.5);doc.setTextColor(40,80,140);
+            doc.text(tx('Koç İletişim Stratejisi:'), 16, Y); Y+=5;
+            const aiStr = aiAnaliz.koc_stratejisi||'';
+            const aiStrSat = doc.splitTextToSize(tx(aiStr), 170);
+            doc.setFont(PF,'normal');doc.setFontSize(7);doc.setTextColor(60,60,100);
+            doc.text(aiStrSat, 16, Y); Y+=aiStrSat.length*4.5+6;
+          } else {
+
           // Vaka tespiti: en uygun ana vakayı seç
           let anaVaka = null;
 
@@ -5428,6 +5583,22 @@ async function exportPsychPDF(sName) {
               durumRenk, durumKenar);
           }
 
+          // KRİZ HAFIZASI: bu haftanın kriz günlerini özet listele
+          const haftaKrizGunleri = veriGunler.filter(d=>(d.kaygi>=8)||(d.uyku>0&&d.uyku<6)||(!d.soru&&d.kaygi>=7));
+          if (haftaKrizGunleri.length>0) {
+            Y=pdfCheck(doc,Y,14);
+            doc.setFont(PF,'bold');doc.setFontSize(7);doc.setTextColor(170,30,30);
+            doc.text(tx('Bu Haftanın Kriz Günleri (' + haftaKrizGunleri.length + ' gün):'), 16, Y); Y+=5;
+            haftaKrizGunleri.forEach(d=>{
+              const tarih = new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'short'});
+              const parcalar = [];
+              if (d.kaygi>=8) parcalar.push('Kaygı ' + d.kaygi + '/10');
+              if (d.uyku>0&&d.uyku<6) parcalar.push('Uyku ' + d.uyku + ' sa');
+              if (!d.soru&&d.kaygi>=7) parcalar.push('Akademik Felç');
+              dipnot('• ' + tarih + ': ' + parcalar.join(' + '));
+            });
+          }
+
           // ── İletişim Stratejisi ──────────────────────────────
           Y=pdfCheck(doc,Y,12);
           doc.setFont(PF,'bold');doc.setFontSize(7.5);doc.setTextColor(40,80,140);
@@ -5463,6 +5634,8 @@ async function exportPsychPDF(sName) {
           doc.setFont(PF,'bold');doc.setFontSize(7.5);doc.setTextColor(40,80,140);
           doc.text('Öncelikli Eylem Adımları:', 16, Y); Y+=5;
           oneriListesi.forEach((o,i)=>dipnot((i+1)+'. '+o));
+
+          } // end if period weekly inner
 
         } else {
           // ═══════════════════════════════════════════════════
@@ -5545,11 +5718,21 @@ async function exportPsychPDF(sName) {
           // Vaka 4: İmposter Sarmalı
           } else if (ozguvenSorunu && genelIsabet!==null&&genelIsabet>75) {
             ayAnaVaka = 'imposter';
-            kutu('AYLIK FOTOĞRAF: İmposter Sarmalı — Başarı İçselleştirme Sorunu',
+            // Başarı sonrası kaygı artışı var mı? (Başarı İçselleştirememe)
+            const basariSonrasiKaygi = (() => {
+              const denemeSirali = [...denemEntries2].sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
+              let count = 0;
+              for (const d of denemeSirali) {
+                const ertesi = gunler.find(g=>g.dk>d.dateKey);
+                if (ertesi && ertesi.kaygi>0 && ertesi.kaygi>7 && (d.net||0)>ortNet) count++;
+              }
+              return count;
+            })();
+            kutu('AYLIK FOTOĞRAF: İmposter Sarmalı — Başarı İçselleştirilemiyor',
               'Dönem isabet oranı %'+genelIsabet.toFixed(0)+' ile nesnel olarak başarılı; ancak duygusal tablo bunu yansıtmıyor. ' +
-              'Öğrenci başarısını kendi emeğine bağlayamıyor; kaygı varlığını sürdürüyor (' + (genelKaygi??0).toFixed(1) + '/10). ' +
-              'Nesnel kanıtlar ile öz-algı arasındaki makas "Kırılgan Performans Riski" yaratıyor. ' +
-              'Koç görüşmelerinde somut başarı kanıtları (net artışları, isabet oranları) öğrenciyle paylaşılmalı ve kendi sesiyle tekrar ettirilmeli.',
+              (basariSonrasiKaygi>0?'İyi geçen ' + basariSonrasiKaygi + ' deneme sonrasında ertesi gün kaygı yükseldi — başarı içselleştirilemiyor. ':'') +
+              'Öğrenci başarısını şansa bağlıyor; "bu sefer denk geldi" savunma mekanizması devrede. ' +
+              'Koç: somut başarı kanıtlarını öğrencinin kendi sesiyle tekrar ettir — "Sen yaptın, şans değil."',
               [255,235,210],[150,75,0]);
 
           // Vaka 5: Dijital Anestezi Karakteristiği
@@ -5635,6 +5818,25 @@ async function exportPsychPDF(sName) {
           doc.setFont(PF,'bold');doc.setFontSize(7.5);doc.setTextColor(40,80,140);
           doc.text('Gelecek Ay Öncelikli Eylem Planı:', 16, Y); Y+=5;
           ayOneriListesi.forEach((o,i)=>dipnot((i+1)+'. '+o));
+        }
+
+        // ── AYLIK KRİZ HAFIZASI ───────────────────────────────────
+        if (period !== 'daily') {
+          const tumKrizGunleri = veriGunler.filter(d=>(d.kaygi>=8)||(d.uyku>0&&d.uyku<6)||(!d.soru&&d.kaygi>=7));
+          if (tumKrizGunleri.length>0) {
+            Y=pdfCheck(doc,Y,14);
+            doc.setFont(PF,'bold');doc.setFontSize(7);doc.setTextColor(170,30,30);
+            doc.text(tx((period==='weekly'?'Bu Hafta':'Bu Ay') + ' Kriz Günleri Kaydı (' + tumKrizGunleri.length + ' gün):'), 16, Y); Y+=5;
+            tumKrizGunleri.forEach(d=>{
+              const tarih = new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'short'});
+              const parcalar = [];
+              if (d.kaygi>=8) parcalar.push('Kaygı ' + d.kaygi + '/10');
+              if (d.uyku>0&&d.uyku<6) parcalar.push('Uyku ' + d.uyku + ' sa');
+              if (!d.soru&&d.kaygi>=7) parcalar.push('Akademik Felç');
+              if (d.hataOrani!==null&&d.hataOrani>40) parcalar.push('Hata %' + Math.round(d.hataOrani));
+              dipnot('• ' + tarih + ': ' + parcalar.join(' · '));
+            });
+          }
         }
 
         // ── Bakiye Riskler (her iki mod için) ───────────────────
@@ -9792,38 +9994,43 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
   const krizGunler = wellnessData.filter(d => (d.kaygi>=8) || (d.uyku>0&&d.uyku<6) || (!d.akademikVar&&d.kaygi>=7));
   const ogrSesi = notlar.filter(n => n.negatif || n.pozitif).slice(0, 5);
 
-  const prompt = `Sen LGSKoc uygulamasinin psikolojik analiz motorusun. Bir ogrencinin ${period === 'daily' ? 'bugunku' : period === 'weekly' ? 'haftalik' : 'aylik'} verisini klinik bir egitim kocu gozuyle analiz et.
-
-OGRENCI: ${studentName}
-DONEM: ${period === 'daily' ? 'Gunluk (bugun)' : period === 'weekly' ? 'Haftalik' : 'Aylik'}
-
-WELLNESS VERISI (son ${wellnessData.length} gun):
-${wellnessData.slice(0,14).map(d=>d.tarih+': Kaygi='+d.kaygi+' Enerji='+d.enerji+' Uyku='+(d.uyku||0)+'sa Mood='+(d.mood||'-')+' Soru='+(d.soru||0)).join('\n')}
-
-KRIZ GUNLERI (Kaygi>=8 veya Uyku<6 veya AkademikFelc):
-${krizGunler.length > 0 ? krizGunler.map(d=>d.tarih+': Kaygi='+(d.kaygi||0)+' Uyku='+(d.uyku||'-')+' Soru='+(d.soru||0)+(!d.akademikVar&&d.kaygi>=7?' AKADEMIK FELC':'')).join('\n') : 'Yok'}
-
-AKADEMIK VERI (SORU COZUMU - deneme sinavi degil):
-${academicData.toplamSoru} soru, ${academicData.ortIsabet!==null?'%'+academicData.ortIsabet+' isabet':'isabet verisi yok'}, ${academicData.aktifGun} aktif gun
-${academicData.dersBazli&&academicData.dersBazli.length>0?'Ders bazli: '+academicData.dersBazli.map(d=>d.d+' %'+d.isabet).join(', '):''}
-
-${denemeler.length>0?'DENEME SINAVI NETLERI (konu soru cozumu degil, resmi sinav sonuclari): '+denemeler.map(d=>d.tarih+': '+d.net+' net').join(', '):''}
-
-OGRENCININ KENDI SESI:
-${ogrSesi.length>0?ogrSesi.map(n=>n.tarih+': '+(n.pozitif?'(+)'+n.pozitif:'')+' '+(n.negatif?'(-)'+n.negatif:'')).join('\n'):'Giris yok'}
-
-KURALLAR:
-1. Kaygi>=7 + Soru=0 olan gunler "Amigdala Blokaji / Akademik Felc" olarak adlandir, asla "dinlenme" yazma
-2. Yuksek kaygi + yuksek enerji = "Kirilgan Hiper-Aktivasyon" asla olumlu yazma
-3. Tum teshis ve yorum ifadelerini TURKCE yaz. Ingilizce terim kullanma: "avoidance" degil "kacis", "denial" degil "inkar", "over-compensation" degil "asiri telafi", "dysregulation" degil "duzensizlik"
-4. Italik veya ozel karakter kullanma - sadece duz metin
-3. Kriz gunlerini tarih tarih adlandir
-4. Ogrencinin negatif ifadelerini dogrudan klinik analize dahil et
-5. Ay/hafta ortalamasi iyi gorunse dahi kriz gunleri varsa "maskelenmis kriz" uyarisi ver
-6. Her bolum 2-3 cumle, kisa tut
-
-Sadece asagidaki JSON formatini don, baska hicbir sey yazma:
-{"ana_tani":"En kritik 1 cumle teshis","kriz_ozeti":"Kriz gunleri ve etkileri","fizyolojik":"Uyku/enerji/odak klinik degerlendirmesi","duygusal":"Kaygi, mood ve brans kacisi analizi","akademik":"Calisma kalitesi ve hafiza riski","ogr_sesi":"Ogrencinin kendi ifadelerinin klinik yorumu","koc_stratejisi":"Koc icin 2-3 madde acil eylem","uyari_seviyesi":"yesil|sari|turuncu|kirmizi"}`;
+  const prompt = 'Sen LGSKoc psikolojik analiz motorusun. Klinik egitim kocu gozuyle analiz et.\n\n' +
+    'OGRENCI: ' + studentName + '\n' +
+    'DONEM: ' + (period==='daily'?'Gunluk':period==='weekly'?'Haftalik':'Aylik') + '\n\n' +
+    'WELLNESS (son ' + wellnessData.length + ' gun):\n' +
+    wellnessData.slice(0,14).map(d=>d.tarih+' Kaygi:'+d.kaygi+' Enerji:'+d.enerji+' Uyku:'+(d.uyku||0)+'sa Mood:'+(d.mood||'-')+' Soru:'+(d.soru||0)).join('\n') +
+    '\n\nKRIZ GUNLERI (kaygi>=8 veya uyku<6 veya akademik felc):\n' +
+    (krizGunler.length>0 ? krizGunler.map(d=>d.tarih+' Kaygi:'+(d.kaygi||0)+' Uyku:'+(d.uyku||'-')+'sa Soru:'+(d.soru||0)+(!d.akademikVar&&d.kaygi>=7?' [AKADEMIK FELC]':'')).join('\n') : 'Kriz gunu yok') +
+    '\n\nGUNLUK SORU COZUMU (antrenman - deneme degil):\n' +
+    'Toplam: ' + academicData.toplamSoru + ' soru, ' + academicData.aktifGun + ' aktif gun\n' +
+    (academicData.ortIsabet!==null ? 'Genel isabet: %'+academicData.ortIsabet+'\n' : '') +
+    (academicData.dersBazli&&academicData.dersBazli.length>0 ? 'Ders bazli: '+academicData.dersBazli.map(d=>d.d+':%'+d.isabet).join(' | ')+'\n' : '') +
+    'NOT: Gunluk calisma kalitesini gosterir. LGS net hesabi degil.\n\n' +
+    'DENEME SINAVI SONUCLARI (resmi olcme - ayri degerlendir):\n' +
+    (denemeler.length>0 ? denemeler.map(d=>d.tarih+' | '+d.baslik+' | Toplam: '+d.toplamNet+' net | '+d.dersler).join('\n') : 'Bu donemde deneme yok') +
+    '\nNOT: Ders doluluk oranlari farkli: Turkce/Mat/Fen=20soru, Inkilap/Ing/Din=10soru.\n\n' +
+    'OGRENCININ SESI:\n' +
+    (ogrSesi.length>0 ? ogrSesi.map(n=>n.tarih+':'+(n.pozitif?' (+)'+n.pozitif:'')+' '+(n.negatif?' (-)'+n.negatif:'')).join('\n') : 'Not yok') +
+    '\n\nKURALLAR:\n' +
+    '1. Kaygi>=7+Soru=0 = Amigdala Blokaji/Akademik Felc (asla dinlenme yazma)\n' +
+    '2. Yuksek kaygi+yuksek enerji = Kirilgan Hiper-Aktivasyon (asla olumlu yazma)\n' +
+    '3. Gunluk soru cozumu ile deneme sonuclarini karistirma, ikisini ayri yorumla\n' +
+    '4. Deneme yorumunda ders doluluk oranini degerlendir\n' +
+    '5. Kriz gunlerini tarih tarih adlandir\n' +
+    '6. Maskelenmis kriz: ortalama iyi ama 3+ kriz gunu varsa uyar\n' +
+    '7. Tum teshisleri TURKCE yaz, ingilizce klinik terim kullanma\n' +
+    '8. Her bolum 2-3 cumle, sade\n\n' +
+    'SADECE su JSON formatini don:\n' +
+    '{"ana_tani":"En kritik 1 cumle","uyari_seviyesi":"yesil|sari|turuncu|kirmizi",' +
+    '"kriz_gunleri":["tarih: sebep"],' +
+    '"fizyolojik_yorum":"uyku/enerji/odak",' +
+    '"duygusal_yorum":"kaygi+mood+brans kacisi",' +
+    '"soru_cozumu_yorum":"gunluk antrenman kalitesi ve hafiza riski",' +
+    '"deneme_yorum":"deneme sonuclari klinik yorum - ders doluluk dahil - bos birak veri yoksa",' +
+    '"brans_riski":"en kritik brans ve gerekce",' +
+    '"ogr_sesi_yorum":"ogrencinin kendi ifadelerinin klinik yorumu",' +
+    '"koc_stratejisi":"1- 2- 3- seklinde acil eylem",' +
+    '"hafiza_borcu":"kriz altinda calisilanlar icin tekrar onerileri"}';
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -9834,7 +10041,50 @@ Sadece asagidaki JSON formatini don, baska hicbir sey yazma:
     const data = await res.json();
     const text = data.content?.[0]?.text || '';
     const clean = text.replace(/```json|```/g, '').trim();
-    return JSON.parse(clean);
+    const parsed = JSON.parse(clean);
+    // Post-process: İngilizce klinik terimleri Türkçeleştir
+    const trTerms = {
+      'avoidance through activity': 'çalışma görüntüsüyle kaçınma',
+      'activity avoidance': 'aktiviteyle kaçınma',
+      'avoidance': 'kaçınma',
+      'over-compensation': 'aşırı telafi',
+      'over compensation': 'aşırı telafi',
+      'overcompensation': 'aşırı telafi',
+      'denial': 'inkâr',
+      'therapeutic denial': 'savunma amaçlı inkâr',
+      'sanitization': 'olumsuzluğu önemsizleştirme',
+      'dysregulation': 'düzensizlik',
+      'dysregülasyon': 'düzensizlik',
+      'bodyscan': 'beden tarama',
+      'fragile': 'kırılgan',
+      'resilience': 'psikolojik dayanıklılık',
+      'burnout': 'tükenmişlik',
+      'helplessness': 'çaresizlik hissi',
+      'catastrophizing': 'felaketleştirme',
+      'imposter': 'sahtekar sendromu',
+      'procrastination': 'erteleme',
+      'compensation': 'telafi',
+      'suppression': 'bastırma',
+      'projection': 'yansıtma',
+    };
+    const turkcelestir = (text) => {
+      if (!text) return text;
+      let result = text;
+      for (const [en, tr] of Object.entries(trTerms)) {
+        const regex = new RegExp(en, 'gi');
+        result = result.replace(regex, tr);
+      }
+      return result;
+    };
+    // Tüm string alanları Türkçeleştir
+    for (const key of Object.keys(parsed)) {
+      if (typeof parsed[key] === 'string') {
+        parsed[key] = turkcelestir(parsed[key]);
+      } else if (Array.isArray(parsed[key])) {
+        parsed[key] = parsed[key].map(v => typeof v === 'string' ? turkcelestir(v) : v);
+      }
+    }
+    return parsed;
   } catch(e) {
     console.warn('AI analiz hatasi:', e.message);
     return null;
