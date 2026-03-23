@@ -5557,126 +5557,61 @@ async function exportPsychPDF(sName) {
           genelSosyal!==null  ? 'Sosyal medya: '+genelSosyal.toFixed(1)+'sa/gün' : null,
         ].filter(Boolean).join(' | ');
 
-        // ═══════════════════════════════════════════════════════════
-        // E. DENEME SINAVI ANALİZİ
-        // ═══════════════════════════════════════════════════════════
+        // ══════════════════════════════════════════
+        // E. DENEME SINAVI — KISA KLİNİK ÖZET
+        // ══════════════════════════════════════════
         if (denemEntries2.length >= 1) {
           Y = pdfCheck(doc, Y, 20);
-          bolumBaslik([80,50,200], 'E.  Deneme Sınavı Analizi',
-            period==='weekly'
-              ? 'Bu haftaki deneme sonuçları: net trendi, kaygı korelasyonu ve öncelikli ders'
-              : 'Ay boyunca deneme sınavı performansı: LGS puan tahmini, ders bazlı net ve kaygı etkisi');
+          bolumBaslik([80,50,200], 'E.  Deneme Sınavı — Klinik Özet',
+            'Kaygı-performans ilişkisi ve öncelikli ders');
 
-          // ── Deneme grupları (examId bazlı) ──────────────────
-          const dGrupE = {};
+          // Grupla
+          const dGrp={};
           denemEntries2.forEach(e=>{
-            const k = e.examId||e.dateKey;
-            if(!dGrupE[k]) dGrupE[k] = {dateKey:e.dateKey, baslik:e.examTitle||e.topic||'Deneme', dersler:{}};
-            const net = Math.max(0,(e.correct||0)-(e.wrong||0)/3);
-            if(!dGrupE[k].dersler[e.subject]) dGrupE[k].dersler[e.subject]={net:0,d:0,y:0};
-            dGrupE[k].dersler[e.subject].net += net;
-            dGrupE[k].dersler[e.subject].d   += e.correct||0;
-            dGrupE[k].dersler[e.subject].y   += e.wrong||0;
+            const k=e.examId||e.dateKey;
+            if(!dGrp[k]) dGrp[k]={dateKey:e.dateKey,dersler:{}};
+            const net=Math.max(0,(e.correct||0)-(e.wrong||0)/3);
+            if(!dGrp[k].dersler[e.subject]) dGrp[k].dersler[e.subject]={net:0,count:0};
+            dGrp[k].dersler[e.subject].net+=net; dGrp[k].dersler[e.subject].count++;
           });
+          const denemSira=Object.values(dGrp).sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
           const lgsSoruE={'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,'İnkılap Tarihi':10,'Din Kültürü':10,'İngilizce':10};
-          const lgsPuan = (dersler) => {
-            const top = Object.values(dersler).reduce((a,v)=>a+v.net,0);
-            return Math.round(100 + top*4.444);
-          };
-          const denemeSirali = Object.values(dGrupE).sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
-          const son5 = denemeSirali.slice(-5);
+          const topNet=d=>Object.values(d.dersler).reduce((a,v)=>a+v.net,0);
+          const lgsPuan=n=>Math.min(500,Math.max(100,Math.round(100+n*4.444)));
 
-          // ── Trend çizgisi (son 5 deneme) ────────────────────
-          if (son5.length >= 2) {
-            const puanlar = son5.map(d=>lgsPuan(d.dersler));
-            const labels  = son5.map(d=>new Date(d.dateKey+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}));
-            Y = pdfLineChart(doc, puanlar, labels, Y, 30, [108,99,255], 'LGS Puan Tahmini (son '+son5.length+' deneme)');
-            // Trend yorumu
-            const ilkP = puanlar[0], sonP = puanlar[puanlar.length-1];
-            const ortP = Math.round(puanlar.reduce((a,b)=>a+b,0)/puanlar.length);
-            const trendYon = sonP-ilkP;
-            const trendMetin = trendYon>15?'Belirgin artış trendi — momentum korunmalı.':
-                               trendYon>5 ?'Hafif yükseliş — strateji işe yarıyor.':
-                               trendYon>-5?'Stabil seyir — dalgalanma yok.':
-                               trendYon>-15?'Hafif düşüş — dikkat gerekiyor.':
-                                           'Belirgin düşüş — acil müdahale gerekli.';
-            Y=pdfCheck(doc,Y,10);
-            doc.setFont(PF,'normal');doc.setFontSize(7);doc.setTextColor(60,50,120);
-            doc.text(tx('Ortalama: ~'+ortP+' puan | '+trendMetin),16,Y);Y+=7;
+          // Ders ort
+          const dOrt={};
+          denemSira.forEach(d=>Object.entries(d.dersler).forEach(([ders,v])=>{
+            if(!dOrt[ders]) dOrt[ders]={net:0,cnt:0,max:lgsSoruE[ders]||10};
+            dOrt[ders].net+=v.net; dOrt[ders].cnt++;
+          }));
+          const dArr=Object.entries(dOrt)
+            .map(([d,v])=>({d,ort:Math.round(v.net/v.cnt*10)/10,max:v.max,pct:Math.min(100,Math.round(v.net/v.cnt/v.max*100))}))
+            .sort((a,b)=>a.pct-b.pct);
+          const enZayif=dArr[0];
+          const enGuclu=dArr[dArr.length-1];
+          const ortPuan=denemSira.length>0?Math.round(denemSira.reduce((a,d)=>a+lgsPuan(topNet(d)),0)/denemSira.length):null;
+
+          // Kaygı etkisi
+          const krizD=denemSira.filter(d=>(parseFloat((days[d.dateKey]||{}).kaygi)||0)>=7);
+          const normD=denemSira.filter(d=>{const k=parseFloat((days[d.dateKey]||{}).kaygi)||0;return k>0&&k<7;});
+          const krizOrt=krizD.length>0?Math.round(krizD.reduce((a,d)=>a+lgsPuan(topNet(d)),0)/krizD.length):null;
+          const normOrt=normD.length>0?Math.round(normD.reduce((a,d)=>a+lgsPuan(topNet(d)),0)/normD.length):null;
+
+          // Satır 1: genel özet
+          const c1=(ortPuan?denemSira.length+' denemede tahmini LGS puan ortalamas\u0131 ~'+ortPuan+'/500. ':'')+
+            (enGuclu?'En güçlü ders: '+enGuclu.d+' (ort. '+enGuclu.ort+'/'+enGuclu.max+' net). ':'')+
+            (enZayif&&enZayif.d!==enGuclu?.d?'Öncelikli ders: '+enZayif.d+' (ort. '+enZayif.ort+'/'+enZayif.max+' net) — çalışma artırılmalı.':'');
+
+          // Satır 2: kaygı etkisi
+          const fark=krizOrt&&normOrt?normOrt-krizOrt:null;
+          const c2=fark!==null?(fark>20?'Kaygılı günlerde deneme puanı ~'+fark+' puan düşüyor — sınav günü kaygı yönetimi kritik.':
+                               fark>5 ?'Kaygı deneme performansını hafifçe etkiliyor (~'+fark+' puan fark).':
+                                        'Kaygı deneme performansını belirgin etkilemiyor — iyi.'):'';
+
+          if (c1) {
+            kutu('Deneme Özeti', c1+(c2?' '+c2:''), [230,225,255],[80,50,200]);
           }
-
-          // ── Ders bazlı net ortalamaları ──────────────────────
-          const dersOrtE = {};
-          denemeSirali.forEach(d=>{
-            Object.entries(d.dersler).forEach(([ders,v])=>{
-              if(!dersOrtE[ders]) dersOrtE[ders]={topNet:0,count:0,max:lgsSoruE[ders]||10};
-              dersOrtE[ders].topNet+=v.net; dersOrtE[ders].count++;
-            });
-          });
-          const dersOrtArr = Object.entries(dersOrtE)
-            .map(([d,v])=>({d,ort:Math.round(v.topNet/v.count*10)/10,max:v.max,pct:Math.round(v.topNet/v.count/v.max*100)}))
-            .sort((a,b)=>b.pct-a.pct);
-
-          if (dersOrtArr.length>0) {
-            Y=pdfCheck(doc,Y,10);
-            doc.setFont(PF,'bold');doc.setFontSize(7.5);doc.setTextColor(40,30,100);
-            doc.text(tx('Ders Bazlı Net Ortalaması:'),16,Y);Y+=5;
-            dersOrtArr.forEach(d=>{
-              Y=pdfCheck(doc,Y,7);
-              const barW = Math.round(d.pct*1.2); // max 120px
-              doc.setFillColor(d.pct>=80?20:d.pct>=60?255:200, d.pct>=80?140:d.pct>=60?160:40, d.pct>=80?62:30);
-              doc.setFillColor(230,228,255);doc.roundedRect(16,Y,140,5.5,1,1,'F');
-              doc.setFillColor(d.pct>=75?20:d.pct>=50?200:200, d.pct>=75?140:d.pct>=50?100:40, d.pct>=75?62:d.pct>=50?30:30);
-              doc.roundedRect(16,Y,Math.max(3,barW),5.5,1,1,'F');
-              doc.setFont(PF,'normal');doc.setFontSize(6.5);doc.setTextColor(30,20,80);
-              doc.text(tx(d.d+': '+d.ort+'/'+d.max+' net (%'+d.pct+' doluluk)'),160,Y+4,{align:'right'});
-              Y+=7;
-            });
-            const enIyi=dersOrtArr[0], enKotuArr=dersOrtArr.filter(d=>d.d!==enIyi.d);
-            const enKotu=enKotuArr.sort((a,b)=>a.pct-b.pct)[0];
-            Y+=2;
-            if(enIyi){
-              doc.setFont(PF,'normal');doc.setFontSize(6.5);doc.setTextColor(20,130,60);
-              doc.text(tx('En güçlü: '+enIyi.d+' ('+enIyi.ort+'/'+enIyi.max+' ort. — '+enIyi.pct+'% doluluk)'),16,Y);Y+=5;
-            }
-            if(enKotu){
-              doc.setFont(PF,'normal');doc.setFontSize(6.5);doc.setTextColor(180,30,30);
-              doc.text(tx('Öncelikli: '+enKotu.d+' ('+enKotu.ort+'/'+enKotu.max+' ort. — '+enKotu.pct+'% doluluk) — çalışma artırılmalı'),16,Y);Y+=5;
-            }
-          }
-
-          // ── Kaygı-Deneme Korelasyonu ─────────────────────────
-          const krizDenemeler = denemeSirali.filter(d=>{
-            const dGunW = days[d.dateKey]||{};
-            return parseFloat(dGunW.kaygi||0)>=7;
-          });
-          const normalDenemeler = denemeSirali.filter(d=>{
-            const dGunW = days[d.dateKey]||{};
-            return parseFloat(dGunW.kaygi||0)<7 && parseFloat(dGunW.kaygi||0)>0;
-          });
-          if (krizDenemeler.length>0 && normalDenemeler.length>0) {
-            const krizOrt  = Math.round(krizDenemeler.reduce((a,d)=>a+lgsPuan(d.dersler),0)/krizDenemeler.length);
-            const normalOrt= Math.round(normalDenemeler.reduce((a,d)=>a+lgsPuan(d.dersler),0)/normalDenemeler.length);
-            Y=pdfCheck(doc,Y,16);
-            const fark = normalOrt-krizOrt;
-            const kc = fark>30?[255,210,210]:fark>15?[255,235,210]:[230,255,230];
-            const kk = fark>30?[175,15,15]:fark>15?[165,75,0]:[20,130,60];
-            doc.setFillColor(...kc);doc.roundedRect(15,Y,180,12,2,2,'F');
-            doc.setFillColor(...kk);doc.roundedRect(15,Y,4,12,1,1,'F');
-            doc.setFont(PF,'bold');doc.setFontSize(7);doc.setTextColor(...kk);
-            doc.text(tx('Kaygı Etkisi: Kaygılı günlerde ~'+krizOrt+'p vs normal günlerde ~'+normalOrt+'p ('+
-              (fark>0?'-'+fark:'fark yok')+' puan fark)'),22,Y+4);
-            doc.setFont(PF,'normal');doc.setFontSize(6.5);doc.setTextColor(60,50,100);
-            doc.text(tx(fark>30?'Kaygı deneme performansını ciddi şekilde düşürüyor — sınav günü kaygı yönetimi kritik.':
-                         fark>15?'Kaygı performansı olumsuz etkiliyor — sınav öncesi rutin gerekli.':
-                                 'Kaygı deneme performansını belirgin etkilemiyor — iyi.'),22,Y+9);
-            Y+=14;
-          }
-        } else {
-          // Deneme verisi yok
-          Y=pdfCheck(doc,Y,12);
-          doc.setFont(PF,'normal');doc.setFontSize(7);doc.setTextColor(150,140,180);
-          doc.text(tx('E. Deneme Analizi: Bu dönemde henüz deneme kaydı yok.'),16,Y);Y+=10;
         }
 
         if (period === 'weekly') {
@@ -8577,7 +8512,7 @@ function wellnessPage() {
     <!-- BÖLÜM 1: Duygu & Enerji -->
     <div class="card" style="margin-bottom:14px">
       <div class="card-title">😊 Duygu Durum & Enerji</div>
-      <div style="font-size:0.75rem;color:var(--text2);margin-bottom:10px;padding:5px 8px;background:var(--surface2);border-radius:8px">📅 \${new Date(todayKey+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'long',year:'numeric'})} verisi${Object.keys(today).length===0?' — bugün henüz giriş yapılmadı':''}</div>
+      <div style="font-size:0.75rem;color:var(--text2);margin-bottom:10px;padding:5px 8px;background:var(--surface2);border-radius:8px">📅 ${new Date(todayKey+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'long',year:'numeric'})} verisi${Object.keys(today).length===0?' — bugün henüz giriş yapılmadı':''}</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">Bugün nasıl hissediyorsun?</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
