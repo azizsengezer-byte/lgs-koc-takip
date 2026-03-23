@@ -7565,7 +7565,11 @@ function renderStudentPage(id, el) {
   else if(id==='kazanimlar') el.innerHTML = studentKazanimlar();
   else if(id==='my-tasks') el.innerHTML = studentTasks();
   else if(id==='wellness') {
-    loadWellnessFromFirestore().then(()=>{ el.innerHTML = wellnessPage(); });
+    loadWellnessFromFirestore().then(()=>{
+      el.innerHTML = wellnessPage();
+      // Render sonrası doğrulama — bugünün tarihi ile uyumsuz veri varsa temizle
+      _wellnessDateGuard();
+    });
   }
   else if(id==='lgs-dagilim') el.innerHTML = lgsDagilimPage();
   else if(id==='all-denemeler') el.innerHTML = allDenemelerPage();
@@ -8521,6 +8525,7 @@ function wellnessPage() {
   try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
 
   const todayKey = getTodayKey();
+  console.log('[Wellness] todayKey:', todayKey, '| days keys:', Object.keys(data.days||{}).slice(-3), '| today dolu:', !!data.days?.[todayKey]);
 
   // Gün değişince: dünün günlük verileri silindi, bugün boş başlar
   // Kalıcı veriler (hedef, hedefOkul) korunur, sadece days[bugün] yok ise boş
@@ -8572,7 +8577,7 @@ function wellnessPage() {
     <!-- BÖLÜM 1: Duygu & Enerji -->
     <div class="card" style="margin-bottom:14px">
       <div class="card-title">😊 Duygu Durum & Enerji</div>
-      <div style="font-size:0.75rem;color:var(--text2);margin-bottom:10px;padding:5px 8px;background:var(--surface2);border-radius:8px">📅 \${new Date(todayKey+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'long',year:'numeric'})} verisi</div>
+      <div style="font-size:0.75rem;color:var(--text2);margin-bottom:10px;padding:5px 8px;background:var(--surface2);border-radius:8px">📅 \${new Date(todayKey+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'long',year:'numeric'})} verisi${Object.keys(today).length===0?' — bugün henüz giriş yapılmadı':''}</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">Bugün nasıl hissediyorsun?</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
@@ -8589,7 +8594,7 @@ function wellnessPage() {
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Enerji Seviyesi (1-10)</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-        <input type="range" min="1" max="10" value="${today.enerji||5}"
+        <input type="range" min="1" max="10" value="${today.enerji||1}"
           id="wellnessEnerji" oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('enerji',this.value)"
           style="flex:1;accent-color:var(--accent)">
         <span style="font-weight:900;font-size:1.1rem;color:var(--accent);min-width:24px;text-align:center">${today.enerji||5}</span>
@@ -8627,7 +8632,7 @@ function wellnessPage() {
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Odaklanma Puanı (1-10)</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <input type="range" min="1" max="10" value="${today.odak||5}"
+        <input type="range" min="1" max="10" value="${today.odak||1}"
           id="wellnessOdak" oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('odak',this.value)"
           style="flex:1;accent-color:#45b7d1">
         <span style="font-weight:900;font-size:1.1rem;color:#45b7d1;min-width:24px;text-align:center">${today.odak||5}</span>
@@ -8702,7 +8707,7 @@ function wellnessPage() {
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Kaygı Skoru (1-10)</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <input type="range" min="1" max="10" value="${today.kaygi||3}"
+        <input type="range" min="1" max="10" value="${today.kaygi||1}"
           id="wellnessKaygi" oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('kaygi',this.value)"
           style="flex:1;accent-color:#ff6b6b">
         <span style="font-weight:900;font-size:1.1rem;color:#ff6b6b;min-width:24px;text-align:center">${today.kaygi||3}</span>
@@ -10268,6 +10273,53 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
   } catch(e) {
     console.warn('AI analiz hatasi:', e.message);
     return null;
+  }
+}
+
+
+// Wellness sayfası açıldığında gün kontrolü — dünün verisi varsa inputları sıfırla
+function _wellnessDateGuard() {
+  const todayKey = getTodayKey();
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  const storageKey = 'wellness_' + myUid;
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
+  const today = data.days?.[todayKey] || {};
+  const hasToday = Object.keys(today).length > 0;
+
+  if (!hasToday) {
+    // Bugüne ait veri yok — tüm inputları sıfırla
+    const resetIds = [
+      'wellnessEnerji','wellnessOdak','wellnessKaygi',
+      'wellnessUyku','wellnessEkranOnline','wellnessEkranSosyal',
+      'wellnessKelime','wellnessGurur','wellnessNegatif',
+      'wellnessPozitif','wellnessNot'
+    ];
+    resetIds.forEach(id=>{
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.type==='range') {
+        // Slider'ları default değere sıfırla
+        if (id==='wellnessEnerji'||id==='wellnessOdak') el.value=5;
+        else if (id==='wellnessKaygi') el.value=5;
+        else el.value=0;
+        // Yanındaki sayı göstergesini güncelle
+        if (el.nextElementSibling) el.nextElementSibling.textContent = el.value;
+      } else {
+        el.value = '';
+      }
+    });
+    // Mood butonlarını temizle
+    document.querySelectorAll('[data-mood-selected]').forEach(btn=>{
+      delete btn.dataset.moodSelected;
+      btn.style.border='2px solid var(--border)';
+      btn.style.background='transparent';
+    });
+    // uykuKalite ve su butonlarını temizle
+    document.querySelectorAll('[data-uykukalite-selected],[data-su-selected]').forEach(btn=>{
+      btn.style.border='2px solid var(--border)';
+      btn.style.background='transparent';
+    });
   }
 }
 
