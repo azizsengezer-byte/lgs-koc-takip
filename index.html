@@ -8127,8 +8127,11 @@ function generateAnalysisComment(filtered, subjectStats, totalDur, totalQ, total
   if (worstSub && worstSub.name !== bestSub?.name) comments.push(`<b>${worstSub.name}</b> dersine biraz daha odaklanabilirsin (%${worstSub.netPct} isabet). 💡`);
 
   // Deneme özeti
-  const _dSrc = studyEntries.filter(e=>e.type==='deneme'&&filtered.some(f=>f.dateKey===e.dateKey)||period==='monthly');
-  const _dAll = studyEntries.filter(e=>e.type==='deneme');
+  // Öğrenciye ait tüm deneme girişleri
+  const _studentName = filtered.length>0 ? filtered[0].studentName : null;
+  const _dAll = studyEntries.filter(e=>
+    e.type==='deneme' && (!_studentName || e.studentName===_studentName)
+  );
   const _dUse = _dAll;
   if (_dUse.length >= 1) {
     const _grp={};
@@ -10198,7 +10201,12 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
       body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
     });
     const data = await res.json();
+    if (!res.ok) {
+      console.error('AI API hata:', res.status, data?.error?.message);
+      return null;
+    }
     const text = data.content?.[0]?.text || '';
+    if (!text) { console.error('AI boş yanıt döndü:', JSON.stringify(data)); return null; }
     const clean = text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
     // Post-process: İngilizce klinik terimleri Türkçeleştir
@@ -10245,7 +10253,7 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
     }
     return parsed;
   } catch(e) {
-    console.warn('AI analiz hatasi:', e.message);
+    console.error('AI analiz HATA:', e.message, e);
     return null;
   }
 }
