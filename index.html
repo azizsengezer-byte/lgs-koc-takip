@@ -1333,6 +1333,15 @@ auth.onAuthStateChanged(async (user) => {
       }
 
       renderSidebar();
+      // Çerçeveyi uygula
+      if (currentRole === 'student') {
+        setTimeout(()=>applyProfileFrame(user.uid, getActiveFrame(user.uid)), 100);
+        // Rozet sayacını göster
+        getBadges(user.uid).then(earned=>{
+          const el = document.getElementById('badgeCountBadge');
+          if (el) el.textContent = earned.length + ' / ' + BADGES.length;
+        });
+      }
       // Sayfa yenilenince son sayfaya dön (URL'den oku)
       const _urlParams = new URLSearchParams(window.location.search);
       const _urlPage = _urlParams.get('p');
@@ -1748,10 +1757,7 @@ async function clearAllMessageNotifs() {
 /* =================== TEACHER PAGES =================== */
 function renderTeacherPage(id, el) {
   if(id==='dashboard') el.innerHTML = teacherDashboard();
-  else if(id==='students') {
-    el.innerHTML = teacherStudents();
-    loadAllStudentsMoodCache().then(() => { el.innerHTML = teacherStudents(); });
-  }
+  else if(id==='students') el.innerHTML = teacherStudents();
   else if(id==='student-detail') el.innerHTML = studentDetailAnalysis();
   else if(id==='psych-report') {
     el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">💙 Yükleniyor...</div>';
@@ -1912,10 +1918,7 @@ function teacherStudents() {
           ? `<span class="badge badge-yellow">📊 Normal</span>`
           : `<span class="badge badge-red">⚠️ Dikkat!</span>`;
         // Bugünkü wellness cache'den mood al
-        const sMoodToday = (window._wellnessCache||{})[s.name]?.mood || null;
-        const sMoodColors = {excited:'#f9ca24',good:'#45b7d1',focused:'#6c63ff',ok:'#a29bfe',tired:'#fd79a8',anxious:'#ff6b6b',sad:'#778ca3'};
-        const sMoodLabels = {excited:'🔥 Heyecanlı',good:'😊 İyiyim',focused:'🎯 Odaklı',ok:'😐 İdare Eder',tired:'😔 Yorgun',anxious:'😰 Kaygılı',sad:'😢 Mutsuz'};
-        const moodBadge = sMoodToday ? `<span style="font-size:0.7rem;padding:2px 7px;border-radius:10px;background:${sMoodColors[sMoodToday]}22;color:${sMoodColors[sMoodToday]};font-weight:700">${sMoodLabels[sMoodToday]}</span>` : '';
+        const moodBadge = '';
         return `
         <div class="student-row student-card-item" data-name="${s.name.toLowerCase()}" onclick="openStudentAnalysis('${s.name}')" style="cursor:pointer">
           ${s.photo
@@ -2748,12 +2751,43 @@ function studentDetailAnalysis() {
         </div>`).join('')}
     </div>`:''}
 
+    <!-- Rozet Özeti -->
+    <div class="card" id="studentBadgeCard" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="card-title" style="margin:0">🏆 Rozetler</div>
+        <span id="studentBadgeCount" style="font-size:0.78rem;color:var(--text2)">-</span>
+      </div>
+      <div id="studentBadgeGrid" style="display:flex;flex-wrap:wrap;gap:6px;min-height:30px">
+        <div style="color:var(--text2);font-size:0.8rem">Yükleniyor...</div>
+      </div>
+    </div>
+
     <!-- Koç Yorumu -->
     <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,var(--accent)10,var(--accent)04);border:1px solid var(--accent)33">
       <div class="card-title">🧑‍🏫 Koç Değerlendirmesi</div>
       <div style="font-size:0.86rem;line-height:1.75;color:var(--text)">${comment}</div>
     </div>
   `;
+  // Rozet grid'ini async doldur
+  setTimeout(async ()=>{
+    const sObj2 = students.find(s=>s.name===selectedStudentName)||{};
+    const sUid2 = sObj2.uid||'';
+    if (!sUid2) return;
+    const earned2 = await getBadges(sUid2);
+    const countEl = document.getElementById('studentBadgeCount');
+    const gridEl  = document.getElementById('studentBadgeGrid');
+    if (countEl) countEl.textContent = earned2.length + ' / ' + BADGES.length + ' rozet';
+    if (gridEl) {
+      if (earned2.length === 0) {
+        gridEl.innerHTML = '<span style="color:var(--text2);font-size:0.8rem">Henüz rozet kazanılmadı</span>';
+      } else {
+        gridEl.innerHTML = BADGES.filter(b=>earned2.includes(b.id))
+          .slice(0,12)
+          .map(b=>`<span title="${b.name}: ${b.desc}" style="font-size:1.4rem;cursor:default">${b.icon}</span>`)
+          .join('') + (earned2.length>12?`<span style="font-size:0.75rem;color:var(--text2);align-self:center">+${earned2.length-12} daha</span>`:'');
+      }
+    }
+  }, 200);
 }
 
 function showPsychReport(sName) {
@@ -8857,6 +8891,486 @@ function _syncW(myUid, storageKey, data) {
   }
 }
 
+
+// ============================================================
+// 🏆 ROZET SİSTEMİ
+// ============================================================
+
+const BADGES = [
+  // ── KATEGORİ 1: AKADEMİK ÜRETİM ──────────────────────────
+  { id:'s100',   cat:'akademik', icon:'🥉', name:'İlk Adım',        desc:'Toplam 100 soru çöz',           check: s=>s.totalQ>=100 },
+  { id:'s500',   cat:'akademik', icon:'🥈', name:'Koşucu',          desc:'Toplam 500 soru çöz',           check: s=>s.totalQ>=500 },
+  { id:'s1000',  cat:'akademik', icon:'🥇', name:'Maraton',         desc:'Toplam 1.000 soru çöz',         check: s=>s.totalQ>=1000 },
+  { id:'s5000',  cat:'akademik', icon:'💎', name:'Efsane',          desc:'Toplam 5.000 soru çöz',         check: s=>s.totalQ>=5000 },
+  { id:'s10000', cat:'akademik', icon:'👑', name:'LGS Savaşçısı',   desc:'Toplam 10.000 soru çöz',        check: s=>s.totalQ>=10000 },
+  { id:'d3',     cat:'akademik', icon:'🔥', name:'3 Gün Ateşi',     desc:'3 gün üst üste çalış',          check: s=>s.streak>=3 },
+  { id:'d7',     cat:'akademik', icon:'🔥', name:'7 Gün Serisi',    desc:'7 gün üst üste çalış',          check: s=>s.streak>=7 },
+  { id:'d14',    cat:'akademik', icon:'⚡', name:'14 Gün Fırtınası', desc:'14 gün üst üste çalış',        check: s=>s.streak>=14 },
+  { id:'d30',    cat:'akademik', icon:'🌟', name:'30 Gün Efsanesi', desc:'30 gün üst üste çalış',         check: s=>s.streak>=30 },
+  { id:'g1',     cat:'akademik', icon:'🎯', name:'Hedef Avcısı',    desc:'1 günde 200+ soru çöz',         check: s=>s.goal1>=1 },
+  { id:'g7',     cat:'akademik', icon:'🎯', name:'Usta',            desc:'7 kez günde 200+ soru',         check: s=>s.goal1>=7 },
+  { id:'g30',    cat:'akademik', icon:'🏹', name:'Keskin Nişancı',  desc:'30 kez günde 200+ soru',        check: s=>s.goal1>=30 },
+  { id:'a80',    cat:'akademik', icon:'✅', name:'İsabetli',        desc:'%80+ isabet 1 gün',             check: s=>s.acc80>=1 },
+  { id:'a80x7',  cat:'akademik', icon:'✅', name:'Tutarlı',         desc:'%80+ isabet 7 gün üst üste',   check: s=>s.acc80streak>=7 },
+  { id:'a95',    cat:'akademik', icon:'💯', name:'Mükemmeliyetçi',  desc:'%95+ isabet 1 gün',             check: s=>s.acc95>=1 },
+  // ── KATEGORİ 2: BRANŞ UZMANLIĞI ───────────────────────────
+  { id:'tur1',   cat:'brans', icon:'📖', name:'Okur',           desc:'Türkçe\'de 50 soru',     check: s=>s.brans['Türkçe']>=50 },
+  { id:'tur2',   cat:'brans', icon:'📖', name:'Yazar',          desc:'Türkçe\'de 200 soru',    check: s=>s.brans['Türkçe']>=200 },
+  { id:'tur3',   cat:'brans', icon:'📖', name:'Edebiyatçı',     desc:'Türkçe\'de 500 soru',    check: s=>s.brans['Türkçe']>=500 },
+  { id:'tur4',   cat:'brans', icon:'📖', name:'Dil Ustası',     desc:'Türkçe\'de 1000 soru',   check: s=>s.brans['Türkçe']>=1000 },
+  { id:'mat1',   cat:'brans', icon:'📐', name:'Sayıcı',         desc:'Matematikte 50 soru',    check: s=>s.brans['Matematik']>=50 },
+  { id:'mat2',   cat:'brans', icon:'📐', name:'Hesapçı',        desc:'Matematikte 200 soru',   check: s=>s.brans['Matematik']>=200 },
+  { id:'mat3',   cat:'brans', icon:'📐', name:'Analist',        desc:'Matematikte 500 soru',   check: s=>s.brans['Matematik']>=500 },
+  { id:'mat4',   cat:'brans', icon:'📐', name:'Matematik Dehası',desc:'Matematikte 1000 soru', check: s=>s.brans['Matematik']>=1000 },
+  { id:'fen1',   cat:'brans', icon:'🔬', name:'Meraklı',        desc:'Fen\'de 50 soru',        check: s=>s.brans['Fen Bilimleri']>=50 },
+  { id:'fen2',   cat:'brans', icon:'🔬', name:'Araştırmacı',    desc:'Fen\'de 200 soru',       check: s=>s.brans['Fen Bilimleri']>=200 },
+  { id:'fen3',   cat:'brans', icon:'🔬', name:'Bilim İnsanı',   desc:'Fen\'de 500 soru',       check: s=>s.brans['Fen Bilimleri']>=500 },
+  { id:'fen4',   cat:'brans', icon:'🔬', name:'Deney Ustası',   desc:'Fen\'de 1000 soru',      check: s=>s.brans['Fen Bilimleri']>=1000 },
+  { id:'ink1',   cat:'brans', icon:'🏛️', name:'Vatandaş',       desc:'İnkılap\'ta 50 soru',    check: s=>s.brans['İnkılap Tarihi']>=50 },
+  { id:'ink2',   cat:'brans', icon:'🏛️', name:'Tarihçi',        desc:'İnkılap\'ta 200 soru',   check: s=>s.brans['İnkılap Tarihi']>=200 },
+  { id:'ink3',   cat:'brans', icon:'🏛️', name:'Arşivci',        desc:'İnkılap\'ta 500 soru',   check: s=>s.brans['İnkılap Tarihi']>=500 },
+  { id:'ink4',   cat:'brans', icon:'🏛️', name:'Tarih Bilgesi',  desc:'İnkılap\'ta 1000 soru',  check: s=>s.brans['İnkılap Tarihi']>=1000 },
+  { id:'din1',   cat:'brans', icon:'🌙', name:'Öğrenci',        desc:'Din\'de 50 soru',        check: s=>s.brans['Din Kültürü']>=50 },
+  { id:'din2',   cat:'brans', icon:'🌙', name:'Bilgili',        desc:'Din\'de 200 soru',       check: s=>s.brans['Din Kültürü']>=200 },
+  { id:'din3',   cat:'brans', icon:'🌙', name:'Aydın',          desc:'Din\'de 500 soru',       check: s=>s.brans['Din Kültürü']>=500 },
+  { id:'din4',   cat:'brans', icon:'🌙', name:'Bilge',          desc:'Din\'de 1000 soru',      check: s=>s.brans['Din Kültürü']>=1000 },
+  { id:'ing1',   cat:'brans', icon:'🌍', name:'Beginner',       desc:'İngilizce\'de 50 soru',  check: s=>s.brans['İngilizce']>=50 },
+  { id:'ing2',   cat:'brans', icon:'🌍', name:'Speaker',        desc:'İngilizce\'de 200 soru', check: s=>s.brans['İngilizce']>=200 },
+  { id:'ing3',   cat:'brans', icon:'🌍', name:'Fluent',         desc:'İngilizce\'de 500 soru', check: s=>s.brans['İngilizce']>=500 },
+  { id:'ing4',   cat:'brans', icon:'🌍', name:'Mastermind',     desc:'İngilizce\'de 1000 soru',check: s=>s.brans['İngilizce']>=1000 },
+  // ── KATEGORİ 3: PSİKOLOJİK TAKİP ─────────────────────────
+  { id:'w1',     cat:'psikoloji', icon:'💙', name:'İlk Gün',       desc:'Wellness sayfasına ilk giriş',        check: s=>s.wellnessTotal>=1 },
+  { id:'w7',     cat:'psikoloji', icon:'💙', name:'Haftalık Takip', desc:'7 gün üst üste wellness girişi',     check: s=>s.wellnessStreak>=7 },
+  { id:'w30',    cat:'psikoloji', icon:'💜', name:'Aylık Takip',    desc:'30 gün üst üste wellness girişi',    check: s=>s.wellnessStreak>=30 },
+  { id:'mood5',  cat:'psikoloji', icon:'😊', name:'İyimser',        desc:'5 gün üst üste iyi/heyecanlı',       check: s=>s.goodMoodStreak>=5 },
+  { id:'calm',   cat:'psikoloji', icon:'🧘', name:'Dengeli',        desc:'Haftalık kaygı ortalaması 5 altı',   check: s=>s.calmWeek>=1 },
+  { id:'brave',  cat:'psikoloji', icon:'💪', name:'Blokaj Kırıcı',  desc:'Kaygı 8+ günde 10+ soru çöz',       check: s=>s.braveDay>=1 },
+  { id:'brave3', cat:'psikoloji', icon:'🦁', name:'Demir İrade',    desc:'Blokaj Kırıcı\'yı 3 kez kazan',     check: s=>s.braveDay>=3 },
+  { id:'bounce', cat:'psikoloji', icon:'🌈', name:'Toparlanma',     desc:'Kaygılı günden sonra iyiyim demiş',  check: s=>s.bounceBack>=1 },
+  { id:'sleep7', cat:'psikoloji', icon:'😴', name:'Dinç Uyandım',   desc:'7 gün üst üste 7+ saat uyku',       check: s=>s.sleepStreak>=7 },
+  { id:'water7', cat:'psikoloji', icon:'💧', name:'Su İçtim',       desc:'7 gün üst üste su içti',            check: s=>s.waterStreak>=7 },
+  { id:'energy5',cat:'psikoloji', icon:'⚡', name:'Enerji Bombası',  desc:'5 gün üst üste enerji 8+',         check: s=>s.energyStreak>=5 },
+  { id:'diary10',cat:'psikoloji', icon:'✍️', name:'Günlükçü',       desc:'10 gün not girişi',                 check: s=>s.diaryDays>=10 },
+  { id:'diary30',cat:'psikoloji', icon:'💭', name:'Düşünür',        desc:'30 gün not girişi',                 check: s=>s.diaryDays>=30 },
+  { id:'open20', cat:'psikoloji', icon:'🗣️', name:'Açık Yürek',     desc:'20 gün hem olumlu hem olumsuz giriş',check: s=>s.openDays>=20 },
+  { id:'nodig',  cat:'psikoloji', icon:'📵', name:'Dijital Oruç',   desc:'Sosyal medya 0 dk olan 1 gün',      check: s=>s.digitalFast>=1 },
+  { id:'nodig5', cat:'psikoloji', icon:'📵', name:'Dijital Usta',   desc:'Dijital Oruç\'u 5 kez yap',         check: s=>s.digitalFast>=5 },
+  { id:'screen', cat:'psikoloji', icon:'💻', name:'Verimli Ekran',  desc:'Sadece online ders, sosyal 0 dk',   check: s=>s.productiveScreen>=1 },
+  { id:'honest7',cat:'psikoloji', icon:'🪞', name:'Ayna',           desc:'7 gün üst üste farklı duygu girişi',check: s=>s.uniqueMoods7>=5 },
+  { id:'honest14',cat:'psikoloji',icon:'💎', name:'Özgün',          desc:'14 günde 5+ farklı duygu seçimi',   check: s=>s.uniqueMoods14>=5 },
+  { id:'real10', cat:'psikoloji', icon:'🌊', name:'Dalgalı Deniz',  desc:'10 gün hem + hem - not girişi',     check: s=>s.openDays>=10 },
+  { id:'full30', cat:'psikoloji', icon:'🔍', name:'Kendini Tanıyan',desc:'4 alanı dolu 30 gün (kaygı+enerji+uyku+duygu)',check: s=>s.fullDays>=30 },
+  // ── KATEGORİ 4: DENEME SINAVI ─────────────────────────────
+  { id:'exam1',  cat:'deneme', icon:'🎯', name:'İlk Deneme',    desc:'İlk deneme girişi',                  check: s=>s.examCount>=1 },
+  { id:'exam10', cat:'deneme', icon:'🔄', name:'Vazgeçmez',     desc:'10 deneme girişi',                   check: s=>s.examCount>=10 },
+  { id:'exup3',  cat:'deneme', icon:'📈', name:'Yükselen Yıldız',desc:'3 denemede üst üste net artışı',    check: s=>s.examRise>=3 },
+  { id:'expeak', cat:'deneme', icon:'🏆', name:'Zirve',         desc:'En yüksek deneme puanını kır',       check: s=>s.examPeak>=1 },
+  { id:'ex400',  cat:'deneme', icon:'💪', name:'500\'e Doğru',  desc:'Tahmini LGS puanı 400+',             check: s=>s.examBest>=400 },
+  { id:'ex450',  cat:'deneme', icon:'👑', name:'LGS Hazırı',    desc:'Tahmini LGS puanı 450+',             check: s=>s.examBest>=450 },
+  { id:'ex80',   cat:'deneme', icon:'⚡', name:'Hız Rekoru',    desc:'Tek denemede 80+ net',               check: s=>s.examMax80>=1 },
+  { id:'exfull', cat:'deneme', icon:'🎓', name:'Full Branş',    desc:'Tüm 6 derste 0 üstü net',            check: s=>s.examAllBrans>=1 },
+  { id:'exmonth',cat:'deneme', icon:'🌟', name:'Ay Şampiyonu',  desc:'Bu ay en yüksek puan',               check: s=>s.examMonthBest>=1 },
+];
+
+// Çerçeve seçenekleri
+const FRAMES = [
+  { id:'none',     name:'Çerçevesiz',    minBadge:0,  style:'none' },
+  { id:'blue',     name:'Azimli',        minBadge:10, style:'2px solid #6c63ff' },
+  { id:'purple',   name:'Kararlı',       minBadge:25, style:'3px solid #a855f7', glow:'0 0 8px #a855f7' },
+  { id:'orange',   name:'Usta',          minBadge:45, style:'3px solid #f97316', glow:'0 0 12px #f97316' },
+  { id:'gold',     name:'Efsane 👑',     minBadge:65, style:'3px solid #f59e0b', glow:'0 0 16px #f59e0b, 0 0 32px #fbbf24' },
+];
+
+// Rozet istatistiklerini hesapla
+function computeBadgeStats(uid) {
+  const entries = studyEntries.filter(e=>e.userId===uid||e.studentName===(students.find(s=>s.uid===uid)||{}).name);
+  const soruEntries = entries.filter(e=>e.type!=='deneme');
+  const denemEntries = entries.filter(e=>e.type==='deneme');
+
+  // Toplam soru
+  const totalQ = soruEntries.reduce((a,e)=>a+(e.questions||0),0);
+
+  // Branş bazlı
+  const brans = {};
+  ['Türkçe','Matematik','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce'].forEach(d=>{
+    brans[d] = soruEntries.filter(e=>e.subject===d).reduce((a,e)=>a+(e.questions||0),0);
+  });
+
+  // Streak (art arda aktif gün)
+  const activeDays = [...new Set(soruEntries.map(e=>e.dateKey))].sort();
+  let streak = 0, maxStreak = 0, cur = 0;
+  for (let i=0; i<activeDays.length; i++) {
+    if (i===0) { cur=1; }
+    else {
+      const prev = new Date(activeDays[i-1]+'T12:00:00');
+      const curr = new Date(activeDays[i]+'T12:00:00');
+      const diff = Math.round((curr-prev)/(1000*60*60*24));
+      cur = diff===1 ? cur+1 : 1;
+    }
+    maxStreak = Math.max(maxStreak, cur);
+  }
+  // Güncel streak (bugünden geri say)
+  const todayKey = getTodayKey();
+  streak = 0;
+  let checkDay = todayKey;
+  for (let i=0; i<365; i++) {
+    if (activeDays.includes(checkDay)) {
+      streak++;
+      const d = new Date(checkDay+'T12:00:00');
+      d.setDate(d.getDate()-1);
+      checkDay = d.toISOString().split('T')[0];
+    } else break;
+  }
+
+  // Günlük 200 hedef kaç kez tutuldu
+  const byDay = {};
+  soruEntries.forEach(e=>{ byDay[e.dateKey]=(byDay[e.dateKey]||0)+(e.questions||0); });
+  const goal1 = Object.values(byDay).filter(v=>v>=200).length;
+
+  // İsabet oranı
+  let acc80=0, acc95=0, acc80streak=0, acc80cur=0;
+  const daysSorted = Object.keys(byDay).sort();
+  daysSorted.forEach(dk=>{
+    const de = soruEntries.filter(e=>e.dateKey===dk);
+    const q = de.reduce((a,e)=>a+(e.questions||0),0);
+    const d2 = de.reduce((a,e)=>a+(e.correct||0),0);
+    const pct = q>0?d2/q*100:0;
+    if(pct>=80){acc80++;acc80cur++;if(acc80cur>acc80streak)acc80streak=acc80cur;}else{acc80cur=0;}
+    if(pct>=95) acc95++;
+  });
+
+  // Wellness verileri
+  const wellnessData = (window._wellnessAllCache||{})[uid] || 
+    JSON.parse(localStorage.getItem('wellness_'+uid)||'{}');
+  const days = wellnessData.days || {};
+  const dayKeys = Object.keys(days).sort();
+  const wellnessTotal = dayKeys.filter(k=>days[k]&&(days[k].mood||days[k].kaygi)).length;
+
+  // Wellness streak
+  let wellnessStreak=0;
+  let wCheck = getTodayKey();
+  for (let i=0; i<365; i++) {
+    if (days[wCheck]&&(days[wCheck].mood||days[wCheck].kaygi)) {
+      wellnessStreak++;
+      const d=new Date(wCheck+'T12:00:00'); d.setDate(d.getDate()-1);
+      wCheck=d.toISOString().split('T')[0];
+    } else break;
+  }
+
+  // İyi mood streak
+  let goodMoodStreak=0, goodCur=0;
+  dayKeys.forEach(k=>{
+    const m=days[k]?.mood;
+    if(m==='good'||m==='excited'){goodCur++;if(goodCur>goodMoodStreak)goodMoodStreak=goodCur;}else{goodCur=0;}
+  });
+
+  // Sakin hafta (kaygı ort <5)
+  let calmWeek=0;
+  for (let w=0; w<52; w++) {
+    const wEnd = new Date(getTodayKey()+'T12:00:00'); wEnd.setDate(wEnd.getDate()-w*7);
+    const wStart = new Date(wEnd); wStart.setDate(wEnd.getDate()-7);
+    const wDays = dayKeys.filter(k=>k>=wStart.toISOString().split('T')[0]&&k<=wEnd.toISOString().split('T')[0]);
+    const kaygiVals = wDays.map(k=>parseFloat(days[k]?.kaygi)||0).filter(v=>v>0);
+    if(kaygiVals.length>0&&kaygiVals.reduce((a,b)=>a+b,0)/kaygiVals.length<5) calmWeek++;
+  }
+
+  // Cesur gün (kaygı 8+ ama 10+ soru)
+  let braveDay=0;
+  dayKeys.forEach(k=>{
+    const kaygi=parseFloat(days[k]?.kaygi)||0;
+    const dSoru=byDay[k]||0;
+    if(kaygi>=8&&dSoru>=10) braveDay++;
+  });
+
+  // Toparlanma
+  let bounceBack=0;
+  for(let i=1;i<dayKeys.length;i++){
+    const prev=days[dayKeys[i-1]]?.mood;
+    const curr=days[dayKeys[i]]?.mood;
+    if((prev==='anxious'||prev==='sad'||prev==='tired')&&(curr==='good'||curr==='excited')) bounceBack++;
+  }
+
+  // Uyku streak
+  let sleepStreak=0, sCur=0;
+  dayKeys.forEach(k=>{
+    if((parseFloat(days[k]?.uyku)||0)>=7){sCur++;if(sCur>sleepStreak)sleepStreak=sCur;}else{sCur=0;}
+  });
+
+  // Su streak
+  let waterStreak=0, wsCur=0;
+  dayKeys.forEach(k=>{
+    if(days[k]?.su==='evet'){wsCur++;if(wsCur>waterStreak)waterStreak=wsCur;}else{wsCur=0;}
+  });
+
+  // Enerji streak
+  let energyStreak=0, eCur=0;
+  dayKeys.forEach(k=>{
+    if((parseFloat(days[k]?.enerji)||0)>=8){eCur++;if(eCur>energyStreak)energyStreak=eCur;}else{eCur=0;}
+  });
+
+  // Günlük not
+  const diaryDays = dayKeys.filter(k=>days[k]?.not||days[k]?.pozitif||days[k]?.negatif).length;
+
+  // Açık yürek (hem + hem -)
+  const openDays = dayKeys.filter(k=>(days[k]?.pozitif||'').length>2&&(days[k]?.negatif||'').length>2).length;
+
+  // Dijital oruç
+  const digitalFast = dayKeys.filter(k=>{
+    const s=parseFloat(days[k]?.ekranSosyal)||0; return s===0&&days[k]?.ekranSosyal!==undefined;
+  }).length;
+
+  // Verimli ekran
+  const productiveScreen = dayKeys.filter(k=>{
+    const s=parseFloat(days[k]?.ekranSosyal)||0;
+    const o=parseFloat(days[k]?.ekranOnline)||0;
+    return s===0&&o>0&&days[k]?.ekranSosyal!==undefined;
+  }).length;
+
+  // Dürüstlük: 7 günde farklı mood
+  const last7Days = dayKeys.slice(-7).map(k=>days[k]?.mood).filter(Boolean);
+  const uniqueMoods7 = new Set(last7Days).size;
+  const last14Days = dayKeys.slice(-14).map(k=>days[k]?.mood).filter(Boolean);
+  const uniqueMoods14 = new Set(last14Days).size;
+
+  // 4 alan dolu gün
+  const fullDays = dayKeys.filter(k=>days[k]?.mood&&days[k]?.kaygi&&days[k]?.enerji&&days[k]?.uyku).length;
+
+  // Deneme istatistikleri
+  const examCount = [...new Set(denemEntries.map(e=>e.examId||e.dateKey))].length;
+  const examByDate = {};
+  denemEntries.forEach(e=>{
+    const k=e.examId||e.dateKey;
+    if(!examByDate[k]) examByDate[k]={net:0};
+    examByDate[k].net+=Math.max(0,(e.correct||0)-(e.wrong||0)/3);
+  });
+  const examNets = Object.values(examByDate).map(e=>Math.round(100+e.net*4.444));
+  let examRise=0, examRiseCur=0;
+  for(let i=1;i<examNets.length;i++){
+    if(examNets[i]>examNets[i-1]){examRiseCur++;}else{examRiseCur=0;}
+    if(examRiseCur>examRise) examRise=examRiseCur;
+  }
+  const examBest = examNets.length>0?Math.max(...examNets):0;
+  const examPeak = examNets.length>1&&examNets[examNets.length-1]===examBest?1:0;
+  const examMax80 = Object.values(examByDate).some(e=>e.net>=80)?1:0;
+  const examAllBrans = [...new Set(denemEntries.map(e=>e.examId||e.dateKey))].some(eid=>{
+    const dBrans = denemEntries.filter(e=>(e.examId||e.dateKey)===eid);
+    return ['Türkçe','Matematik','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce']
+      .every(d=>dBrans.some(e=>e.subject===d&&Math.max(0,(e.correct||0)-(e.wrong||0)/3)>0));
+  })?1:0;
+  // Ay şampiyonu — bu ayın en yüksek puanı
+  const thisMonth = getTodayKey().substring(0,7);
+  const monthNets = Object.entries(examByDate)
+    .filter(([k])=>k.startsWith(thisMonth)||denemEntries.find(e=>(e.examId||e.dateKey)===k&&e.dateKey?.startsWith(thisMonth)))
+    .map(([,v])=>Math.round(100+v.net*4.444));
+  const examMonthBest = monthNets.length>0&&Math.max(...monthNets)===examBest?1:0;
+
+  return {
+    totalQ, brans, streak, goal1, acc80, acc80streak, acc95,
+    wellnessTotal, wellnessStreak, goodMoodStreak, calmWeek,
+    braveDay, bounceBack, sleepStreak, waterStreak, energyStreak,
+    diaryDays, openDays, digitalFast, productiveScreen,
+    uniqueMoods7, uniqueMoods14, fullDays,
+    examCount, examRise, examBest, examPeak, examMax80, examAllBrans, examMonthBest
+  };
+}
+
+// Rozet kontrolü ve kazanım
+async function checkBadges() {
+  const user = auth.currentUser;
+  if (!user || currentRole !== 'student') return;
+  const uid = user.uid;
+
+  const stats = computeBadgeStats(uid);
+  const storageKey = 'badges_' + uid;
+  let earned = JSON.parse(localStorage.getItem(storageKey)||'[]');
+  const newBadges = [];
+
+  BADGES.forEach(b=>{
+    if (!earned.includes(b.id) && b.check(stats)) {
+      earned.push(b.id);
+      newBadges.push(b);
+    }
+  });
+
+  if (newBadges.length > 0) {
+    localStorage.setItem(storageKey, JSON.stringify(earned));
+    // Firestore'a kaydet
+    if (db) {
+      db.collection('badges').doc(uid).set({ earned, updatedAt: new Date() }).catch(()=>{});
+    }
+    // Sırayla göster
+    for (const b of newBadges) {
+      await showBadgeUnlocked(b);
+      await new Promise(r=>setTimeout(r,2500));
+    }
+  }
+}
+
+// Rozet kazanım animasyonu (konfeti)
+function showBadgeUnlocked(badge) {
+  return new Promise(resolve=>{
+    // Konfeti
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999';
+    canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+    document.body.appendChild(canvas);
+    const ctx2 = canvas.getContext('2d');
+    const particles = Array.from({length:80},()=>({
+      x:Math.random()*canvas.width, y:-10,
+      vx:(Math.random()-0.5)*4, vy:Math.random()*3+2,
+      color:['#6c63ff','#f9ca24','#ff6584','#43e97b','#00b4d8'][Math.floor(Math.random()*5)],
+      size:Math.random()*8+4, rot:Math.random()*360, rotV:(Math.random()-0.5)*8
+    }));
+    let frame=0;
+    const animate=()=>{
+      ctx2.clearRect(0,0,canvas.width,canvas.height);
+      particles.forEach(p=>{
+        p.x+=p.vx; p.y+=p.vy; p.rot+=p.rotV; p.vy+=0.05;
+        ctx2.save(); ctx2.translate(p.x,p.y); ctx2.rotate(p.rot*Math.PI/180);
+        ctx2.fillStyle=p.color; ctx2.fillRect(-p.size/2,-p.size/4,p.size,p.size/2);
+        ctx2.restore();
+      });
+      frame++;
+      if(frame<120) requestAnimationFrame(animate); else canvas.remove();
+    };
+    requestAnimationFrame(animate);
+
+    // Bildirim kartı
+    const card = document.createElement('div');
+    card.style.cssText=`position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
+      background:var(--surface);border:2px solid ${badge.cat==='akademik'?'#f9ca24':badge.cat==='brans'?'#6c63ff':badge.cat==='psikoloji'?'#a855f7':'#43e97b'};
+      border-radius:20px;padding:28px 36px;text-align:center;z-index:10000;
+      box-shadow:0 8px 40px rgba(0,0,0,0.4);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1)`;
+    card.innerHTML=`
+      <div style="font-size:3rem;margin-bottom:8px">${badge.icon}</div>
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);letter-spacing:1px;margin-bottom:4px">YENİ ROZET KAZANILDI!</div>
+      <div style="font-size:1.3rem;font-weight:800;color:var(--text);margin-bottom:6px">${badge.name}</div>
+      <div style="font-size:0.82rem;color:var(--text2)">${badge.desc}</div>`;
+    document.body.appendChild(card);
+    setTimeout(()=>card.style.transform='translate(-50%,-50%) scale(1)',50);
+    setTimeout(()=>{
+      card.style.transition='opacity 0.4s'; card.style.opacity='0';
+      setTimeout(()=>{ card.remove(); resolve(); },400);
+    },2200);
+  });
+}
+
+// Kullanıcının kazandığı rozetleri getir
+async function getBadges(uid) {
+  // Önce Firestore'dan dene
+  if (db) {
+    try {
+      const snap = await db.collection('badges').doc(uid).get();
+      if (snap.exists) {
+        const earned = snap.data().earned || [];
+        localStorage.setItem('badges_'+uid, JSON.stringify(earned));
+        return earned;
+      }
+    } catch(e) {}
+  }
+  return JSON.parse(localStorage.getItem('badges_'+uid)||'[]');
+}
+
+// Aktif çerçeveyi getir/kaydet
+function getActiveFrame(uid) {
+  return localStorage.getItem('frame_'+uid) || 'none';
+}
+function setActiveFrame(uid, frameId) {
+  localStorage.setItem('frame_'+uid, frameId);
+  if (db) db.collection('users').doc(uid).update({ activeFrame: frameId }).catch(()=>{});
+  applyProfileFrame(uid, frameId);
+}
+
+// Profil fotoğrafına çerçeve uygula
+function applyProfileFrame(uid, frameId) {
+  const frame = FRAMES.find(f=>f.id===frameId) || FRAMES[0];
+  const avatarEl = document.getElementById('headerAvatar');
+  if (!avatarEl) return;
+  if (frame.id==='none') {
+    avatarEl.style.border='none';
+    avatarEl.style.boxShadow='none';
+  } else {
+    avatarEl.style.border=frame.style;
+    avatarEl.style.boxShadow=frame.glow||'none';
+    avatarEl.style.borderRadius='50%';
+  }
+}
+
+// Rozet profil sayfası HTML
+async function badgesPageHTML(uid) {
+  const earned = await getBadges(uid);
+  const total = BADGES.length;
+  const activeFrame = getActiveFrame(uid);
+  const earnedCount = earned.length;
+
+  // Kazanılabilir çerçeveler
+  const availFrames = FRAMES.filter(f=>earnedCount>=f.minBadge);
+
+  const cats = [
+    { id:'akademik', label:'🎓 Akademik', color:'#f9ca24' },
+    { id:'brans',    label:'📚 Branş',    color:'#6c63ff' },
+    { id:'psikoloji',label:'💙 Psikoloji',color:'#a855f7' },
+    { id:'deneme',   label:'🎯 Deneme',   color:'#43e97b' },
+  ];
+
+  const catHTML = cats.map(cat=>{
+    const catBadges = BADGES.filter(b=>b.cat===cat.id);
+    const catEarned = catBadges.filter(b=>earned.includes(b.id)).length;
+    return `
+      <div style="margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-weight:800;font-size:0.9rem;color:var(--text)">${cat.label}</div>
+          <div style="font-size:0.75rem;color:var(--text2);background:${cat.color}22;padding:2px 8px;border-radius:20px;font-weight:700;color:${cat.color}">${catEarned}/${catBadges.length}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+          ${catBadges.map(b=>{
+            const has = earned.includes(b.id);
+            return `<div style="text-align:center;padding:10px 4px;border-radius:12px;background:${has?cat.color+'22':'var(--surface2)'};border:1.5px solid ${has?cat.color:'var(--border)'};opacity:${has?1:0.4};transition:all 0.2s" title="${b.desc}">
+              <div style="font-size:1.5rem">${has?b.icon:'🔒'}</div>
+              <div style="font-size:0.62rem;font-weight:700;color:${has?'var(--text)':'var(--text2)'};margin-top:3px;line-height:1.2">${b.name}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  const frameHTML = `
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">🖼️ Profil Çerçevesi Seç</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        ${availFrames.map(f=>`
+          <button onclick="setActiveFrame('${uid}','${f.id}');showPage('profile')"
+            style="padding:8px 14px;border-radius:10px;border:2px solid ${activeFrame===f.id?'#6c63ff':'var(--border)'};
+                   background:${activeFrame===f.id?'#6c63ff22':'var(--surface2)'};cursor:pointer;font-size:0.82rem;
+                   color:${activeFrame===f.id?'#6c63ff':'var(--text)'}">
+            ${f.name}
+          </button>`).join('')}
+        ${FRAMES.filter(f=>earnedCount<f.minBadge).map(f=>`
+          <div style="padding:8px 14px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);opacity:0.5;font-size:0.82rem;color:var(--text2)">
+            ${f.name} <span style="font-size:0.7rem">(${f.minBadge} rozet)</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  return `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <button onclick="showPage('profile')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
+      <div class="page-title" style="margin:0">🏆 Rozetlerim</div>
+    </div>
+    <div class="page-sub">${earnedCount} / ${total} rozet kazanıldı</div>
+    <div style="background:var(--accent)22;border-radius:12px;padding:12px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:0.82rem;color:var(--text2)">İlerleme</span>
+        <span style="font-size:0.82rem;font-weight:700;color:var(--accent)">${Math.round(earnedCount/total*100)}%</span>
+      </div>
+      <div style="background:var(--border);border-radius:4px;height:6px">
+        <div style="background:var(--accent);width:${Math.round(earnedCount/total*100)}%;height:6px;border-radius:4px;transition:width 0.5s"></div>
+      </div>
+    </div>
+    ${catHTML}
+    ${frameHTML}`;
+}
+
 function saveWellnessField(field, value) {
   const { myUid, storageKey, data } = _getW();
   data[field] = value;
@@ -8930,6 +9444,8 @@ function saveWellnessAll(btn) {
     showToast('✅','Kaydedildi (çevrimdışı)');
     if (btn) { btn.textContent='✅ Kaydedildi'; setTimeout(()=>{ btn.textContent='✅ Bugünü Kaydet'; },2000); }
   }
+  // Rozet kontrolü
+  setTimeout(()=>checkBadges(), 800);
 }
 
 // ============================================================
@@ -9748,7 +10264,27 @@ function profilePage() {
         <button class="btn btn-outline" style="width:100%" onclick="changePassword()">Şifreyi Güncelle</button>
       </div>
     </div>
+
+    <!-- Rozetler Butonu -->
+    <div class="card" style="margin-top:0">
+      <button class="btn btn-primary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px"
+        onclick="showBadgesPage()">
+        🏆 <span>Rozetlerim</span>
+        <span id="badgeCountBadge" style="background:#f9ca24;color:#222;border-radius:20px;padding:2px 10px;font-size:0.78rem;font-weight:800"></span>
+      </button>
+    </div>
   `;
+}
+
+// Rozet sayfasını göster
+async function showBadgesPage() {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  const el = document.getElementById('mainContent');
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">🏆 Yükleniyor...</div>';
+  el.innerHTML = await badgesPageHTML(uid);
+  // Çerçeveyi uygula
+  applyProfileFrame(uid, getActiveFrame(uid));
 }
 
 // ========== FOTOĞRAF KIRPMA SİSTEMİ ==========
@@ -10698,6 +11234,8 @@ function saveEntry() {
   const netStr = q>0 ? ` | Net: ${net.toFixed(1)}` : '';
   showToast('✅', `${sub} — ${topic} kaydedildi!${netStr}`);
   showPage('daily-entry');
+  // Rozet kontrolü
+  setTimeout(()=>checkBadges(), 500);
 }
 
 async function deleteStudent(i) {
@@ -10780,10 +11318,10 @@ async function saveNewStudent() {
     const cred = await secondaryAuth.createUserWithEmailAndPassword(email, pass);
     const studentUid = cred.user.uid;
 
-    // Öğrenci Firestore profilini kaydet
+    // Öğrenci Firestore profilini secondaryAuth aktifken yaz (öğrencinin kendi auth'u)
     const colors = ['#6c63ff','#ff6584','#43e97b','#f9ca24','#00b4d8','#ff9f43'];
     const color = colors[students.length % colors.length];
-    await db.collection('users').doc(studentUid).set({
+    const profileData = {
       name, email, role: 'student',
       teacherId: teacherUser.uid,
       teacherName: teacherData.name || '',
@@ -10791,10 +11329,25 @@ async function saveNewStudent() {
       school: teacherData.school || '',
       photo: '', color, avg: 0,
       createdAt: new Date()
-    });
+    };
 
-    // İkinci oturumu kapat (öğretmen oturumu etkilenmez)
+    // secondaryApp'in Firestore instance'ını al (öğrencinin auth'u aktif)
+    let written = false;
+    try {
+      const secDb = firebase.app('secondary').firestore();
+      await secDb.collection('users').doc(studentUid).set(profileData);
+      written = true;
+    } catch(e1) {
+      console.log('Secondary Firestore hatasi:', e1.message);
+    }
+
+    // İkinci oturumu kapat
     await secondaryAuth.signOut();
+
+    // Secondary başarısız olduysa öğretmen auth'u ile dene
+    if (!written) {
+      await db.collection('users').doc(studentUid).set(profileData);
+    }
 
     // Öğretmenin listesine ekle
     students.push({ name, uid: studentUid, avg: 0, trend: 'up', lastActive: 'Yeni', color, tasks: 0 });
