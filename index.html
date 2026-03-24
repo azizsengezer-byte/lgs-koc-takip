@@ -10202,6 +10202,7 @@ function clearApiKey() {
 async function generateAIAnalysis(studentName, period, wellnessData, academicData, denemeler, notlar) {
   const key = localStorage.getItem('lgs_anthropic_key');
   if (!key || localStorage.getItem('lgs_api_enabled') !== 'true') return null;
+  showToast('🤖', 'AI analiz başlatılıyor...');
 
   const krizGunler = wellnessData.filter(d => (d.kaygi>=8) || (d.uyku>0&&d.uyku<6) || (!d.akademikVar&&d.kaygi>=7));
   const ogrSesi = notlar.filter(n => n.negatif || n.pozitif).slice(0, 5);
@@ -10312,9 +10313,11 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
         parsed[key] = parsed[key].map(v => typeof v === 'string' ? turkcelestir(v) : v);
       }
     }
+    showToast('✅', 'AI analiz tamamlandı');
     return parsed;
   } catch(e) {
     console.error('AI analiz HATA:', e.message, e);
+    showToast('❌', 'AI hata: ' + e.message);
     return null;
   }
 }
