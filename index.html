@@ -10313,7 +10313,7 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
         parsed[key] = parsed[key].map(v => typeof v === 'string' ? turkcelestir(v) : v);
       }
     }
-    showToast('✅', 'AI analiz tamamlandı');
+    showToast('✅', 'AI hazır: ' + (parsed.ana_tani||'?').substring(0,30));
     return parsed;
   } catch(e) {
     console.error('AI analiz HATA:', e.message, e);
