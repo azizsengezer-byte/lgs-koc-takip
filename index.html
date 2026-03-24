@@ -4076,6 +4076,7 @@ async function exportPsychPDF(sName) {
         Y = pdfSecHeader(doc, 'PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ', Y, 220, 50, 100);
 
         // ── AI ANALİZ KUTUSU (API aktifse önce göster) ──────────
+        console.log('AI analiz kontrol:', !!aiAnaliz, aiAnaliz?.uyari_seviyesi);
         if (aiAnaliz) {
           const uyariRenk = {
             kirmizi: [[255,210,210],[175,15,15]],
@@ -4174,6 +4175,7 @@ async function exportPsychPDF(sName) {
           const ortEnerjiH = enerjiVeriliGunler.length>0 ? enerjiVeriliGunler.reduce((a,d)=>a+d.enerji,0)/enerjiVeriliGunler.length : null;
           const ortOdakH = odakVeriliGunler.length>0 ? odakVeriliGunler.reduce((a,d)=>a+d.odak,0)/odakVeriliGunler.length : null;
           const ortHataH = hataGunler.length>0 ? hataGunler.reduce((a,d)=>a+d.hataOrani,0)/hataGunler.length : null;
+          const ortKaygiH = veriGunler.filter(d=>d.kaygi>0).length>0 ? veriGunler.filter(d=>d.kaygi>0).reduce((a,d)=>a+d.kaygi,0)/veriGunler.filter(d=>d.kaygi>0).length : null;
           const fizIyilikH = (ortEnerjiH!==null && ortOdakH!==null) ? (ortEnerjiH+ortOdakH)/2 : (ortEnerjiH??ortOdakH);
 
           // ── Vaka 1: Sözel İşlemleme Blokajı ──
