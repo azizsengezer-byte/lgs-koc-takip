@@ -5497,6 +5497,65 @@ async function exportPsychPDF(sName) {
         bakiyeRiskler.forEach((r,i)=>dipnot((i+1)+'. '+r));
       }
 
+
+        // ══════════════════════════════════════════
+        // E. DENEME SINAVI — KISA KLİNİK ÖZET
+        // ══════════════════════════════════════════
+        if (denemEntries2.length >= 1) {
+          Y = pdfCheck(doc, Y, 20);
+          bolumBaslik([80,50,200], 'E.  Deneme Sınavı — Klinik Özet',
+            'Kaygı-performans ilişkisi ve öncelikli ders');
+
+          // Grupla
+          const dGrp={};
+          denemEntries2.forEach(e=>{
+            const k=e.examId||e.dateKey;
+            if(!dGrp[k]) dGrp[k]={dateKey:e.dateKey,dersler:{}};
+            const net=Math.max(0,(e.correct||0)-(e.wrong||0)/3);
+            if(!dGrp[k].dersler[e.subject]) dGrp[k].dersler[e.subject]={net:0,count:0};
+            dGrp[k].dersler[e.subject].net+=net; dGrp[k].dersler[e.subject].count++;
+          });
+          const denemSira=Object.values(dGrp).sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
+          const lgsSoruE={'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,'İnkılap Tarihi':10,'Din Kültürü':10,'İngilizce':10};
+          const topNet=d=>Object.values(d.dersler).reduce((a,v)=>a+v.net,0);
+          const lgsPuan=n=>Math.min(500,Math.max(100,Math.round(100+n*4.444)));
+
+          // Ders ort
+          const dOrt={};
+          denemSira.forEach(d=>Object.entries(d.dersler).forEach(([ders,v])=>{
+            if(!dOrt[ders]) dOrt[ders]={net:0,cnt:0,max:lgsSoruE[ders]||10};
+            dOrt[ders].net+=v.net; dOrt[ders].cnt++;
+          }));
+          const dArr=Object.entries(dOrt)
+            .map(([d,v])=>({d,ort:Math.round(v.net/v.cnt*10)/10,max:v.max,pct:Math.min(100,Math.round(v.net/v.cnt/v.max*100))}))
+            .sort((a,b)=>a.pct-b.pct);
+          const enZayif=dArr[0];
+          const enGuclu=dArr[dArr.length-1];
+          const ortPuan=denemSira.length>0?Math.round(denemSira.reduce((a,d)=>a+lgsPuan(topNet(d)),0)/denemSira.length):null;
+
+          // Kaygı etkisi
+          const krizD=denemSira.filter(d=>(parseFloat((days[d.dateKey]||{}).kaygi)||0)>=7);
+          const normD=denemSira.filter(d=>{const k=parseFloat((days[d.dateKey]||{}).kaygi)||0;return k>0&&k<7;});
+          const krizOrt=krizD.length>0?Math.round(krizD.reduce((a,d)=>a+lgsPuan(topNet(d)),0)/krizD.length):null;
+          const normOrt=normD.length>0?Math.round(normD.reduce((a,d)=>a+lgsPuan(topNet(d)),0)/normD.length):null;
+
+          // Satır 1: genel özet
+          const c1=(ortPuan?denemSira.length+' denemede tahmini LGS puan ortalamas\u0131 ~'+ortPuan+'/500. ':'')+
+            (enGuclu?'En güçlü ders: '+enGuclu.d+' (ort. '+enGuclu.ort+'/'+enGuclu.max+' net). ':'')+
+            (enZayif&&enZayif.d!==enGuclu?.d?'Öncelikli ders: '+enZayif.d+' (ort. '+enZayif.ort+'/'+enZayif.max+' net) — çalışma artırılmalı.':'');
+
+          // Satır 2: kaygı etkisi
+          const fark=krizOrt&&normOrt?normOrt-krizOrt:null;
+          const c2=fark!==null?(fark>20?'Kaygılı günlerde deneme puanı ~'+fark+' puan düşüyor — sınav günü kaygı yönetimi kritik.':
+                               fark>5 ?'Kaygı deneme performansını hafifçe etkiliyor (~'+fark+' puan fark).':
+                                        'Kaygı deneme performansını belirgin etkilemiyor — iyi.'):'';
+
+          if (c1) {
+            kutu('Deneme Özeti', c1+(c2?' '+c2:''), [230,225,255],[80,50,200]);
+          }
+        }
+
+
       // ── BÜTÜNCÜL KLİNİK DEĞERLENDİRME VE SÜREÇ SAĞLIĞI ─────────
       Y=pdfCheck(doc,Y,14);
       Y=pdfSecHeader(doc,
@@ -5556,63 +5615,6 @@ async function exportPsychPDF(sName) {
           genelIsabet!==null  ? 'İsabet: %'+genelIsabet.toFixed(0)       : null,
           genelSosyal!==null  ? 'Sosyal medya: '+genelSosyal.toFixed(1)+'sa/gün' : null,
         ].filter(Boolean).join(' | ');
-
-        // ══════════════════════════════════════════
-        // E. DENEME SINAVI — KISA KLİNİK ÖZET
-        // ══════════════════════════════════════════
-        if (denemEntries2.length >= 1) {
-          Y = pdfCheck(doc, Y, 20);
-          bolumBaslik([80,50,200], 'E.  Deneme Sınavı — Klinik Özet',
-            'Kaygı-performans ilişkisi ve öncelikli ders');
-
-          // Grupla
-          const dGrp={};
-          denemEntries2.forEach(e=>{
-            const k=e.examId||e.dateKey;
-            if(!dGrp[k]) dGrp[k]={dateKey:e.dateKey,dersler:{}};
-            const net=Math.max(0,(e.correct||0)-(e.wrong||0)/3);
-            if(!dGrp[k].dersler[e.subject]) dGrp[k].dersler[e.subject]={net:0,count:0};
-            dGrp[k].dersler[e.subject].net+=net; dGrp[k].dersler[e.subject].count++;
-          });
-          const denemSira=Object.values(dGrp).sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
-          const lgsSoruE={'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,'İnkılap Tarihi':10,'Din Kültürü':10,'İngilizce':10};
-          const topNet=d=>Object.values(d.dersler).reduce((a,v)=>a+v.net,0);
-          const lgsPuan=n=>Math.min(500,Math.max(100,Math.round(100+n*4.444)));
-
-          // Ders ort
-          const dOrt={};
-          denemSira.forEach(d=>Object.entries(d.dersler).forEach(([ders,v])=>{
-            if(!dOrt[ders]) dOrt[ders]={net:0,cnt:0,max:lgsSoruE[ders]||10};
-            dOrt[ders].net+=v.net; dOrt[ders].cnt++;
-          }));
-          const dArr=Object.entries(dOrt)
-            .map(([d,v])=>({d,ort:Math.round(v.net/v.cnt*10)/10,max:v.max,pct:Math.min(100,Math.round(v.net/v.cnt/v.max*100))}))
-            .sort((a,b)=>a.pct-b.pct);
-          const enZayif=dArr[0];
-          const enGuclu=dArr[dArr.length-1];
-          const ortPuan=denemSira.length>0?Math.round(denemSira.reduce((a,d)=>a+lgsPuan(topNet(d)),0)/denemSira.length):null;
-
-          // Kaygı etkisi
-          const krizD=denemSira.filter(d=>(parseFloat((days[d.dateKey]||{}).kaygi)||0)>=7);
-          const normD=denemSira.filter(d=>{const k=parseFloat((days[d.dateKey]||{}).kaygi)||0;return k>0&&k<7;});
-          const krizOrt=krizD.length>0?Math.round(krizD.reduce((a,d)=>a+lgsPuan(topNet(d)),0)/krizD.length):null;
-          const normOrt=normD.length>0?Math.round(normD.reduce((a,d)=>a+lgsPuan(topNet(d)),0)/normD.length):null;
-
-          // Satır 1: genel özet
-          const c1=(ortPuan?denemSira.length+' denemede tahmini LGS puan ortalamas\u0131 ~'+ortPuan+'/500. ':'')+
-            (enGuclu?'En güçlü ders: '+enGuclu.d+' (ort. '+enGuclu.ort+'/'+enGuclu.max+' net). ':'')+
-            (enZayif&&enZayif.d!==enGuclu?.d?'Öncelikli ders: '+enZayif.d+' (ort. '+enZayif.ort+'/'+enZayif.max+' net) — çalışma artırılmalı.':'');
-
-          // Satır 2: kaygı etkisi
-          const fark=krizOrt&&normOrt?normOrt-krizOrt:null;
-          const c2=fark!==null?(fark>20?'Kaygılı günlerde deneme puanı ~'+fark+' puan düşüyor — sınav günü kaygı yönetimi kritik.':
-                               fark>5 ?'Kaygı deneme performansını hafifçe etkiliyor (~'+fark+' puan fark).':
-                                        'Kaygı deneme performansını belirgin etkilemiyor — iyi.'):'';
-
-          if (c1) {
-            kutu('Deneme Özeti', c1+(c2?' '+c2:''), [230,225,255],[80,50,200]);
-          }
-        }
 
         if (period === 'weekly') {
           // ═══════════════════════════════════════════════════
@@ -8123,6 +8125,43 @@ function generateAnalysisComment(filtered, subjectStats, totalDur, totalQ, total
   // Ders yorumu
   if (bestSub) comments.push(`En güçlü dersin <b>${bestSub.name}</b> (%${bestSub.netPct} isabet) — tebrikler! 🎯`);
   if (worstSub && worstSub.name !== bestSub?.name) comments.push(`<b>${worstSub.name}</b> dersine biraz daha odaklanabilirsin (%${worstSub.netPct} isabet). 💡`);
+
+  // Deneme özeti
+  const _dSrc = studyEntries.filter(e=>e.type==='deneme'&&filtered.some(f=>f.dateKey===e.dateKey)||period==='monthly');
+  const _dAll = studyEntries.filter(e=>e.type==='deneme');
+  const _dUse = _dAll;
+  if (_dUse.length >= 1) {
+    const _grp={};
+    _dUse.forEach(e=>{
+      const k=e.examId||e.dateKey;
+      if(!_grp[k]) _grp[k]={dersler:{}};
+      const net=Math.max(0,(e.correct||0)-(e.wrong||0)/3);
+      if(!_grp[k].dersler[e.subject]) _grp[k].dersler[e.subject]={net:0,cnt:0};
+      _grp[k].dersler[e.subject].net+=net; _grp[k].dersler[e.subject].cnt++;
+    });
+    const _lgsSoru={'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,'İnkılap Tarihi':10,'Din Kültürü':10,'İngilizce':10};
+    const _dSira=Object.values(_grp);
+    const _topNet=d=>Object.values(d.dersler).reduce((a,v)=>a+v.net,0);
+    const _puan=n=>Math.min(500,Math.max(100,Math.round(100+n*4.444)));
+    const _ortP=Math.round(_dSira.reduce((a,d)=>a+_puan(_topNet(d)),0)/_dSira.length);
+    const _dOrt={};
+    _dSira.forEach(d=>Object.entries(d.dersler).forEach(([ders,v])=>{
+      if(!_dOrt[ders]) _dOrt[ders]={net:0,cnt:0,max:_lgsSoru[ders]||10};
+      _dOrt[ders].net+=v.net; _dOrt[ders].cnt++;
+    }));
+    const _arr=Object.entries(_dOrt)
+      .map(([d,v])=>({d,ort:Math.round(v.net/v.cnt*10)/10,max:v.max,pct:Math.min(100,Math.round(v.net/v.cnt/v.max*100))}))
+      .sort((a,b)=>a.pct-b.pct);
+    const _enZ=_arr[0], _enG=_arr[_arr.length-1];
+    const _son=_puan(_topNet(_dSira[_dSira.length-1]));
+    const _ilk=_puan(_topNet(_dSira[0]));
+    const _trend=_son-_ilk>15?'artış trendi var':_son-_ilk>5?'hafif yükseliş var':_son-_ilk>-15?'stabil':'düşüş var';
+    comments.push(
+      '<b>'+_dSira.length+' denemede</b> tahmini LGS puan ortalaması yaklaşık <b>'+_ortP+'/500</b>; son deneme '+_son+' puan, '+_trend+'. '+
+      (_enG?'En yüksek net ortalaması <b>'+_enG.d+'</b> (ort. '+_enG.ort+'/'+_enG.max+' net). ':'')+
+      (_enZ&&_enZ.d!==_enG?.d?'En düşük net ortalaması <b>'+_enZ.d+'</b> (ort. '+_enZ.ort+'/'+_enZ.max+' net) — öncelikli çalışma alanı.':'')
+    );
+  }
 
   // Genel öneri
   const lgsDate = new Date('2026-06-14T09:30:00+03:00');
