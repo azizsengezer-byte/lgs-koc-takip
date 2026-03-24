@@ -8130,14 +8130,20 @@ function generateAnalysisComment(filtered, subjectStats, totalDur, totalQ, total
   // Öğrenciye ait tüm deneme girişleri
   // selectedStudentName global — öğretmen tarafında seçili öğrenci
   // Öğrenci kendi raporunu alıyorsa filtered içindeki studentName'i kullan
-  // Önce parametre, sonra global, sonra filtered'dan bul
+  // Öğrenci adını belirle — studentNameParam öncelikli
   const _sName = studentNameParam
     || (typeof selectedStudentName !== 'undefined' && selectedStudentName)
     || filtered.find(e=>e.studentName)?.studentName
     || null;
-  const _dAll = studyEntries.filter(e=>
-    e.type==='deneme' && (!_sName || e.studentName===_sName)
-  );
+  // Deneme girişlerini filtrele — studentName veya userId eşleşmesi
+  const _currentUid = (window.currentUserData||{}).uid || null;
+  const _dAll = studyEntries.filter(e=>{
+    if (e.type !== 'deneme') return false;
+    if (!_sName && !_currentUid) return true; // filtre yoksa hepsini al
+    if (_currentUid && e.userId === _currentUid) return true;
+    if (_sName && e.studentName === _sName) return true;
+    return false;
+  });
   const _dUse = _dAll;
   if (_dUse.length >= 1) {
     const _grp={};
@@ -10201,11 +10207,15 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
     '"hafiza_borcu":"kriz altinda calisilanlar icin tekrar onerileri"}';
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 saniye timeout
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
+      signal: controller.signal,
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
       body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
     });
+    clearTimeout(timeoutId);
     const data = await res.json();
     if (!res.ok) {
       console.error('AI API hata:', res.status, data?.error?.message);
