@@ -3543,26 +3543,7 @@ async function exportPsychPDF(sName) {
     const kullanılanOlaylar = new Set(); // Bağlamsal izolasyon: aynı olay iki başlıkta kullanılmaz
 
     // ── Yardımcı fonksiyonlar ──
-    // AI yorumunu kod metnine güvenli şekilde ekleyen yardımcı
-    // aiAnaliz yoksa veya alan boşsa sadece kod metni döner
-    function aiEkle(kodMetni, aiAlan) {
-      if (!aiAnaliz || !aiAlan || aiAlan.trim().length < 10) return kodMetni;
-      const separator = kodMetni.endsWith(' ') ? '' : ' ';
-      return kodMetni + separator + '◆ ' + aiAlan.trim();
-    }
-
-    // AI kriz günlerini metin olarak döndür
-    function aiKrizGunleri() {
-      if (!aiAnaliz?.kriz_gunleri?.length) return null;
-      return aiAnaliz.kriz_gunleri.join(' | ');
-    }
-
-    // Belirli bir alanı güvenli al
-    function aiAl(alan) {
-      return aiAnaliz?.[alan] || null;
-    }
-
-    function kutu(baslik, metin, bg, kenar) {
+        function kutu(baslik, metin, bg, kenar) {
       const bSat = doc.splitTextToSize(baslik, 156);
       const mSat = doc.splitTextToSize(metin, 156);
       const bH   = Math.max(bSat.length*5.5 + mSat.length*4.8 + 20, 24);
@@ -3606,52 +3587,10 @@ async function exportPsychPDF(sName) {
       doc.text(altSat, 16, Y); Y += altSat.length*5+5;
     }
 
-    // AI analizi için veri hazırla ve API'ye gönder
-    let aiAnaliz = null;
-    if (localStorage.getItem('lgs_api_enabled') === 'true' && localStorage.getItem('lgs_anthropic_key')) {
-      const aiWellnessData = sortedDays.slice().reverse().map(dk => {
-        const p = days[dk] || {};
-        const sq = soruEntries2.filter(e=>e.dateKey===dk).reduce((a,e)=>a+(e.questions||0),0);
-        return {
-          tarih: new Date(dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}),
-          kaygi: parseFloat(p.kaygi)||0, enerji: parseFloat(p.enerji)||0,
-          uyku: parseFloat(p.uyku)||0, mood: p.mood||'', soru: sq,
-          akademikVar: sq > 0
-        };
-      });
-      const aiAkademikData = {
-        toplamSoru, aktifGun: aktifGunler.length,
-        ortIsabet: ortHata!==null ? Math.round(100-ortHata) : null,
-        dersBazli: dersHataArr.slice(0,5).map(d=>({d:d.d, isabet:Math.round(100-d.pct)}))
-      };
-      // Deneme verisi — examId bazlı grupla, ders bazlı net göster
-      const denemGrup = {};
-      denemEntries2.forEach(e=>{
-        const k = e.examId||e.dateKey;
-        if(!denemGrup[k]) denemGrup[k] = {tarih:e.dateKey, baslik:e.examTitle||e.topic||'Deneme', dersler:[]};
-        denemGrup[k].dersler.push({ders:e.subject, net:Math.round((e.net||0)*10)/10, dogru:e.correct||0, yanlis:e.wrong||0});
-      });
-      const lgsSoruSayisiAI = {'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,'İnkılap Tarihi':10,'Din Kültürü':10,'İngilizce':10};
-      const aiDenemeler = Object.values(denemGrup).slice(-3).map(g=>({
-        tarih: new Date(g.tarih+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long'}),
-        baslik: g.baslik,
-        dersler: g.dersler.map(d=>{
-          const max = lgsSoruSayisiAI[d.ders]||20;
-          const doluluk = Math.round(d.net/max*100);
-          return d.ders+': '+d.net+' net ('+d.dogru+' doğru/'+d.yanlis+' yanlış, %'+doluluk+' doluluk)';
-        }).join(' | '),
-        toplamNet: Math.round(g.dersler.reduce((a,d)=>a+(d.net||0),0)*10)/10
-      }));
-      const aiNotlar = sortedDays.map(dk=>({
-        tarih: new Date(dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'}),
-        pozitif: (days[dk]||{}).pozitif||'', negatif: (days[dk]||{}).negatif||''
-      })).filter(n=>n.pozitif||n.negatif);
-      try {
-        aiAnaliz = await generateAIAnalysis(sName, period, aiWellnessData, aiAkademikData, aiDenemeler, aiNotlar);
-      } catch(e) { console.warn('AI analiz alınamadı:', e.message); }
-    }
+    // AI analizi devre dışı
+    const aiAnaliz = null;
 
-    if (veriGunler.length >= 1 || period === 'daily') {
+        if (veriGunler.length >= 1 || period === 'daily') {
       // ───────────────────────────────────────────────────────────
       // ORTAK ALTYAPI — 3 mod için paylaşılan yardımcılar
       // ───────────────────────────────────────────────────────────
@@ -3733,33 +3672,8 @@ async function exportPsychPDF(sName) {
         Y = pdfCheck(doc, Y, 20);
         Y = pdfSecHeader(doc, 'GÜNLÜK KLİNİK ANALİZ', Y, 220, 50, 100);
 
-        // AI günlük analizi
-        if (aiAnaliz) {
-          const uyariRenk = {kirmizi:[[255,210,210],[175,15,15]],turuncu:[[255,232,210],[165,55,0]],sari:[[255,248,215],[145,105,0]],yesil:[[220,252,232],[14,128,62]]}[aiAnaliz.uyari_seviyesi]||[[240,238,255],[100,90,175]];
-          Y = pdfCheck(doc, Y, 22);
-          doc.setFillColor(...uyariRenk[0]); doc.roundedRect(15,Y,180,14,2,2,'F');
-          doc.setFillColor(...uyariRenk[1]); doc.roundedRect(15,Y,5,14,1,1,'F');
-          doc.setFont(PF,'bold'); doc.setFontSize(8); doc.setTextColor(...uyariRenk[1]);
-          const taniSat = doc.splitTextToSize(tx('🤖 ' + (aiAnaliz.ana_tani||'')), 160);
-          doc.text(taniSat, 24, Y+5); Y += Math.max(14, taniSat.length*5+6)+3;
-          const gunlukBolumler = [
-            aiAnaliz.fizyolojik?['Fizyolojik',aiAnaliz.fizyolojik,[255,232,215],[162,55,0]]:null,
-            aiAnaliz.duygusal?['Duygusal',aiAnaliz.duygusal,[248,222,255],[115,45,180]]:null,
-            aiAnaliz.koc_stratejisi?['Koç Eylemi',aiAnaliz.koc_stratejisi,[220,252,232],[14,128,62]]:null,
-          ].filter(Boolean);
-          gunlukBolumler.forEach(([b,m,bg,k])=>{
-            const sat=doc.splitTextToSize(tx(m),160); const h=sat.length*4.5+14;
-            Y=pdfCheck(doc,Y,h+4);
-            doc.setFillColor(...bg);doc.roundedRect(15,Y,180,h,2,2,'F');
-            doc.setFillColor(...k);doc.roundedRect(15,Y,4,h,1,1,'F');
-            doc.setFont(PF,'bold');doc.setFontSize(7.5);doc.setTextColor(...k);doc.text(tx(b),23,Y+6);
-            doc.setFont(PF,'normal');doc.setFontSize(7);doc.setTextColor(40,40,80);doc.text(sat,23,Y+11);
-            Y+=h+4;
-          });
-          doc.setDrawColor(180,170,220);doc.setLineWidth(0.3);Y=pdfCheck(doc,Y,8);doc.line(15,Y,195,Y);Y+=6;
-        }
-
-        doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(100,90,140);
+        // AI günlük kutusu kaldırıldı
+                doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(100,90,140);
         doc.text(tx('Bugünün verisi anlık klinik değerlendirme — bakiye riskler sonda'), 16, Y); Y+=8;
 
         // ══ ALTIN KURAL: Kaygı≥7 + Soru=0 -> ACİL UYARI ══════════
@@ -3772,14 +3686,10 @@ async function exportPsychPDF(sName) {
           doc.text(tx('⚠  ACİL: BİLİŞSEL BLOKAJ — AKADEMİK FELÇ'), 24, Y+9.5);
           Y+=18;
           kutu('Amigdala Blokajı (Modül A-Vaka 6 + Modül 2.5-Vaka 2)',
-            aiEkle(
-              'Bugün kaygı ' + bugunKaygi.toFixed(1) + '/10 ' + (bugunMoodTr?'('+bugunMoodTr+') ':'') + 'iken hiç akademik çalışma yapılmamış. ' +
-              'Bu bir disiplin sorunu değil biyolojik bir savunmadır: prefrontal korteks devre dışı, öğrenci doğrudan donmuştur. ' +
-              (bugunSosyal>0?'Sosyal medya '+bugunSosyal.toFixed(1)+' sa kullanımı -> dijital anestezi (kaygı + kaçış kombinasyonu). ':'') +
-              (ardisikBosDays>1?'Son '+ardisikBosDays+' gün üst üste akademik giriş yok — kaçınma örüntüsü kemikleşiyor. ':'') +
-              'Koç eylemi: akademik baskı yok, önce duygusal regülasyon. Mikro hedef: 5 soru, en sevdiği ders.',
-              aiAl('duygusal_yorum')
-            ),
+            'Bugün kaygı ' + bugunKaygi.toFixed(1) + '/10 ' + (bugunMoodTr?'('+bugunMoodTr+') ':'') + 'iken hiç akademik çalışma yapılmamış. ' +
+            'Bu bir disiplin sorunu değil biyolojik bir savunmadır: prefrontal korteks devre dışı, öğrenci doğrudan donmuştur. ' +
+            (bugunSosyal>0?'Sosyal medya '+bugunSosyal.toFixed(1)+' sa — dijital anestezi. ':'') +
+            'Koç eylemi: akademik baskı yok, önce duygusal düzenleme. Mikro hedef: 5 soru, en sevdiği ders.',
             [255,210,210],[175,0,0]);
           gunlukBakiye.push('Dün çalışılan konularda unutma eğrisi hızlandı — yarın 10 dk tekrar zorunlu');
           if (dunKaygi>7) gunlukBakiye.push('Dün de kaygı '+dunKaygi.toFixed(1)+'/10 idi — 2 günlük blokaj birikimi');
@@ -4007,12 +3917,9 @@ async function exportPsychPDF(sName) {
 
         if (acilDurum) {
           kutu('GÜNLÜK TANI: Akademik Felç — Acil Müdahale',
-            aiEkle(
-              'Bugün tüm göstergeler kritik: kaygı '+bugunKaygi.toFixed(1)+'/10, akademik üretim sıfır. ' +
-              (bugunSosyal>0?'Dijital anestezi '+bugunSosyal.toFixed(1)+' sa. ':'') +
-              'Koç eylem planı: ① Akademik baskı yok; ② "Nasıl hissediyorsun?" sorusuyla başla; ③ Tek bir derse 5 soru mikro hedefi koy; ④ Yarın sabah takip et.',
-              aiAl('koc_stratejisi')
-            ),
+            'Bugün tüm göstergeler kritik: kaygı '+bugunKaygi.toFixed(1)+'/10, akademik üretim sıfır. ' +
+            (bugunSosyal>0?'Dijital anestezi '+bugunSosyal.toFixed(1)+' sa. ':'') +
+            'Koç eylem planı: akademik baskı yok, "Nasıl hissediyorsun?" ile başla, mikro hedef koy.',
             [255,205,205],[175,0,0]);
         } else if (krizDurum) {
           kutu('GÜNLÜK TANI: Kriz Koşullarında Çalışma',
@@ -4075,63 +3982,8 @@ async function exportPsychPDF(sName) {
         Y = pdfCheck(doc, Y, 20);
         Y = pdfSecHeader(doc, 'PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ', Y, 220, 50, 100);
 
-        // ── AI ANALİZ KUTUSU (API aktifse önce göster) ──────────
-        console.log('AI analiz kontrol:', !!aiAnaliz, aiAnaliz?.uyari_seviyesi);
-        if (aiAnaliz) {
-          const uyariRenk = {
-            kirmizi: [[255,210,210],[175,15,15]],
-            turuncu: [[255,232,210],[165,55,0]],
-            sari:    [[255,248,215],[145,105,0]],
-            yesil:   [[220,252,232],[14,128,62]]
-          }[aiAnaliz.uyari_seviyesi] || [[240,238,255],[100,90,175]];
-
-          // Ana tanı — büyük başlık kutusu
-          Y = pdfCheck(doc, Y, 22);
-          doc.setFillColor(...uyariRenk[0]);
-          doc.roundedRect(15, Y, 180, 14, 2, 2, 'F');
-          doc.setFillColor(...uyariRenk[1]);
-          doc.roundedRect(15, Y, 5, 14, 1, 1, 'F');
-          doc.setFont(PF, 'bold'); doc.setFontSize(8); doc.setTextColor(...uyariRenk[1]);
-          const taniSat = doc.splitTextToSize(tx('🤖 AI TANI: ' + (aiAnaliz.ana_tani||'')), 160);
-          doc.text(taniSat, 24, Y + 5); Y += Math.max(14, taniSat.length * 5 + 6);
-          Y += 3;
-
-          // AI bölüm kutuları
-          const aiBolumler = [
-            aiAnaliz.kriz_ozeti||aiAnaliz.kriz_gunleri?.length
-              ? ['Kriz Hafızası', aiAnaliz.kriz_ozeti||(aiAnaliz.kriz_gunleri||[]).join(' | '), [255,215,215],[172,15,15]] : null,
-            aiAnaliz.fizyolojik_yorum ? ['Fizyolojik Analiz', aiAnaliz.fizyolojik_yorum, [255,232,215],[162,55,0]] : null,
-            aiAnaliz.duygusal_yorum   ? ['Duygusal & Branş Analizi', aiAnaliz.duygusal_yorum, [248,222,255],[115,45,180]] : null,
-            aiAnaliz.soru_cozumu_yorum ? ['Günlük Soru Çözümü Analizi', aiAnaliz.soru_cozumu_yorum, [220,235,255],[40,80,160]] : null,
-            aiAnaliz.deneme_yorum&&aiAnaliz.deneme_yorum.length>5
-              ? ['Deneme Sınavı Analizi', aiAnaliz.deneme_yorum, [215,235,255],[20,70,160]] : null,
-            aiAnaliz.ogr_sesi_yorum&&aiAnaliz.ogr_sesi_yorum.length>5
-              ? ['Öğrencinin Sesi (Klinik Yorum)', aiAnaliz.ogr_sesi_yorum, [248,242,255],[115,75,178]] : null,
-            aiAnaliz.koc_stratejisi ? ['Koç Eylem Planı', aiAnaliz.koc_stratejisi, [220,252,232],[14,128,62]] : null,
-          ].filter(Boolean);
-
-          aiBolumler.forEach(([baslik, metin, bgRenk, kenarRenk]) => {
-            const satirlar = doc.splitTextToSize(tx(metin), 160);
-            const kutH = satirlar.length * 4.5 + 14;
-            Y = pdfCheck(doc, Y, kutH + 5);
-            doc.setFillColor(...bgRenk); doc.roundedRect(15, Y, 180, kutH, 2, 2, 'F');
-            doc.setFillColor(...kenarRenk); doc.roundedRect(15, Y, 4, kutH, 1, 1, 'F');
-            doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(...kenarRenk);
-            doc.text(tx(baslik), 23, Y + 6);
-            doc.setFont(PF,'normal'); doc.setFontSize(7); doc.setTextColor(40,40,80);
-            doc.text(satirlar, 23, Y + 11);
-            Y += kutH + 5;
-          });
-
-          // Ayıraç
-          Y = pdfCheck(doc, Y, 8);
-          doc.setDrawColor(180,170,220); doc.setLineWidth(0.3);
-          doc.line(15, Y, 195, Y); Y += 6;
-          doc.setFont(PF,'normal'); doc.setFontSize(6); doc.setTextColor(160,150,200);
-          doc.text(tx('Aşağıdaki istatistiksel analiz AI yorumunu destekler niteliktedir.'), 16, Y); Y += 8;
-        }
-
-        doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(100,90,140);
+        // AI kutusu kaldırıldı
+                doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(100,90,140);
         doc.text(tx(period==='weekly'
           ? 'Haftalık neden-sonuç zinciri — her başlık bu haftanın verisiyle çalışır'
           : 'Aylık trend / varyans / kriz kümesi — tekil gün ana analize taşınmaz'), 16, Y); Y+=7;
@@ -4285,12 +4137,9 @@ async function exportPsychPDF(sName) {
                   aktifNegatifler.push('Kırılgan Hiper-Aktivasyon');
                   kullanılanOlaylar.add('A_kirilgan_hiper');
                   kutu('Kırılgan Hiper-Aktivasyon — Bu Hafta',
-                    aiEkle(
-                      'Enerji ort. ' + ortEnerjiH.toFixed(1) + '/10 yüksek ama kaygı ort. ' + ortKaygiH.toFixed(1) + '/10 ile kritik eşikte. ' +
+                    'Enerji ort. ' + ortEnerjiH.toFixed(1) + '/10 yüksek ama kaygı ort. ' + ortKaygiH.toFixed(1) + '/10 ile kritik eşikte. ' +
                       'Kortizol kaynaklı geçici enerji illüzyonu; yüksek üretim "öğrenme" değil "kaygıyla çalışma" refleksini gösterir. ' +
                       'Bu tablo olumlu değil — sürdürülemez bir tempo işaretidir.',
-                      aiAl('fizyolojik_yorum')
-                    ),
                     [255,228,210],[160,55,0]);
                   bakiyeRiskler.push('Bu hafta kaygı+enerji eş zamanlı yüksek: kırılgan performans');
                 } else {
@@ -4443,13 +4292,10 @@ async function exportPsychPDF(sName) {
             aktifNegatifler.push('Kırılgan Hiper-Aktivasyon');
             kullanılanOlaylar.add('A_kirilgan_hiper_ay');
             kutu('Kırılgan Hiper-Aktivasyon — Maskelenmiş Kriz',
-              aiEkle(
-                'Enerji ort. ' + ortEnerjiA.toFixed(1) + '/10 yüksek görünse de kaygı ort. ' + ortKaygi.toFixed(1) + '/10 ile kritik eşikte. ' +
+              'Enerji ort. ' + ortEnerjiA.toFixed(1) + '/10 yüksek görünse de kaygı ort. ' + ortKaygi.toFixed(1) + '/10 ile kritik eşikte. ' +
                 'Bu tablo "iyi performans" değildir. Kortizol ve adrenalin geçici bir enerji illüzyonu yaratmakta; ' +
                 'prefrontal korteks kronik baskı altında çalışmaktadır. ' +
                 'Yüksek soru üretimi varsa "öğrenme" değil "kaygıyla çalışma" refleksidir. Sürdürülemez.',
-                aiAl('fizyolojik_yorum')
-              ),
               [255,228,210],[160,55,0]);
             bakiyeRiskler.push('Kaygı+enerji eş zamanlı yüksek: tükenmişlik öncesi sinyal — tempo düşürülmeli');
           } else {
@@ -4660,13 +4506,10 @@ async function exportPsychPDF(sName) {
             aktifNegatifler.push('Kemikleşmiş Savunma Karakteristiği');
             kullanılanOlaylar.add('B_kemiklesme');
             kutu('Kemikleşmiş Savunma Karakteristiği',
-              aiEkle(
-                'Ay boyunca ' + kaygiGunler.length + ' yüksek kaygı gününde tutarlı bir patern gözlemlendi: ' +
-                siginakDers.d + ' branşı "duygusal tampon" (kaygıda ort. ' + (siginakDers.oran*100).toFixed(0) + '% soru artışı), ' +
-                kacisaDers.d + ' branşı ise "tehdit" olarak kodlanmış (kaygıda ' + Math.round((1-kacisaDers.oran)*100) + '% azalış). ' +
-                'Bu bir alışkanlık değil, karakteristik bir reflekstir. Sınav gününde kaygı yükselirse bu örüntü aktive olacaktır.',
-                aiAl('duygusal_yorum')
-              ),
+              'Ay boyunca ' + kaygiGunler.length + ' yüksek kaygı gününde tutarlı bir patern gözlemlendi: ' +
+              siginakDers.d + ' branşı "duygusal tampon" (kaygıda ort. ' + (siginakDers.oran*100).toFixed(0) + '% soru artışı), ' +
+              kacisaDers.d + ' branşı "tehdit" olarak kodlanmış (kaygıda ' + Math.round((1-kacisaDers.oran)*100) + '% azalış). ' +
+              'Bu karakteristik bir reflekstir — sınav gününde bu örüntü aktive olacaktır.',
               [255,220,220],[170,25,25]);
             bakiyeRiskler.push('Sınav anı ' + kacisaDers.d + ' performansı kaygı düzeyine kritik bağımlı — özel müdahale gerekli');
 
@@ -5360,13 +5203,10 @@ async function exportPsychPDF(sName) {
             kullanılanOlaylar.add('D_aylik_borc');
             const topBorclar = borcKonular.slice(0,4);
             kutu('Aylık Bilişsel Borç Bakiyesi — Hasar Kaydı',
-              aiEkle(
-                'Ay içinde ' + ayKrizGunSayisi + ' kriz günü tespit edildi. Bu günlerde çalışılan konulardan hasar riski taşıyanlar: ' +
+              'Ay içinde ' + ayKrizGunSayisi + ' kriz günü tespit edildi. Bu günlerde çalışılan konulardan hasar riski taşıyanlar: ' +
                 topBorclar.map(k=>k.konu+' ('+k.soru+' soru, %'+(100-k.hataPct).toFixed(0)+' isabet)').join('; ') + '. ' +
                 'Bu konular akademik birer borçtur: "öğrenilmiş" sayılmamalı. ' +
                 'Gelecek ayın ilk 10 gününde "Bilişsel Check-up" uygulanmalı — temiz zihin + düşük kaygı koşullarında tekrar edilmeli.',
-                aiAl('hafiza_borcu')
-              ),
               [255,215,215],[175,15,15]);
             topBorclar.forEach(k=>bakiyeRiskler.push(k.konu+': kriz döneminde (%'+(100-k.hataPct).toFixed(0)+' isabet) çalışıldı — tekrar zorunlu'));
 
@@ -5624,17 +5464,6 @@ async function exportPsychPDF(sName) {
           // ═══════════════════════════════════════════════════
 
           // AI varsa kodlu bütüncül vakayı atla — AI zaten kapsamlı analiz yaptı
-          if (aiAnaliz) {
-            // Sadece koç stratejisi ve eylem önerilerini göster
-            Y=pdfCheck(doc,Y,12);
-            doc.setFont(PF,'bold');doc.setFontSize(7.5);doc.setTextColor(40,80,140);
-            doc.text(tx('Koç İletişim Stratejisi:'), 16, Y); Y+=5;
-            const aiStr = aiAnaliz.koc_stratejisi||'';
-            const aiStrSat = doc.splitTextToSize(tx(aiStr), 170);
-            doc.setFont(PF,'normal');doc.setFontSize(7);doc.setTextColor(60,60,100);
-            doc.text(aiStrSat, 16, Y); Y+=aiStrSat.length*4.5+6;
-          } else {
-
           // Vaka tespiti: en uygun ana vakayı seç
           let anaVaka = null;
 
@@ -5757,7 +5586,6 @@ async function exportPsychPDF(sName) {
           doc.text('Öncelikli Eylem Adımları:', 16, Y); Y+=5;
           oneriListesi.forEach((o,i)=>dipnot((i+1)+'. '+o));
 
-          } // end if period weekly inner
 
         } else {
           // ═══════════════════════════════════════════════════
@@ -8554,7 +8382,6 @@ function wellnessPage() {
   try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
 
   const todayKey = getTodayKey();
-  console.log('[Wellness] todayKey:', todayKey, '| days keys:', Object.keys(data.days||{}).slice(-3), '| today dolu:', !!data.days?.[todayKey]);
 
   // Gün değişince: dünün günlük verileri silindi, bugün boş başlar
   // Kalıcı veriler (hedef, hedefOkul) korunur, sadece days[bugün] yok ise boş
@@ -10204,7 +10031,6 @@ function clearApiKey() {
 async function generateAIAnalysis(studentName, period, wellnessData, academicData, denemeler, notlar) {
   const key = localStorage.getItem('lgs_anthropic_key');
   if (!key || localStorage.getItem('lgs_api_enabled') !== 'true') return null;
-  showToast('🤖', 'AI analiz başlatılıyor...');
 
   const krizGunler = wellnessData.filter(d => (d.kaygi>=8) || (d.uyku>0&&d.uyku<6) || (!d.akademikVar&&d.kaygi>=7));
   const ogrSesi = notlar.filter(n => n.negatif || n.pozitif).slice(0, 5);
@@ -10319,7 +10145,6 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
     return parsed;
   } catch(e) {
     console.error('AI analiz HATA:', e.message, e);
-    showToast('❌', 'AI hata: ' + e.message);
     return null;
   }
 }
