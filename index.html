@@ -6498,6 +6498,44 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
   if (worst) stratejik += `${p(worst.name)} ${p('dersine ek ağırlık verilmeli.')} `;
   parts.push(stratejik);
 
+  // 5b. DENEME SINAVI ÖZETİ
+  const _sObj = students.find(s=>s.name===sName)||{};
+  const _sUid = _sObj.uid||'';
+  const _dEntries = studyEntries.filter(e=>
+    e.type==='deneme' && (e.studentName===sName || (_sUid && e.userId===_sUid))
+  );
+  if (_dEntries.length >= 1) {
+    const _grp={};
+    _dEntries.forEach(e=>{
+      const k=e.examId||e.dateKey;
+      if(!_grp[k]) _grp[k]={dersler:{}};
+      const net=Math.max(0,(e.correct||0)-(e.wrong||0)/3);
+      // Aynı sınavda aynı ders birden fazla girdiyse en son girişi al (üzerine yaz)
+      _grp[k].dersler[e.subject]={net, cnt:1};
+    });
+    const _lgsSoru={'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,'İnkılap Tarihi':10,'Din Kültürü':10,'İngilizce':10};
+    const _dSira=Object.values(_grp);
+    const _topNet=d=>Object.values(d.dersler).reduce((a,v)=>a+v.net,0);
+    const _puan=n=>Math.min(500,Math.max(100,Math.round(100+n*4.444)));
+    const _ortP=Math.round(_dSira.reduce((a,d)=>a+_puan(_topNet(d)),0)/_dSira.length);
+    const _son=_puan(_topNet(_dSira[_dSira.length-1]));
+    const _ilk=_puan(_topNet(_dSira[0]));
+    const _trend=_son-_ilk>15?p('artış trendi var'):_son-_ilk>5?p('hafif yükseliş var'):_son-_ilk>-15?p('stabil'):p('düşüş var');
+    const _dOrt={};
+    _dSira.forEach(d=>Object.entries(d.dersler).forEach(([ders,v])=>{
+      if(!_dOrt[ders]) _dOrt[ders]={net:0,cnt:0,max:_lgsSoru[ders]||10};
+      _dOrt[ders].net+=v.net; _dOrt[ders].cnt++;
+    }));
+    const _arr=Object.entries(_dOrt)
+      .map(([d,v])=>({d,ort:Math.round(v.net/v.cnt*10)/10,max:v.max,pct:Math.min(100,Math.round(v.net/v.cnt/v.max*100))}))
+      .sort((a,b)=>a.pct-b.pct);
+    const _enZ=_arr[0], _enG=_arr[_arr.length-1];
+    const _denemePart = p(_dSira.length+' denemede tahmini LGS puan ortalaması yaklaşık '+_ortP+'/500; son deneme '+_son+' puan, '+_trend+'. ')+
+      (_enG ? p('En yüksek net ortalaması '+_enG.d+' (ort. '+_enG.ort+'/'+_enG.max+' net). ') : '')+
+      (_enZ&&_enZ.d!==_enG?.d ? p('En düşük net ortalaması '+_enZ.d+' (ort. '+_enZ.ort+'/'+_enZ.max+' net) — öncelikli çalışma alanı.') : '');
+    if (_denemePart) parts.push(_denemePart);
+  }
+
   // 6. LGS HEDEF
   parts.push(`${p("LGS'ye")} ${daysLeft} ${p('gün kalıyor.')} ${firstName}'${p('in her geçen gün daha nitelikli çalışmasının önemi artmaktadır. Düzenli takip, motivasyon desteği ve hedef belirleme bu süreçte belirleyici rol oynayacaktır.')}`);
 
@@ -8152,7 +8190,7 @@ function generateAnalysisComment(filtered, subjectStats, totalDur, totalQ, total
       if(!_grp[k]) _grp[k]={dersler:{}};
       const net=Math.max(0,(e.correct||0)-(e.wrong||0)/3);
       if(!_grp[k].dersler[e.subject]) _grp[k].dersler[e.subject]={net:0,cnt:0};
-      _grp[k].dersler[e.subject].net+=net; _grp[k].dersler[e.subject].cnt++;
+      _grp[k].dersler[e.subject]={net, cnt:1};
     });
     const _lgsSoru={'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,'İnkılap Tarihi':10,'Din Kültürü':10,'İngilizce':10};
     const _dSira=Object.values(_grp);
