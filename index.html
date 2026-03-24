@@ -8087,7 +8087,7 @@ function studentAnalysis() {
   `;
 }
 
-function generateAnalysisComment(filtered, subjectStats, totalDur, totalQ, totalNet, dayCount, period) {
+function generateAnalysisComment(filtered, subjectStats, totalDur, totalQ, totalNet, dayCount, period, studentNameParam) {
   if (filtered.length === 0) {
     return `Henüz bu dönem için çalışma verisi bulunmuyor. Düzenli çalışma girişi yaparak performansını takip edebilirsin. Her gün küçük adımlar büyük fark yaratır! 💪`;
   }
@@ -8128,9 +8128,15 @@ function generateAnalysisComment(filtered, subjectStats, totalDur, totalQ, total
 
   // Deneme özeti
   // Öğrenciye ait tüm deneme girişleri
-  const _studentName = filtered.length>0 ? filtered[0].studentName : null;
+  // selectedStudentName global — öğretmen tarafında seçili öğrenci
+  // Öğrenci kendi raporunu alıyorsa filtered içindeki studentName'i kullan
+  // Önce parametre, sonra global, sonra filtered'dan bul
+  const _sName = studentNameParam
+    || (typeof selectedStudentName !== 'undefined' && selectedStudentName)
+    || filtered.find(e=>e.studentName)?.studentName
+    || null;
   const _dAll = studyEntries.filter(e=>
-    e.type==='deneme' && (!_studentName || e.studentName===_studentName)
+    e.type==='deneme' && (!_sName || e.studentName===_sName)
   );
   const _dUse = _dAll;
   if (_dUse.length >= 1) {
@@ -8277,7 +8283,7 @@ function exportStudentPDF() {
     const netPct=q>0?Math.round(d/q*100):0;
     return {...s,q,d,y:w,net,dur,netPct};
   });
-  const rawComment = generateAnalysisComment(filtered,subjectStats,totalDur,totalQ,totalNet,dayCount,analysisPeriod)
+  const rawComment = generateAnalysisComment(filtered,subjectStats,totalDur,totalQ,totalNet,dayCount,analysisPeriod,name)
     .replace(/<b>/g,'').replace(/<\/b>/g,'').replace(/<br><br>/g,'\n').replace(/<[^>]+>/g,'');
 
   if (y > 240) { doc.addPage(); y = 20; }
@@ -10208,7 +10214,14 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
     const text = data.content?.[0]?.text || '';
     if (!text) { console.error('AI boş yanıt döndü:', JSON.stringify(data)); return null; }
     const clean = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    console.log('AI yanıtı (ilk 200):', clean.substring(0, 200));
+    let parsed;
+    try {
+      parsed = JSON.parse(clean);
+    } catch(parseErr) {
+      console.error('AI JSON parse hatası:', parseErr.message, '| Ham metin:', clean.substring(0, 300));
+      return null;
+    }
     // Post-process: İngilizce klinik terimleri Türkçeleştir
     const trTerms = {
       'avoidance through activity': 'çalışma görüntüsüyle kaçınma',
