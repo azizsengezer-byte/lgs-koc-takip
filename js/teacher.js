@@ -775,27 +775,35 @@ function studentDetailAnalysis() {
       dGrup[k].dersler[e.subject].push(net);
     });
     const denemeler = Object.values(dGrup).sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
-    // Her denemede toplam net → LGS puan tahmini
-    // LGS yaklaşık formül: puan = 100 + toplamNet * 4.444 (500 max, 90 soru tam net)
+    // 2025 LGS katsayıları
+    const LGS_K = {'Türkçe':4.348,'Matematik':4.2538,'Fen Bilimleri':4.1230,'İnkılap Tarihi':1.666,'Din Kültürü':1.899,'İngilizce':1.5075};
+    const LGS_BAZ = 194.752082;
+    const LGS_MAX_SORU = {'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,'İnkılap Tarihi':10,'Din Kültürü':10,'İngilizce':10};
     const lgsPuanHesapla = (dersler) => {
-      const topNet = Object.values(dersler).reduce((a,arr)=>a+arr.reduce((x,y)=>x+y,0),0);
-      return Math.round(100 + topNet * 4.444);
+      let toplam = 0;
+      Object.entries(dersler).forEach(([ders, netArr]) => {
+        const k = LGS_K[ders]; if (!k) return;
+        // Aynı derste birden fazla giriş varsa ortalamasını al
+        const ortNet = netArr.reduce((a,b)=>a+b,0) / netArr.length;
+        toplam += ortNet * k;
+      });
+      return Math.min(500, Math.max(100, Math.round((toplam + LGS_BAZ) * 10) / 10));
     };
     const puanlar = denemeler.map(d=>lgsPuanHesapla(d.dersler));
     const ortPuan = Math.round(puanlar.reduce((a,b)=>a+b,0)/puanlar.length);
     const son = puanlar[puanlar.length-1];
     const ilk = puanlar[0];
-    // Trend
     const trend = puanlar.length>=3
       ? (son>ilk+10?'artış trendi var':son>ilk?'hafif yükseliş var':'stabil gidiyor')
       : (son>ilk?'artış var':'stabil');
-    // Ders bazlı ortalama net
+    // Ders bazlı ortalama net — her denemede dersin ortalaması alınır
     const dersOrt = {};
-    const lgsSoru = {'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,'İnkılap Tarihi':10,'Din Kültürü':10,'İngilizce':10};
     denemeler.forEach(d=>{
       Object.entries(d.dersler).forEach(([ders,netArr])=>{
-        if(!dersOrt[ders]) dersOrt[ders]={topNet:0,count:0,max:lgsSoru[ders]||10};
-        dersOrt[ders].topNet += netArr.reduce((a,b)=>a+b,0);
+        const maxSoru = LGS_MAX_SORU[ders]||10;
+        if(!dersOrt[ders]) dersOrt[ders]={topNet:0,count:0,max:maxSoru};
+        // Birden fazla giriş varsa ortalamasını kullan
+        dersOrt[ders].topNet += netArr.reduce((a,b)=>a+b,0) / netArr.length;
         dersOrt[ders].count++;
       });
     });
@@ -812,8 +820,8 @@ function studentDetailAnalysis() {
     commentParts.push(
       `${count} denemede LGS puan ortalaması yaklaşık ${ortPuan}/500; ` +
       `son deneme ${son} puan, ${trend}. ` +
-      (enYuksek ? `En yüksek net ortalaması ${enYuksek.d} (ort. ${enYuksek.ort}/${enYuksek.max}, %${enYuksek.pct} doluluk). ` : '') +
-      (enDusuk&&enDusuk.d!==enYuksek?.d ? `En düşük net ortalaması ${enDusuk.d} (ort. ${enDusuk.ort}/${enDusuk.max}, %${enDusuk.pct} doluluk) — öncelikli çalışma alanı.` : '')
+      (enYuksek ? `Denemede en yüksek net ortalaması ${enYuksek.d} (ort. ${enYuksek.ort} net, %${enYuksek.pct} isabet). ` : '') +
+      (enDusuk&&enDusuk.d!==enYuksek?.d ? `En düşük net ortalaması ${enDusuk.d} (ort. ${enDusuk.ort} net, %${enDusuk.pct} isabet) — öncelikli çalışma alanı.` : '')
     );
   }
 
