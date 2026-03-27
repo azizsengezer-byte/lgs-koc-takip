@@ -1020,11 +1020,12 @@ function studentDetailAnalysis() {
     </div>
   `;
   // Rozet grid'ini async doldur
+  const _badgeUid = sUid;
+  const _badgeName = sName;
   setTimeout(async ()=>{
-    const sObj2 = students.find(s=>s.name===selectedStudentName)||{};
-    const sUid2 = sObj2.uid||'';
-    if (!sUid2) return;
-    const earned2 = await getBadges(sUid2);
+    // Hâlâ aynı öğrenci sayfasındayız mı?
+    if (selectedStudentName !== _badgeName) return;
+    const earned2 = await getBadges(_badgeUid);
     const countEl = document.getElementById('studentBadgeCount');
     const gridEl  = document.getElementById('studentBadgeGrid');
     if (countEl) countEl.textContent = earned2.length + ' / ' + BADGES.length + ' rozet';
@@ -1038,7 +1039,7 @@ function studentDetailAnalysis() {
           .join('') + (earned2.length>12?`<span style="font-size:0.75rem;color:var(--text2);align-self:center">+${earned2.length-12} daha</span>`:'');
       }
     }
-  }, 200);
+  }, 800);
 }
 
 function showPsychReport(sName) {
