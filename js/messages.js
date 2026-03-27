@@ -179,6 +179,35 @@ async function switchChatTo(uid, role) {
   updateNotifBadge();
   showPage('messages');
   setTimeout(()=>{ const cm=document.getElementById('chatMessages'); if(cm) cm.scrollTop=cm.scrollHeight; },80);
+
+  // Realtime listener — karşı taraf mesaj atınca anında göster
+  if (window._chatUnsub) window._chatUnsub(); // önceki listener'ı kapat
+  window._chatUnsub = db.collection('messages').doc(cId).collection('msgs')
+    .orderBy('createdAt','asc')
+    .onSnapshot(snap => {
+      const myUid2 = (window.currentUserData||{}).uid||'';
+      snap.docChanges().forEach(change => {
+        if (change.type !== 'added') return;
+        const msg = change.doc.data();
+        // Zaten local'de varsa ekleme
+        const already = (chatMessages[cId]||[]).find(m=>m.id===msg.id);
+        if (already) return;
+        if (!chatMessages[cId]) chatMessages[cId]=[];
+        chatMessages[cId].push(msg);
+        // DOM'a ekle
+        const msgEl = document.getElementById('chatMessages');
+        if (!msgEl) return;
+        const isMine = msg.senderUid === myUid2;
+        const div = document.createElement('div');
+        div.className = 'msg' + (isMine?' mine':' theirs');
+        div.id = 'msg_' + msg.id;
+        div.innerHTML = `<div class="msg-bubble">${msg.text}</div><div class="msg-time">${msg.time||''}</div>`;
+        msgEl.appendChild(div);
+        msgEl.scrollTop = msgEl.scrollHeight;
+        // Gelen mesajsa okundu işaretle
+        if (!isMine) markMessagesAsSeen(uid);
+      });
+    });
 }
 
 async function sendMessage(role) {
