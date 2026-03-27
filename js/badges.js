@@ -1048,7 +1048,17 @@ function showBadgeUnlocked(badge) {
 
 // ── Rozet yükleme / kaydetme ────────────────────────────────
 async function getBadges(uid) {
-  if(db){try{const s=await db.collection('badges').doc(uid).get();if(s.exists){const e=s.data().earned||[];localStorage.setItem('badges_'+uid,JSON.stringify(e));return e;}}catch(e){}}
+  if(db){
+    try{
+      const s=await db.collection('badges').doc(uid).get();
+      if(s.exists){
+        const e=s.data().earned||[];
+        localStorage.setItem('badges_'+uid,JSON.stringify(e));
+        return e;
+      }
+    } catch(e){ console.warn('getBadges hata:',e.message); }
+  }
+  // localStorage fallback
   return JSON.parse(localStorage.getItem('badges_'+uid)||'[]');
 }
 
