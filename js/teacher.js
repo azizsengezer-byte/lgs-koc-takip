@@ -1026,7 +1026,7 @@ function studentDetailAnalysis() {
       } else {
         gridEl.innerHTML = BADGES.filter(b=>earned2.includes(b.id))
           .slice(0,12)
-          .map(b=>`<span title="${b.name}: ${b.desc}" style="font-size:1.4rem;cursor:default">${b.icon}</span>`)
+          .map(b=>getBadgeHTML(b,false,40))
           .join('') + (earned2.length>12?`<span style="font-size:0.75rem;color:var(--text2);align-self:center">+${earned2.length-12} daha</span>`:'');
       }
     }
