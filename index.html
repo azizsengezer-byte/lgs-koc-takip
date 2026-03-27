@@ -1339,9 +1339,20 @@ auth.onAuthStateChanged(async (user) => {
       // Rozet menü butonunu göster/gizle
       const _bmb = document.getElementById('badgeMenuBtn');
       if (_bmb) _bmb.style.display = currentRole==='student' ? 'flex' : 'none';
-      // Çerçeveyi uygula
+      // Çerçeveyi uygula — önce Firestore'dan oku
       if (currentRole === 'student') {
-        setTimeout(()=>applyProfileFrame(user.uid, getActiveFrame(user.uid)), 100);
+        if (db) {
+          db.collection('users').doc(user.uid).get().then(snap=>{
+            if (snap.exists && snap.data().activeFrame) {
+              localStorage.setItem('frame_'+user.uid, snap.data().activeFrame);
+            }
+            setTimeout(()=>applyProfileFrame(user.uid, getActiveFrame(user.uid)), 100);
+          }).catch(()=>{
+            setTimeout(()=>applyProfileFrame(user.uid, getActiveFrame(user.uid)), 100);
+          });
+        } else {
+          setTimeout(()=>applyProfileFrame(user.uid, getActiveFrame(user.uid)), 100);
+        }
         // Rozet sayacını göster
         getBadges(user.uid).then(earned=>{
           const el = document.getElementById('badgeCountBadge');
@@ -2005,6 +2016,7 @@ async function showUserProfile(uid, fallbackName, fallbackColor) {
   const color = fallbackColor || '#6c63ff';
 
   // Fotoğraf
+  vpPhoto.style.cssText = 'width:80px;height:80px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;overflow:hidden;position:relative';
   if (data.photo) {
     vpPhoto.innerHTML = `<img src="${data.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
   } else {
@@ -2024,6 +2036,24 @@ async function showUserProfile(uid, fallbackName, fallbackColor) {
   vpDet.innerHTML = details.join('<br>') || '<span style="color:var(--text2)">Bilgi eklenmemiş</span>';
 
   openModal('viewProfileModal');
+
+  // Çerçeve uygula — Firestore'dan activeFrame oku
+  const old = vpPhoto.querySelector('._anyFrameOverlay');
+  if (old) old.remove();
+  try {
+    let frameId = data.activeFrame || localStorage.getItem('frame_'+uid) || 'none';
+    // Firestore'dan güncelle (data yetersizse)
+    if (!data.activeFrame && db) {
+      db.collection('users').doc(uid).get().then(snap=>{
+        if (snap.exists && snap.data().activeFrame) {
+          applyFrameToElement(vpPhoto, snap.data().activeFrame, 80);
+        }
+      }).catch(()=>{});
+    }
+    if (frameId !== 'none') {
+      setTimeout(()=>applyFrameToElement(vpPhoto, frameId, 80), 50);
+    }
+  } catch(e) {}
 }
 
 async function editDeneme(examId, currentTitle) {
@@ -9238,45 +9268,199 @@ function _ci(x,y,r,fill,stroke,sw){return '<circle cx="'+x+'" cy="'+y+'" r="'+r+
 // Çerçeveler — 12 seviye, süslü arabesk tarz
 const FRAMES = [
 
-{id:'none', name:'Çerçevesiz', minBadge:0, border:'none', shadow:'none', cornerSVG:null},
+{id:'none', name:'Çerçevesiz', minBadge:0, fn:null},
 
-{id:'baslangic', name:'Başlangıç', minBadge:0,
-  border:'2px solid #475569', shadow:'none',
-  cornerSVG:(c,s)=>`<circle cx="${c}" cy="${c}" r="${s*.45}" fill="none" stroke="#475569" stroke-width="1.5"/>`},
+{id:'baslangic', name:'Başlangıç', minBadge:0, fn:function(C,R){
+  var out='';
+  out+='<circle cx="'+C+'" cy="'+C+'" r="'+R+'" fill="none" stroke="#475569" stroke-width="2.5"/>';
+  out+='<circle cx="'+C+'" cy="'+C+'" r="'+(R+5)+'" fill="none" stroke="#334155" stroke-width="0.8" stroke-dasharray="3,4" opacity="0.5"/>';
+  for(var i=0;i<8;i++){
+    var a=i*45*Math.PI/180,x=C+R*Math.cos(a),y=C+R*Math.sin(a);
+    var tx=-Math.sin(a)*5,ty=Math.cos(a)*5;
+    out+='<path d="M'+(x+tx)+','+(y+ty)+' Q'+(x+Math.cos(a)*4)+','+(y+Math.sin(a)*4)+' '+(x-tx)+','+(y-ty)+'" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>';
+    out+='<circle cx="'+x+'" cy="'+y+'" r="2" fill="#64748b"/>';
+  }
+  return out;
+}},
 
-{id:'azimli', name:'Azimli', minBadge:5,
-  border:'2.5px solid #6c63ff', shadow:'0 0 10px #6c63ff66',
-  cornerSVG:(c,s)=>`<path d="M${c},${c-s*.45} L${c+s*.28},${c} L${c},${c+s*.45} L${c-s*.28},${c}Z" fill="#6c63ff" opacity="0.85"/>`},
+{id:'caliskan', name:'Çalışkan', minBadge:8, fn:function(C,R){
+  var out='<circle cx="'+C+'" cy="'+C+'" r="'+R+'" fill="none" stroke="#1d4ed8" stroke-width="2.5"/>';
+  for(var i=0;i<6;i++){
+    var a1=(i*60-20)*Math.PI/180,a2=(i*60+20)*Math.PI/180,am=i*60*Math.PI/180;
+    var x1=C+R*Math.cos(a1),y1=C+R*Math.sin(a1),x2=C+R*Math.cos(a2),y2=C+R*Math.sin(a2);
+    var mx=C+(R+9)*Math.cos(am),my=C+(R+9)*Math.sin(am);
+    var cx1=C+(R+5)*Math.cos(a1),cy1=C+(R+5)*Math.sin(a1),cx2=C+(R+5)*Math.cos(a2),cy2=C+(R+5)*Math.sin(a2);
+    out+='<path d="M'+x1+','+y1+' Q'+cx1+','+cy1+' '+mx+','+my+' Q'+cx2+','+cy2+' '+x2+','+y2+'" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>';
+    out+='<circle cx="'+mx+'" cy="'+my+'" r="3.5" fill="#60a5fa" stroke="#93c5fd" stroke-width="1"/>';
+  }
+  return out;
+}},
 
-{id:'odakli', name:'Odaklı', minBadge:10,
-  border:'2.5px solid #06b6d4', shadow:'0 0 10px #06b6d466',
-  cornerSVG:(c,s)=>`<polygon points="${c},${c-s*.45} ${c+s*.35},${c-s*.15} ${c+s*.25},${c+s*.4} ${c-s*.25},${c+s*.4} ${c-s*.35},${c-s*.15}" fill="none" stroke="#06b6d4" stroke-width="1.5"/>`},
+{id:'azimli', name:'Azimli', minBadge:15, fn:function(C,R){
+  var out='<circle cx="'+C+'" cy="'+C+'" r="'+R+'" fill="none" stroke="#6d28d9" stroke-width="2.5"/>';
+  out+='<circle cx="'+C+'" cy="'+C+'" r="'+(R-4)+'" fill="none" stroke="#8b5cf6" stroke-width="0.8" stroke-dasharray="2,3" opacity="0.5"/>';
+  [0,90,180,270].forEach(function(deg){
+    var a=deg*Math.PI/180,x=C+R*Math.cos(a-Math.PI/2),y=C+R*Math.sin(a-Math.PI/2);
+    var nx=Math.cos(a-Math.PI/2),ny=Math.sin(a-Math.PI/2),tx=-ny,ty=nx;
+    out+='<path d="M'+(x+tx*9)+','+(y+ty*9)+' C'+(x+nx*5+tx*9)+','+(y+ny*5+ty*9)+' '+(x+nx*11)+','+(y+ny*11)+' '+(x+nx*11)+','+(y+ny*11)+' C'+(x+nx*5-tx*9)+','+(y+ny*5-ty*9)+' '+(x-tx*9)+','+(y-ty*9)+'" fill="#4c1d95" stroke="#a855f7" stroke-width="1.8"/>';
+    out+='<path d="M'+(x+nx*11)+','+(y+ny*11)+' Q'+(x+nx*16+tx*4)+','+(y+ny*16+ty*4)+' '+(x+nx*14+tx*5)+','+(y+ny*14+ty*5)+'" fill="none" stroke="#c084fc" stroke-width="1.5" stroke-linecap="round"/>';
+    out+='<path d="M'+(x+nx*11)+','+(y+ny*11)+' Q'+(x+nx*16-tx*4)+','+(y+ny*16-ty*4)+' '+(x+nx*14-tx*5)+','+(y+ny*14-ty*5)+'" fill="none" stroke="#c084fc" stroke-width="1.5" stroke-linecap="round"/>';
+    out+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="#7c3aed"/>';
+    out+='<circle cx="'+(x+nx*11)+'" cy="'+(y+ny*11)+'" r="4" fill="#a855f7" stroke="#c084fc" stroke-width="1"/>';
+  });
+  return out;
+}},
 
-{id:'kararli', name:'Kararlı', minBadge:18,
-  border:'3px solid #a855f7', shadow:'0 0 14px #a855f7aa',
-  cornerSVG:(c,s)=>`<path d="M${c},${c-s*.48} L${c+s*.18},${c-s*.14} L${c+s*.48},${c-s*.16} L${c+s*.22},${c+s*.08} L${c+s*.3},${c+s*.44} L${c},${c+s*.26} L${c-s*.3},${c+s*.44} L${c-s*.22},${c+s*.08} L${c-s*.48},${c-s*.16} L${c-s*.18},${c-s*.14}Z" fill="#a855f7" opacity="0.85"/>`},
+{id:'kararli', name:'Kararlı', minBadge:22, fn:function(C,R){
+  var out='<circle cx="'+C+'" cy="'+C+'" r="'+R+'" fill="none" stroke="#0e7490" stroke-width="3"/>';
+  for(var i=0;i<6;i++){
+    var a=i*60*Math.PI/180,x=C+R*Math.cos(a-Math.PI/2),y=C+R*Math.sin(a-Math.PI/2);
+    var nx=Math.cos(a-Math.PI/2),ny=Math.sin(a-Math.PI/2),tx=-ny,ty=nx;
+    out+='<path d="M'+(x+tx*7)+','+(y+ty*7)+' Q'+(x+nx*7+tx*7)+','+(y+ny*7+ty*7)+' '+(x+nx*2)+','+(y+ny*2)+' Q'+(x+nx*7-tx*7)+','+(y+ny*7-ty*7)+' '+(x-tx*7)+','+(y-ty*7)+' Q'+(x-nx*3)+','+(y-ny*3)+' '+(x+tx*7)+','+(y+ty*7)+'Z" fill="#0e4a5c" stroke="#22d3ee" stroke-width="1.5"/>';
+    out+='<path d="M'+(x+tx*4)+','+(y+ty*4)+' Q'+(x+nx*9)+','+(y+ny*9)+' '+(x-tx*4)+','+(y-ty*4)+'" fill="none" stroke="#67e8f9" stroke-width="1" opacity="0.7"/>';
+  }
+  out+='<circle cx="'+C+'" cy="'+C+'" r="'+(R+8)+'" fill="none" stroke="#06b6d4" stroke-width="0.8" stroke-dasharray="1,3" opacity="0.35"/>';
+  return out;
+}},
 
-{id:'guclu', name:'Güçlü', minBadge:28,
-  border:'3px solid #f43f5e', shadow:'0 0 14px #f43f5eaa',
-  cornerSVG:(c,s)=>`<path d="M${c},${c-s*.45} C${c+s*.35},${c-s*.45} ${c+s*.45},${c} ${c},${c+s*.45} C${c-s*.45},${c} ${c-s*.35},${c-s*.45} ${c},${c-s*.45}Z" fill="#f43f5e" opacity="0.8"/>`},
+{id:'guclu', name:'Güçlü', minBadge:30, fn:function(C,R){
+  var out='';
+  for(var i=0;i<5;i++){
+    var a1=i*72*Math.PI/180-Math.PI/2,a2=(i+1)*72*Math.PI/180-Math.PI/2,am=(a1+a2)/2;
+    var x1=C+R*Math.cos(a1),y1=C+R*Math.sin(a1),x2=C+R*Math.cos(a2),y2=C+R*Math.sin(a2);
+    var qx=C+(R+9)*Math.cos(am),qy=C+(R+9)*Math.sin(am);
+    out+='<path d="M'+x1+','+y1+' Q'+qx+','+qy+' '+x2+','+y2+'" fill="none" stroke="#9f1239" stroke-width="1.8"/>';
+  }
+  for(var i=0;i<5;i++){
+    var a=i*72*Math.PI/180-Math.PI/2,x=C+R*Math.cos(a),y=C+R*Math.sin(a),nx=Math.cos(a),ny=Math.sin(a);
+    for(var j=0;j<5;j++){var pa=j*72*Math.PI/180,px=x+nx*2+Math.cos(a+pa)*4.5,py=y+ny*2+Math.sin(a+pa)*4.5;out+='<circle cx="'+px+'" cy="'+py+'" r="3" fill="#be123c"/>';}
+    out+='<circle cx="'+(x+nx*2)+'" cy="'+(y+ny*2)+'" r="4" fill="#f43f5e" stroke="#fda4af" stroke-width="1"/>';
+    out+='<circle cx="'+(x+nx*2)+'" cy="'+(y+ny*2)+'" r="2" fill="#fff1f2"/>';
+  }
+  return out;
+}},
 
-{id:'usta', name:'Usta', minBadge:38,
-  border:'3px solid #f97316', shadow:'0 0 18px #f97316cc',
-  cornerSVG:(c,s)=>`<path d="M${c},${c-s*.48} L${c+s*.14},${c-s*.18} L${c+s*.48},${c-s*.1} L${c+s*.24},${c+s*.14} L${c+s*.28},${c+s*.46} L${c},${c+s*.28} L${c-s*.28},${c+s*.46} L${c-s*.24},${c+s*.14} L${c-s*.48},${c-s*.1} L${c-s*.14},${c-s*.18}Z" fill="#f97316" opacity="0.85"/>`},
+{id:'usta', name:'Usta', minBadge:40, fn:function(C,R){
+  var out='<circle cx="'+C+'" cy="'+C+'" r="'+R+'" fill="none" stroke="#9a3412" stroke-width="2.5"/>';
+  [-80,-10,10,80,100,170,190,260].reduce(function(acc,v,i,arr){
+    if(i%2===0){
+      var s1=arr[i]*Math.PI/180,s2=arr[i+1]*Math.PI/180;
+      var x1=C+R*Math.cos(s1),y1=C+R*Math.sin(s1),x2=C+R*Math.cos(s2),y2=C+R*Math.sin(s2);
+      var col=i%4===0?'#f97316':'#fb923c';
+      out+='<path d="M'+x1+','+y1+' A'+R+','+R+' 0 0,1 '+x2+','+y2+'" fill="none" stroke="'+col+'" stroke-width="5" stroke-linecap="round" opacity="0.85"/>';
+    }
+    return acc;
+  },[]);
+  [0,90,180,270].forEach(function(deg){
+    var a=deg*Math.PI/180,x=C+R*Math.cos(a-Math.PI/2),y=C+R*Math.sin(a-Math.PI/2);
+    out+='<circle cx="'+x+'" cy="'+y+'" r="5" fill="#fde047" stroke="#f97316" stroke-width="1"/>';
+    out+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="#f97316"/>';
+  });
+  out+='<circle cx="'+C+'" cy="'+C+'" r="'+(R-8)+'" fill="none" stroke="#fdba74" stroke-width="1" stroke-dasharray="2,4" opacity="0.3"/>';
+  return out;
+}},
 
-{id:'efsane', name:'Efsane', minBadge:50,
-  border:'3px solid #f59e0b', shadow:'0 0 22px #f59e0bdd, 0 0 44px #fbbf2444',
-  cornerSVG:(c,s)=>`<path d="M${c},${c-s*.5} L${c+s*.12},${c-s*.16} L${c+s*.48},${c-s*.15} L${c+s*.2},${c+s*.06} L${c+s*.3},${c+s*.43} L${c},${c+s*.25} L${c-s*.3},${c+s*.43} L${c-s*.2},${c+s*.06} L${c-s*.48},${c-s*.15} L${c-s*.12},${c-s*.16}Z" fill="#f59e0b" opacity="0.9"/>`},
+{id:'efsane', name:'Efsane', minBadge:52, fn:function(C,R){
+  var out='<circle cx="'+C+'" cy="'+C+'" r="'+R+'" fill="none" stroke="#92400e" stroke-width="2.5"/>';
+  out+='<circle cx="'+C+'" cy="'+C+'" r="'+(R-5)+'" fill="none" stroke="#fde68a" stroke-width="0.8" opacity="0.4"/>';
+  for(var i=0;i<8;i++){
+    var a=i*45*Math.PI/180-Math.PI/2,x=C+R*Math.cos(a),y=C+R*Math.sin(a),nx=Math.cos(a),ny=Math.sin(a),tx=-ny,ty=nx,big=i%2===0;
+    if(big){
+      out+='<path d="M'+x+','+y+' Q'+(x+nx*4+tx*5)+','+(y+ny*4+ty*5)+' '+(x+nx*10)+','+(y+ny*10)+' Q'+(x+nx*4-tx*5)+','+(y+ny*4-ty*5)+' '+x+','+y+'Z" fill="#78350f" stroke="#f59e0b" stroke-width="1.5"/>';
+      out+='<path d="M'+(x+nx*10)+','+(y+ny*10)+' Q'+(x+nx*14+tx*4)+','+(y+ny*14+ty*4)+' '+(x+nx*12+tx*5)+','+(y+ny*12+ty*5)+'" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>';
+      out+='<path d="M'+(x+nx*10)+','+(y+ny*10)+' Q'+(x+nx*14-tx*4)+','+(y+ny*14-ty*4)+' '+(x+nx*12-tx*5)+','+(y+ny*12-ty*5)+'" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>';
+      out+='<circle cx="'+(x+nx*10)+'" cy="'+(y+ny*10)+'" r="4" fill="#fde047" stroke="#f59e0b" stroke-width="1"/>';
+      out+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="#d97706"/>';
+    } else {
+      out+='<path d="M'+(x-tx*4)+','+(y-ty*4)+' Q'+(x+nx*5)+','+(y+ny*5)+' '+(x+tx*4)+','+(y+ty*4)+'" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"/>';
+      out+='<circle cx="'+x+'" cy="'+y+'" r="2.5" fill="#f59e0b"/>';
+    }
+  }
+  return out;
+}},
 
-{id:'efsaneplus', name:'Efsane+', minBadge:65,
-  border:'3px solid #e879f9', shadow:'0 0 22px #e879f9cc, 0 0 44px #a855f755',
-  cornerSVG:(c,s)=>`<path d="M${c},${c-s*.5} L${c+s*.08},${c-s*.08} L${c+s*.5},${c} L${c+s*.08},${c+s*.08} L${c},${c+s*.5} L${c-s*.08},${c+s*.08} L${c-s*.5},${c} L${c-s*.08},${c-s*.08}Z" fill="#e879f9" opacity="0.9"/>`},
+{id:'efsaneplus', name:'Efsane+', minBadge:65, fn:function(C,R){
+  var out='<circle cx="'+C+'" cy="'+C+'" r="'+R+'" fill="none" stroke="#1e3a8a" stroke-width="2.5"/>';
+  for(var i=0;i<6;i++){
+    var a1=(i*60-25)*Math.PI/180-Math.PI/2,a2=(i*60+25)*Math.PI/180-Math.PI/2,am=i*60*Math.PI/180-Math.PI/2;
+    var x1=C+R*Math.cos(a1),y1=C+R*Math.sin(a1),x2=C+R*Math.cos(a2),y2=C+R*Math.sin(a2);
+    var xm=C+(R+11)*Math.cos(am),ym=C+(R+11)*Math.sin(am),xc=C+(R+5)*Math.cos(am),yc=C+(R+5)*Math.sin(am);
+    var fill=i%2===0?'#1e3a8a':'#0e7490',stroke=i%2===0?'#60a5fa':'#22d3ee';
+    out+='<path d="M'+x1+','+y1+' Q'+(C+(R+7)*Math.cos(a1))+','+(C+(R+7)*Math.sin(a1))+' '+xm+','+ym+' Q'+(C+(R+7)*Math.cos(a2))+','+(C+(R+7)*Math.sin(a2))+' '+x2+','+y2+' Q'+xc+','+yc+' '+x1+','+y1+'Z" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.5"/>';
+    out+='<circle cx="'+xm+'" cy="'+ym+'" r="4" fill="'+(i%2===0?'#93c5fd':'#67e8f9')+'" stroke="'+stroke+'" stroke-width="1"/>';
+    out+='<path d="M'+(C+(R+4)*Math.cos((i*60-15)*Math.PI/180-Math.PI/2))+','+(C+(R+4)*Math.sin((i*60-15)*Math.PI/180-Math.PI/2))+' Q'+xc+','+yc+' '+(C+(R+4)*Math.cos((i*60+15)*Math.PI/180-Math.PI/2))+','+(C+(R+4)*Math.sin((i*60+15)*Math.PI/180-Math.PI/2))+'" fill="none" stroke="#fde047" stroke-width="1" opacity="0.55"/>';
+  }
+  return out;
+}},
 
-{id:'kozmik', name:'Kozmik', minBadge:80,
-  border:'3px solid #6ee7b7', shadow:'0 0 22px #6ee7b7cc, 0 0 44px #10b98155',
-  cornerSVG:(c,s)=>`<g><path d="M${c},${c-s*.5} L${c+s*.1},${c-s*.1} L${c+s*.5},${c} L${c+s*.1},${c+s*.1} L${c},${c+s*.5} L${c-s*.1},${c+s*.1} L${c-s*.5},${c} L${c-s*.1},${c-s*.1}Z" fill="#6ee7b7" opacity="0.8"/><circle cx="${c}" cy="${c-s*.5}" r="${s*.06}" fill="#6ee7b7"/><circle cx="${c+s*.5}" cy="${c}" r="${s*.06}" fill="#6ee7b7"/><circle cx="${c}" cy="${c+s*.5}" r="${s*.06}" fill="#6ee7b7"/><circle cx="${c-s*.5}" cy="${c}" r="${s*.06}" fill="#6ee7b7"/></g>`},
+{id:'sampiyonluk', name:'Şampiyonluk', minBadge:78, fn:function(C,R){
+  var out='';
+  for(var i=0;i<16;i++){
+    var a=i*22.5*Math.PI/180-Math.PI/2,x=C+R*Math.cos(a),y=C+R*Math.sin(a),nx=Math.cos(a),ny=Math.sin(a),tx=-ny,ty=nx,big=i%2===0,sz=big?5:3;
+    var fill=big?'#14532d':'#166534',stroke=big?'#4ade80':'#86efac';
+    out+='<path d="M'+x+','+y+' Q'+(x+nx*6+tx*sz)+','+(y+ny*6+ty*sz)+' '+(x+nx*10)+','+(y+ny*10)+' Q'+(x+nx*6-tx*sz)+','+(y+ny*6-ty*sz)+' '+x+','+y+'Z" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1"/>';
+  }
+  out+='<circle cx="'+C+'" cy="'+C+'" r="'+(R-1)+'" fill="none" stroke="#15803d" stroke-width="2"/>';
+  out+='<path d="M'+(C-11)+','+(C+R+7)+' Q'+C+','+(C+R+13)+' '+(C+11)+','+(C+R+7)+'" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/>';
+  return out;
+}},
+
+{id:'yakut', name:'Yakut', minBadge:88, fn:function(C,R){
+  var out='<circle cx="'+C+'" cy="'+C+'" r="'+R+'" fill="none" stroke="#991b1b" stroke-width="2.5"/>';
+  [45,135,225,315].forEach(function(deg){
+    var a1=(deg-20)*Math.PI/180-Math.PI/2,a2=(deg+20)*Math.PI/180-Math.PI/2;
+    var x1=C+R*Math.cos(a1),y1=C+R*Math.sin(a1),x2=C+R*Math.cos(a2),y2=C+R*Math.sin(a2);
+    var qx=C+(R+5)*Math.cos(deg*Math.PI/180-Math.PI/2),qy=C+(R+5)*Math.sin(deg*Math.PI/180-Math.PI/2);
+    out+='<path d="M'+x1+','+y1+' Q'+qx+','+qy+' '+x2+','+y2+'" fill="none" stroke="#b91c1c" stroke-width="2.5"/>';
+  });
+  [0,90,180,270].forEach(function(deg){
+    var a=deg*Math.PI/180-Math.PI/2,x=C+R*Math.cos(a),y=C+R*Math.sin(a),nx=Math.cos(a),ny=Math.sin(a),tx=-ny,ty=nx;
+    out+='<path d="M'+(x+tx*10)+','+(y+ty*10)+' C'+(x+nx*6+tx*10)+','+(y+ny*6+ty*10)+' '+(x+nx*13)+','+(y+ny*13)+' '+(x+nx*13)+','+(y+ny*13)+' C'+(x+nx*6-tx*10)+','+(y+ny*6-ty*10)+' '+(x-tx*10)+','+(y-ty*10)+'" fill="#7f1d1d" stroke="#ef4444" stroke-width="1.8"/>';
+    out+='<path d="M'+(x+nx*13)+','+(y+ny*13)+' Q'+(x+nx*18+tx*5)+','+(y+ny*18+ty*5)+' '+(x+nx*15+tx*7)+','+(y+ny*15+ty*7)+'" fill="none" stroke="#fca5a5" stroke-width="1.5" stroke-linecap="round"/>';
+    out+='<path d="M'+(x+nx*13)+','+(y+ny*13)+' Q'+(x+nx*18-tx*5)+','+(y+ny*18-ty*5)+' '+(x+nx*15-tx*7)+','+(y+ny*15-ty*7)+'" fill="none" stroke="#fca5a5" stroke-width="1.5" stroke-linecap="round"/>';
+    out+='<circle cx="'+(x+nx*13)+'" cy="'+(y+ny*13)+'" r="4" fill="#fde047" stroke="#f59e0b" stroke-width="1.2"/>';
+    out+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="#dc2626"/>';
+  });
+  return out;
+}},
+
+{id:'kozmik', name:'Kozmik', minBadge:95, fn:function(C,R){
+  var cols=['#7c3aed','#2563eb','#0e7490','#047857','#b45309','#9f1239','#4c1d95','#1e3a8a'];
+  var scols=['#a78bfa','#60a5fa','#22d3ee','#34d399','#fbbf24','#f87171','#c084fc','#93c5fd'];
+  var out='';
+  for(var i=0;i<8;i++){
+    var a1=(i*45-12)*Math.PI/180-Math.PI/2,a2=(i*45+12)*Math.PI/180-Math.PI/2,am=i*45*Math.PI/180-Math.PI/2;
+    var x1=C+(R-2)*Math.cos(a1),y1=C+(R-2)*Math.sin(a1),x2=C+(R-2)*Math.cos(a2),y2=C+(R-2)*Math.sin(a2);
+    var xo=C+(R+12)*Math.cos(am),yo=C+(R+12)*Math.sin(am);
+    out+='<path d="M'+x1+','+y1+' L'+xo+','+yo+' L'+x2+','+y2+' Q'+(C+(R-4)*Math.cos(am))+','+(C+(R-4)*Math.sin(am))+' '+x1+','+y1+'Z" fill="'+cols[i]+'" stroke="'+scols[i]+'" stroke-width="1.2" opacity="0.9"/>';
+    out+='<circle cx="'+xo+'" cy="'+yo+'" r="2.5" fill="white"/>';
+  }
+  for(var i=0;i<12;i++){var a=i*30*Math.PI/180,d=R+6+(i%3)*2;out+='<circle cx="'+(C+d*Math.cos(a))+'" cy="'+(C+d*Math.sin(a))+'" r="'+(i%4===0?1.8:1)+'" fill="white"/>';}
+  out+='<circle cx="'+C+'" cy="'+C+'" r="'+R+'" fill="none" stroke="#1e0050" stroke-width="2"/>';
+  return out;
+}},
+
+{id:'efsanevi', name:'Efsanevi ✦', minBadge:105, fn:function(C,R){
+  var out='<circle cx="'+C+'" cy="'+C+'" r="'+R+'" fill="none" stroke="#92400e" stroke-width="3"/>';
+  out+='<circle cx="'+C+'" cy="'+C+'" r="'+(R-6)+'" fill="none" stroke="#fde68a" stroke-width="0.8" opacity="0.4"/>';
+  for(var i=0;i<12;i++){
+    var a=i*30*Math.PI/180-Math.PI/2,x=C+R*Math.cos(a),y=C+R*Math.sin(a),nx=Math.cos(a),ny=Math.sin(a),tx=-ny,ty=nx,big=i%3===0;
+    if(big){
+      out+='<path d="M'+(x+tx*8)+','+(y+ty*8)+' Q'+(x+nx*5+tx*8)+','+(y+ny*5+ty*8)+' '+(x+nx*11)+','+(y+ny*11)+' Q'+(x+nx*5-tx*8)+','+(y+ny*5-ty*8)+' '+(x-tx*8)+','+(y-ty*8)+' Q'+(x-nx*3)+','+(y-ny*3)+' '+(x+tx*8)+','+(y+ty*8)+'Z" fill="#78350f" stroke="#fde047" stroke-width="1.5"/>';
+      out+='<path d="M'+(x+nx*11)+','+(y+ny*11)+' Q'+(x+nx*16+tx*4)+','+(y+ny*16+ty*4)+' '+(x+nx*13+tx*6)+','+(y+ny*13+ty*6)+'" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>';
+      out+='<path d="M'+(x+nx*11)+','+(y+ny*11)+' Q'+(x+nx*16-tx*4)+','+(y+ny*16-ty*4)+' '+(x+nx*13-tx*6)+','+(y+ny*13-ty*6)+'" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>';
+      out+='<circle cx="'+(x+nx*11)+'" cy="'+(y+ny*11)+'" r="4.5" fill="#fde047" stroke="#f59e0b" stroke-width="1.2"/>';
+      out+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="#d97706"/>';
+    } else {
+      out+='<path d="M'+(x-tx*5)+','+(y-ty*5)+' Q'+(x+nx*7)+','+(y+ny*7)+' '+(x+tx*5)+','+(y+ty*5)+'" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>';
+      out+='<circle cx="'+x+'" cy="'+y+'" r="2.5" fill="#d97706"/>';
+    }
+  }
+  return out;
+}},
 
 ];
+
 
 
 
@@ -9539,32 +9723,43 @@ function applyProfileFrame(uid,frameId){
   const frame=FRAMES.find(f=>f.id===frameId)||FRAMES[0];
   const el=document.getElementById('headerAvatar');
   if(!el) return;
-  if(frame.id==='none'){el.style.border='none';el.style.boxShadow='none';}
-  else{el.style.border=frame.border;el.style.boxShadow=frame.shadow;el.style.borderRadius='50%';}
-  // Köşe süsleri için wrapper
-  let wrapper = document.getElementById('avatarFrameWrapper');
-  if (frame.id==='none' || !frame.cornerSVG) {
-    if (wrapper) { wrapper.replaceWith(el); wrapper=null; }
-    return;
-  }
-  if (!wrapper) {
-    wrapper = document.createElement('div');
-    wrapper.id = 'avatarFrameWrapper';
-    wrapper.style.cssText = 'position:relative;display:inline-block';
-    el.parentNode.insertBefore(wrapper, el);
-    wrapper.appendChild(el);
-  }
-  // Köşe SVG'leri ekle
-  ['tl','tr','bl','br'].forEach(pos=>{ const old=wrapper.querySelector('.corner-'+pos); if(old) old.remove(); });
-  const positions = [{cls:'tl',x:-6,y:-6},{cls:'tr',x:'calc(100% - 10px)',y:-6},{cls:'bl',x:-6,y:'calc(100% - 10px)'},{cls:'br',x:'calc(100% - 10px)',y:'calc(100% - 10px)'}];
-  const sz=16;
-  positions.forEach(p=>{
-    const d=document.createElement('div');
-    d.className='corner-'+p.cls;
-    d.style.cssText=`position:absolute;left:${p.x};top:${p.y};width:${sz}px;height:${sz}px;pointer-events:none;z-index:2`;
-    d.innerHTML=`<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">${frame.cornerSVG(sz/2,sz/2)}</svg>`;
-    wrapper.appendChild(d);
-  });
+  el.style.border='none'; el.style.boxShadow='none';
+  // Eski overlay temizle
+  const old=document.getElementById('_frameOverlay');
+  if(old) old.remove();
+  if(frame.id==='none'||!frame.fn) return;
+  const avSz=el.offsetWidth||42;
+  const totalSz=avSz+32;
+  const C=totalSz/2, R=avSz/2+4;
+  const parent=el.parentElement;
+  if(!parent) return;
+  parent.style.position='relative'; parent.style.overflow='visible';
+  const overlay=document.createElement('div');
+  overlay.id='_frameOverlay';
+  overlay.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:3;width:'+totalSz+'px;height:'+totalSz+'px';
+  overlay.innerHTML='<svg width="'+totalSz+'" height="'+totalSz+'" viewBox="0 0 '+totalSz+' '+totalSz+'" xmlns="http://www.w3.org/2000/svg">'+frame.fn(C,R)+'</svg>';
+  parent.appendChild(overlay);
+}
+
+// Herhangi bir avatar elementine çerçeve uygula (öğretmen görünümü için)
+function applyFrameToElement(el, frameId, avSz) {
+  if(!el) return;
+  // Eski overlay temizle
+  const old=el.parentElement && el.parentElement.querySelector('._anyFrameOverlay');
+  if(old) old.remove();
+  const frame=FRAMES.find(f=>f.id===frameId);
+  if(!frame||frame.id==='none'||!frame.fn) return;
+  avSz=avSz||el.offsetWidth||80;
+  const totalSz=avSz+32;
+  const C=totalSz/2, R=avSz/2+4;
+  const parent=el.parentElement;
+  if(!parent) return;
+  parent.style.position='relative'; parent.style.overflow='visible';
+  const overlay=document.createElement('div');
+  overlay.className='_anyFrameOverlay';
+  overlay.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:3;width:'+totalSz+'px;height:'+totalSz+'px';
+  overlay.innerHTML='<svg width="'+totalSz+'" height="'+totalSz+'" viewBox="0 0 '+totalSz+' '+totalSz+'" xmlns="http://www.w3.org/2000/svg">'+frame.fn(C,R)+'</svg>';
+  parent.appendChild(overlay);
 }
 
 // ── Rozet sayfası HTML ──────────────────────────────────────
@@ -9613,13 +9808,11 @@ async function badgesPageHTML(uid) {
         const avail = earnedCount >= f.minBadge;
         const active = activeFrame === f.id;
         // Küçük önizleme SVG
-        const pvSz = 44, pvC = 8, pvS = 8;
-        const corners = f.cornerSVG ? [
-          {x:-4,y:-4},{x:pvSz-12,y:-4},{x:-4,y:pvSz-12},{x:pvSz-12,y:pvSz-12}
-        ].map(p=>`<div style="position:absolute;left:${p.x}px;top:${p.y}px;width:${pvC*2}px;height:${pvC*2}px;pointer-events:none;z-index:2"><svg width="${pvC*2}" height="${pvC*2}" viewBox="0 0 ${pvC*2} ${pvC*2}">${f.cornerSVG(pvC,pvS)}</svg></div>`).join('') : '';
-        const previewHTML = `<div style="position:relative;width:${pvSz}px;height:${pvSz}px;flex-shrink:0">
-          <div style="width:${pvSz}px;height:${pvSz}px;border-radius:50%;background:#1e2030;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:16px;${f.border&&f.id!=='none'?'border:'+f.border+';box-shadow:'+f.shadow:''}">👤</div>
-          ${corners}
+        const pvSz = 48, pvC = pvSz/2, pvR = pvSz/2 - 2;
+        const pvContent = f.fn ? f.fn(pvC, pvR) : '';
+        const previewHTML = `<div style="position:relative;width:${pvSz}px;height:${pvSz}px;flex-shrink:0;overflow:visible">
+          <div style="width:${pvSz}px;height:${pvSz}px;border-radius:50%;background:#1e2030;display:flex;align-items:center;justify-content:center;font-size:18px;position:relative;z-index:1">👤</div>
+          ${pvContent ? `<svg width="${pvSz+16}" height="${pvSz+16}" viewBox="0 0 ${pvSz+16} ${pvSz+16}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:2" xmlns="http://www.w3.org/2000/svg">${f.fn((pvSz+16)/2,(pvSz)/2+2)}</svg>` : ''}
         </div>`;
         return `<button onclick="${avail ? `setActiveFrame('${uid}','${f.id}');showPage('badges')` : 'void(0)'}"
           style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;
