@@ -1,3 +1,102 @@
+function showAllDenemeler() {
+  showPage('all-denemeler');
+}
+
+function allDenemelerPage() {
+  const myUid = (window.currentUserData||{}).uid || '';
+  const myName = (window.currentUserData||{}).name || '';
+  const matchE = e => e.studentName===myName || (myUid && e.userId===myUid);
+  const allE = studyEntries.filter(e=>matchE(e)&&e.type==='deneme');
+
+  // Tüm denemeleri grupla
+  const denMap = {};
+  allE.forEach(e=>{
+    const k = e.examId||(e.dateKey+'_'+e.examTitle);
+    if(!denMap[k]) denMap[k]=[];
+    denMap[k].push(e);
+  });
+  const allDen = Object.entries(denMap)
+    .sort((a,b)=>(b[1][0]?.dateKey||'').localeCompare(a[1][0]?.dateKey||''))
+    .map(([k,dl])=>{
+      const title = dl[0]?.examTitle||dl[0]?.topic||(dl[0]?.dateKey+' Denemesi');
+      const dk = dl[0]?.dateKey||'';
+      const subR = subjects.map(s=>{ const se=dl.find(e=>e.subject===s.name); if(!se) return {name:s.name,d:0,y:0,net:0,q:0}; const d=se.correct||0,y=se.wrong||0; return {name:s.name,d,y,net:Math.round((d-y/3)*100)/100,q:d+y}; });
+      const lgsR = calcLGSScore(subR.map(s=>({...s,avgNet:s.net,count:s.q>0?1:0})));
+      return {title,dk,lgsR,examId:k};
+    });
+
+  // Aylık gruplama
+  const byMonth = {};
+  allDen.forEach(d=>{
+    const mo = d.dk ? d.dk.substring(0,7) : 'bilinmiyor';
+    if(!byMonth[mo]) byMonth[mo]=[];
+    byMonth[mo].push(d);
+  });
+
+  const months = Object.keys(byMonth).sort().reverse();
+
+  return `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+      <button onclick="showPage('my-analysis')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
+      <div class="page-title" style="margin:0">🎯 Tüm Denemeler</div>
+    </div>
+    <div class="page-sub">Tüm deneme geçmişin — ${allDen.length} deneme</div>
+
+    ${allDen.length===0 ? `<div class="card" style="text-align:center;padding:40px;color:var(--text2)">Henüz deneme girilmemiş</div>` :
+      months.map(mo=>{
+        const moLabel = new Date(mo+'-01T12:00:00').toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
+        const moDen = byMonth[mo];
+        return `
+          <div style="margin-bottom:20px">
+            <div style="font-size:0.78rem;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">${moLabel}</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              ${moDen.map(d=>{
+                const dateLabel = d.dk ? new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'}) : '';
+                return `
+                  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;justify-content:space-between;align-items:center">
+                    <div>
+                      <div style="font-weight:700;font-size:0.88rem">${d.title}</div>
+                      <div style="font-size:0.72rem;color:var(--text2);margin-top:2px">${dateLabel}</div>
+                    </div>
+                    <div style="text-align:right">
+                      <div style="font-size:1.3rem;font-weight:900;color:var(--accent)">${d.lgsR.puan}</div>
+                      <div style="font-size:0.6rem;color:var(--text2)">/500</div>
+                    </div>
+                  </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+      }).join('')}`;
+}
+
+function generateWeekOptions() {
+  const opts = [];
+  const now = new Date();
+  // Son 12 haftayı listele
+  for (let w = 0; w < 12; w++) {
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - (now.getDay()===0?6:now.getDay()-1) - w*7);
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    const monStr = mon.toISOString().split('T')[0];
+    const label = mon.toLocaleDateString('tr-TR',{day:'numeric',month:'long'}) + ' - ' + sun.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+    opts.push(`<option value="${monStr}"${w===0?' selected':''}>${label}</option>`);
+  }
+  return opts.join('');
+}
+
+function generateMonthOptions() {
+  const opts = [];
+  const now = new Date();
+  // Son 12 ayı listele
+  for (let m = 0; m < 12; m++) {
+    const d = new Date(now.getFullYear(), now.getMonth()-m, 1);
+    const val = d.toISOString().split('T')[0].substring(0,7); // "2026-03"
+    const label = d.toLocaleDateString('tr-TR',{month:'long',year:'numeric'});
+    opts.push(`<option value="${val}"${m===0?' selected':''}>${label}</option>`);
+  }
+  return opts.join('');
+}
+
 // ============================================================
 // ÖZEL ONAY DİALOGU — confirm() yerine
 // ============================================================
