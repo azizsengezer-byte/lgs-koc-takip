@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#6c63ff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="LGSKoç">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="styles.css">
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -21,10 +21,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
+<div id="authSplash" style="position:fixed;inset:0;background:#0f1117;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999">
+  <div style="font-size:2.5rem;margin-bottom:16px">📊</div>
+  <div style="color:#6c63ff;font-size:1rem;font-weight:700;font-family:system-ui">LGS Koç</div>
+  <div style="margin-top:20px;width:40px;height:40px;border:3px solid #6c63ff33;border-top-color:#6c63ff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+</div>
 <body>
+<div id="authSplash" style="position:fixed;inset:0;background:#0f1117;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999">
+  <div style="font-size:2.5rem;margin-bottom:16px">📊</div>
+  <div style="color:#6c63ff;font-size:1rem;font-weight:700;font-family:system-ui">LGS Koç</div>
+  <div style="margin-top:20px;width:40px;height:40px;border:3px solid #6c63ff33;border-top-color:#6c63ff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+</div>
 
 <!-- LOGIN -->
-<div id="loginScreen">
+<div id="loginScreen" style="display:none">
   <div class="login-box">
     <div class="login-logo" style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px">
       <div style="width:56px;height:56px;border-radius:15px;background:linear-gradient(135deg,#6c63ff,#4cc9f0);display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(108,99,255,.45),0 4px 16px rgba(108,99,255,.25);flex-shrink:0">
@@ -522,19 +534,19 @@
 
 
 <!-- Modüller — yükleme sırası önemli -->
-<script src="js/config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/badges.js"></script>
-<script src="js/teacher.js"></script>
-<script src="js/teacher_psych.js"></script>
-<script src="js/teacher_pdf.js"></script>
-<script src="js/teacher_analysis.js"></script>
-<script src="js/student_dash.js"></script>
-<script src="js/student_analysis.js"></script>
-<script src="js/wellness_notif.js"></script>
-<script src="js/messages.js"></script>
-<script src="js/profile.js"></script>
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<script src="ui.js"></script>
+<script src="badges.js"></script>
+<script src="teacher.js"></script>
+<script src="teacher_psych.js"></script>
+<script src="teacher_pdf.js"></script>
+<script src="teacher_analysis.js"></script>
+<script src="student_dash.js"></script>
+<script src="student_analysis.js"></script>
+<script src="wellness_notif.js"></script>
+<script src="messages.js"></script>
+<script src="profile.js"></script>
 <script>
 
 </script>
