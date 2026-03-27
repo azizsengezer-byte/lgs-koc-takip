@@ -21,8 +21,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
-<div id="authSplash" style="position:fixed;inset:0;background:#0f1117;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999">
-  <div style="font-size:2.5rem;margin-bottom:16px">📊</div>
   <div style="color:#6c63ff;font-size:1rem;font-weight:700;font-family:system-ui">LGS Koç</div>
   <div style="margin-top:20px;width:40px;height:40px;border:3px solid #6c63ff33;border-top-color:#6c63ff;border-radius:50%;animation:spin 0.8s linear infinite"></div>
   <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
@@ -34,7 +32,7 @@
 </div>
 
 <!-- LOGIN -->
-<div id="loginScreen" style="display:none">
+<div id="loginScreen">
   <div class="login-box">
     <div class="login-logo" style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px">
       <div style="width:56px;height:56px;border-radius:15px;background:linear-gradient(135deg,#6c63ff,#4cc9f0);display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(108,99,255,.45),0 4px 16px rgba(108,99,255,.25);flex-shrink:0">
@@ -531,7 +529,6 @@
 <nav class="mobile-nav" id="mobileNav"></nav>
 
 
-<script>setTimeout(()=>{const s=document.getElementById("authSplash");if(s){s.remove();const ls=document.getElementById("loginScreen");if(ls&&ls.style.display==="none"&&document.getElementById("app").style.display!=="block"){ls.style.display="flex";}}},3000);</script>
 <!-- Modüller — yükleme sırası önemli -->
 <script src="config.js"></script>
 <script src="auth.js"></script>
