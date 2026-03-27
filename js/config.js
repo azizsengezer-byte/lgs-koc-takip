@@ -287,6 +287,9 @@ auth.onAuthStateChanged(async (user) => {
       }
     } catch(err) {
       console.log('Auth hata:', err.message);
+      const _splashErr=document.getElementById('authSplash');if(_splashErr)_splashErr.remove();
+      document.getElementById('loginScreen').style.display='none';
+      document.getElementById('app').style.display='block';
       renderSidebar();
       showPage('dashboard');
       startNotifListener();
