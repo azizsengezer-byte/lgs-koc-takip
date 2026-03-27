@@ -697,7 +697,7 @@
 <div class="modal-overlay" id="viewProfileModal">
   <div class="modal" style="max-width:340px">
     <div style="text-align:center;padding:8px 0 16px">
-      <div id="vpPhoto" style="width:80px;height:80px;border-radius:50%;margin:8px auto 20px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;background:var(--accent)22;color:var(--accent);position:relative"></div>
+      <div id="vpPhoto" style="width:80px;height:80px;border-radius:50%;margin:8px auto 20px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;background:var(--accent)22;color:var(--accent);position:relative;overflow:visible"></div>
       <div id="vpName" style="font-size:1.3rem;font-weight:900;margin-bottom:4px"></div>
       <div id="vpRole" style="font-size:0.82rem;color:var(--accent);font-weight:600;margin-bottom:16px"></div>
       <div id="vpDetails" style="text-align:left;font-size:0.83rem;color:var(--text2);line-height:2"></div>
@@ -2016,7 +2016,7 @@ async function showUserProfile(uid, fallbackName, fallbackColor) {
   const color = fallbackColor || '#6c63ff';
 
   // Fotoğraf
-  vpPhoto.style.cssText = 'width:80px;height:80px;border-radius:50%;margin:8px auto 20px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;position:relative';
+  vpPhoto.style.cssText = 'width:80px;height:80px;border-radius:50%;margin:8px auto 20px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;position:relative;overflow:visible';
   if (data.photo) {
     vpPhoto.innerHTML = `<img src="${data.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
   } else {
@@ -9775,21 +9775,22 @@ function applyProfileFrame(uid,frameId){
 
 function applyFrameToElement(el, frameId, avSz) {
   if(!el) return;
-  const old=el.parentElement && el.parentElement.querySelector('._anyFrameOverlay');
+  // Eski overlay temizle
+  const old=el.querySelector('._anyFrameOverlay');
   if(old) old.remove();
   const frame=FRAMES.find(f=>f.id===frameId);
   if(!frame||frame.id==='none'||!frame.fn) return;
   avSz=avSz||(el.offsetWidth||80);
   const pad=12, totalSz=avSz+pad*2;
   const C=totalSz/2, R=avSz/2+2;
-  const parent=el.parentElement;
-  if(!parent) return;
-  parent.style.position='relative'; parent.style.overflow='visible';
+  // Overlay'i doğrudan el'in içine ekle — parent'a değil
+  el.style.position='relative';
+  el.style.overflow='visible';
   const overlay=document.createElement('div');
   overlay.className='_anyFrameOverlay';
   overlay.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:3;width:'+totalSz+'px;height:'+totalSz+'px';
   overlay.innerHTML='<svg width="'+totalSz+'" height="'+totalSz+'" viewBox="0 0 '+totalSz+' '+totalSz+'" xmlns="http://www.w3.org/2000/svg">'+frame.fn(C,R)+'</svg>';
-  parent.appendChild(overlay);
+  el.appendChild(overlay);
 }
 
 // ── Rozet sayfası HTML ──────────────────────────────────────
