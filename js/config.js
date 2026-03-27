@@ -124,6 +124,7 @@ auth.onAuthStateChanged(async (user) => {
         await auth.signOut();
         document.getElementById('app').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
+        const _splash3=document.getElementById('authSplash');if(_splash3)_splash3.remove();
         return;
       }
       const data = doc.data();
@@ -131,6 +132,7 @@ auth.onAuthStateChanged(async (user) => {
       window.currentUserData = { ...data, uid: user.uid };
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
+      const _splash=document.getElementById('authSplash');if(_splash)_splash.remove();
       document.getElementById('menuName') && (document.getElementById('menuName').textContent = data.name || user.email);
       const roleLabel = currentRole==='teacher'
         ? `Koç Öğretmen${data.branch?' • '+data.branch:''}`
@@ -292,6 +294,7 @@ auth.onAuthStateChanged(async (user) => {
   } else {
     document.getElementById('app').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
+    const _splash2=document.getElementById('authSplash');if(_splash2)_splash2.remove();
     // Butonun takılı kalmaması için resetle
     const btn = document.getElementById('loginBtn');
     if (btn) { btn.textContent = 'Giriş Yap →'; btn.disabled = false; }
