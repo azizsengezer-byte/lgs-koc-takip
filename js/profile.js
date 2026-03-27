@@ -330,6 +330,31 @@ async function removePhoto() {
   }
 }
 
+async function uploadPhoto(input) {
+  // Geriye dönük uyumluluk — artık cropModal üzerinden çalışıyor
+  // ama input varsa doğrudan çağır
+  const file = input?.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('⚠️','Lütfen görsel seçin!'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      _crop.img = img; _crop.imgNatW = img.naturalWidth; _crop.imgNatH = img.naturalHeight;
+      const fit = Math.max(_crop.size/img.naturalWidth, _crop.size/img.naturalHeight);
+      _crop.scale = fit;
+      _crop.x = (_crop.size - img.naturalWidth*fit)/2;
+      _crop.y = (_crop.size - img.naturalHeight*fit)/2;
+      openCropModal();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+// ========== CLAUDE API YÖNETİMİ ==========
+
 function toggleApiKeyVis() {
   const inp = document.getElementById('apiKeyInput');
   if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';

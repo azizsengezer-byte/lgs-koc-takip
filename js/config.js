@@ -285,8 +285,6 @@ auth.onAuthStateChanged(async (user) => {
       }
     } catch(err) {
       console.log('Auth hata:', err.message);
-      document.getElementById('loginScreen').style.display='none';
-      document.getElementById('app').style.display='block';
       renderSidebar();
       showPage('dashboard');
       startNotifListener();

@@ -1,4 +1,3 @@
-
 function teacherDashboard() {
   const name = document.getElementById('menuName')?.textContent || 'Hoca';
   const studentCount = students.length;

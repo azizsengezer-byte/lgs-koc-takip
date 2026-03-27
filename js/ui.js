@@ -222,8 +222,6 @@ function renderTeacherPage(id, el) {
   setTimeout(()=>drawCharts(), 50);
 }
 
-
-// ── Yardımcı fonksiyonlar ──
 function hexToRgb(hex) {
   const r = parseInt(hex.slice(1,3),16);
   const g = parseInt(hex.slice(3,5),16);
