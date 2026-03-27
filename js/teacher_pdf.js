@@ -494,25 +494,30 @@ function toSafe(str) {
 //    SP = 300 + ((hamPuan - 85) / 58) * 66.67  → 100-500 arası
 
 const LGS_KATSAYI = {
-  'Türkçe': 4, 'Matematik': 4, 'Fen Bilimleri': 4,
-  'İnkılap Tarihi': 1, 'Din Kültürü': 1, 'İngilizce': 1,
+  'Türkçe':        4.348,
+  'Matematik':     4.2538,
+  'Fen Bilimleri': 4.1230,
+  'İnkılap Tarihi':1.666,
+  'Din Kültürü':   1.899,
+  'İngilizce':     1.5075,
 };
+const LGS_BAZ_PUAN = 194.752082;
 
 function calcLGSScore(subStats) {
-  let hamPuan = 0;
+  let toplam = 0;
   const detail = [];
   subStats.forEach(s => {
     const k = LGS_KATSAYI[s.name];
     if (k == null) return;
-    const net = Number(s.avgNet) || 0;
-    const agNet = net * k;
-    hamPuan += agNet;
-    detail.push({ name: s.name, net: net.toFixed(2), kat: k, agNet: agNet.toFixed(2) });
+    const net = Number(s.avgNet) || 0; // avgNet = doğru - yanlış/3 (önceden hesaplanmış)
+    const puan = net * k;
+    toplam += puan;
+    detail.push({ name: s.name, net: net.toFixed(2), kat: k, puan: puan.toFixed(2) });
   });
-  // Ortalama ≈ 300 puan, std sapma ≈ 66.67 puan aralığı
-  const sp = 300 + ((hamPuan - 85) / 58) * 66.67;
-  const lgsPuan = Math.min(Math.max(Math.round(sp * 10) / 10, 100), 500);
-  return { puan: lgsPuan, hamPuan: hamPuan.toFixed(2), detail };
+  const lgsPuan = Math.min(Math.max(
+    Math.round((toplam + LGS_BAZ_PUAN) * 10) / 10,
+  100), 500);
+  return { puan: lgsPuan, hamPuan: toplam.toFixed(2), detail };
 }
 
 
