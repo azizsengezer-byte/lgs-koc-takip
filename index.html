@@ -8902,6 +8902,54 @@ function _syncW(myUid, storageKey, data) {
 // 🏆 ROZET SİSTEMİ — SVG Tasarım
 // ============================================================
 
+// ── Benzersiz Rozet SVG'leri ─────────────────────────────────
+const BADGE_DEFS = {
+  s50:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bg50" cx="40%" cy="30%"><stop offset="0%" stop-color="#a8ff78"/><stop offset="100%" stop-color="#1a6b1a"/></radialGradient><filter id="ds50"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0a3d0a" flood-opacity="0.8"/></filter></defs><ellipse cx="40" cy="40" rx="34" ry="36" fill="url(#bg50)" filter="url(#ds50)"/><ellipse cx="40" cy="40" rx="34" ry="36" fill="none" stroke="#5dde5d" stroke-width="1.5" opacity="0.6"/><line x1="40" y1="58" x2="40" y2="35" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/><path d="M40,45 Q32,38 28,30" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.8"/><path d="M40,40 Q48,34 52,26" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.8"/><path d="M37,58 Q40,52 43,58" fill="white" opacity="0.9"/></svg>`,
+  s100:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bg100" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#1e40af"/></linearGradient><filter id="ds100"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0a1f5c" flood-opacity="0.8"/></filter></defs><path d="M14,12 L52,8 L66,12 L66,72 L52,68 L14,72Z" fill="url(#bg100)" filter="url(#ds100)"/><path d="M14,12 L14,72 L52,68 L52,8Z" fill="#1e3a8a"/><line x1="52" y1="8" x2="52" y2="68" stroke="#93c5fd" stroke-width="1.5" opacity="0.7"/><path d="M57,24 L63,24 M57,32 L63,32 M57,40 L61,40 M57,48 L63,48 M57,56 L63,56" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/><path d="M22,44 L38,44 M32,37 L38,44 L32,51" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/></svg>`,
+  s500:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bg500" x1="0%" y1="0%" x2="60%" y2="100%"><stop offset="0%" stop-color="#fb923c"/><stop offset="100%" stop-color="#9a3412"/></linearGradient><filter id="ds500"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#3d1308" flood-opacity="0.8"/></filter></defs><polygon points="40,6 62,18 70,42 62,66 40,74 18,66 10,42 18,18" fill="url(#bg500)" filter="url(#ds500)"/><polygon points="40,6 62,18 70,42 62,66 40,74 18,66 10,42 18,18" fill="none" stroke="#fb923c" stroke-width="1.5" opacity="0.5"/><circle cx="40" cy="22" r="5" fill="white" opacity="0.9"/><path d="M40,27 L38,40 L32,52 M40,27 L42,40 L48,52" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/><path d="M35,34 L45,34" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.8"/><path d="M15,40 H25 M13,46 H21 M15,52 H23" stroke="#fb923c" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/></svg>`,
+  s1000:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bg1k" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="50%" stop-color="#94a3b8"/><stop offset="100%" stop-color="#334155"/></linearGradient><filter id="ds1k"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.8"/></filter></defs><polygon points="40,6 70,40 40,74 10,40" fill="url(#bg1k)" filter="url(#ds1k)"/><polygon points="40,6 70,40 40,74 10,40" fill="none" stroke="#94a3b8" stroke-width="1.5" opacity="0.6"/><ellipse cx="40" cy="40" rx="20" ry="16" fill="none" stroke="white" stroke-width="1.5" opacity="0.4"/><ellipse cx="40" cy="40" rx="14" ry="10" fill="none" stroke="white" stroke-width="1.5" opacity="0.6"/><text x="40" y="44" text-anchor="middle" font-size="13" font-weight="900" fill="white" opacity="0.95" font-family="system-ui">1K</text></svg>`,
+  s5000:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bg5k" x1="0%" y1="0%" x2="70%" y2="100%"><stop offset="0%" stop-color="#fde68a"/><stop offset="40%" stop-color="#d97706"/><stop offset="100%" stop-color="#78350f"/></linearGradient><filter id="ds5k"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#78350f" flood-opacity="0.9"/></filter></defs><path d="M40,6 L70,16 L70,44 C70,60 56,72 40,76 C24,72 10,60 10,44 L10,16Z" fill="url(#bg5k)" filter="url(#ds5k)"/><path d="M40,6 L70,16 L70,44 C70,60 56,72 40,76 C24,72 10,60 10,44 L10,16Z" fill="none" stroke="#fde68a" stroke-width="1.5" opacity="0.6"/><path d="M20,36 L20,52 L60,52 L60,36 L52,44 L40,32 L28,44Z" fill="white" opacity="0.9"/><circle cx="20" cy="34" r="3.5" fill="white" opacity="0.9"/><circle cx="40" cy="30" r="4" fill="white" opacity="0.9"/><circle cx="60" cy="34" r="3.5" fill="white" opacity="0.9"/></svg>`,
+  d3:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bgd3" cx="50%" cy="80%"><stop offset="0%" stop-color="#fde047"/><stop offset="40%" stop-color="#f97316"/><stop offset="100%" stop-color="#7f1d1d"/></radialGradient><filter id="dsd3"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#3d0000" flood-opacity="0.8"/></filter></defs><circle cx="40" cy="40" r="36" fill="url(#bgd3)" filter="url(#dsd3)"/><circle cx="40" cy="40" r="36" fill="none" stroke="#f97316" stroke-width="1.5" opacity="0.5"/><path d="M40,65 Q24,52 26,36 Q30,24 38,20 Q35,28 40,32 Q44,24 46,16 Q56,28 54,44 Q52,56 40,65Z" fill="white" opacity="0.9"/><path d="M40,62 Q30,50 33,38 Q36,30 40,28 Q43,34 44,42 Q50,36 48,50 Q46,58 40,62Z" fill="#f97316" opacity="0.7"/><text x="40" y="56" text-anchor="middle" font-size="11" font-weight="900" fill="white" opacity="0.9" font-family="system-ui">3</text></svg>`,
+  d7:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bgd7" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#4c1d95"/></linearGradient><filter id="dsd7"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#1e0050" flood-opacity="0.9"/></filter></defs><rect x="8" y="8" width="64" height="64" rx="18" fill="url(#bgd7)" filter="url(#dsd7)"/><rect x="8" y="8" width="64" height="64" rx="18" fill="none" stroke="#a78bfa" stroke-width="1.5" opacity="0.5"/><path d="M46,14 L30,42 H43 L34,66 L58,34 H44Z" fill="white" opacity="0.9"/></svg>`,
+  d30:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bgd30" cx="35%" cy="28%"><stop offset="0%" stop-color="#bae6fd"/><stop offset="40%" stop-color="#0ea5e9"/><stop offset="100%" stop-color="#0c4a6e"/></radialGradient><filter id="dsd30"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#001a2e" flood-opacity="0.9"/></filter></defs><circle cx="40" cy="40" r="36" fill="url(#bgd30)" filter="url(#dsd30)"/><path d="M40,12 L40,22 M40,58 L40,68 M12,40 L22,40 M58,40 L68,40" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/><path d="M20,20 L27,27 M53,53 L60,60 M60,20 L53,27 M27,53 L20,60" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/><polygon points="40,22 43,32 54,32 45,39 48,50 40,44 32,50 35,39 26,32 37,32" fill="white" opacity="0.9"/></svg>`,
+  g1:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bgg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f43f5e"/><stop offset="100%" stop-color="#7f1d1d"/></linearGradient><filter id="dsg1"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#3d0010" flood-opacity="0.8"/></filter></defs><polygon points="40,6 66,21 66,59 40,74 14,59 14,21" fill="url(#bgg1)" filter="url(#dsg1)"/><polygon points="40,6 66,21 66,59 40,74 14,59 14,21" fill="none" stroke="#f43f5e" stroke-width="1.5" opacity="0.5"/><circle cx="40" cy="40" r="20" fill="none" stroke="white" stroke-width="1.5" opacity="0.5"/><circle cx="40" cy="40" r="13" fill="none" stroke="white" stroke-width="1.5" opacity="0.7"/><circle cx="40" cy="40" r="6" fill="none" stroke="white" stroke-width="2" opacity="0.9"/><circle cx="40" cy="40" r="2.5" fill="white" opacity="0.95"/><path d="M40,18 L40,24 M40,56 L40,62 M18,40 L24,40 M56,40 L62,40" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/></svg>`,
+  a95:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bga95" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="#e0f2fe"/><stop offset="30%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#075985"/></linearGradient><filter id="dsa95"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#001a35" flood-opacity="0.9"/></filter></defs><polygon points="40,8 68,34 40,72 12,34" fill="url(#bga95)" filter="url(#dsa95)"/><polygon points="40,8 68,34 40,72 12,34" fill="none" stroke="#7dd3fc" stroke-width="1.5" opacity="0.6"/><text x="40" y="38" text-anchor="middle" font-size="14" font-weight="900" fill="white" opacity="0.9" font-family="system-ui">%95</text></svg>`,
+  tur1:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bgtur" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fb923c"/><stop offset="100%" stop-color="#7c2d12"/></linearGradient><filter id="dstur"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#2d0a00" flood-opacity="0.8"/></filter></defs><rect x="8" y="8" width="64" height="64" rx="14" fill="url(#bgtur)" filter="url(#dstur)"/><path d="M20,24 L40,20 L40,58 L20,54Z" fill="white" opacity="0.9"/><path d="M60,24 L40,20 L40,58 L60,54Z" fill="white" opacity="0.75"/><line x1="40" y1="20" x2="40" y2="58" stroke="#fb923c" stroke-width="2" opacity="0.8"/><path d="M23,32 H36 M23,38 H34 M23,44 H36 M23,50 H31" stroke="#fb923c" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/></svg>`,
+  mat1:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bgmat" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4ade80"/><stop offset="100%" stop-color="#14532d"/></linearGradient><filter id="dsmat"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#052e16" flood-opacity="0.8"/></filter></defs><rect x="8" y="16" width="64" height="50" rx="4" fill="url(#bgmat)" filter="url(#dsmat)"/><rect x="8" y="60" width="64" height="6" rx="2" fill="#15803d"/><rect x="28" y="66" width="8" height="10" rx="2" fill="#15803d"/><rect x="44" y="66" width="8" height="10" rx="2" fill="#15803d"/><text x="24" y="34" font-size="11" font-weight="700" fill="white" opacity="0.9" font-family="monospace">x²+y²</text><text x="20" y="47" font-size="10" font-weight="700" fill="white" opacity="0.85" font-family="monospace">=r²</text><text x="43" y="56" font-size="9" fill="white" opacity="0.7" font-family="monospace">∑∞π</text></svg>`,
+  fen1:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bgfen" cx="50%" cy="40%"><stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#1e1b4b"/></radialGradient><filter id="dsfen"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000020" flood-opacity="0.9"/></filter></defs><circle cx="40" cy="40" r="36" fill="url(#bgfen)" filter="url(#dsfen)"/><ellipse cx="40" cy="40" rx="30" ry="12" fill="none" stroke="white" stroke-width="1.5" opacity="0.6"/><ellipse cx="40" cy="40" rx="30" ry="12" fill="none" stroke="white" stroke-width="1.5" opacity="0.6" transform="rotate(60 40 40)"/><ellipse cx="40" cy="40" rx="30" ry="12" fill="none" stroke="white" stroke-width="1.5" opacity="0.6" transform="rotate(-60 40 40)"/><circle cx="40" cy="40" r="6" fill="white" opacity="0.9"/><circle cx="40" cy="40" r="3" fill="#818cf8"/><circle cx="68" cy="36" r="3" fill="#a5f3fc" opacity="0.9"/><circle cx="22" cy="22" r="3" fill="#a5f3fc" opacity="0.9"/><circle cx="22" cy="58" r="3" fill="#a5f3fc" opacity="0.9"/></svg>`,
+  ink1:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bgink" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#78350f"/></linearGradient><filter id="dsink"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#1c0700" flood-opacity="0.8"/></filter></defs><path d="M40,8 L68,18 L68,44 C68,58 55,70 40,74 C25,70 12,58 12,44 L12,18Z" fill="url(#bgink)" filter="url(#dsink)"/><path d="M40,8 L68,18 L68,44 C68,58 55,70 40,74 C25,70 12,58 12,44 L12,18Z" fill="none" stroke="#fde68a" stroke-width="1.5" opacity="0.5"/><line x1="28" y1="52" x2="28" y2="24" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/><path d="M28,24 L52,30 L28,36Z" fill="white" opacity="0.9"/></svg>`,
+  din1:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bgdin" cx="40%" cy="30%"><stop offset="0%" stop-color="#6ee7b7"/><stop offset="100%" stop-color="#065f46"/></radialGradient><filter id="dsdin"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#021c12" flood-opacity="0.9"/></filter></defs><circle cx="40" cy="40" r="36" fill="url(#bgdin)" filter="url(#dsdin)"/><path d="M34,20 A20,20 0 1,1 34,60 A14,14 0 1,0 34,20Z" fill="white" opacity="0.9"/><polygon points="56,26 57.5,31 63,31 58.5,34.5 60,40 56,36.5 52,40 53.5,34.5 49,31 54.5,31" fill="white" opacity="0.9"/></svg>`,
+  ing1:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bging" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#0c4a6e"/></linearGradient><filter id="dsing"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#001624" flood-opacity="0.9"/></filter></defs><circle cx="40" cy="40" r="36" fill="url(#bging)" filter="url(#dsing)"/><path d="M14,32 Q22,28 28,34 Q26,44 20,46 Q12,44 14,32Z" fill="white" opacity="0.7"/><path d="M34,16 Q44,14 48,22 Q52,30 44,36 Q38,38 32,32 Q28,24 34,16Z" fill="white" opacity="0.7"/><path d="M52,38 Q62,36 66,46 Q64,56 54,56 Q46,58 44,50 Q44,40 52,38Z" fill="white" opacity="0.7"/><circle cx="40" cy="40" r="34" fill="none" stroke="white" stroke-width="1" opacity="0.3"/></svg>`,
+  w1:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bgw1" cx="40%" cy="35%"><stop offset="0%" stop-color="#f9a8d4"/><stop offset="100%" stop-color="#9d174d"/></radialGradient><filter id="dsw1"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#3d0020" flood-opacity="0.8"/></filter></defs><rect x="8" y="8" width="64" height="64" rx="20" fill="url(#bgw1)" filter="url(#dsw1)"/><path d="M40,58 C38,56 14,44 14,30 C14,20 21,14 28,14 C33,14 38,18 40,22 C42,18 47,14 52,14 C59,14 66,20 66,30 C66,44 42,56 40,58Z" fill="white" opacity="0.9"/></svg>`,
+  brave:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bgbrave" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fde047"/><stop offset="50%" stop-color="#f97316"/><stop offset="100%" stop-color="#7f1d1d"/></linearGradient><filter id="dsbrave"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#1c0000" flood-opacity="0.9"/></filter></defs><path d="M40,6 L70,16 L70,44 C70,60 56,72 40,76 C24,72 10,60 10,44 L10,16Z" fill="url(#bgbrave)" filter="url(#dsbrave)"/><path d="M40,6 L70,16 L70,44 C70,60 56,72 40,76 C24,72 10,60 10,44 L10,16Z" fill="none" stroke="#fde047" stroke-width="2" opacity="0.5"/><path d="M48,18 L34,42 H45 L32,62 L54,36 H42Z" fill="white" opacity="0.95"/></svg>`,
+  sleep14:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bgsl" cx="40%" cy="30%"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#1e0050"/></radialGradient><filter id="dssl"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0a0020" flood-opacity="0.9"/></filter></defs><circle cx="40" cy="40" r="36" fill="url(#bgsl)" filter="url(#dssl)"/><circle cx="20" cy="20" r="2" fill="white" opacity="0.8"/><circle cx="60" cy="18" r="1.5" fill="white" opacity="0.6"/><circle cx="62" cy="56" r="2" fill="white" opacity="0.7"/><path d="M30,24 A18,18 0 1,1 30,58 A12,12 0 1,0 30,24Z" fill="white" opacity="0.9"/><text x="50" y="36" font-size="10" font-weight="900" fill="white" opacity="0.8" font-family="system-ui">Z</text><text x="55" y="46" font-size="8" font-weight="900" fill="white" opacity="0.6" font-family="system-ui">z</text><text x="58" y="54" font-size="6" font-weight="900" fill="white" opacity="0.4" font-family="system-ui">z</text></svg>`,
+  water7:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bgwt" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" stop-color="#7dd3fc"/><stop offset="100%" stop-color="#0369a1"/></linearGradient><filter id="dswt"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#001a35" flood-opacity="0.9"/></filter></defs><path d="M40,8 Q52,22 56,36 A16,16 0 0,1 24,36 Q28,22 40,8Z" fill="url(#bgwt)" filter="url(#dswt)" transform="scale(1.3) translate(-9,-5)"/><path d="M35,44 A6,4 0 0,0 46,44" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"/></svg>`,
+  nodig:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bgnd" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#94a3b8"/><stop offset="100%" stop-color="#0f172a"/></linearGradient><filter id="dsnd"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.8"/></filter></defs><rect x="8" y="8" width="64" height="64" rx="14" fill="url(#bgnd)" filter="url(#dsnd)"/><rect x="28" y="18" width="24" height="42" rx="4" fill="white" opacity="0.85"/><rect x="31" y="22" width="18" height="30" rx="2" fill="#0f172a" opacity="0.8"/><circle cx="40" cy="56" r="2.5" fill="#0f172a" opacity="0.9"/><line x1="14" y1="14" x2="66" y2="66" stroke="#ef4444" stroke-width="5" stroke-linecap="round" opacity="0.9"/><line x1="14" y1="14" x2="66" y2="66" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.6"/></svg>`,
+  honest7:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bghn" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e0f2fe"/><stop offset="50%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#1e1b4b"/></linearGradient><filter id="dshn"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0a001c" flood-opacity="0.9"/></filter></defs><ellipse cx="40" cy="36" rx="26" ry="30" fill="url(#bghn)" filter="url(#dshn)"/><ellipse cx="40" cy="36" rx="26" ry="30" fill="none" stroke="#c4b5fd" stroke-width="2" opacity="0.6"/><path d="M30,24 Q26,30 26,38 Q26,46 30,52" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.3"/><ellipse cx="34" cy="24" rx="4" ry="7" fill="white" opacity="0.2" transform="rotate(-20 34 24)"/><rect x="36" y="64" width="8" height="14" rx="3" fill="#7c3aed"/><rect x="34" y="64" width="12" height="4" rx="2" fill="#5b21b6"/></svg>`,
+  exam1:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bgex1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#064e3b"/></linearGradient><filter id="dsex1"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#001c12" flood-opacity="0.8"/></filter></defs><path d="M40,8 L66,22 L72,50 L56,70 L24,70 L8,50 L14,22Z" fill="url(#bgex1)" filter="url(#dsex1)"/><path d="M40,8 L66,22 L72,50 L56,70 L24,70 L8,50 L14,22Z" fill="none" stroke="#6ee7b7" stroke-width="1.5" opacity="0.5"/><text x="40" y="48" text-anchor="middle" font-size="28" font-weight="900" fill="white" opacity="0.95" font-family="system-ui">1</text><text x="40" y="62" text-anchor="middle" font-size="9" fill="white" opacity="0.7" font-family="system-ui">DENEME</text></svg>`,
+  exup3:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bgexup" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f97316"/><stop offset="100%" stop-color="#fde047"/></linearGradient><filter id="dsexup"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#1c0700" flood-opacity="0.8"/></filter></defs><path d="M20,14 H60 V46 C60,58 51,65 40,68 C29,65 20,58 20,46Z" fill="url(#bgexup)" filter="url(#dsexup)"/><path d="M20,18 H8 C8,18 5,34 20,40" fill="none" stroke="#fde047" stroke-width="2.5" stroke-linecap="round"/><path d="M60,18 H72 C72,18 75,34 60,40" fill="none" stroke="#fde047" stroke-width="2.5" stroke-linecap="round"/><rect x="32" y="68" width="16" height="8" rx="2" fill="#f97316"/><rect x="26" y="76" width="28" height="4" rx="2" fill="#c2410c"/><path d="M28,50 L34,42 L38,46 L50,32" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/><path d="M46,28 L54,28 L54,36" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/></svg>`,
+  ex450:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="bgex450" cx="40%" cy="30%"><stop offset="0%" stop-color="#fef9c3"/><stop offset="30%" stop-color="#eab308"/><stop offset="100%" stop-color="#713f12"/></radialGradient><filter id="dsex450"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#1c0a00" flood-opacity="0.9"/></filter></defs><polygon points="40,6 49,32 76,32 55,50 63,76 40,60 17,76 25,50 4,32 31,32" fill="url(#bgex450)" filter="url(#dsex450)"/><polygon points="40,6 49,32 76,32 55,50 63,76 40,60 17,76 25,50 4,32 31,32" fill="none" stroke="#fef08a" stroke-width="1.5" opacity="0.6"/><text x="40" y="46" text-anchor="middle" font-size="12" font-weight="900" fill="white" opacity="0.95" font-family="system-ui">450+</text></svg>`,
+  exmonth:`<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bgexm" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e879f9"/><stop offset="50%" stop-color="#a21caf"/><stop offset="100%" stop-color="#3b0764"/></linearGradient><filter id="dsexm"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#1a0025" flood-opacity="0.9"/></filter></defs><circle cx="40" cy="40" r="36" fill="url(#bgexm)" filter="url(#dsexm)"/><circle cx="40" cy="40" r="36" fill="none" stroke="#f0abfc" stroke-width="1.5" opacity="0.4"/><path d="M24,28 H56 V46 C56,54 48,60 40,62 C32,60 24,54 24,46Z" fill="white" opacity="0.9"/><path d="M24,30 H16 C16,30 14,40 24,44" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.8"/><path d="M56,30 H64 C64,30 66,40 56,44" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.8"/><rect x="34" y="62" width="12" height="7" rx="1.5" fill="white" opacity="0.8"/><rect x="28" y="69" width="24" height="4" rx="2" fill="white" opacity="0.7"/><path d="M26,28 L26,22 L32,26 L40,18 L48,26 L54,22 L54,28Z" fill="#fde047" opacity="0.95"/></svg>`,
+};
+
+// Rozet HTML döndür — BADGE_DEFS varsa kullan, yoksa makeBadgeSVG
+function getBadgeHTML(badge, isLocked, size) {
+  size = size || 52;
+  if (BADGE_DEFS[badge.id]) {
+    const svgStr = BADGE_DEFS[badge.id].replace('<svg ', '<svg width="'+size+'" height="'+size+'" ');
+    if (isLocked) {
+      return '<div style="position:relative;display:inline-block;width:'+size+'px;height:'+size+'px">'
+        +'<div style="filter:saturate(0);opacity:0.3">'+svgStr+'</div>'
+        +'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">'
+        +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round">'
+        +'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7,11V7a5,5,0 0,1,10,0v4"/>'
+        +'</svg></div></div>';
+    }
+    return svgStr;
+  }
+  return makeBadgeSVG(badge.form, badge.tier, badge.sym, isLocked, size);
+}
+
 // SVG Rozet Üretici — saf SVG, emoji yok
 function makeBadgeSVG(form, tier, sym, locked, size) {
   size = size || 72;
@@ -9190,97 +9238,46 @@ function _ci(x,y,r,fill,stroke,sw){return '<circle cx="'+x+'" cy="'+y+'" r="'+r+
 // Çerçeveler — 12 seviye, süslü arabesk tarz
 const FRAMES = [
 
-{id:'none', name:'Çerçevesiz', minBadge:0, fn:null},
+{id:'none', name:'Çerçevesiz', minBadge:0, border:'none', shadow:'none', cornerSVG:null},
 
-{id:'baslangic', name:'Başlangıç', minBadge:0, fn:function(C,R){
-  var o=_c(C,R,'#475569',2.5)+_c(C,R+5,'#334155',0.8,'stroke-dasharray="3,4" opacity="0.5"');
-  for(var i=0;i<8;i++){var a=i*45*Math.PI/180,x=C+R*Math.cos(a),y=C+R*Math.sin(a),tx=-Math.sin(a)*5,ty=Math.cos(a)*5;o+='<path d="M'+(x+tx)+','+(y+ty)+' Q'+(x+Math.cos(a)*4)+','+(y+Math.sin(a)*4)+' '+(x-tx)+','+(y-ty)+'" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>'+_ci(x,y,2,'#64748b');}
-  return o;
-}},
+{id:'baslangic', name:'Başlangıç', minBadge:0,
+  border:'2px solid #475569', shadow:'none',
+  cornerSVG:(c,s)=>`<circle cx="${c}" cy="${c}" r="${s*.45}" fill="none" stroke="#475569" stroke-width="1.5"/>`},
 
-{id:'caliskan', name:'Çalışkan', minBadge:8, fn:function(C,R){
-  var o=_c(C,R,'#1d4ed8',2.5);
-  for(var i=0;i<6;i++){var a1=(i*60-20)*Math.PI/180,a2=(i*60+20)*Math.PI/180,am=i*60*Math.PI/180,x1=C+R*Math.cos(a1),y1=C+R*Math.sin(a1),x2=C+R*Math.cos(a2),y2=C+R*Math.sin(a2),mx=C+(R+9)*Math.cos(am),my=C+(R+9)*Math.sin(am),cx1=C+(R+5)*Math.cos(a1),cy1=C+(R+5)*Math.sin(a1),cx2=C+(R+5)*Math.cos(a2),cy2=C+(R+5)*Math.sin(a2);o+='<path d="M'+x1+','+y1+' Q'+cx1+','+cy1+' '+mx+','+my+' Q'+cx2+','+cy2+' '+x2+','+y2+'" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>'+_ci(mx,my,3.5,'#60a5fa','#93c5fd',1);}
-  return o;
-}},
+{id:'azimli', name:'Azimli', minBadge:5,
+  border:'2.5px solid #6c63ff', shadow:'0 0 10px #6c63ff66',
+  cornerSVG:(c,s)=>`<path d="M${c},${c-s*.45} L${c+s*.28},${c} L${c},${c+s*.45} L${c-s*.28},${c}Z" fill="#6c63ff" opacity="0.85"/>`},
 
-{id:'azimli', name:'Azimli', minBadge:15, fn:function(C,R){
-  var o=_c(C,R,'#6d28d9',2.5)+_c(C,R-4,'#8b5cf6',0.8,'stroke-dasharray="2,3" opacity="0.5"');
-  [0,90,180,270].forEach(function(deg){var a=deg*Math.PI/180,x=C+R*Math.cos(a-Math.PI/2),y=C+R*Math.sin(a-Math.PI/2),nx=Math.cos(a-Math.PI/2),ny=Math.sin(a-Math.PI/2),tx=-ny,ty=nx;o+='<path d="M'+(x+tx*9)+','+(y+ty*9)+' C'+(x+nx*5+tx*9)+','+(y+ny*5+ty*9)+' '+(x+nx*11)+','+(y+ny*11)+' '+(x+nx*11)+','+(y+ny*11)+' C'+(x+nx*5-tx*9)+','+(y+ny*5-ty*9)+' '+(x-tx*9)+','+(y-ty*9)+'" fill="#4c1d95" stroke="#a855f7" stroke-width="1.8"/>'+
-    '<path d="M'+(x+nx*11)+','+(y+ny*11)+' Q'+(x+nx*16+tx*4)+','+(y+ny*16+ty*4)+' '+(x+nx*14+tx*5)+','+(y+ny*14+ty*5)+'" fill="none" stroke="#c084fc" stroke-width="1.5" stroke-linecap="round"/>'+
-    '<path d="M'+(x+nx*11)+','+(y+ny*11)+' Q'+(x+nx*16-tx*4)+','+(y+ny*16-ty*4)+' '+(x+nx*14-tx*5)+','+(y+ny*14-ty*5)+'" fill="none" stroke="#c084fc" stroke-width="1.5" stroke-linecap="round"/>'+
-    _ci(x,y,3,'#7c3aed')+_ci(x+nx*11,y+ny*11,4,'#a855f7','#c084fc',1);});
-  return o;
-}},
+{id:'odakli', name:'Odaklı', minBadge:10,
+  border:'2.5px solid #06b6d4', shadow:'0 0 10px #06b6d466',
+  cornerSVG:(c,s)=>`<polygon points="${c},${c-s*.45} ${c+s*.35},${c-s*.15} ${c+s*.25},${c+s*.4} ${c-s*.25},${c+s*.4} ${c-s*.35},${c-s*.15}" fill="none" stroke="#06b6d4" stroke-width="1.5"/>`},
 
-{id:'kararli', name:'Kararlı', minBadge:22, fn:function(C,R){
-  var o=_c(C,R,'#0e7490',3)+_c(C,R+8,'#06b6d4',0.8,'stroke-dasharray="1,3" opacity="0.35"');
-  for(var i=0;i<6;i++){var a=i*60*Math.PI/180,x=C+R*Math.cos(a-Math.PI/2),y=C+R*Math.sin(a-Math.PI/2),nx=Math.cos(a-Math.PI/2),ny=Math.sin(a-Math.PI/2),tx=-ny,ty=nx;o+='<path d="M'+(x+tx*7)+','+(y+ty*7)+' Q'+(x+nx*7+tx*7)+','+(y+ny*7+ty*7)+' '+(x+nx*2)+','+(y+ny*2)+' Q'+(x+nx*7-tx*7)+','+(y+ny*7-ty*7)+' '+(x-tx*7)+','+(y-ty*7)+' Q'+(x-nx*3)+','+(y-ny*3)+' '+(x+tx*7)+','+(y+ty*7)+'Z" fill="#0e4a5c" stroke="#22d3ee" stroke-width="1.5"/>'+'<path d="M'+(x+tx*4)+','+(y+ty*4)+' Q'+(x+nx*9)+','+(y+ny*9)+' '+(x-tx*4)+','+(y-ty*4)+'" fill="none" stroke="#67e8f9" stroke-width="1" opacity="0.7"/>';}
-  return o;
-}},
+{id:'kararli', name:'Kararlı', minBadge:18,
+  border:'3px solid #a855f7', shadow:'0 0 14px #a855f7aa',
+  cornerSVG:(c,s)=>`<path d="M${c},${c-s*.48} L${c+s*.18},${c-s*.14} L${c+s*.48},${c-s*.16} L${c+s*.22},${c+s*.08} L${c+s*.3},${c+s*.44} L${c},${c+s*.26} L${c-s*.3},${c+s*.44} L${c-s*.22},${c+s*.08} L${c-s*.48},${c-s*.16} L${c-s*.18},${c-s*.14}Z" fill="#a855f7" opacity="0.85"/>`},
 
-{id:'guclu', name:'Güçlü', minBadge:30, fn:function(C,R){
-  var o='';
-  for(var i=0;i<5;i++){var a1=i*72*Math.PI/180-Math.PI/2,a2=(i+1)*72*Math.PI/180-Math.PI/2,am=(a1+a2)/2,x1=C+R*Math.cos(a1),y1=C+R*Math.sin(a1),x2=C+R*Math.cos(a2),y2=C+R*Math.sin(a2),qx=C+(R+9)*Math.cos(am),qy=C+(R+9)*Math.sin(am);o+='<path d="M'+x1+','+y1+' Q'+qx+','+qy+' '+x2+','+y2+'" fill="none" stroke="#9f1239" stroke-width="1.8"/>';}
-  for(var i=0;i<5;i++){var a=i*72*Math.PI/180-Math.PI/2,x=C+R*Math.cos(a),y=C+R*Math.sin(a),nx=Math.cos(a),ny=Math.sin(a);for(var j=0;j<5;j++){var pa=j*72*Math.PI/180,px=x+nx*2+Math.cos(a+pa)*4.5,py=y+ny*2+Math.sin(a+pa)*4.5;o+=_ci(px,py,3,'#be123c');}o+=_ci(x+nx*2,y+ny*2,4,'#f43f5e','#fda4af',1)+_ci(x+nx*2,y+ny*2,2,'#fff1f2');}
-  return o;
-}},
+{id:'guclu', name:'Güçlü', minBadge:28,
+  border:'3px solid #f43f5e', shadow:'0 0 14px #f43f5eaa',
+  cornerSVG:(c,s)=>`<path d="M${c},${c-s*.45} C${c+s*.35},${c-s*.45} ${c+s*.45},${c} ${c},${c+s*.45} C${c-s*.45},${c} ${c-s*.35},${c-s*.45} ${c},${c-s*.45}Z" fill="#f43f5e" opacity="0.8"/>`},
 
-{id:'usta', name:'Usta', minBadge:40, fn:function(C,R){
-  var o=_c(C,R,'#9a3412',2.5)+_c(C,R-8,'#fdba74',1,'stroke-dasharray="2,4" opacity="0.3"');
-  [-80,-10,10,80,100,170,190,260].reduce(function(acc,v,i,arr){if(i%2===0){var s1=arr[i]*Math.PI/180,s2=arr[i+1]*Math.PI/180,x1=C+R*Math.cos(s1),y1=C+R*Math.sin(s1),x2=C+R*Math.cos(s2),y2=C+R*Math.sin(s2),col=i%4===0?'#f97316':'#fb923c';o+='<path d="M'+x1+','+y1+' A'+R+','+R+' 0 0,1 '+x2+','+y2+'" fill="none" stroke="'+col+'" stroke-width="5" stroke-linecap="round" opacity="0.85"/>';}return acc;},[]);
-  [0,90,180,270].forEach(function(deg){var a=deg*Math.PI/180,x=C+R*Math.cos(a-Math.PI/2),y=C+R*Math.sin(a-Math.PI/2);o+=_ci(x,y,5,'#fde047','#f97316',1)+_ci(x,y,3,'#f97316');});
-  return o;
-}},
+{id:'usta', name:'Usta', minBadge:38,
+  border:'3px solid #f97316', shadow:'0 0 18px #f97316cc',
+  cornerSVG:(c,s)=>`<path d="M${c},${c-s*.48} L${c+s*.14},${c-s*.18} L${c+s*.48},${c-s*.1} L${c+s*.24},${c+s*.14} L${c+s*.28},${c+s*.46} L${c},${c+s*.28} L${c-s*.28},${c+s*.46} L${c-s*.24},${c+s*.14} L${c-s*.48},${c-s*.1} L${c-s*.14},${c-s*.18}Z" fill="#f97316" opacity="0.85"/>`},
 
-{id:'efsane', name:'Efsane', minBadge:52, fn:function(C,R){
-  var o=_c(C,R,'#92400e',2.5)+_c(C,R-5,'#fde68a',0.8,'opacity="0.4"');
-  for(var i=0;i<8;i++){var a=i*45*Math.PI/180-Math.PI/2,x=C+R*Math.cos(a),y=C+R*Math.sin(a),nx=Math.cos(a),ny=Math.sin(a),tx=-ny,ty=nx,big=i%2===0;
-    if(big){o+='<path d="M'+x+','+y+' Q'+(x+nx*4+tx*5)+','+(y+ny*4+ty*5)+' '+(x+nx*10)+','+(y+ny*10)+' Q'+(x+nx*4-tx*5)+','+(y+ny*4-ty*5)+' '+x+','+y+'Z" fill="#78350f" stroke="#f59e0b" stroke-width="1.5"/>'+'<path d="M'+(x+nx*10)+','+(y+ny*10)+' Q'+(x+nx*14+tx*4)+','+(y+ny*14+ty*4)+' '+(x+nx*12+tx*5)+','+(y+ny*12+ty*5)+'" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>'+'<path d="M'+(x+nx*10)+','+(y+ny*10)+' Q'+(x+nx*14-tx*4)+','+(y+ny*14-ty*4)+' '+(x+nx*12-tx*5)+','+(y+ny*12-ty*5)+'" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>'+_ci(x+nx*10,y+ny*10,4,'#fde047','#f59e0b',1)+_ci(x,y,3,'#d97706');}
-    else{o+='<path d="M'+(x-tx*4)+','+(y-ty*4)+' Q'+(x+nx*5)+','+(y+ny*5)+' '+(x+tx*4)+','+(y+ty*4)+'" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round"/>'+_ci(x,y,2.5,'#f59e0b');}}
-  return o;
-}},
+{id:'efsane', name:'Efsane', minBadge:50,
+  border:'3px solid #f59e0b', shadow:'0 0 22px #f59e0bdd, 0 0 44px #fbbf2444',
+  cornerSVG:(c,s)=>`<path d="M${c},${c-s*.5} L${c+s*.12},${c-s*.16} L${c+s*.48},${c-s*.15} L${c+s*.2},${c+s*.06} L${c+s*.3},${c+s*.43} L${c},${c+s*.25} L${c-s*.3},${c+s*.43} L${c-s*.2},${c+s*.06} L${c-s*.48},${c-s*.15} L${c-s*.12},${c-s*.16}Z" fill="#f59e0b" opacity="0.9"/>`},
 
-{id:'efsaneplus', name:'Efsane+', minBadge:65, fn:function(C,R){
-  var o=_c(C,R,'#1e3a8a',2.5);
-  for(var i=0;i<6;i++){var a1=(i*60-25)*Math.PI/180-Math.PI/2,a2=(i*60+25)*Math.PI/180-Math.PI/2,am=i*60*Math.PI/180-Math.PI/2,x1=C+R*Math.cos(a1),y1=C+R*Math.sin(a1),x2=C+R*Math.cos(a2),y2=C+R*Math.sin(a2),xm=C+(R+11)*Math.cos(am),ym=C+(R+11)*Math.sin(am),xc=C+(R+5)*Math.cos(am),yc=C+(R+5)*Math.sin(am),fill=i%2===0?'#1e3a8a':'#0e7490',stroke=i%2===0?'#60a5fa':'#22d3ee';
-    o+='<path d="M'+x1+','+y1+' Q'+(C+(R+7)*Math.cos(a1))+','+(C+(R+7)*Math.sin(a1))+' '+xm+','+ym+' Q'+(C+(R+7)*Math.cos(a2))+','+(C+(R+7)*Math.sin(a2))+' '+x2+','+y2+' Q'+xc+','+yc+' '+x1+','+y1+'Z" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.5"/>'+_ci(xm,ym,4,i%2===0?'#93c5fd':'#67e8f9',stroke,1)+'<path d="M'+(C+(R+4)*Math.cos((i*60-15)*Math.PI/180-Math.PI/2))+','+(C+(R+4)*Math.sin((i*60-15)*Math.PI/180-Math.PI/2))+' Q'+xc+','+yc+' '+(C+(R+4)*Math.cos((i*60+15)*Math.PI/180-Math.PI/2))+','+(C+(R+4)*Math.sin((i*60+15)*Math.PI/180-Math.PI/2))+'" fill="none" stroke="#fde047" stroke-width="1" opacity="0.55"/>';}
-  return o;
-}},
+{id:'efsaneplus', name:'Efsane+', minBadge:65,
+  border:'3px solid #e879f9', shadow:'0 0 22px #e879f9cc, 0 0 44px #a855f755',
+  cornerSVG:(c,s)=>`<path d="M${c},${c-s*.5} L${c+s*.08},${c-s*.08} L${c+s*.5},${c} L${c+s*.08},${c+s*.08} L${c},${c+s*.5} L${c-s*.08},${c+s*.08} L${c-s*.5},${c} L${c-s*.08},${c-s*.08}Z" fill="#e879f9" opacity="0.9"/>`},
 
-{id:'sampiyonluk', name:'Şampiyonluk', minBadge:78, fn:function(C,R){
-  var o='';
-  for(var i=0;i<16;i++){var a=i*22.5*Math.PI/180-Math.PI/2,x=C+R*Math.cos(a),y=C+R*Math.sin(a),nx=Math.cos(a),ny=Math.sin(a),tx=-ny,ty=nx,big=i%2===0,sz=big?5:3,fill=big?'#14532d':'#166534',stroke=big?'#4ade80':'#86efac';o+='<path d="M'+x+','+y+' Q'+(x+nx*6+tx*sz)+','+(y+ny*6+ty*sz)+' '+(x+nx*10)+','+(y+ny*10)+' Q'+(x+nx*6-tx*sz)+','+(y+ny*6-ty*sz)+' '+x+','+y+'Z" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1"/>';}
-  o+=_c(C,R-1,'#15803d',2)+'<path d="M'+(C-11)+','+(C+R+7)+' Q'+C+','+(C+R+13)+' '+(C+11)+','+(C+R+7)+'" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/>';
-  return o;
-}},
-
-{id:'yakut', name:'Yakut', minBadge:88, fn:function(C,R){
-  var o=_c(C,R,'#991b1b',2.5);
-  [45,135,225,315].forEach(function(deg){var a1=(deg-20)*Math.PI/180-Math.PI/2,a2=(deg+20)*Math.PI/180-Math.PI/2,x1=C+R*Math.cos(a1),y1=C+R*Math.sin(a1),x2=C+R*Math.cos(a2),y2=C+R*Math.sin(a2),qx=C+(R+5)*Math.cos(deg*Math.PI/180-Math.PI/2),qy=C+(R+5)*Math.sin(deg*Math.PI/180-Math.PI/2);o+='<path d="M'+x1+','+y1+' Q'+qx+','+qy+' '+x2+','+y2+'" fill="none" stroke="#b91c1c" stroke-width="2.5"/>';});
-  [0,90,180,270].forEach(function(deg){var a=deg*Math.PI/180-Math.PI/2,x=C+R*Math.cos(a),y=C+R*Math.sin(a),nx=Math.cos(a),ny=Math.sin(a),tx=-ny,ty=nx;o+='<path d="M'+(x+tx*10)+','+(y+ty*10)+' C'+(x+nx*6+tx*10)+','+(y+ny*6+ty*10)+' '+(x+nx*13)+','+(y+ny*13)+' '+(x+nx*13)+','+(y+ny*13)+' C'+(x+nx*6-tx*10)+','+(y+ny*6-ty*10)+' '+(x-tx*10)+','+(y-ty*10)+'" fill="#7f1d1d" stroke="#ef4444" stroke-width="1.8"/>'+'<path d="M'+(x+nx*13)+','+(y+ny*13)+' Q'+(x+nx*18+tx*5)+','+(y+ny*18+ty*5)+' '+(x+nx*15+tx*7)+','+(y+ny*15+ty*7)+'" fill="none" stroke="#fca5a5" stroke-width="1.5" stroke-linecap="round"/>'+'<path d="M'+(x+nx*13)+','+(y+ny*13)+' Q'+(x+nx*18-tx*5)+','+(y+ny*18-ty*5)+' '+(x+nx*15-tx*7)+','+(y+ny*15-ty*7)+'" fill="none" stroke="#fca5a5" stroke-width="1.5" stroke-linecap="round"/>'+_ci(x+nx*13,y+ny*13,4,'#fde047','#f59e0b',1.2)+_ci(x,y,3,'#dc2626');});
-  return o;
-}},
-
-{id:'kozmik', name:'Kozmik', minBadge:95, fn:function(C,R){
-  var cols=['#7c3aed','#2563eb','#0e7490','#047857','#b45309','#9f1239','#4c1d95','#1e3a8a'];
-  var scols=['#a78bfa','#60a5fa','#22d3ee','#34d399','#fbbf24','#f87171','#c084fc','#93c5fd'];
-  var o='';
-  for(var i=0;i<8;i++){var a1=(i*45-12)*Math.PI/180-Math.PI/2,a2=(i*45+12)*Math.PI/180-Math.PI/2,am=i*45*Math.PI/180-Math.PI/2,x1=C+(R-2)*Math.cos(a1),y1=C+(R-2)*Math.sin(a1),x2=C+(R-2)*Math.cos(a2),y2=C+(R-2)*Math.sin(a2),xo=C+(R+12)*Math.cos(am),yo=C+(R+12)*Math.sin(am);o+='<path d="M'+x1+','+y1+' L'+xo+','+yo+' L'+x2+','+y2+' Q'+(C+(R-4)*Math.cos(am))+','+(C+(R-4)*Math.sin(am))+' '+x1+','+y1+'Z" fill="'+cols[i]+'" stroke="'+scols[i]+'" stroke-width="1.2" opacity="0.9"/>'+_ci(xo,yo,2.5,'white');}
-  for(var i=0;i<12;i++){var a=i*30*Math.PI/180,d=R+6+(i%3)*2;o+=_ci(C+d*Math.cos(a),C+d*Math.sin(a),i%4===0?1.8:1,'white');}
-  o+=_c(C,R,'#1e0050',2);
-  return o;
-}},
-
-{id:'efsanevi', name:'Efsanevi ✦', minBadge:105, fn:function(C,R){
-  var o=_c(C,R,'#92400e',3)+_c(C,R-6,'#fde68a',0.8,'opacity="0.4"');
-  for(var i=0;i<12;i++){var a=i*30*Math.PI/180-Math.PI/2,x=C+R*Math.cos(a),y=C+R*Math.sin(a),nx=Math.cos(a),ny=Math.sin(a),tx=-ny,ty=nx,big=i%3===0;
-    if(big){o+='<path d="M'+(x+tx*8)+','+(y+ty*8)+' Q'+(x+nx*5+tx*8)+','+(y+ny*5+ty*8)+' '+(x+nx*11)+','+(y+ny*11)+' Q'+(x+nx*5-tx*8)+','+(y+ny*5-ty*8)+' '+(x-tx*8)+','+(y-ty*8)+' Q'+(x-nx*3)+','+(y-ny*3)+' '+(x+tx*8)+','+(y+ty*8)+'Z" fill="#78350f" stroke="#fde047" stroke-width="1.5"/>'+'<path d="M'+(x+nx*11)+','+(y+ny*11)+' Q'+(x+nx*16+tx*4)+','+(y+ny*16+ty*4)+' '+(x+nx*13+tx*6)+','+(y+ny*13+ty*6)+'" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>'+'<path d="M'+(x+nx*11)+','+(y+ny*11)+' Q'+(x+nx*16-tx*4)+','+(y+ny*16-ty*4)+' '+(x+nx*13-tx*6)+','+(y+ny*13-ty*6)+'" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/>'+_ci(x+nx*11,y+ny*11,4.5,'#fde047','#f59e0b',1.2)+_ci(x+nx*13+tx*6,y+ny*13+ty*6,2.5,'#fbbf24')+_ci(x+nx*13-tx*6,y+ny*13-ty*6,2.5,'#fbbf24')+_ci(x,y,3,'#d97706');}
-    else{o+='<path d="M'+(x-tx*5)+','+(y-ty*5)+' Q'+(x+nx*7)+','+(y+ny*7)+' '+(x+tx*5)+','+(y+ty*5)+'" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>'+_ci(x,y,2.5,'#d97706');}}
-  return o;
-}},
+{id:'kozmik', name:'Kozmik', minBadge:80,
+  border:'3px solid #6ee7b7', shadow:'0 0 22px #6ee7b7cc, 0 0 44px #10b98155',
+  cornerSVG:(c,s)=>`<g><path d="M${c},${c-s*.5} L${c+s*.1},${c-s*.1} L${c+s*.5},${c} L${c+s*.1},${c+s*.1} L${c},${c+s*.5} L${c-s*.1},${c+s*.1} L${c-s*.5},${c} L${c-s*.1},${c-s*.1}Z" fill="#6ee7b7" opacity="0.8"/><circle cx="${c}" cy="${c-s*.5}" r="${s*.06}" fill="#6ee7b7"/><circle cx="${c+s*.5}" cy="${c}" r="${s*.06}" fill="#6ee7b7"/><circle cx="${c}" cy="${c+s*.5}" r="${s*.06}" fill="#6ee7b7"/><circle cx="${c-s*.5}" cy="${c}" r="${s*.06}" fill="#6ee7b7"/></g>`},
 
 ];
+
 
 
 
@@ -9601,7 +9598,7 @@ async function badgesPageHTML(uid) {
             border:1.5px solid ${has?cat.color:'var(--border)'};
             cursor:${has?'default':'not-allowed'}"
             title="${b.desc}">
-            ${makeBadgeSVG(b.form,b.tier,b.sym,!has,52)}
+            ${getBadgeHTML(b,!has,52)}
             <div style="font-size:0.6rem;font-weight:700;margin-top:3px;line-height:1.2;color:${has?'var(--text)':'var(--text2)'}">${b.name}</div>
           </div>`;
         }).join('')}
@@ -9616,11 +9613,13 @@ async function badgesPageHTML(uid) {
         const avail = earnedCount >= f.minBadge;
         const active = activeFrame === f.id;
         // Küçük önizleme SVG
-        const pvSz = 44, pvC = pvSz/2, pvR = pvSz/2 - 6;
-        const pvContent = f.fn ? f.fn(pvC, pvR) : '';
+        const pvSz = 44, pvC = 8, pvS = 8;
+        const corners = f.cornerSVG ? [
+          {x:-4,y:-4},{x:pvSz-12,y:-4},{x:-4,y:pvSz-12},{x:pvSz-12,y:pvSz-12}
+        ].map(p=>`<div style="position:absolute;left:${p.x}px;top:${p.y}px;width:${pvC*2}px;height:${pvC*2}px;pointer-events:none;z-index:2"><svg width="${pvC*2}" height="${pvC*2}" viewBox="0 0 ${pvC*2} ${pvC*2}">${f.cornerSVG(pvC,pvS)}</svg></div>`).join('') : '';
         const previewHTML = `<div style="position:relative;width:${pvSz}px;height:${pvSz}px;flex-shrink:0">
-          <div style="width:${pvSz}px;height:${pvSz}px;border-radius:50%;background:#1e2030;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:16px">👤</div>
-          ${pvContent ? `<svg width="${pvSz}" height="${pvSz}" viewBox="0 0 ${pvSz} ${pvSz}" style="position:absolute;top:0;left:0;pointer-events:none" xmlns="http://www.w3.org/2000/svg">${pvContent}</svg>` : ''}
+          <div style="width:${pvSz}px;height:${pvSz}px;border-radius:50%;background:#1e2030;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:16px;${f.border&&f.id!=='none'?'border:'+f.border+';box-shadow:'+f.shadow:''}">👤</div>
+          ${corners}
         </div>`;
         return `<button onclick="${avail ? `setActiveFrame('${uid}','${f.id}');showPage('badges')` : 'void(0)'}"
           style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;
