@@ -242,14 +242,17 @@ async function showUserProfile(uid, fallbackName, fallbackColor) {
   if (data.email) details.push(`✉️ <b>E-posta:</b> ${data.email}`);
   vpDet.innerHTML = details.join('<br>') || '<span style="color:var(--text2)">Bilgi eklenmemiş</span>';
 
+  window._vpCurrentUid = uid;
   openModal('viewProfileModal');
 
-  // Çerçeve uygula — Firestore'dan activeFrame oku
-  const old = vpPhoto.querySelector('._anyFrameOverlay');
-  if (old) old.remove();
+  // Sekmeyi sıfırla
+  vpSwitchTab('info');
+
+  // Çerçeve uygula
+  const _oldOverlay = vpPhoto.querySelector('._anyFrameOverlay');
+  if (_oldOverlay) _oldOverlay.remove();
   try {
     let frameId = data.activeFrame || localStorage.getItem('frame_'+uid) || 'none';
-    // Firestore'dan güncelle (data yetersizse)
     if (!data.activeFrame && db) {
       db.collection('users').doc(uid).get().then(snap=>{
         if (snap.exists && snap.data().activeFrame) {
@@ -261,6 +264,62 @@ async function showUserProfile(uid, fallbackName, fallbackColor) {
       setTimeout(()=>applyFrameToElement(vpPhoto, frameId, 80), 50);
     }
   } catch(e) {}
+
+  // Rozetleri arka planda yükle
+  if (data.role === 'student') {
+    getBadges(uid).then(earned => {
+      window._vpBadges = { uid, earned };
+    });
+  }
+}
+
+function vpSwitchTab(tab) {
+  const infoBtn     = document.getElementById('vpTabInfo');
+  const badgesBtn   = document.getElementById('vpTabBadges');
+  const infoContent = document.getElementById('vpTabInfoContent');
+  const badgeContent= document.getElementById('vpTabBadgesContent');
+  if (!infoBtn) return;
+
+  if (tab === 'info') {
+    infoBtn.style.color = 'var(--accent)';
+    infoBtn.style.borderBottom = '2px solid var(--accent)';
+    badgesBtn.style.color = 'var(--text2)';
+    badgesBtn.style.borderBottom = '2px solid transparent';
+    infoContent.style.display = 'block';
+    badgeContent.style.display = 'none';
+  } else {
+    badgesBtn.style.color = 'var(--accent)';
+    badgesBtn.style.borderBottom = '2px solid var(--accent)';
+    infoBtn.style.color = 'var(--text2)';
+    infoBtn.style.borderBottom = '2px solid transparent';
+    infoContent.style.display = 'none';
+    badgeContent.style.display = 'block';
+
+    // Rozet grid'ini doldur
+    const gridEl  = document.getElementById('vpBadgeGrid');
+    const countEl = document.getElementById('vpBadgeCount');
+    if (!gridEl) return;
+
+    const cached = window._vpBadges;
+    const fill = (earned) => {
+      if (countEl) countEl.textContent = earned.length + ' / ' + BADGES.length + ' rozet kazanıldı';
+      if (earned.length === 0) {
+        gridEl.innerHTML = '<div style="color:var(--text2);font-size:0.8rem;padding:20px">Henüz rozet kazanılmadı</div>';
+      } else {
+        gridEl.innerHTML = BADGES.filter(b=>earned.includes(b.id))
+          .map(b=>getBadgeHTML(b,false,44))
+          .join('');
+      }
+    };
+
+    if (cached) {
+      fill(cached.earned);
+    } else {
+      gridEl.innerHTML = '<div style="color:var(--text2);font-size:0.8rem;padding:20px">Yükleniyor...</div>';
+      const vpUid = (window._vpCurrentUid || '');
+      if (vpUid) getBadges(vpUid).then(fill);
+    }
+  }
 }
 
 async function editDeneme(examId, currentTitle) {
@@ -1002,16 +1061,7 @@ function studentDetailAnalysis() {
         </div>`).join('')}
     </div>`:''}
 
-    <!-- Rozet Özeti -->
-    <div class="card" id="studentBadgeCard" style="margin-bottom:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div class="card-title" style="margin:0">🏆 Rozetler</div>
-        <span id="studentBadgeCount" style="font-size:0.78rem;color:var(--text2)">-</span>
-      </div>
-      <div id="studentBadgeGrid" style="display:flex;flex-wrap:wrap;gap:6px;min-height:30px">
-        <div style="color:var(--text2);font-size:0.8rem">Yükleniyor...</div>
-      </div>
-    </div>
+
 
     <!-- Koç Yorumu -->
     <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,var(--accent)10,var(--accent)04);border:1px solid var(--accent)33">
@@ -1019,27 +1069,7 @@ function studentDetailAnalysis() {
       <div style="font-size:0.86rem;line-height:1.75;color:var(--text)">${comment}</div>
     </div>
   `;
-  // Rozet grid'ini async doldur
-  const _badgeUid = sUid;
-  const _badgeName = sName;
-  setTimeout(async ()=>{
-    // Hâlâ aynı öğrenci sayfasındayız mı?
-    if (selectedStudentName !== _badgeName) return;
-    const earned2 = await getBadges(_badgeUid);
-    const countEl = document.getElementById('studentBadgeCount');
-    const gridEl  = document.getElementById('studentBadgeGrid');
-    if (countEl) countEl.textContent = earned2.length + ' / ' + BADGES.length + ' rozet';
-    if (gridEl) {
-      if (earned2.length === 0) {
-        gridEl.innerHTML = '<span style="color:var(--text2);font-size:0.8rem">Henüz rozet kazanılmadı</span>';
-      } else {
-        gridEl.innerHTML = BADGES.filter(b=>earned2.includes(b.id))
-          .slice(0,12)
-          .map(b=>getBadgeHTML(b,false,40))
-          .join('') + (earned2.length>12?`<span style="font-size:0.75rem;color:var(--text2);align-self:center">+${earned2.length-12} daha</span>`:'');
-      }
-    }
-  }, 800);
+
 }
 
 function showPsychReport(sName) {
