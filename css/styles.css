@@ -1,4 +1,4 @@
-:root {
+  :root {
     --bg: #0f1117;
     --surface: #1a1d27;
     --surface2: #22263a;
@@ -31,7 +31,7 @@
     padding:48px 40px; width:100%; max-width:420px; text-align:center;
     box-shadow:0 32px 80px rgba(0,0,0,0.5);
   }
-  .login-logo { font-family:'Sora',sans-serif; font-size:2.2rem; font-weight:700; margin-bottom:8px; }
+  .login-logo { font-family:'Nunito',sans-serif; font-size:2.2rem; font-weight:700; margin-bottom:8px; }
   .login-logo span { color:var(--accent); }
   .login-sub { color:var(--text2); margin-bottom:36px; font-size:0.95rem; }
   .role-btns { display:flex; gap:12px; margin-bottom:28px; }
@@ -61,7 +61,7 @@
     padding:16px 24px; display:flex; align-items:center; justify-content:space-between;
     position:sticky; top:0; z-index:100;
   }
-  .header-logo { font-family:'Sora',sans-serif; font-weight:700; font-size:1.1rem; }
+  .header-logo { font-family:'Nunito',sans-serif; font-weight:700; font-size:1.1rem; }
   .header-logo span { color:var(--accent); }
   .header-user { display:flex; align-items:center; gap:10px; }
   .avatar {
@@ -121,7 +121,7 @@
   .page { display:none; }
   .page.active { display:block; }
 
-  .page-title { font-family:'Sora',sans-serif; font-size:1.5rem; font-weight:700; margin-bottom:6px; }
+  .page-title { font-family:'Nunito',sans-serif; font-size:1.5rem; font-weight:700; margin-bottom:6px; }
   .page-sub { color:var(--text2); font-size:0.9rem; margin-bottom:28px; }
 
   /* CARDS */
@@ -181,7 +181,7 @@
     padding:20px; display:flex; flex-direction:column; gap:8px;
   }
   .stat-label { font-size:0.8rem; color:var(--text2); font-weight:600; }
-  .stat-value { font-size:2rem; font-weight:900; font-family:'Sora',sans-serif; line-height:1; }
+  .stat-value { font-size:2rem; font-weight:900; font-family:'Nunito',sans-serif; line-height:1; }
   .stat-change { font-size:0.8rem; font-weight:700; }
   .stat-change.up { color:var(--accent3); }
   .stat-change.down { color:var(--accent2); }
@@ -269,7 +269,7 @@
   .student-info { flex:1; }
   .student-name { font-weight:700; font-size:0.95rem; }
   .student-meta { font-size:0.78rem; color:var(--text2); margin-top:2px; }
-  .student-score { font-family:'Sora',sans-serif; font-weight:800; font-size:1.1rem; }
+  .student-score { font-family:'Nunito',sans-serif; font-weight:800; font-size:1.1rem; }
   .badge { padding:3px 10px; border-radius:99px; font-size:0.75rem; font-weight:700; }
   .badge-green { background:rgba(67,233,123,.15); color:var(--accent3); }
   .badge-yellow { background:rgba(249,202,36,.15); color:var(--accent4); }
@@ -332,7 +332,7 @@
     background:var(--surface); border:1px solid var(--border); border-radius:20px;
     padding:28px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto;
   }
-  .modal-title { font-family:'Sora',sans-serif; font-weight:700; font-size:1.2rem; margin-bottom:20px; }
+  .modal-title { font-family:'Nunito',sans-serif; font-weight:700; font-size:1.2rem; margin-bottom:20px; }
   .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
 
   /* Özel onay modal */
