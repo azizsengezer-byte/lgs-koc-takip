@@ -1,3 +1,64 @@
+// ── Wellness kayıt fonksiyonları ─────────────────────────────
+
+function saveWellnessDay(field, value, btn) {
+  const { myUid, storageKey, data } = _getW();
+  const todayKey = getTodayKey();
+  if (!data.days) data.days = {};
+  if (!data.days[todayKey]) data.days[todayKey] = {};
+  data.days[todayKey][field] = value;
+  _syncW(myUid, storageKey, data);
+
+  // Buton aktif stilini güncelle
+  if (btn) {
+    const parent = btn.parentElement;
+    if (parent) {
+      parent.querySelectorAll('button').forEach(b => {
+        b.style.borderColor = 'var(--border)';
+        b.style.background = 'transparent';
+        const span = b.querySelector('span:last-child');
+        if (span) span.style.color = 'var(--text2)';
+      });
+      // Aktif butonu vurgula
+      const color = btn.style.borderColor || 'var(--accent)';
+      btn.style.borderColor = 'var(--accent)';
+      btn.style.background = 'var(--accent)22';
+    }
+  }
+
+  // Wellness bildirimleri kontrol et
+  if (field === 'kaygi' || field === 'mood') {
+    const todayData = data.days[todayKey];
+    checkAllWellnessNotifications(myUid, data, todayKey);
+  }
+}
+
+function saveWellnessField(field, value) {
+  const { myUid, storageKey, data } = _getW();
+  data[field] = value;
+  _syncW(myUid, storageKey, data);
+}
+
+function saveWellnessAll(btn) {
+  const { myUid, storageKey, data } = _getW();
+  const todayKey = getTodayKey();
+  if (!data.days) data.days = {};
+  if (!data.days[todayKey]) data.days[todayKey] = {};
+
+  // Tüm input değerlerini topla
+  const fields = ['wellnessEnerji','wellnessKaygi','wellnessOdak'];
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const fieldName = id.replace('wellness','').toLowerCase();
+      data.days[todayKey][fieldName] = el.value;
+    }
+  });
+
+  _syncW(myUid, storageKey, data);
+  if (btn) { btn.textContent = '✅ Kaydedildi!'; setTimeout(()=>{ btn.textContent = '💾 Kaydet'; }, 1500); }
+  checkBadges();
+}
+
 // ============================================================
 // LGS SORU DAĞILIM VERİSİ (2021-2025)
 // ============================================================
