@@ -127,14 +127,27 @@
 
 <!-- PROFİL GÖRÜNTÜLEME MODAL -->
 <div class="modal-overlay" id="viewProfileModal">
-  <div class="modal" style="max-width:340px">
-    <div style="text-align:center;padding:8px 0 16px">
-      <div id="vpPhoto" style="width:80px;height:80px;border-radius:50%;margin:8px auto 20px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;background:var(--accent)22;color:var(--accent);position:relative;overflow:visible"></div>
+  <div class="modal" style="max-width:360px">
+    <div style="text-align:center;padding:8px 0 12px">
+      <div id="vpPhoto" style="width:80px;height:80px;border-radius:50%;margin:8px auto 16px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;background:var(--accent)22;color:var(--accent);position:relative;overflow:visible"></div>
       <div id="vpName" style="font-size:1.3rem;font-weight:900;margin-bottom:4px"></div>
-      <div id="vpRole" style="font-size:0.82rem;color:var(--accent);font-weight:600;margin-bottom:16px"></div>
-      <div id="vpDetails" style="text-align:left;font-size:0.83rem;color:var(--text2);line-height:2"></div>
+      <div id="vpRole" style="font-size:0.82rem;color:var(--accent);font-weight:600;margin-bottom:12px"></div>
     </div>
-    <button class="btn btn-outline" style="width:100%" onclick="closeModal('viewProfileModal')">Kapat</button>
+    <!-- Sekmeler -->
+    <div style="display:flex;border-bottom:1.5px solid var(--border);margin-bottom:14px">
+      <button id="vpTabInfo" onclick="vpSwitchTab('info')" style="flex:1;padding:8px;background:none;border:none;color:var(--accent);font-weight:700;font-size:0.82rem;cursor:pointer;border-bottom:2px solid var(--accent)">📋 Bilgi</button>
+      <button id="vpTabBadges" onclick="vpSwitchTab('badges')" style="flex:1;padding:8px;background:none;border:none;color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer;border-bottom:2px solid transparent">🏆 Rozetler</button>
+    </div>
+    <div id="vpTabInfoContent">
+      <div id="vpDetails" style="text-align:left;font-size:0.83rem;color:var(--text2);line-height:2;margin-bottom:8px"></div>
+    </div>
+    <div id="vpTabBadgesContent" style="display:none">
+      <div id="vpBadgeGrid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:60px;padding:4px 0 8px">
+        <div style="color:var(--text2);font-size:0.8rem;padding:20px">Yükleniyor...</div>
+      </div>
+      <div id="vpBadgeCount" style="text-align:center;font-size:0.75rem;color:var(--text2);margin-bottom:8px"></div>
+    </div>
+    <button class="btn btn-outline" style="width:100%;margin-top:4px" onclick="closeModal('viewProfileModal')">Kapat</button>
   </div>
 </div>
 
