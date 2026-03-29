@@ -71,11 +71,12 @@ function maceraYakitTanki() {
   const ekranSosyal = parseFloat(today.ekranSosyal || 0);
   const toplamEkran = ekranOnline + ekranSosyal;
 
-  // Formül
-  const uykuPuan   = Math.min(30, Math.round((uyku / 8) * 30));
-  const enerjiPuan = Math.min(30, Math.round((enerji / 10) * 30));
-  const ekranKayip = Math.min(40, Math.round(toplamEkran * 4));
-  const tank       = Math.max(0, Math.min(100, uykuPuan + enerjiPuan - ekranKayip));
+  // Formül: uyku(0-40) + enerji(0-40) - ekran kaybı → /80 → %100
+  const uykuPuan   = Math.min(40, Math.round((uyku / 8) * 40));
+  const enerjiPuan = Math.min(40, Math.round((enerji / 10) * 40));
+  const ekranKayip = Math.min(40, Math.round(ekranSosyal * 6 + ekranOnline * 3));
+  const ham        = uykuPuan + enerjiPuan - ekranKayip;
+  const tank       = Math.max(0, Math.min(100, Math.round(ham / 80 * 100)));
 
   // Renk ve mesaj
   const { renk, renk2, mesaj, durum } = tank >= 70
@@ -116,19 +117,20 @@ function maceraYakitTanki() {
 
       <!-- Katkı kartları -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:${durum==='dusuk'&&!veriYok?'14px':'0'}">
-        <div style="background:${uykuPuan>=20?'rgba(29,158,117,0.12)':'var(--surface2)'};border-radius:9px;padding:10px;text-align:center">
+        <div style="background:${uykuPuan>=28?'rgba(29,158,117,0.12)':'var(--surface2)'};border-radius:9px;padding:10px;text-align:center">
           <div style="font-size:0.7rem;color:var(--text2);margin-bottom:3px">Uyku</div>
-          <div style="font-size:1.1rem;font-weight:800;color:${uykuPuan>=20?'#1D9E75':'var(--text)'}">${uyku>0?uyku+' sa':'--'}</div>
-          <div style="font-size:0.65rem;color:${uykuPuan>=20?'#1D9E75':'var(--text2)'};margin-top:2px">${veriYok?'':'+'+(uykuPuan)+' yakıt'}</div>
+          <div style="font-size:1.1rem;font-weight:800;color:${uykuPuan>=28?'#1D9E75':'var(--text)'}">${uyku>0?uyku+' sa':'--'}</div>
+          <div style="font-size:0.65rem;color:${uykuPuan>=28?'#1D9E75':'var(--text2)'};margin-top:2px">${veriYok?'':'+'+(uykuPuan)+' yakıt'}</div>
         </div>
-        <div style="background:${enerjiPuan>=20?'rgba(29,158,117,0.12)':'var(--surface2)'};border-radius:9px;padding:10px;text-align:center">
+        <div style="background:${enerjiPuan>=28?'rgba(29,158,117,0.12)':'var(--surface2)'};border-radius:9px;padding:10px;text-align:center">
           <div style="font-size:0.7rem;color:var(--text2);margin-bottom:3px">Enerji</div>
-          <div style="font-size:1.1rem;font-weight:800;color:${enerjiPuan>=20?'#1D9E75':'var(--text)'}">${enerji}/10</div>
-          <div style="font-size:0.65rem;color:${enerjiPuan>=20?'#1D9E75':'var(--text2)'};margin-top:2px">${veriYok?'':'+'+(enerjiPuan)+' yakıt'}</div>
+          <div style="font-size:1.1rem;font-weight:800;color:${enerjiPuan>=28?'#1D9E75':'var(--text)'}">${enerji}/10</div>
+          <div style="font-size:0.65rem;color:${enerjiPuan>=28?'#1D9E75':'var(--text2)'};margin-top:2px">${veriYok?'':'+'+(enerjiPuan)+' yakıt'}</div>
         </div>
         <div style="background:${toplamEkran>5?'rgba(226,75,74,0.12)':'var(--surface2)'};border-radius:9px;padding:10px;text-align:center">
           <div style="font-size:0.7rem;color:var(--text2);margin-bottom:3px">Ekran</div>
           <div style="font-size:1.1rem;font-weight:800;color:${toplamEkran>5?'#E24B4A':'var(--text)'}">${toplamEkran>0?toplamEkran+' sa':'--'}</div>
+          <div style="font-size:0.6rem;color:var(--text2);margin-top:1px">${ekranSosyal>0?ekranSosyal+'sa sosyal':''}</div>
           <div style="font-size:0.65rem;color:${toplamEkran>5?'#E24B4A':'var(--text2)'};margin-top:2px">${veriYok||toplamEkran===0?'':'-'+(ekranKayip)+' sızıntı'}</div>
         </div>
       </div>
