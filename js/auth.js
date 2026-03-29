@@ -16,30 +16,15 @@ function showRegister() {
 async function doLogin() {
   const email = document.getElementById('loginUser').value.trim();
   const pass = document.getElementById('loginPass').value;
-  const secilenRol = document.getElementById('roleTeacher').classList.contains('active') ? 'teacher' : 'student';
   const errEl = document.getElementById('loginError');
   const btn = document.getElementById('loginBtn');
   errEl.style.display = 'none';
   if (!email || !pass) { errEl.textContent = 'E-posta ve şifre giriniz.'; errEl.style.display='block'; return; }
   btn.textContent = 'Giriş yapılıyor...'; btn.disabled = true;
   try {
-    // Önce giriş yap
-    const cred = await auth.signInWithEmailAndPassword(email, pass);
-    // Firestore'dan rolü kontrol et
-    const doc = await db.collection('users').doc(cred.user.uid).get();
-    if (doc.exists) {
-      const gercekRol = doc.data().role || 'student';
-      if (gercekRol !== secilenRol) {
-        // Rol uyuşmuyor — sessizce çıkış yap, butonu resetle
-        const rolAd = gercekRol === 'teacher' ? 'Öğretmen' : 'Öğrenci';
-        auth.signOut(); // await YOK — onAuthStateChanged'i beklemiyoruz
-        btn.textContent = 'Giriş Yap →'; btn.disabled = false;
-        errEl.textContent = `Bu hesap bir ${rolAd} hesabıdır. Lütfen doğru rolü seçin.`;
-        errEl.style.display = 'block';
-        return;
-      }
-    }
-    // Rol doğru → onAuthStateChanged devralır, buton zaten resetlenecek
+    // Giriş yap — rol kontrolü yok, Firestore'daki gerçek role göre çalışır
+    await auth.signInWithEmailAndPassword(email, pass);
+    // onAuthStateChanged devralır
   } catch(e) {
     btn.textContent = 'Giriş Yap →'; btn.disabled = false;
     const msgs = {
