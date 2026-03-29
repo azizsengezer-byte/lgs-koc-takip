@@ -48,7 +48,7 @@
       </div>
     </div>
     <div class="login-sub">Koçluk &amp; Takip Sistemi</div>
-    <div class="role-btns">
+    <div class="role-btns" style="display:none">
       <button class="role-btn active" onclick="selectRole('teacher')" id="roleTeacher">👨‍🏫 Öğretmen</button>
       <button class="role-btn" onclick="selectRole('student')" id="roleStudent">🎒 Öğrenci</button>
     </div>
@@ -361,33 +361,33 @@
       <div style="font-size:0.82rem;color:var(--text2);margin-bottom:12px">Her dersin doğru ve yanlış sayısını gir:</div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <div style="width:90px;font-size:0.82rem;font-weight:700;color:var(--turkish)">📖 Türkçe</div>
-        <input class="form-input" type="number" placeholder="Doğru" min="0" id="deneme_d_Türkçe" style="flex:1;padding:8px">
-        <input class="form-input" type="number" placeholder="Yanlış" min="0" id="deneme_y_Türkçe" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Doğru" min="0" max="20" id="deneme_d_Türkçe" oninput="denemeSoruKontrol('Türkçe')" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Yanlış" min="0" max="20" id="deneme_y_Türkçe" oninput="denemeSoruKontrol('Türkçe')" style="flex:1;padding:8px">
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <div style="width:90px;font-size:0.82rem;font-weight:700;color:var(--math)">📐 Matematik</div>
-        <input class="form-input" type="number" placeholder="Doğru" min="0" id="deneme_d_Matematik" style="flex:1;padding:8px">
-        <input class="form-input" type="number" placeholder="Yanlış" min="0" id="deneme_y_Matematik" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Doğru" min="0" max="20" id="deneme_d_Matematik" oninput="denemeSoruKontrol('Matematik')" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Yanlış" min="0" max="20" id="deneme_y_Matematik" oninput="denemeSoruKontrol('Matematik')" style="flex:1;padding:8px">
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <div style="width:90px;font-size:0.82rem;font-weight:700;color:var(--science)">🔬 Fen</div>
-        <input class="form-input" type="number" placeholder="Doğru" min="0" id="deneme_d_Fen Bilimleri" style="flex:1;padding:8px">
-        <input class="form-input" type="number" placeholder="Yanlış" min="0" id="deneme_y_Fen Bilimleri" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Doğru" min="0" max="20" id="deneme_d_Fen Bilimleri" oninput="denemeSoruKontrol('Fen Bilimleri')" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Yanlış" min="0" max="20" id="deneme_y_Fen Bilimleri" oninput="denemeSoruKontrol('Fen Bilimleri')" style="flex:1;padding:8px">
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <div style="width:90px;font-size:0.82rem;font-weight:700;color:var(--history)">🏛️ İnkılap</div>
-        <input class="form-input" type="number" placeholder="Doğru" min="0" id="deneme_d_İnkılap Tarihi" style="flex:1;padding:8px">
-        <input class="form-input" type="number" placeholder="Yanlış" min="0" id="deneme_y_İnkılap Tarihi" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Doğru" min="0" max="10" id="deneme_d_İnkılap Tarihi" oninput="denemeSoruKontrol('İnkılap Tarihi')" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Yanlış" min="0" max="10" id="deneme_y_İnkılap Tarihi" oninput="denemeSoruKontrol('İnkılap Tarihi')" style="flex:1;padding:8px">
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <div style="width:90px;font-size:0.82rem;font-weight:700;color:var(--religion)">☪️ Din</div>
-        <input class="form-input" type="number" placeholder="Doğru" min="0" id="deneme_d_Din Kültürü" style="flex:1;padding:8px">
-        <input class="form-input" type="number" placeholder="Yanlış" min="0" id="deneme_y_Din Kültürü" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Doğru" min="0" max="10" id="deneme_d_Din Kültürü" oninput="denemeSoruKontrol('Din Kültürü')" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Yanlış" min="0" max="10" id="deneme_y_Din Kültürü" oninput="denemeSoruKontrol('Din Kültürü')" style="flex:1;padding:8px">
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
         <div style="width:90px;font-size:0.82rem;font-weight:700;color:var(--english)">🌍 İngilizce</div>
-        <input class="form-input" type="number" placeholder="Doğru" min="0" id="deneme_d_İngilizce" style="flex:1;padding:8px">
-        <input class="form-input" type="number" placeholder="Yanlış" min="0" id="deneme_y_İngilizce" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Doğru" min="0" max="10" id="deneme_d_İngilizce" oninput="denemeSoruKontrol('İngilizce')" style="flex:1;padding:8px">
+        <input class="form-input" type="number" placeholder="Yanlış" min="0" max="10" id="deneme_y_İngilizce" oninput="denemeSoruKontrol('İngilizce')" style="flex:1;padding:8px">
       </div>
       <div style="font-size:0.75rem;color:var(--text2);margin-top:4px">Boş bıraktığın dersler hesaba katılmaz.</div>
     </div>
