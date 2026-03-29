@@ -82,6 +82,7 @@ function renderMobileNav() {
     {id:'daily-entry',icon:'✏️',label:'Giriş Yap'},
     {id:'macera',icon:'🗺️',label:'Macera'},
     {id:'messages',icon:'💬',label:'Mesaj'},
+    {id:'my-tasks',icon:'📋',label:'Ödevler'},
   ];
   const items = currentRole==='teacher' ? teacherNav : studentNav;
   const unreadMsg = (currentRole==='teacher' ? teacherNotifs : studentNotifs).filter(n=>!n.read&&n.type==='message').length;
