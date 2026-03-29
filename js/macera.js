@@ -67,14 +67,12 @@ function maceraYakitTanki() {
 
   const uyku   = parseFloat(today.uyku || 0);
   const enerji = parseInt(today.enerji || 5);
-  const ekranOnline = parseFloat(today.ekranOnline || 0);
   const ekranSosyal = parseFloat(today.ekranSosyal || 0);
-  const toplamEkran = ekranOnline + ekranSosyal;
 
-  // Formül: uyku(0-40) + enerji(0-40) - ekran kaybı → /80 → %100
+  // Formül: uyku(0-40) + enerji(0-40) - sosyal medya sızıntısı → /80 → %100
   const uykuPuan   = Math.min(40, Math.round((uyku / 8) * 40));
   const enerjiPuan = Math.min(40, Math.round((enerji / 10) * 40));
-  const ekranKayip = Math.min(40, Math.round(ekranSosyal * 6 + ekranOnline * 3));
+  const ekranKayip = Math.min(40, Math.round(ekranSosyal * 6));
   const ham        = uykuPuan + enerjiPuan - ekranKayip;
   const tank       = Math.max(0, Math.min(100, Math.round(ham / 80 * 100)));
 
@@ -85,7 +83,7 @@ function maceraYakitTanki() {
     ? { renk: '#BA7517', renk2: '#EF9F27', mesaj: 'Orta kapasite', durum: 'orta' }
     : { renk: '#E24B4A', renk2: '#F09595', mesaj: 'Düşük kapasite — dinlenmeni öneririm', durum: 'dusuk' };
 
-  const veriYok = uyku === 0 && enerji === 5 && toplamEkran === 0;
+  const veriYok = uyku === 0 && enerji === 5 && ekranSosyal === 0;
 
   return `
     <div class="card" style="margin-bottom:14px">
@@ -127,11 +125,11 @@ function maceraYakitTanki() {
           <div style="font-size:1.1rem;font-weight:800;color:${enerjiPuan>=28?'#1D9E75':'var(--text)'}">${enerji}/10</div>
           <div style="font-size:0.65rem;color:${enerjiPuan>=28?'#1D9E75':'var(--text2)'};margin-top:2px">${veriYok?'':'+'+(enerjiPuan)+' yakıt'}</div>
         </div>
-        <div style="background:${toplamEkran>5?'rgba(226,75,74,0.12)':'var(--surface2)'};border-radius:9px;padding:10px;text-align:center">
+        <div style="background:${ekranSosyal>5?'rgba(226,75,74,0.12)':'var(--surface2)'};border-radius:9px;padding:10px;text-align:center">
           <div style="font-size:0.7rem;color:var(--text2);margin-bottom:3px">Ekran</div>
-          <div style="font-size:1.1rem;font-weight:800;color:${toplamEkran>5?'#E24B4A':'var(--text)'}">${toplamEkran>0?toplamEkran+' sa':'--'}</div>
+          <div style="font-size:1.1rem;font-weight:800;color:${ekranSosyal>5?'#E24B4A':'var(--text)'}">${ekranSosyal>0?ekranSosyal+' sa':'--'}</div>
           <div style="font-size:0.6rem;color:var(--text2);margin-top:1px">${ekranSosyal>0?ekranSosyal+'sa sosyal':''}</div>
-          <div style="font-size:0.65rem;color:${toplamEkran>5?'#E24B4A':'var(--text2)'};margin-top:2px">${veriYok||toplamEkran===0?'':'-'+(ekranKayip)+' sızıntı'}</div>
+          <div style="font-size:0.65rem;color:${ekranSosyal>5?'#E24B4A':'var(--text2)'};margin-top:2px">${veriYok||ekranSosyal===0?'':'-'+(ekranKayip)+' sızıntı'}</div>
         </div>
       </div>
 
