@@ -6,7 +6,7 @@ const conversations = [];
 
 function convId(uid1, uid2) { return [uid1,uid2].sort().join('_'); }
 
-function messagesPage(role) {
+async function messagesPage(role) {
   const isTeacher = role === 'teacher';
   const myData = window.currentUserData || {};
   const myUid = myData.uid || '';
@@ -18,6 +18,31 @@ function messagesPage(role) {
   } else {
     const tId = myData.teacherId || '';
     if (tId) partners = [{ uid: tId, name: myData.teacherName || 'Koçum', color: '#6c63ff', photo: myData.teacherPhoto||'' }];
+  }
+
+  // Öğrenci ise okul arkadaşlarını da yükle
+  if (!isTeacher) {
+    const mySchool = myData.school || '';
+    const myUid2 = myData.uid || '';
+    if (mySchool) {
+      try {
+        const snap = await db.collection('users')
+          .where('role','==','student')
+          .where('school','==',mySchool)
+          .get();
+        snap.forEach(d => {
+          if (d.id !== myUid2) {
+            const s = d.data();
+            if (!partners.find(p => p.uid === d.id)) {
+              partners.push({
+                uid: d.id, name: s.name, color: s.color||'#6c63ff',
+                photo: s.photo||'', isSchoolMate: true
+              });
+            }
+          }
+        });
+      } catch(e) {}
+    }
   }
 
   if (partners.length === 0) {
@@ -34,18 +59,21 @@ function messagesPage(role) {
     unreadByPartner[n.fromUid] = (unreadByPartner[n.fromUid]||0)+1;
   });
 
-  const listHTML = partners.map(p => {
+  const kocPartners = partners.filter(p => !p.isSchoolMate);
+  const arkadaşPartners = partners.filter(p => p.isSchoolMate);
+
+  const partnerListHTML = (pList) => pList.map(p => {
     const cid = convId(myUid, p.uid);
     const lastMsgs = chatMessages[cid] || [];
     const last = lastMsgs[lastMsgs.length - 1];
     const unread = unreadByPartner[p.uid]||0;
     const avatarHTML = p.photo
-      ? `<img src="${p.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${p.uid}','${p.name}','${p.color}')">`
-      : `<div class="student-avatar" style="background:${p.color}22;color:${p.color};width:40px;height:40px;font-size:1rem;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${p.uid}','${p.name}','${p.color}')">${p.name[0]}</div>`;
+      ? `<img src="${p.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+      : `<div class="student-avatar" style="background:${p.color}22;color:${p.color};width:40px;height:40px;font-size:1rem;flex-shrink:0">${p.name[0]}</div>`;
     return `<div class="chat-list-item" onclick="switchChatTo('${p.uid}','${role}')">
       ${avatarHTML}
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:0.9rem">${p.name}</div>
+        <div style="font-weight:700;font-size:0.9rem">${p.name}${p.isSchoolMate?'<span style="font-size:0.65rem;color:var(--accent);margin-left:6px">🏫 Okul</span>':''}</div>
         <div style="font-size:0.75rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${last ? last.text.substring(0,30)+'…' : 'Henüz mesaj yok'}</div>
       </div>
       ${unread>0?`<span style="background:var(--accent2);color:#fff;font-size:0.65rem;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0">${unread}</span>`:'<span style="color:var(--text2);font-size:1rem">›</span>'}
@@ -134,7 +162,15 @@ function messagesPage(role) {
     <div class="chat-layout">
       <div class="${listClass}">
         <div class="chat-list-header">💬 Konuşmalar</div>
-        ${listHTML}
+        ${kocPartners.length > 0 ? `
+          <div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:6px 12px 2px;text-transform:uppercase;letter-spacing:0.06em">👨‍🏫 Koçum</div>
+          ${partnerListHTML(kocPartners).join('')}
+        ` : ''}
+        ${arkadaşPartners.length > 0 ? `
+          <div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:10px 12px 2px;text-transform:uppercase;letter-spacing:0.06em">🏫 Okul Arkadaşları</div>
+          ${partnerListHTML(arkadaşPartners).join('')}
+        ` : (!isTeacher && (window.currentUserData||{}).school ? '<div style="padding:12px;font-size:0.82rem;color:var(--text2)">Aynı okuldaki başka öğrenci yok</div>' : '')}
+        ${isTeacher ? partnerListHTML(kocPartners).join('') : ''}
       </div>
       <div class="${winClass}">
         ${chatWindowHTML}
@@ -216,6 +252,24 @@ async function sendMessage(role) {
   if (!text || !activeChat) return;
   const myData = window.currentUserData || {};
   const myUid = myData.uid || '';
+
+  // Okul arkadaşlarıyla günlük 50 mesaj limiti
+  const partnerIsSchoolMate = (() => {
+    // Koç değilse ve partner teacherId değilse okul arkadaşı
+    if (currentRole === 'teacher') return false;
+    return activeChat !== myData.teacherId;
+  })();
+
+  if (partnerIsSchoolMate) {
+    const todayKey = getTodayKey();
+    const limitKey = `msgLimit_${myUid}_${activeChat}_${todayKey}`;
+    const count = parseInt(localStorage.getItem(limitKey) || '0');
+    if (count >= 50) {
+      showToast('⚠️', 'Bugünlük 50 mesaj limitine ulaştın!');
+      return;
+    }
+    localStorage.setItem(limitKey, count + 1);
+  }
   const cId = convId(myUid, activeChat);
   const now = new Date();
   const time = now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
