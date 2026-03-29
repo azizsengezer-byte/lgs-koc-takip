@@ -1365,7 +1365,8 @@ function toggleKazanim(subject, idx, el) {
   const kList = kazanimlar[subject] || [];
   const done = kList.filter((_,i)=> kazanimDone[subject+i]).length;
   const pct = kList.length ? Math.round(done/kList.length*100) : 0;
-  showToast(kazanimDone[key]?'✅':'↩️', `${subject} — ${kList[idx]} ${kazanimDone[key]?'tamamlandı':'geri alındı'}`);
+  const kLabel = typeof kList[idx] === 'object' ? kList[idx].unite : kList[idx];
+  showToast(kazanimDone[key]?'✅':'↩️', `${subject} — ${kLabel} ${kazanimDone[key]?'tamamlandı':'geri alındı'}`);
 }
 
 /* =================== PDF EXPORT =================== */

@@ -336,12 +336,12 @@ function studentKazanimlar() {
           </div>
           <div class="bar-bg" style="margin-bottom:14px"><div class="bar-fill bg-${s.cls}" style="width:${pct}%"></div></div>
           <div class="kazanim-grid">
-            ${kList.map((k,i)=>`
+            ${kList.map((k,i)=>{ const label = typeof k === 'object' ? k.unite : k; return `
               <div class="kazanim-item ${kazanimDone[s.name+i]?'done':''}" onclick="toggleKazanim('${s.name}',${i},this)">
                 <div class="kazanim-check">${kazanimDone[s.name+i]?'✓':''}</div>
-                <span>${k}</span>
+                <span>${label}</span>
               </div>
-            `).join('')}
+            `; }).join('')}
           </div>
         </div>
       `;
