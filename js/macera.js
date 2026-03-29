@@ -7,6 +7,8 @@ function maceraPage() {
     <div class="page-title">🗺️ Macera</div>
     <div class="page-sub">Gelişimini oyun gibi takip et</div>
 
+    ${maceraHarita()}
+
     ${maceraEjderha()}
 
     ${maceraYakitTanki()}
