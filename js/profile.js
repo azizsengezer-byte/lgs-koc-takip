@@ -1,3 +1,55 @@
+
+// Deneme soru limiti kontrolü
+function denemeSoruKontrol(ders) {
+  const limler = {
+    'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,
+    'İnkılap Tarihi':10,'Din Kültürü':10,'İngilizce':10
+  };
+  const max = limler[ders] || 20;
+  const dEl = document.getElementById('deneme_d_' + ders);
+  const yEl = document.getElementById('deneme_y_' + ders);
+  if (!dEl || !yEl) return;
+
+  const d = parseInt(dEl.value) || 0;
+  const y = parseInt(yEl.value) || 0;
+  const toplam = d + y;
+
+  // Toplam max'ı aşıyorsa kırmızı yap
+  const asim = toplam > max;
+  dEl.style.borderColor = asim ? '#E24B4A' : '';
+  yEl.style.borderColor = asim ? '#E24B4A' : '';
+  dEl.style.color = asim ? '#E24B4A' : '';
+  yEl.style.color = asim ? '#E24B4A' : '';
+
+  // Kaydet butonunu devre dışı bırak
+  const kaydetBtn = document.querySelector('#addEntryModal .btn-primary');
+  if (!kaydetBtn) return;
+
+  // Tüm derslerde kontrol et
+  const tumLimler = {
+    'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,
+    'İnkılap Tarihi':10,'Din Kültürü':10,'İngilizce':10
+  };
+  let herhangiAsim = false;
+  Object.entries(tumLimler).forEach(([d2, m]) => {
+    const dI = document.getElementById('deneme_d_' + d2);
+    const yI = document.getElementById('deneme_y_' + d2);
+    if (!dI || !yI) return;
+    if ((parseInt(dI.value)||0) + (parseInt(yI.value)||0) > m) herhangiAsim = true;
+  });
+
+  if (herhangiAsim) {
+    kaydetBtn.disabled = true;
+    kaydetBtn.style.opacity = '0.5';
+    kaydetBtn.title = 'Soru sayısı limiti aşıldı!';
+    showToast('⚠️', `${ders} denemede en fazla ${max} soru olabilir!`);
+  } else {
+    kaydetBtn.disabled = false;
+    kaydetBtn.style.opacity = '';
+    kaydetBtn.title = '';
+  }
+}
+
 function profilePage() {
   const user = auth.currentUser;
   const name = document.getElementById('menuName')?.textContent;
@@ -1051,6 +1103,7 @@ function saveEntry() {
       db.collection('notifications').add({
         toUid: teacherId, fromUid: user.uid,
         text: `🎯 ${studentName} deneme girdi: "${examTitle}" (${saved} ders)`,
+        examTitle: examTitle,
         type: 'entry', read: false, time: time2,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(()=>{});

@@ -1,3 +1,44 @@
+
+function kocProfilGoster() {
+  const myData = window.currentUserData || {};
+  const teacherId = myData.teacherId;
+  const teacherName = myData.teacherName || 'Koçum';
+  const teacherPhoto = myData.teacherPhoto || '';
+
+  if (!teacherId) {
+    showToast('⚠️', 'Koç bilgisi bulunamadı');
+    return;
+  }
+
+  // Basit profil modalı
+  const existing = document.getElementById('kocProfilModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'kocProfilModal';
+  modal.className = 'modal-overlay';
+  modal.style.display = 'flex';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:320px;text-align:center">
+      <div style="margin-bottom:16px">
+        ${teacherPhoto
+          ? `<img src="${teacherPhoto}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin:0 auto 12px;display:block">`
+          : `<div style="width:80px;height:80px;border-radius:50%;background:var(--accent)22;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin:0 auto 12px">👨‍🏫</div>`}
+        <div style="font-size:1.3rem;font-weight:900">${teacherName}</div>
+        <div style="font-size:0.82rem;color:var(--accent);font-weight:600;margin-top:4px">Koç Öğretmenim</div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:8px" onclick="showPage('messages')">
+        💬 Mesaj Gönder
+      </button>
+      <button class="btn btn-outline" style="width:100%" onclick="document.getElementById('kocProfilModal').remove()">
+        Kapat
+      </button>
+    </div>
+  `;
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
 function renderStudentPage(id, el) {
   if(id==='dashboard') el.innerHTML = studentDashboard();
   else if(id==='daily-entry') el.innerHTML = studentDailyEntry();
@@ -157,7 +198,7 @@ function studentDashboard() {
 
     <!-- Koç Kartı -->
     ${(window.currentUserData||{}).teacherId ? `
-    <div class="card" style="margin-top:16px;cursor:pointer" onclick="showUserProfile('${(window.currentUserData||{}).teacherId}','${(window.currentUserData||{}).teacherName||'Koçum'}','#6c63ff')">
+    <div class="card" style="margin-top:16px;cursor:pointer" onclick="kocProfilGoster()">
       <div style="display:flex;align-items:center;gap:14px">
         ${(window.currentUserData||{}).teacherPhoto
           ? `<img src="${(window.currentUserData||{}).teacherPhoto}" style="width:52px;height:52px;border-radius:50%;object-fit:cover">`
