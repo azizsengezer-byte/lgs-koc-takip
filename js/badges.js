@@ -998,6 +998,7 @@ async function checkBadges() {
 
 // ── Konfeti + kart animasyonu ───────────────────────────────
 function showBadgeUnlocked(badge) {
+  rozetBildirimiGonder(badge);
   return new Promise(resolve=>{
     const catColors={akademik:'#f9ca24',brans:'#6c63ff',psikoloji:'#e879f9',deneme:'#34d399'};
     const cc=catColors[badge.cat]||'#6c63ff';

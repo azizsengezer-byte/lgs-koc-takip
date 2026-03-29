@@ -29,7 +29,9 @@ function saveWellnessDay(field, value, btn) {
   if (field === 'kaygi' || field === 'mood') {
     const todayData = data.days[todayKey];
     checkAllWellnessNotifications(myUid, data, todayKey);
+    if (field === 'kaygi' && parseInt(value) >= 8) kaygiBildirimiGonder(parseInt(value));
   }
+  if (field === 'uyku') uykuBildirimiGonder(parseFloat(value)||0);
 }
 
 function saveWellnessField(field, value) {

@@ -276,6 +276,7 @@ auth.onAuthStateChanged(async (user) => {
       if (_urlStudent) selectedStudentName = decodeURIComponent(_urlStudent);
       showPage(_startPage);
       startNotifListener();
+      setTimeout(bildirimKontrolleriniCalistir, 3000);
 
       // Öğrenci sınıf seçmemişse sor
       if (currentRole==='student' && !data.classroom) {
