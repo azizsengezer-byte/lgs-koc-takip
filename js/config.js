@@ -80,8 +80,8 @@ function renderMobileNav() {
   const studentNav = [
     {id:'dashboard',icon:'🏠',label:'Ana Sayfa'},
     {id:'daily-entry',icon:'✏️',label:'Giriş Yap'},
+    {id:'macera',icon:'🗺️',label:'Macera'},
     {id:'messages',icon:'💬',label:'Mesaj'},
-    {id:'my-tasks',icon:'📋',label:'Ödevler'},
   ];
   const items = currentRole==='teacher' ? teacherNav : studentNav;
   const unreadMsg = (currentRole==='teacher' ? teacherNotifs : studentNotifs).filter(n=>!n.read&&n.type==='message').length;
@@ -270,7 +270,7 @@ auth.onAuthStateChanged(async (user) => {
       const _urlPage = _urlParams.get('p');
       const _urlStudent = _urlParams.get('s');
       const _safePages = ['dashboard','students','student-detail','tasks-teacher','messages','notifs',
-        'daily-entry','my-analysis','kazanimlar','my-tasks','wellness','lgs-dagilim','psych-report'];
+        'daily-entry','my-analysis','kazanimlar','my-tasks','wellness','lgs-dagilim','psych-report','macera'];
       const _startPage = _safePages.includes(_urlPage) ? _urlPage : 'dashboard';
       if (_urlStudent) selectedStudentName = decodeURIComponent(_urlStudent);
       showPage(_startPage);

@@ -11,6 +11,7 @@ function renderStudentPage(id, el) {
       _wellnessDateGuard();
     });
   }
+  else if(id==='macera') el.innerHTML = maceraPage();
   else if(id==='lgs-dagilim') el.innerHTML = lgsDagilimPage();
   else if(id==='all-denemeler') el.innerHTML = allDenemelerPage();
   else if(id==='messages') {
