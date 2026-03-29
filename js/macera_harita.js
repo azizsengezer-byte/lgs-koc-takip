@@ -60,19 +60,22 @@ function haritaGetirVeri() {
   Object.keys(dersMap).forEach(ders => {
     const entries = soruEntries.filter(e => e.subject === ders);
     const toplamD = entries.reduce((a,e) => a+(e.correct||0),0);
-    const toplamY = entries.reduce((a,e) => a+(e.wrong||0),0);
     const toplamQ = entries.reduce((a,e) => a+(e.questions||0),0);
     const isabet = toplamQ > 0 ? Math.round(toplamD/toplamQ*100) : 0;
 
-    // Konu tamamlama: kazanımlar listesinden
+    // Tamamlanan: çözülen benzersiz gün sayısı / hedef (7 gün = %100)
+    // Veya toplam soru / hedef soru sayısı
+    const hedef = toplam[ders] * 20; // her konu için 20 soru hedefi
+    const tamamlananPct = Math.min(1, toplamQ / Math.max(hedef, 1));
     const kazList = kazanimlar[ders] || [];
-    const tamamlananSayisi = kazList.filter((_,i) => kazanimDone[ders+i]).length;
+    const toplamKonu = kazList.length || toplam[ders] || 10;
+    const tamamlanan = Math.round(tamamlananPct * toplamKonu);
 
     result[ders] = {
       ...dersMap[ders],
       ad: ders,
-      toplamKonu: kazList.length || toplam[ders] || 10,
-      tamamlanan: tamamlananSayisi,
+      toplamKonu,
+      tamamlanan,
       isabet,
       toplamSoru: toplamQ,
     };
@@ -119,62 +122,112 @@ function haritaCiz(canvas, img, veri) {
   ctx.clearRect(0, 0, W, H);
 
   HARITA_ADALAR.forEach(ada => {
-    const d = veri[ada.ad === 'İnkılap' ? 'İnkılap Tarihi' : ada.ad] || {};
+    const dAdi = ada.ad === 'İnkılap' ? 'İnkılap Tarihi' : ada.ad;
+    const d = veri[dAdi] || {};
     const pct = d.toplamKonu > 0 ? d.tamamlanan / d.toplamKonu : 0;
     const sisYog = Math.max(0, 1 - pct);
+    if (sisYog < 0.04) return;
+
     const cx = ada.cx * W, cy = ada.cy * H;
     const rx = ada.rx * W, ry = ada.ry * H;
-
-    if (sisYog < 0.05) return; // Tamamen açık
-
-    // Sis rengi — düşük isabet ise kırmızımsı
     const dusukIsabet = d.isabet > 0 && d.isabet < 65;
-    const sisBaz = dusukIsabet ? 'rgba(80,0,0,' : 'rgba(20,20,40,';
+    const t = _haritaT;
 
-    // Ana sis ellipsi
     ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-    ctx.fillStyle = sisBaz + (sisYog * 0.82) + ')';
-    ctx.fill();
 
-    // Hareketli sis katmanları
-    for (let j = 0; j < 5; j++) {
-      const ang = (j / 5) * Math.PI * 2 + _haritaT / 150 + j * 0.8;
-      const drift = Math.sin(_haritaT / 90 + j * 2);
-      const fx = cx + Math.cos(ang) * rx * 0.45 + drift * 5;
-      const fy = cy + Math.sin(ang) * ry * 0.45 + drift * 4;
+    // Clip: sis sadece ada bölgesinde görünsün
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx * 1.05, ry * 1.05, 0, 0, Math.PI * 2);
+    ctx.clip();
+
+    // --- KATMAN 1: Koyu temel sis ---
+    const g1 = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
+    const baseAlpha = sisYog * 0.52;
+    const sisR = dusukIsabet ? '60,0,0' : '15,18,38';
+    g1.addColorStop(0,   `rgba(${sisR},${baseAlpha})`);
+    g1.addColorStop(0.6, `rgba(${sisR},${baseAlpha * 0.85})`);
+    g1.addColorStop(1,   `rgba(${sisR},0)`);
+    ctx.fillStyle = g1;
+    ctx.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);
+
+    // --- KATMAN 2: Yüzen bulut topakları ---
+    const bulutSayisi = 7;
+    for (let j = 0; j < bulutSayisi; j++) {
+      const speed1 = 0.004 + j * 0.0008;
+      const speed2 = 0.003 + j * 0.0006;
+      const baseAng = (j / bulutSayisi) * Math.PI * 2;
+      const ang = baseAng + t * speed1;
+      const wobble = Math.sin(t * 0.015 + j * 1.3) * 0.12;
+      const orbitR = 0.28 + wobble;
+      const bx = cx + Math.cos(ang) * rx * orbitR;
+      const by = cy + Math.sin(ang) * ry * orbitR * 0.85;
+      const br = rx * (0.32 + Math.sin(t * speed2 + j) * 0.05);
+      const pulse = 0.18 + Math.sin(t * 0.022 + j * 0.9) * 0.06;
+
+      const g2 = ctx.createRadialGradient(bx, by, 0, bx, by, br);
+      const bulutRenk = dusukIsabet ? '80,10,10' : '30,34,64';
+      g2.addColorStop(0,   `rgba(${bulutRenk},${sisYog * pulse})`);
+      g2.addColorStop(0.5, `rgba(${bulutRenk},${sisYog * pulse * 0.6})`);
+      g2.addColorStop(1,   `rgba(${bulutRenk},0)`);
+      ctx.fillStyle = g2;
       ctx.beginPath();
-      ctx.ellipse(fx, fy, rx * 0.42, ry * 0.38, ang / 4, 0, Math.PI * 2);
-      ctx.fillStyle = sisBaz + (sisYog * (0.28 + Math.sin(_haritaT / 70 + j) * 0.08)) + ')';
+      ctx.arc(bx, by, br, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Merkez yoğun sis
+    // --- KATMAN 3: Sis akış dalgaları ---
+    for (let j = 0; j < 3; j++) {
+      const waveAng = t * 0.008 + j * (Math.PI * 2 / 3);
+      const wx = cx + Math.cos(waveAng) * rx * 0.15;
+      const wy = cy + Math.sin(waveAng) * ry * 0.15;
+      const wR = rx * (0.55 + Math.sin(t * 0.012 + j * 2) * 0.08);
+      const wAlpha = sisYog * (0.1 + Math.sin(t * 0.018 + j) * 0.04);
+      const g3 = ctx.createRadialGradient(wx, wy, 0, wx, wy, wR);
+      const wRenk = dusukIsabet ? '90,20,20' : '40,44,80';
+      g3.addColorStop(0,   `rgba(${wRenk},${wAlpha})`);
+      g3.addColorStop(1,   `rgba(${wRenk},0)`);
+      ctx.fillStyle = g3;
+      ctx.beginPath();
+      ctx.arc(wx, wy, wR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // --- KATMAN 4: Kenarlardaki yoğun sis halkası ---
+    const edgeG = ctx.createRadialGradient(cx, cy, rx * 0.5, cx, cy, rx);
+    const edgeAlpha = sisYog * (0.35 + Math.sin(t * 0.025) * 0.06);
+    const edgeRenk = dusukIsabet ? '70,5,5' : '20,24,50';
+    edgeG.addColorStop(0,   `rgba(${edgeRenk},0)`);
+    edgeG.addColorStop(0.7, `rgba(${edgeRenk},${edgeAlpha * 0.5})`);
+    edgeG.addColorStop(1,   `rgba(${edgeRenk},${edgeAlpha})`);
+    ctx.fillStyle = edgeG;
     ctx.beginPath();
-    ctx.ellipse(cx, cy, rx * 0.55, ry * 0.55, 0, 0, Math.PI * 2);
-    ctx.fillStyle = sisBaz + (sisYog * 0.45) + ')';
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Kırmızı kenar — düşük isabet
-    if (dusukIsabet && sisYog > 0.2) {
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, rx + 3, ry + 3, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(255,50,50,${0.25 + Math.sin(_haritaT / 25) * 0.12})`;
-      ctx.lineWidth = 4;
-      ctx.stroke();
-    }
+    ctx.restore();
 
-    // Parlama — tam keşfedilince
-    if (pct >= 1) {
+    // --- Kırmızı tehlike halkası (düşük isabet) ---
+    if (dusukIsabet && sisYog > 0.15) {
+      ctx.save();
       ctx.beginPath();
-      ctx.ellipse(cx, cy, rx + 6, ry + 6, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = `${ada.renk}${Math.round((0.4 + Math.sin(_haritaT / 20) * 0.3) * 255).toString(16).padStart(2,'0')}`;
+      ctx.ellipse(cx, cy, rx + 2, ry + 2, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255,40,40,${0.2 + Math.sin(t * 0.04) * 0.1})`;
       ctx.lineWidth = 3;
       ctx.stroke();
+      ctx.restore();
     }
 
-    ctx.restore();
+    // --- Keşif parlaması (tamamen açılınca) ---
+    if (pct >= 1) {
+      ctx.save();
+      const glowAlpha = 0.35 + Math.sin(t * 0.05) * 0.2;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx + 5, ry + 5, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = ada.renk + Math.round(glowAlpha * 255).toString(16).padStart(2,'0');
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+    }
   });
 }
 
