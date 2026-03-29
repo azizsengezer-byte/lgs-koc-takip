@@ -89,10 +89,10 @@ function renderMobileNav() {
   const pendingTaskCount = currentRole==='student' ? tasks.filter(t=>!t.done).length : 0;
   nav.innerHTML = `<div class="mobile-nav-inner">${items.map(n=>{
     let badge = '';
-    if(n.id==='messages' && unreadMsg>0) badge=`<span style="position:absolute;top:-6px;right:-8px;background:var(--accent2);color:#fff;font-size:0.55rem;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 3px">${unreadMsg>9?'9+':unreadMsg}</span>`;
-    if(n.id==='my-tasks' && pendingTaskCount>0) badge=`<span style="position:absolute;top:2px;right:8px;background:#ff6584;color:#fff;font-size:0.55rem;font-weight:800;min-width:14px;height:14px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 3px">${pendingTaskCount>9?'9+':pendingTaskCount}</span>`;
+    if(n.id==='messages' && unreadMsg>0) badge=`<span class=\"nav-badge\">${unreadMsg>9?'9+':unreadMsg}</span>`;
+    if(n.id==='my-tasks' && pendingTaskCount>0) badge=`<span class=\"nav-badge\">${pendingTaskCount>9?'9+':pendingTaskCount}</span>`;
     return `<button class="mobile-nav-item ${currentPage===n.id?'active':''}" onclick="showPage('${n.id}')">
-      <span style="position:relative;display:inline-flex">${n.icon}${badge}</span><span>${n.label}</span>
+      <span class="nav-icon-wrap">${n.icon}${badge}</span><span>${n.label}</span>
     </button>`;
   }).join('')}</div>`;
 }
