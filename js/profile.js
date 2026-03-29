@@ -1,4 +1,43 @@
 
+// ── Koç Okul Yönetimi ────────────────────────────────────────
+async function teacherOkulEkle() {
+  const input = document.getElementById('newSchoolInput');
+  const okul = input?.value?.trim();
+  if (!okul) { showToast('⚠️', 'Okul adı girin'); return; }
+
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+
+  const mevcutOkullar = window.currentUserData?.schools || [];
+  if (mevcutOkullar.includes(okul)) { showToast('⚠️', 'Bu okul zaten ekli'); return; }
+
+  const yeniOkullar = [...mevcutOkullar, okul];
+  try {
+    await db.collection('users').doc(uid).update({ schools: yeniOkullar });
+    window.currentUserData.schools = yeniOkullar;
+    input.value = '';
+    showToast('✅', `"${okul}" eklendi`);
+    showPage('profile');
+  } catch(e) { showToast('❌', 'Kaydedilemedi: ' + e.message); }
+}
+
+async function teacherOkulSil(idx) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+
+  const mevcutOkullar = [...(window.currentUserData?.schools || [])];
+  const silinen = mevcutOkullar[idx];
+  mevcutOkullar.splice(idx, 1);
+
+  try {
+    await db.collection('users').doc(uid).update({ schools: mevcutOkullar });
+    window.currentUserData.schools = mevcutOkullar;
+    showToast('✅', `"${silinen}" kaldırıldı`);
+    showPage('profile');
+  } catch(e) { showToast('❌', 'Kaydedilemedi: ' + e.message); }
+}
+
+
 // Deneme soru limiti kontrolü
 function denemeSoruKontrol(ders) {
   const limler = {
@@ -115,6 +154,24 @@ function profilePage() {
       <button class="btn btn-primary" style="width:100%" onclick="saveProfile()">Kaydet ✓</button>
     </div>
     ${isTeacher ? `
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">🏫 Çalıştığım Okullar</div>
+      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:12px">Öğrenci eklerken bu okullardan seçim yapılır</div>
+      <div id="teacherSchoolList" style="margin-bottom:12px">
+        ${(data.schools||[]).length === 0
+          ? '<div style="color:var(--text2);font-size:0.82rem;padding:8px 0">Henüz okul eklenmedi</div>'
+          : (data.schools||[]).map((s,i) => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:8px;margin-bottom:6px">
+              <span style="font-size:0.88rem">🏫 ${s}</span>
+              <button onclick="teacherOkulSil(${i})" style="background:none;border:none;color:#ff6584;cursor:pointer;font-size:0.8rem;padding:2px 6px">✕ Kaldır</button>
+            </div>`).join('')
+        }
+      </div>
+      <div style="display:flex;gap:8px">
+        <input class="form-input" type="text" id="newSchoolInput" placeholder="Okul adı girin..." style="flex:1">
+        <button class="btn btn-primary" onclick="teacherOkulEkle()" style="white-space:nowrap">+ Ekle</button>
+      </div>
+    </div>
     <div class="card" style="margin-top:16px;border:1.5px solid #6c63ff33">
       <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.api-arrow\').style.transform=this.nextElementSibling.style.display===\'block\'?\'rotate(180deg)\':\'rotate(0deg)\'"
         style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;user-select:none">
@@ -662,6 +719,8 @@ async function saveProfile() {
     if (currentRole === 'teacher') {
       updates.branch = document.getElementById('profileBranch').value;
       updates.school = document.getElementById('profileSchool').value.trim();
+      // schools array yoksa başlat
+      if (!window.currentUserData?.schools) updates.schools = [];
     } else {
       updates.classroom = document.getElementById('profileClass').value + '. Sınıf';
     }
@@ -1206,7 +1265,9 @@ async function saveNewStudent() {
   const pass = document.getElementById('newStudentPass').value;
   const errEl = document.getElementById('addStudentError');
   errEl.style.display = 'none';
+  const school = document.getElementById('newStudentSchool')?.value || '';
   if (!name || !email || !pass) { errEl.textContent = 'Tüm alanları doldurunuz.'; errEl.style.display='block'; return; }
+  if (!school) { errEl.textContent = 'Lütfen bir okul seçin.'; errEl.style.display='block'; return; }
   if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
   if (students.length >= 30) { errEl.textContent = 'En fazla 30 öğrenci eklenebilir.'; errEl.style.display='block'; return; }
 
@@ -1246,7 +1307,7 @@ async function saveNewStudent() {
       teacherId: teacherUser.uid,
       teacherName: teacherData.name || '',
       teacherPhoto: teacherData.photo || '',
-      school: teacherData.school || '',
+      school: (document.getElementById('newStudentSchool')?.value) || teacherData.school || '',
       photo: '', color, avg: 0,
       createdAt: new Date()
     };

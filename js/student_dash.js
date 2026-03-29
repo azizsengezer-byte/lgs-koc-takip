@@ -56,7 +56,7 @@ function renderStudentPage(id, el) {
   else if(id==='lgs-dagilim') el.innerHTML = lgsDagilimPage();
   else if(id==='all-denemeler') el.innerHTML = allDenemelerPage();
   else if(id==='messages') {
-    el.innerHTML = messagesPage('student');
+    messagesPage('student').then(html => { el.innerHTML = html; });
   }
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
   else if(id==='profile') { el.innerHTML = profilePage(); setTimeout(initApiSettings, 50); }

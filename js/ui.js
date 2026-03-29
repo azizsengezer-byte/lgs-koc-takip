@@ -215,7 +215,7 @@ function renderTeacherPage(id, el) {
   else if(id==='tasks-teacher') el.innerHTML = teacherTasks();
   else if(id==='messages') {
     // activeChat null ise liste göster (mobilde seçim yapılmamış)
-    el.innerHTML = messagesPage('teacher');
+    messagesPage('teacher').then(html => { el.innerHTML = html; });
   }
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
   else if(id==='profile') { el.innerHTML = profilePage(); setTimeout(initApiSettings, 50); }
