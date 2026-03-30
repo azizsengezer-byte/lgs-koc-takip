@@ -305,7 +305,8 @@ async function showUserProfile(uid, fallbackName, fallbackColor) {
   if (data.school) details.push(`🏫 <b>Okul:</b> ${data.school}`);
   if (data.classroom) details.push(`📚 <b>Sınıf:</b> ${data.classroom}`);
   if (data.branch) details.push(`📐 <b>Branş:</b> ${data.branch}`);
-  if (data.email) details.push(`✉️ <b>E-posta:</b> ${data.email}`);
+  // E-posta sadece koça göster, öğrenciler birbirinin e-postasını göremez
+  if (data.email && currentRole === 'teacher') details.push(`✉️ <b>E-posta:</b> ${data.email}`);
   vpDet.innerHTML = details.join('<br>') || '<span style="color:var(--text2)">Bilgi eklenmemiş</span>';
 
   window._vpCurrentUid = uid;

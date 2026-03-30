@@ -29,9 +29,8 @@ function saveWellnessDay(field, value, btn) {
   if (field === 'kaygi' || field === 'mood') {
     const todayData = data.days[todayKey];
     checkAllWellnessNotifications(myUid, data, todayKey);
-    if (field === 'kaygi' && parseInt(value) >= 8) kaygiBildirimiGonder(parseInt(value));
   }
-  if (field === 'uyku') uykuBildirimiGonder(parseFloat(value)||0);
+  // Bildirimler sadece kaydet butonuna basılınca gönderilir (saveWellnessAll)
 }
 
 function saveWellnessField(field, value) {
@@ -57,6 +56,11 @@ function saveWellnessAll(btn) {
   });
 
   _syncW(myUid, storageKey, data);
+  // Bildirimler sadece kaydet butonuna basılınca
+  const kaygiVal = parseInt(data.days[todayKey]?.kaygi || 0);
+  const uykuVal = parseFloat(data.days[todayKey]?.uyku || 0);
+  if (kaygiVal >= 8) kaygiBildirimiGonder(kaygiVal);
+  if (uykuVal > 0 && uykuVal < 5) uykuBildirimiGonder(uykuVal);
   if (btn) { btn.textContent = '✅ Kaydedildi!'; setTimeout(()=>{ btn.textContent = '💾 Kaydet'; }, 1500); }
   checkBadges();
 }

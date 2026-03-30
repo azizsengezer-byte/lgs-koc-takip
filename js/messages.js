@@ -1,3 +1,95 @@
+
+async function chatPartnerProfil(uid, name, color, photo, isSchoolMate) {
+  const existing = document.getElementById('chatProfilModal');
+  if (existing) existing.remove();
+
+  // Firestore'dan ek bilgi çek (e-posta hariç)
+  let okul = '', sinif = '';
+  try {
+    const snap = await db.collection('users').doc(uid).get();
+    if (snap.exists) {
+      const d = snap.data();
+      okul = d.school || '';
+      sinif = d.classroom || '';
+      if (!photo && d.photo) photo = d.photo;
+    }
+  } catch(e) {}
+
+  const avatarHTML = photo
+    ? `<img src="${photo}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto 12px;display:block">`
+    : `<div style="width:72px;height:72px;border-radius:50%;background:${color}22;color:${color};display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:800;margin:0 auto 12px">${name[0]}</div>`;
+
+  const detaylar = [];
+  if (okul) detaylar.push(`<div style="font-size:0.85rem;color:var(--text2);margin-bottom:4px">🏫 ${okul}</div>`);
+  if (sinif) detaylar.push(`<div style="font-size:0.85rem;color:var(--text2);margin-bottom:4px">📚 ${sinif}</div>`);
+
+  const modal = document.createElement('div');
+  modal.id = 'chatProfilModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(26,26,46,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:28px 24px;width:100%;max-width:320px;text-align:center;box-shadow:var(--shadow-md)">
+      ${avatarHTML}
+      <div style="font-size:1.2rem;font-weight:900;margin-bottom:4px">${name}</div>
+      <div style="font-size:0.82rem;color:var(--accent);font-weight:700;margin-bottom:12px">${isSchoolMate==='true'?'🏫 Okul Arkadaşı':'👨‍🎓 Öğrenci'}</div>
+      ${detaylar.join('')}
+      <button class="btn btn-outline" style="width:100%;margin-top:12px" onclick="document.getElementById('chatProfilModal').remove()">Kapat</button>
+    </div>
+  `;
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+
+// ── ONLINE STATUS + TYPING ───────────────────────────────────
+let _typingTimeout = null;
+let _onlineUnsub = null;
+
+function startOnlineWatch(partnerUid) {
+  if (_onlineUnsub) { _onlineUnsub(); _onlineUnsub = null; }
+  if (!partnerUid || !db) return;
+  _onlineUnsub = db.collection('presence').doc(partnerUid)
+    .onSnapshot(snap => {
+      const el = document.getElementById('chatStatus');
+      if (!el) return;
+      const d = snap.data();
+      if (!d) { el.textContent = ''; el.style.color = 'var(--text2)'; return; }
+      if (d.typing) {
+        el.textContent = '● yazıyor...';
+        el.style.color = 'var(--accent)';
+      } else if (d.online) {
+        el.textContent = '● çevrimiçi';
+        el.style.color = 'var(--accent3)';
+      } else {
+        const last = d.lastSeen?.seconds ? new Date(d.lastSeen.seconds*1000) : null;
+        const label = last ? 'son görülme: ' + last.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}) : 'çevrimdışı';
+        el.textContent = label;
+        el.style.color = 'var(--text2)';
+      }
+    }, ()=>{});
+}
+
+function setMyPresence(typing=false) {
+  const myUid = (window.currentUserData||{}).uid;
+  if (!myUid || !db) return;
+  db.collection('presence').doc(myUid).set({
+    online: true, typing, lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+  }, {merge:true}).catch(()=>{});
+}
+
+function setMyOffline() {
+  const myUid = (window.currentUserData||{}).uid;
+  if (!myUid || !db) return;
+  db.collection('presence').doc(myUid).set({
+    online: false, typing: false, lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+  }, {merge:true}).catch(()=>{});
+}
+
+// Online dur, sekmeyi kapatınca offline ol
+window.addEventListener('beforeunload', setMyOffline);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) setMyOffline(); else setMyPresence();
+});
+
 let activeChat = null; // partnerUid
 let chatMessages = {}; // { convId: [msgs] }
 let teacherNotifs = [];
@@ -131,8 +223,8 @@ async function messagesPage(role) {
 
       return `${separator}<div class="msg ${mine?'mine':'theirs'}" id="msg_${m.id||i}">
         <div class="msg-bubble">${m.text||''}</div>
-        <div class="msg-time">${m.time||''}${seenHTML}</div>
-      </div>${seenLabel}`;
+        <div class="msg-time">${m.time||''}${mine ? (isLastMine && m.seen ? '<span style="font-size:0.65rem;color:var(--accent3);margin-left:3px">✓✓</span>' : '<span style="font-size:0.65rem;color:rgba(0,0,0,0.3);margin-left:3px">✓</span>') : ''}</div>
+      </div>`;
     }).join('');
 
     const partnerAvatar = partner.photo
@@ -143,9 +235,9 @@ async function messagesPage(role) {
       <div class="chat-header">
         <button class="mobile-chat-back" onclick="activeChat=null;showPage('messages')">← Geri</button>
         ${partnerAvatar}
-        <div style="flex:1;cursor:pointer" onclick="showUserProfile('${partner.uid}','${partner.name}','${partner.color}')">
+        <div style="flex:1;cursor:pointer" onclick="chatPartnerProfil('${partner.uid}','${partner.name}','${partner.color}','${partner.photo||''}','${partner.isSchoolMate||false}')">
           <div style="font-weight:800">${partner.name}</div>
-          <div style="font-size:0.72rem;color:var(--accent3)">● profil için tıkla</div>
+          <div id="chatStatus" style="font-size:0.72rem;color:var(--text2)">● çevrimiçi durumu yükleniyor...</div>
         </div>
         <button onclick="confirmDeleteConversation('${partner.uid}','${cId}')"
           style="background:#ff658420;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:0.82rem;color:#ff6584;flex-shrink:0"
@@ -156,8 +248,9 @@ async function messagesPage(role) {
         ${msgsHTML}
       </div>
       <div class="chat-input-row">
-        <input class="chat-input" id="chatInput" type="text" placeholder="Mesaj yaz..."
-          onkeydown="if(event.key==='Enter')sendMessage('${role}')">
+        <textarea class="chat-input" id="chatInput" placeholder="Mesaj yaz..." rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage('${role}')}"
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';setMyPresence(true);clearTimeout(window._tpTimeout);window._tpTimeout=setTimeout(()=>setMyPresence(false),2000)"></textarea>
         <button class="chat-send-btn" onclick="sendMessage('${role}')">➤</button>
       </div>`;
   }
@@ -186,6 +279,8 @@ async function messagesPage(role) {
 
 async function switchChatTo(uid, role) {
   activeChat = uid;
+  startOnlineWatch(uid);
+  setMyPresence(false);
   const myUid = (window.currentUserData || {}).uid || '';
   const cId = convId(myUid, uid);
   const el = document.getElementById('pageContent');
@@ -256,6 +351,8 @@ async function sendMessage(role) {
   const input = document.getElementById('chatInput');
   const text = input?.value?.trim();
   if (!text || !activeChat) return;
+  // Textarea'yı sıfırla
+  if (input.tagName === 'TEXTAREA') { input.style.height = 'auto'; }
   const myData = window.currentUserData || {};
   const myUid = myData.uid || '';
 
