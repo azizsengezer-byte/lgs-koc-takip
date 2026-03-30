@@ -15,87 +15,71 @@ body { background:#0f0830; display:flex; flex-direction:column; align-items:cent
 <div id="status">Yükleniyor...</div>
 <div style="color:rgba(255,255,255,0.3);font-size:11px;margin-top:8px">yumurtaya dokun</div>
 
+<script src="three.min.js"></script>
+<script src="GLTFLoader.js"></script>
 <script>
-// Three.js ve GLTFLoader'ı sırayla yükle
-function loadScript(src, cb) {
-  var s = document.createElement('script');
-  s.src = src;
-  s.onload = cb;
-  s.onerror = function() { document.getElementById('status').textContent = '❌ CDN yüklenemedi: ' + src; };
-  document.head.appendChild(s);
-}
+var wrap = document.getElementById('wrap');
+var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setSize(300, 300);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+wrap.appendChild(renderer.domElement);
 
-loadScript('https://unpkg.com/three@0.150.0/build/three.min.js', function() {
-  loadScript('https://unpkg.com/three@0.150.0/examples/js/loaders/GLTFLoader.js', function() {
-    initScene();
-  });
-});
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.set(0, 0.5, 3);
 
-function initScene() {
-  var wrap = document.getElementById('wrap');
-  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(300, 300);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.2;
-  wrap.appendChild(renderer.domElement);
+scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+var dir = new THREE.DirectionalLight(0xffa0ff, 1.5);
+dir.position.set(2, 4, 3);
+scene.add(dir);
+var rim = new THREE.DirectionalLight(0x4cc9f0, 0.8);
+rim.position.set(-3, 1, -2);
+scene.add(rim);
 
-  var scene = new THREE.Scene();
-  var camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-  camera.position.set(0, 0.5, 3);
+var loader = new THREE.GLTFLoader();
+loader.load('egg.glb',
+  function(gltf) {
+    var model = gltf.scene;
+    var box = new THREE.Box3().setFromObject(model);
+    var center = box.getCenter(new THREE.Vector3());
+    var size = box.getSize(new THREE.Vector3());
+    var scale = 2.0 / Math.max(size.x, size.y, size.z);
+    model.scale.setScalar(scale);
+    model.position.sub(center.multiplyScalar(scale));
+    scene.add(model);
+    document.getElementById('status').textContent = '✅ Yüklendi! Dokun.';
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-  var dir = new THREE.DirectionalLight(0xffa0ff, 1.5);
-  dir.position.set(2, 4, 3);
-  scene.add(dir);
-  var rim = new THREE.DirectionalLight(0x4cc9f0, 0.8);
-  rim.position.set(-3, 1, -2);
-  scene.add(rim);
+    var shaking = false, shakePower = 0;
+    wrap.addEventListener('click', function() {
+      shaking = true; shakePower = 0.15;
+      dir.intensity = 3;
+      setTimeout(function() { dir.intensity = 1.5; }, 200);
+    });
 
-  var loader = new THREE.GLTFLoader();
-  loader.load('egg.glb',
-    function(gltf) {
-      var model = gltf.scene;
-      var box = new THREE.Box3().setFromObject(model);
-      var center = box.getCenter(new THREE.Vector3());
-      var size = box.getSize(new THREE.Vector3());
-      var scale = 2.0 / Math.max(size.x, size.y, size.z);
-      model.scale.setScalar(scale);
-      model.position.sub(center.multiplyScalar(scale));
-      scene.add(model);
-      document.getElementById('status').textContent = '✅ Yüklendi! Dokun.';
-
-      var shaking = false, shakePower = 0;
-      wrap.addEventListener('click', function() {
-        shaking = true;
-        shakePower = 0.15;
-        dir.intensity = 3;
-        setTimeout(function() { dir.intensity = 1.5; }, 200);
-      });
-
-      var clock = new THREE.Clock();
-      (function animate() {
-        requestAnimationFrame(animate);
-        var t = clock.getElapsedTime();
-        model.rotation.y = Math.sin(t * 0.4) * 0.3;
-        model.position.y = Math.sin(t * 1.2) * 0.04;
-        if (shaking) {
-          model.rotation.z = Math.sin(t * 25) * shakePower;
-          shakePower *= 0.92;
-          if (shakePower < 0.002) { shaking = false; model.rotation.z = 0; }
-        }
-        renderer.render(scene, camera);
-      })();
-    },
-    function(xhr) {
-      if (xhr.total) document.getElementById('status').textContent = 'Yükleniyor... ' + Math.round(xhr.loaded / xhr.total * 100) + '%';
-    },
-    function(err) {
-      document.getElementById('status').textContent = '❌ Model hatası';
-      console.error(err);
-    }
-  );
-}
+    var clock = new THREE.Clock();
+    (function animate() {
+      requestAnimationFrame(animate);
+      var t = clock.getElapsedTime();
+      model.rotation.y = Math.sin(t * 0.4) * 0.3;
+      model.position.y = Math.sin(t * 1.2) * 0.04;
+      if (shaking) {
+        model.rotation.z = Math.sin(t * 25) * shakePower;
+        shakePower *= 0.92;
+        if (shakePower < 0.002) { shaking = false; model.rotation.z = 0; }
+      }
+      renderer.render(scene, camera);
+    })();
+  },
+  function(xhr) {
+    if (xhr.total) document.getElementById('status').textContent = 'Yükleniyor... ' + Math.round(xhr.loaded/xhr.total*100) + '%';
+  },
+  function(err) {
+    document.getElementById('status').textContent = '❌ Model yüklenemedi';
+    console.error(err);
+  }
+);
 </script>
 </body>
 </html>
