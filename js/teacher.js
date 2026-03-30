@@ -470,9 +470,20 @@ async function saveEditEntry() {
   const wrong = parseInt(document.getElementById('editEntryWrong').value) || 0;
   const qManual = parseInt(document.getElementById('editEntryQuestions')?.value) || 0;
   const note = document.getElementById('editEntryNote').value.trim();
-  const net = correct > 0 || wrong > 0 ? correct - wrong/3 : (studyEntries[localIdx]?.net || 0);
   const q = qManual > 0 ? qManual : (correct + wrong);
 
+  // Doğru + yanlış toplam soru sayısını geçemez
+  if (qManual > 0 && (correct + wrong) > qManual) {
+    showToast('⚠️', `Doğru (${correct}) + yanlış (${wrong}) = ${correct+wrong}, soru sayısı (${qManual}) geçemez!`);
+    const cEl = document.getElementById('editEntryCorrect');
+    const wEl = document.getElementById('editEntryWrong');
+    if(cEl) cEl.style.borderColor='#E24B4A';
+    if(wEl) wEl.style.borderColor='#E24B4A';
+    setTimeout(()=>{ if(cEl) cEl.style.borderColor=''; if(wEl) wEl.style.borderColor=''; }, 3000);
+    return;
+  }
+
+  const net = correct > 0 || wrong > 0 ? correct - wrong/3 : (studyEntries[localIdx]?.net || 0);
   const updates = { subject: sub, topic, duration: dur, correct, wrong, net, questions: q, note };
 
   if (studyEntries[localIdx]) Object.assign(studyEntries[localIdx], updates);

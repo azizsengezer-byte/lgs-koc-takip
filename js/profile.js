@@ -1175,6 +1175,19 @@ function saveEntry() {
   const q = type==='soru' ? (parseInt(document.getElementById('entryQuestions').value)||0) : 0;
   const correct = type==='soru' ? (parseInt(document.getElementById('entryCorrect').value)||0) : 0;
   const wrong = type==='soru' ? (parseInt(document.getElementById('entryWrong').value)||0) : 0;
+
+  // Doğru + yanlış toplam soru sayısını geçemez
+  if (type==='soru' && q > 0 && (correct + wrong) > q) {
+    showToast('⚠️', `Doğru (${correct}) + yanlış (${wrong}) = ${correct+wrong}, soru sayısı (${q}) geçemez!`);
+    // Hatalı alanları kırmızı yap
+    const cEl = document.getElementById('entryCorrect');
+    const wEl = document.getElementById('entryWrong');
+    if(cEl) cEl.style.borderColor='#E24B4A';
+    if(wEl) wEl.style.borderColor='#E24B4A';
+    setTimeout(()=>{ if(cEl) cEl.style.borderColor=''; if(wEl) wEl.style.borderColor=''; }, 3000);
+    return;
+  }
+
   const net = q > 0 ? correct - wrong/3 : 0;
 
   const entry = {
