@@ -2231,8 +2231,12 @@ async function exportPsychPDF(sName) {
               const _gQ = _gunlukGirisler.reduce((a,e)=>a+(e.questions||0),0);
               const _gD = _gunlukGirisler.reduce((a,e)=>a+(e.correct||0),0);
               const _gIsa = _gQ > 0 ? _gD/_gQ*100 : null;
-              const _dQ = filteredExams.reduce((a,e)=>a+(e.questions||0),0);
-              const _dD = filteredExams.reduce((a,e)=>a+(e.correct||0),0);
+              const _filtExams = studyEntries.filter(e =>
+                (e.userId === sUid || e.studentName === sName) &&
+                e.type === 'deneme' && e.dateKey >= startKey && e.dateKey <= endKey
+              );
+              const _dQ = _filtExams.reduce((a,e)=>a+(e.questions||0),0);
+              const _dD = _filtExams.reduce((a,e)=>a+(e.correct||0),0);
               const _dIsa = _dQ > 0 ? _dD/_dQ*100 : null;
               if (_gIsa !== null && _dIsa !== null && Math.abs(_gIsa - _dIsa) > 20) {
                 const yonMesaj = _dIsa < _gIsa
