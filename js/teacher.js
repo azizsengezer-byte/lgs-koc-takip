@@ -1,3 +1,68 @@
+
+async function ogrenciOkulDegistir(i) {
+  const s = students[i];
+  const okullar = window.currentUserData?.schools || [];
+  if (okullar.length === 0) {
+    showToast('⚠️', 'Önce profilinde okul ekle');
+    return;
+  }
+
+  // Basit seçim modalı
+  const mevcut = s.school || 'Belirtilmemiş';
+  const secenek = okullar.map((o, idx) =>
+    `<button onclick="ogrenciOkulKaydet(${i},'${o}',this)" style="width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;background:${o===mevcut?'rgba(108,99,255,.1)':'var(--bg)'};border:1.5px solid ${o===mevcut?'var(--accent)':'var(--border)'};border-radius:12px;cursor:pointer;font-weight:700;font-size:0.9rem;color:${o===mevcut?'var(--accent)':'var(--text)'};font-family:'Nunito',sans-serif">
+      ${o===mevcut?'✓ ':''}${o}
+    </button>`
+  ).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'okulDegistirModal';
+  modal.className = 'modal-overlay open';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:360px">
+      <div class="modal-title">🏫 Okul Değiştir</div>
+      <div style="font-size:0.82rem;color:var(--text2);margin-bottom:14px">${s.name} — Mevcut: <b>${mevcut}</b></div>
+      ${secenek}
+      <button class="btn btn-outline" style="width:100%;margin-top:4px" onclick="document.getElementById('okulDegistirModal').remove()">İptal</button>
+    </div>
+  `;
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+async function ogrenciOkulKaydet(i, yeniOkul, btn) {
+  const s = students[i];
+  if (!s.uid) return;
+  try {
+    await db.collection('users').doc(s.uid).update({ school: yeniOkul });
+    students[i].school = yeniOkul;
+    showToast('✅', `${s.name} → ${yeniOkul}`);
+    document.getElementById('okulDegistirModal')?.remove();
+    showPage('students');
+  } catch(e) {
+    showToast('❌', 'Kaydedilemedi: ' + e.message);
+  }
+}
+
+
+function ogrenciEkleModalAc() {
+  const okullar = window.currentUserData?.schools || [];
+  const sel = document.getElementById('newStudentSchool');
+  if (sel) {
+    sel.innerHTML = '<option value="">— Okul seçin —</option>';
+    okullar.forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o;
+      opt.textContent = o;
+      sel.appendChild(opt);
+    });
+    if (okullar.length === 0) {
+      sel.innerHTML = '<option value="">Önce profilde okul ekleyin</option>';
+    }
+  }
+  openModal('addStudentModal');
+}
+
 function teacherDashboard() {
   const name = document.getElementById('menuName')?.textContent || 'Hoca';
   const studentCount = students.length;
@@ -106,7 +171,7 @@ function teacherStudents() {
     <div class="page-title">👥 Öğrencilerim</div>
     <div class="page-sub">Koçluk takibindeki öğrenciler</div>
     <div style="display:flex;gap:10px;margin-bottom:12px">
-      <button class="btn btn-primary" onclick="openModal('addStudentModal')">+ Öğrenci Ekle</button>
+      <button class="btn btn-primary" onclick="ogrenciEkleModalAc()">+ Öğrenci Ekle</button>
       <button class="btn btn-outline" onclick="openTaskModal()">📋 Görev Ata</button>
     </div>
     <!-- Arama -->
@@ -158,7 +223,8 @@ function teacherStudents() {
             ${statusBadge}
             <div style="display:flex;gap:6px">
               <button class="btn btn-outline" style="padding:4px 10px;font-size:0.75rem" onclick="event.stopPropagation();openStudentAnalysis('${s.name}')">📊</button>
-              <button class="btn btn-outline" style="padding:4px 10px;font-size:0.75rem;color:#ff6584;border-color:#ff6584" onclick="event.stopPropagation();deleteStudent(${i})">🗑️</button>
+              <button class="btn btn-outline" style="padding:4px 10px;font-size:0.75rem;color:var(--accent)" onclick="event.stopPropagation();ogrenciOkulDegistir(${i})">🏫</button>
+              <button class="btn btn-outline" style="padding:4px 10px;font-size:0.75rem;color:#ff5c8a;border-color:#ff5c8a" onclick="event.stopPropagation();deleteStudent(${i})">🗑️</button>
             </div>
           </div>
         </div>`;
