@@ -487,7 +487,7 @@ async function exportPsychPDF(sName) {
           doc.setFont(PF,'bold'); doc.setFontSize(9.5); doc.setTextColor(175,0,0);
           doc.text(tx('⚠  ACİL: BİLİŞSEL BLOKAJ — AKADEMİK FELÇ'), 24, Y+9.5);
           Y+=18;
-          kutu('Amigdala Blokajı (Modül A-Vaka 6 + Modül 2.5-Vaka 2)',
+          kutu('[ID-020] Amigdala Blokajı — Güne Stresli Başlama',
             'Bugün kaygı ' + bugunKaygi.toFixed(1) + '/10 ' + (bugunMoodTr?'('+bugunMoodTr+') ':'') + 'iken hiç akademik çalışma yapılmamış. ' +
             'Bu bir disiplin sorunu değil biyolojik bir savunmadır: prefrontal korteks devre dışı, öğrenci doğrudan donmuştur. ' +
             (bugunSosyal>0?'Sosyal medya '+bugunSosyal.toFixed(1)+' sa — dijital anestezi. ':'') +
@@ -507,7 +507,7 @@ async function exportPsychPDF(sName) {
             [245,243,255],[130,120,200]);
         } else if (bugunUyku>0&&bugunUyku<6&&bugunEnerji>0&&bugunEnerji<4) {
           gunlukAktifler.push('Akut Fizyolojik Çöküş');
-          kutu('Akut Fizyolojik Çöküş — Çift Tehdit',
+          kutu('[ID-010] Akut Fizyolojik Çöküş — Çift Tehdit',
             'Uyku '+bugunUyku.toFixed(1)+' sa + enerji '+bugunEnerji.toFixed(1)+'/10: ikisi birlikte kritik bölgede. ' +
             'Glimfatik sistem dün gece çalışmadı; bugün öğrenilen bilgiler kalıcı belleğe geçemez. ' +
             (akademikVar?'Çözülen '+bugunSoru+' soru "bilişsel borç" statüsünde — temiz zihinle tekrar edilmeli. ':'Akademik üretim beklenmemeli. ') +
@@ -516,7 +516,7 @@ async function exportPsychPDF(sName) {
           gunlukBakiye.push('Bugün çalışılan konular hatalı kodlanma riski taşıyor — düşük enerji testi önerilir');
         } else if (bugunUyku>0&&bugunUyku<6.5) {
           gunlukAktifler.push('Uyku Borcu');
-          kutu('Uyku Borcu — Bellek Konsolidasyonu Riskli',
+          kutu('[ID-010] Uyku Borcu — Bellek Konsolidasyonu Riskli',
             'Bugün '+bugunUyku.toFixed(1)+' sa uyku (ideal 7.5+). ' +
             (bugunEnerji>0?'Enerji '+bugunEnerji.toFixed(1)+'/10. ':'') +
             'REM evresi kısalmış olabilir; dün öğrenilen bilgiler tam konsolide olmamıştır. ' +
@@ -526,7 +526,7 @@ async function exportPsychPDF(sName) {
           gunlukBakiye.push('Uyku borcu devam ederse hafta sonu performans düşüşü kaçınılmaz');
         } else if (bugunUyku>0&&bugunUyku<6.5&&bugunOdak>8) {
           gunlukAktifler.push('Yanılsamalı Hiper-Odak');
-          kutu('Yanılsamalı Hiper-Odak — Adrenalin Maskesi',
+          kutu('[ID-020] Yanılsamalı Hiper-Odak — Adrenalin Maskesi',
             'Uyku '+bugunUyku.toFixed(1)+' sa iken odak '+bugunOdak.toFixed(1)+'/10. ' +
             'Stres hormonu kortizol geçici odak sağlıyor; hata denetim mekanizması (error monitoring) devre dışı. ' +
             (akademikVar?'Bugün çözülen '+bugunSoru+' soruda fark edilmeden geçilen hatalar birikmiş olabilir.':''),
@@ -565,7 +565,7 @@ async function exportPsychPDF(sName) {
 
           if (bugunKaygi>=8&&akademikVar&&enCokBrans) {
             gunlukAktifler.push('Akademik Anestezi');
-            kutu('Akademik Anestezi — Güvenli Liman (Modül B-Vaka 1)',
+            kutu('[ID-085] Akademik Anestezi — Konfor Alanına Sığınma',
               'Kaygı '+bugunKaygi.toFixed(1)+'/10 iken '+enCokBrans.d+' branşında '+enCokBrans.q+' soru çözüldü. ' +
               (sayisalYok&&sozelVar?'Sayısal branşlar hiç çalışılmadı -> Sözel Sığınma refleksi aktif. ':'') +
               'Bu üretim öğrenme odaklı değil; "başarıyorum" illüzyonuyla kaygı anestezisi yapılıyor. ' +
@@ -574,13 +574,13 @@ async function exportPsychPDF(sName) {
             if (sayisalYok) gunlukBakiye.push('Bugün kaçınılan sayısal branşlar: yarın 10 dk "kapı aralama" seansı');
           } else if (bugunKaygi>=8&&!akademikVar&&bugunSosyal>0) {
             // Amigdala blokajı zaten yukarıda işlendi, burada sosyal medya detayı
-            kutu('Dijital Anestezi — Kaçış Kapısı Kullanıldı (Modül 2.5-Vaka 2)',
+            kutu('[ID-035] Dijital Anestezi — Kaçış Kapısı Kullanıldı',
               'Akademik giriş yok + sosyal medya '+bugunSosyal.toFixed(1)+' sa. ' +
               'Öğrenci başarısızlık korkusuyla yüzleşmek yerine dijital uyuşturmayı tercih etti. ' +
               'Bu bir dinlenme değil "bilişsel erteleme" — akademik sorun çözülmeden büyüyor.',
               [255,215,215],[170,15,15]);
           } else if (negatifMood&&akademikVar&&sayisalYok&&sozelVar) {
-            kutu('Sözel Sığınma — Bilişsel Konfor Refleksi (Modül B-Vaka 5)',
+            kutu('[ID-095] Sözel Sığınma — Bilişsel Konfor Refleksi',
               bugunMoodTr+' hissederken sayısal branşlar bırakılmış, sözel branşlara yönelinmiş. ' +
               'Beyin yorgunluk/kaygı anında bilişsel yükü düşük branşı seçiyor. ' +
               'Bu durum sayısal branşlarda bugün zaman kaybı yaratıyor.',
@@ -614,6 +614,20 @@ async function exportPsychPDF(sName) {
               [240,238,255],[100,90,175]);
           }
         } else {
+          // ID-080: Pazartesi Sendromu
+          const _gunPazar = new Date(dateKey+'T12:00:00').getDay() === 0;
+          if (_gunPazar && bugunKaygi > 7 && bugunOdak > 0 && bugunOdak < 4
+              && !kullanılanOlaylar.has('G_pazar')) {
+            kullanılanOlaylar.add('G_pazar');
+            gunlukAktifler.push('Pazartesi Sendromu');
+            kutu('[ID-080] Gelecek Kaygısı — Pazartesi Sendromu',
+              'Pazar akşamı: Kaygı ' + bugunKaygi.toFixed(1) + '/10 + Odak ' + bugunOdak.toFixed(1) + '/10. ' +
+              'Hafta başına yönelik öngörü stresi günü sabote etti. ' +
+              'Öğrenci başlamadan yoruluyor; hafta planlaması ve küçük adım hedefleme bu döngüyü kırabilir.',
+              [255,235,250],[140,20,100]);
+            gunlukBakiye.push('Pazar akşamı kaygısı — haftaya giriş ritüeli önerilir');
+          }
+
           kutu('Duygusal Veri Girilmemiş',
             'Bugün kaygı/mood girişi yok. Psikolojik bağlam kurulamıyor.',
             [245,243,255],[130,120,200]);
@@ -641,7 +655,7 @@ async function exportPsychPDF(sName) {
               && !kullanılanOlaylar.has('G_aktivite_kacis')) {
             gunlukAktifler.push('Çalışma Görüntüsüyle Kaçınma');
             kullanılanOlaylar.add('G_aktivite_kacis');
-            kutu('Çalışma Görüntüsüyle Kaçınma — Sahte Verimlilik',
+            kutu('[ID-115] Çalışma Görüntüsüyle Kaçınma — Sahte Verimlilik',
               'Kaygı ' + bugunKaygi.toFixed(1) + '/10 iken bugün ' + bugunSoru + ' soru çözüldü (ort. ' + Math.round(ortSoru) + '). ' +
               'Ancak isabet %' + bugunIsabet + ' — yüksek hacim düşük kalite. ' +
               'Öğrenci kaygıyla yüzleşmek yerine "çalışıyor" maskesi takarak soru sayısını artırıyor. ' +
@@ -663,7 +677,20 @@ async function exportPsychPDF(sName) {
                 return {d,q,pct:q>0?y/q*100:null};
               }).filter(x=>x.pct!==null).sort((a,b)=>b.pct-a.pct)[0];
             }
-            kutu('Kriz Altında Çalışma — Hatalı Kodlanma Riski (Modül D-Vaka 1)',
+            // ID-165: Kriz Savar — yüksek kaygıda üretim devam ettiyse pozitif sinyal
+            if (krizAltinda && bugunSoru >= 15 && bugunIsabet !== null && bugunIsabet >= 70
+                && !kullanılanOlaylar.has('G_kriz_savar')) {
+              kullanılanOlaylar.add('G_kriz_savar');
+              gunlukAktifler.push('Kriz Savar');
+              kutu('[ID-165] Kriz Savar — Yüksek Psikolojik Dayanıklılık',
+                'Kriz koşullarına (kaygı/uyku/enerji baskısı) rağmen ' + bugunSoru + ' soru çözüldü, isabet %' + bugunIsabet + '. ' +
+                'Bu, öğrencinin baskı altında dağılmadığının klinik kanıtıdır. ' +
+                'Sınav günü bu dayanıklılık kapasitesi kritik avantaj sağlayacak. Koç teyit etmeli.',
+                [220,255,235],[14,128,62]);
+              gunlukBakiye.push('Kriz altında kaliteli üretim: sınav günü dayanıklılığının pozitif sinyali');
+            }
+
+            kutu('[ID-125] Kriz Altında Çalışma — Hatalı Kodlanma Riski',
               bugunSoru+' soru fizyolojik/psikolojik kriz koşullarında çalışıldı. ' +
               (enYuksekHataBrans?'"'+enYuksekHataBrans.d+'" branşında %'+(100-enYuksekHataBrans.pct).toFixed(0)+' isabet — bu konu bugün kalıcı belleğe "hatalı mantık" ile kaydedilmiş olabilir. ':'') +
               'Bu çalışma "tamamlandı" değil "borçlandı" olarak işaretlenmeli; 48-72 saat içinde temiz zihinle Hasar Tespit Testi yapılmalı.',
@@ -687,13 +714,13 @@ async function exportPsychPDF(sName) {
           Y = pdfCheck(doc, Y, 16);
           bolumBaslik([65,35,130],'4.  Ekran Verisi','Sosyal medya ve online ders çaprazlaması');
           if (bugunSosyal>2&&(negatifMood||bugunKaygi>=7)) {
-            kutu('Reaktif Dijital Kaçış (Modül 2.5-Vaka 2)',
+            kutu('[ID-001] Reaktif Dijital Kaçış — Dijital Yorgunluk',
               'Sosyal medya '+bugunSosyal.toFixed(1)+' sa + olumsuz durum. ' +
               'Olumsuz hislerle baş edememe -> dijital uyuşturma döngüsü. ' +
               (bugunSosyal>bugunOnline?'Eğlence ekranı akademik ekranı geçti ('+bugunSosyal.toFixed(1)+' sa vs '+bugunOnline.toFixed(1)+' sa).':''),
               [255,218,218],[172,15,15]);
           } else if (bugunOnline>3&&!akademikVar) {
-            kutu('Pasif Öğrenme İllüzyonu (Modül 2.5-Vaka 1)',
+            kutu('[ID-105] Pasif Öğrenme İllüzyonu — Masa Başında Hayal Kurma',
               bugunOnline.toFixed(1)+' sa online ders izlendi ama soru çözümü yok. ' +
               'Pasif izleme kalıcı nöral yollar oluşturmaz — "öğrendim" hissi yanıltıcı.',
               [255,238,215],[145,78,0]);
@@ -893,7 +920,7 @@ async function exportPsychPDF(sName) {
                 const enYuksekHataDers = dersHataArr[0];
                 aktifNegatifler.push('Karar Verme Yorgunluğu');
                 kullanılanOlaylar.add('A_karar_yorgunlugu');
-                kutu('Karar Verme Yorgunluğu (Decision Fatigue)',
+                kutu('[ID-115] Karar Verme Yorgunluğu — Fizyolojik İşlem Hatası',
                   'Haftalık enerji ortalaması ' + ortEnerjiH.toFixed(1) + '/10 ile kritik düşüklükte. ' +
                   (enYuksekHataDers ? enYuksekHataDers.d + ' branşında %' + enYuksekHataDers.pct.toFixed(0) + ' hata oranıyla "çeldiriciler arasında kalma" sendromu gözlemlenmektedir. ' : '') +
                   'Fizyolojik çöküş nedeniyle beyin "ayırt etme" yetisini kaybetmiştir; analiz gerektiren branşlarda iki şık arasında kalma sıklığı bu hafta artmıştır.',
@@ -990,7 +1017,7 @@ async function exportPsychPDF(sName) {
           if (ortUykuA!==null && ortUykuA<7 && netRegresyon!==null && netRegresyon<-1) {
             aktifNegatifler.push('Kronik Bilişsel Erozyon');
             kullanılanOlaylar.add('A_kronik_erozyon');
-            kutu('Kronik Bilişsel Erozyon — Hafıza Konsolidasyonu Arızası',
+            kutu('[ID-040] Kronik Bilişsel Erozyon — Hafıza Konsolidasyonu Arızası',
               'Ay boyunca uyku ortalaması ' + ortUykuA.toFixed(1) + ' saat/gece ile yetersiz. ' +
               'Hipokampal bölgedeki veri transferi (' + ortUykuA.toFixed(1) + ' sa < 7 sa eşik) aksatılmıştır. ' +
               (netRegresyon!==null ? 'Ay sonu deneme netlerinde ' + Math.abs(netRegresyon).toFixed(1) + ' birim düşüş; bu ay başındaki uykusuz gecelerin kümülatif yorgunluk bedelidir. ' : '') +
@@ -1022,7 +1049,7 @@ async function exportPsychPDF(sName) {
             if (soruTrendi!==null && soruTrendi>0) {
               aktifNegatifler.push('Robotikleşme — Tükenmişlik Öncesi');
               kullanılanOlaylar.add('A_robotiklesme');
-              kutu('Robotikleşme — Tükenmişlik Öncesi Evre',
+              kutu('[ID-040] Robotikleşme — Tükenmişlik Öncesi Evre',
                 'Enerji trendi: ay başı ' + (ayBasiOrt??0).toFixed(1) + ' -> ay sonu ' + (aySonuOrt??0).toFixed(1) + '/10 (' + enerjiiRegresyon.toFixed(1) + ' puan düşüş). ' +
                 'Soru sayısı artarken enerji düşüyor — öğrenci verimi değil, sadece rakamları takip etmektedir. ' +
                 'Bu süreçte çözülen sorular nitelikten yoksundur; hacim "çalışma" değil "var olma" amacıyla üretilmektedir. ' +
@@ -1041,7 +1068,7 @@ async function exportPsychPDF(sName) {
           } else if (ortUykuA!==null && ortEnerjiA!==null && ortUykuA<7 && ortEnerjiA<5 && ortKaygi>7) {
             aktifNegatifler.push('Adaptasyon Direnci');
             kullanılanOlaylar.add('A_adaptasyon_direnci');
-            kutu('Adaptasyon Direnci — Fizyolojik Sürdürülemezlik',
+            kutu('[ID-040] Adaptasyon Direnci — Fizyolojik Sürdürülemezlik',
               'Ay boyunca yüksek kaygı (' + ortKaygi.toFixed(1) + '/10) + yetersiz uyku (' + ortUykuA.toFixed(1) + ' sa) + düşük enerji (' + ortEnerjiA.toFixed(1) + '/10) birlikte seyretti. ' +
               'Öğrenci mevcut seviyesini korumak için çok ağır bir "duygusal maliyet" ödüyor. ' +
               'Bu tempo fizyolojik olarak sürdürülebilir değildir; bir sonraki kriz evresi daha derin bir çöküşle gelebilir.',
@@ -1050,7 +1077,7 @@ async function exportPsychPDF(sName) {
           // Vaka 5: Bellek Sızıntısı
           } else if (aktifGunler.length < veriGunler.length * 0.5 && ortHata!==null && ortHata<20) {
             kullanılanOlaylar.add('A_bellek_sizintisi');
-            kutu('Bellek Sızıntısı — Kopuk Çalışma Ritmi',
+            kutu('[ID-140] Bellek Sızıntısı — Kopuk Çalışma Ritmi',
               'Wellness verisi olan ' + veriGunler.length + ' günün yalnızca ' + aktifGunler.length + "'inde akademik çalışma yapılmış. " +
               'İsabet oranı görece yüksek (%' + (100-ortHata).toFixed(0) + ') olsa da, aktif olunmayan günlerdeki "bilişsel boşluk" öğrenilen konuların kalıcı hafızaya geçmeden silinmesine (leakage) neden olmaktadır. ' +
               'Sınav günleri arasındaki uzun boşluklar, Ebbinghaus unutma eğrisini hızlandırır.',
@@ -1073,7 +1100,7 @@ async function exportPsychPDF(sName) {
             kullanılanOlaylar.add('A_dengeli_ay');
             if (krizGunSayisiMask >= 3) {
               aktifNegatifler.push('Maskelenmiş Kriz');
-              kutu('Maskelenmiş Kriz — Ortalama Aldatıcı',
+              kutu('[ID-055] Maskelenmiş Kriz — Gizli Kırılganlık',
                 'Uyku ve enerji ortalamaları dengeli görünse de ay içinde ' + krizGunSayisiMask + ' kriz günü (kaygı≥8 veya uyku<6) yaşandı. ' +
                 'Ay ortalaması bu krizleri görünmez kılıyor. ' +
                 'Öğrencinin "genel olarak iyi" profili, gerçekte kronik kırılganlık üzerine kurulu. ' +
@@ -1187,7 +1214,7 @@ async function exportPsychPDF(sName) {
           if (kaygiGunler.length>=1 && siginakDers && !kullanılanOlaylar.has('B_anestezi')) {
             aktifNegatifler.push('Akademik Anestezi');
             kullanılanOlaylar.add('B_anestezi');
-            kutu('Akademik Anestezi — Güvenli Liman Sığınması',
+            kutu('[ID-085] Akademik Anestezi — Güvenli Liman Sığınması',
               'Kaygı yüksek günlerde ' + siginakDers.d + ' branşındaki soru sayısı normal günlerin ' + (siginakDers.oran*100).toFixed(0) + '\'ine çıkmış. ' +
               'Öğrenci stres anında başarısızlık riskini sıfırlamak için en güçlü olduğu ' + siginakDers.d + ' branşına sığınmıştır. ' +
               'Bu hacimli üretim öğrenme odaklı değil; "başarıyorum" illüzyonuyla kaygıyı uyuşturma (anestezi) amaçlıdır. ' +
@@ -1199,7 +1226,7 @@ async function exportPsychPDF(sName) {
           } else if (yorgunGunler.length>=1 && yorgunBirakilan && yorgunBirakilan.oran<0.4 && !kullanılanOlaylar.has('B_yuk_reddi')) {
             kullanılanOlaylar.add('B_yuk_reddi');
             const isSayisal = sayisalDersler.includes(yorgunBirakilan.d);
-            kutu('Bilişsel Yük Reddi — Enerji Tasarrufu Refleksi',
+            kutu('[ID-105] Bilişsel Yük Reddi — Verimsiz Çalışma',
               'Sistem koruma modu. Enerji düşük günlerde ' + yorgunBirakilan.d + ' branşındaki çalışma normale göre %' + Math.round((1-yorgunBirakilan.oran)*100) + ' azalmış. ' +
               'Beyin, yorgunluk anında en çok enerji tüketen ' + yorgunBirakilan.d + ' branşını ' + (isSayisal?'(sayısal muhakeme yükü yüksek) ':'') + 'geçici olarak devre dışı bırakmıştır. ' +
               'Bu bir disiplinsizlik değil, prefrontal korteksin "enerji ekonomisi" refleksidir.',
@@ -1209,7 +1236,7 @@ async function exportPsychPDF(sName) {
           } else if (kacisaDers && zayifBrans && kacisaDers.d===zayifBrans.d && kaygiGunler.some(d=>!d.dersHata[kacisaDers.d]||d.dersHata[kacisaDers.d].q===0) && !kullanılanOlaylar.has('B_klinik_kacinma')) {
             aktifNegatifler.push('Klinik Kaçınma');
             kullanılanOlaylar.add('B_klinik_kacinma');
-            kutu('Klinik Kaçınma (Avoidance) — ' + kacisaDers.d,
+            kutu('[ID-095] Klinik Kaçınma (Avoidance) — ' + kacisaDers.d,
               'Hata oranı en yüksek (%' + zayifBrans.pct.toFixed(0) + ') olan ' + kacisaDers.d + ' branşı, kaygı yüksek günlerde tamamen bloke edilmiştir. ' +
               'Hata yapma korkusuyla yüzleşmemek için ' + kacisaDers.d + ' sistematik olarak atlanmaktadır. ' +
               'Öğrenci diğer derslerde çok soru çözerek "çalışıyor" maskesi taksa da, akademik gelişim patinaj yapmaktadır. ' +
@@ -1235,7 +1262,7 @@ async function exportPsychPDF(sName) {
             if (denemeSonrasi) {
               aktifNegatifler.push('Reaktif Telafi');
               kullanılanOlaylar.add('B_reaktif_telafi');
-              kutu('Reaktif Telafi — Yanılsamalı Tamir',
+              kutu('[ID-175] Reaktif Telafi — Öz-Denetim Sinyali',
                 'Düşük deneme performansının ertesinde soru sayısı ort. ' + Math.round(ortSoru) + '\'den ' + denemeSonrasi.ertesi.soru + '\'e çıkmış. ' +
                 'Zedelenen öz-güveni rakamlarla tamir etme çabasıdır. ' +
                 'Hızla çözülen bu soruların analiz kalitesi ve kalıcı hafızaya aktarımı düşüktür — sayı artışı gerçek öğrenmeyi yansıtmaz.',
@@ -1307,7 +1334,7 @@ async function exportPsychPDF(sName) {
           if (siginakDers && kacisaDers && kaygiGunler.length>=3 && !kullanılanOlaylar.has('B_kemiklesme')) {
             aktifNegatifler.push('Kemikleşmiş Savunma Karakteristiği');
             kullanılanOlaylar.add('B_kemiklesme');
-            kutu('Kemikleşmiş Savunma Karakteristiği',
+            kutu('[ID-055] Kemikleşmiş Savunma — Maskeli Stabilite',
               'Ay boyunca ' + kaygiGunler.length + ' yüksek kaygı gününde tutarlı bir patern gözlemlendi: ' +
               siginakDers.d + ' branşı "duygusal tampon" (kaygıda ort. ' + (siginakDers.oran*100).toFixed(0) + '% soru artışı), ' +
               kacisaDers.d + ' branşı "tehdit" olarak kodlanmış (kaygıda ' + Math.round((1-kacisaDers.oran)*100) + '% azalış). ' +
@@ -1318,7 +1345,7 @@ async function exportPsychPDF(sName) {
           // Vaka 2: Sahte Gelişim İllüzyonu
           } else if (zayifBransCalismaPct!==null && zayifBransCalismaPct<15 && toplamSoruAy>100 && !kullanılanOlaylar.has('B_sahte_gelisim')) {
             kullanılanOlaylar.add('B_sahte_gelisim');
-            kutu('Sahte Gelişim İllüzyonu — Konfor Alanı Tuzağı',
+            kutu('[ID-085] Sahte Gelişim İllüzyonu — Konfor Alanı Tuzağı',
               'Aylık toplam ' + toplamSoruAy + ' soru çözülmüş; ancak en zayıf branş olan ' + zayifBrans.d + ' (%' + zayifBrans.pct.toFixed(0) + ' hata) toplam çalışmanın yalnızca %' + zayifBransCalismaPct.toFixed(0) + '\'ini oluşturuyor. ' +
               'Ay genelinde "patinaj" teşhisi: öğrenci bildiği konuları tekrar ederek "başarı hazzı" satın almakta, gerçek zayıflıklarıyla temas kurmaktan ay boyu kaçınmıştır. ' +
               'Gelecek ay ' + zayifBrans.d + ' çalışma oranının %30\'a çıkarılması hedeflenmeli.',
@@ -1430,7 +1457,7 @@ async function exportPsychPDF(sName) {
             if (sirkadiyanSabotaj && !kullanılanOlaylar.has('E_sirkadiyen')) {
               aktifNegatifler.push('Sirkadiyen Sabotaj');
               kullanılanOlaylar.add('E_sirkadiyen');
-              kutu('Mavi Işık ve Bilişsel Sis — Sirkadiyen Sabotaj',
+              kutu('[ID-010] Mavi Işık ve Bilişsel Sis — Sirkadiyen Sabotaj',
                 'Sosyal medya ' + sirkadiyanSabotaj.d.sosyal.toFixed(1) + ' saat (uyku ' + sirkadiyanSabotaj.d.uyku.toFixed(1) + ' sa) olan günün ertesinde isabet oranı belirgin düştü. ' +
                 'Gece geç saatteki ekran maruziyeti melatonin salgısını baskılamış; ertesi günün ilk akademik periyodu "bilişsel sis" içinde geçirilmiştir. ' +
                 'Uyku öncesi 1 saat ekransız tampon zorunlu.',
@@ -1443,7 +1470,7 @@ async function exportPsychPDF(sName) {
               kullanılanOlaylar.add('E_reaktif_kacis');
               const enKotuGun = sosyalKaygiGunler.sort((a,b)=>b.kaygi-a.kaygi)[0];
               const kacisHata = dersHataArr[0];
-              kutu('Reaktif Sosyal Medya Kaçışı — Akademik Anestezi',
+              kutu('[ID-035] Reaktif Sosyal Medya Kaçışı — Akademik Anestezi',
                 'Kaygı ' + enKotuGun.kaygi + '/10 olan günde sosyal medya ' + enKotuGun.sosyal.toFixed(1) + ' saat kullanıldı. ' +
                 (kacisHata ? '"' + kacisHata.d + '" branşındaki %' + kacisHata.pct.toFixed(0) + ' hata oranıyla yüzleşmek yerine beyin dijital uyuşturucuya yöneldi. ' : '') +
                 'Bu bir dinlenme değil "bilişsel erteleme" (procrastination) refleksidir; akademik sorun çözülmeden büyümeye devam ediyor.',
@@ -1456,7 +1483,7 @@ async function exportPsychPDF(sName) {
                        !kullanılanOlaylar.has('E_pasif_ogrenme')) {
               kullanılanOlaylar.add('E_pasif_ogrenme');
               const illuzGun = yuksekOnlineGunler.find(d=>d.soru<ortSoru*0.6);
-              kutu('Pasif Öğrenme İllüzyonu',
+              kutu('[ID-105] Pasif Öğrenme İllüzyonu',
                 illuzGun.online.toFixed(1) + ' saat online ders izlendi; ancak o gün soru sayısı (' + illuzGun.soru + ') günlük ortalamanın (' + Math.round(ortSoru) + ') altında kaldı. ' +
                 'Öğrenci ekran karşısında ders izleyerek "öğreniyorum" hissini tatmin etmiş ancak aktif üretime geçemedi. ' +
                 'Pasif izleme kalıcı nöral yollar oluşturmaz; her 25 dk izleme için en az 15 dk aktif soru çözümü gereklidir.',
@@ -1539,7 +1566,7 @@ async function exportPsychPDF(sName) {
                 !kullanılanOlaylar.has('E_kriz_uyusma')) {
               aktifNegatifler.push('Kemikleşmiş Dijital Kaçış');
               kullanılanOlaylar.add('E_kriz_uyusma');
-              kutu('Kriz Sonrası Uyuşma Trendi — Kemikleşmiş Dijital Kaçış',
+              kutu('[ID-035] Kriz Sonrası Uyuşma Trendi — Kemikleşmiş Dijital Kaçış',
                 'Ay içinde ' + krizGunleri2.length + ' kriz gününde sosyal medya kullanımı normal günlerin %' + Math.round(krizSosyalArtis) + ' üzerinde (' + (krizSosyalOrt??0).toFixed(1) + ' sa/gün vs ' + (normalSosyalOrt??0).toFixed(1) + ' sa/gün normal). ' +
                 'Öğrenci ay boyunca her akademik krizde birincil savunma olarak dijital uyuşturmayı kullandı. ' +
                 'Bu kemikleşmiş bir "Dijital Kaçış" karakteristiğidir; sınav dönemi stresinde bu refleks güçlenecektir.',
@@ -1552,7 +1579,7 @@ async function exportPsychPDF(sName) {
               aktifNegatifler.push('Kronik Dijital Sızıntı');
               kullanılanOlaylar.add('E_kronik_sizinti');
               const enZayif = dersHataArr[0];
-              kutu('Kronik Dijital Sızıntı — Bilişsel Yer Değiştirme',
+              kutu('[ID-001] Kronik Dijital Sızıntı — Bilişsel Yer Değiştirme',
                 'Ay boyunca sosyal medya ort. ' + ortSosyal2.toFixed(1) + ' sa/gün. ' +
                 'En çok geliştirilmesi gereken ' + enZayif.d + ' branşına (%' + enZayif.pct.toFixed(0) + ' hata) ayrılması gereken "direnç enerjisi", dijital evrende tüketildi. ' +
                 'Ay sonunda ' + enZayif.d + ' netlerindeki duraksama bu sızıntının doğrudan sonucudur.',
@@ -1654,7 +1681,7 @@ async function exportPsychPDF(sName) {
               gunlerSorted.slice(0,3).some(d=>d.kaygi>0&&d.kaygi>7) && !kullanılanOlaylar.has('C_basari_kaygisi')) {
             aktifNegatifler.push('Başarı Kaygısı');
             kullanılanOlaylar.add('C_basari_kaygisi');
-            kutu('Başarı Kaygısı — Beklenti Baskısı',
+            kutu('[ID-045] Başarı Kaygısı — Zirve Baskısı / İmposter',
               'Bu haftaki deneme neti (' + haftaDenemeOrt.toFixed(1) + ') önceki ortalamayı (' + oncekiDenemeOrt.toFixed(1) + ') geçmesine rağmen kaygı skoru yüksek seyretti. ' +
               'Başarı paradoksu: yüksek performans "bu seviyeyi koruma" baskısı yaratmış, ödül değil yeni stres kaynağına dönüşmüştür. ' +
               'Öz-yeterlilik dışsal sonuca aşırı bağımlı.' +
@@ -1666,7 +1693,7 @@ async function exportPsychPDF(sName) {
                      gunlerSorted.slice(0,3).some(d=>negatifMoodlar.includes(d.mood))&&
                      !kullanılanOlaylar.has('C_yanilsamali_yetersizlik')) {
             kullanılanOlaylar.add('C_yanilsamali_yetersizlik');
-            kutu('Yanılsamalı Yetersizlik — Bilişsel Çarpıtma',
+            kutu('[ID-075] Yanılsamalı Yetersizlik — Gizli Duygu Çarpıtması',
               'Bu haftaki isabet oranı %' + toplamIsabet.toFixed(0) + ' ile yüksek; ancak duygu girişleri olumsuz seyretti. ' +
               'Nesnel veriler uzmanlık seviyesini gösterirken öğrenci yapamadığı %' + (100-toplamIsabet).toFixed(0) + '\'lik kısma odaklanarak tüm emeğini değersizleştiriyor. ' +
               'Mükemmeliyetçi blokaj riski.' +
@@ -1695,7 +1722,7 @@ async function exportPsychPDF(sName) {
             if (denemeSonrasiSifir&&!kullanılanOlaylar.has('C_paralizi')) {
               aktifNegatifler.push('Deneme Sonrası Paralizi');
               kullanılanOlaylar.add('C_paralizi');
-              kutu('Deneme Sonrası Şok — Akademik Paralizi',
+              kutu('[ID-065] Deneme Sonrası Şok — Akademik Küsme',
                 'Deneme performansı öğrencinin duygusal eşiğini aşmış; ertesi gün kaygı '+denemeSonrasiSifir.ertesi.kaygi+'/10\'a çıkarak akademik veri girişi sıfırlanmış. ' +
                 'Bu total akademik ketlenme biyolojik bir tepkidir; koç bu noktayı "hatalı öğrenme" değil "eşik kalibrasyonu" olarak ele almalıdır.',
                 [255,218,218],[175,15,15]);
@@ -1758,7 +1785,7 @@ async function exportPsychPDF(sName) {
           if (netDegisim!==null&&netDegisim>1&&kaygiDegisim!==null&&kaygiDegisim>0&&!kullanılanOlaylar.has('C_kirilgan_ozguven')) {
             aktifNegatifler.push('Kırılgan Öz-Güven');
             kullanılanOlaylar.add('C_kirilgan_ozguven');
-            kutu('Kırılgan Öz-Güven Karakteristiği',
+            kutu('[ID-045] Kırılgan Öz-Güven — Zirve Felci Karakteristiği',
               'Ay boyunca netler '+ilkYariNet.toFixed(1)+'->'+ikinciYariNet.toFixed(1)+' (+'+netDegisim.toFixed(1)+') yükseldi; ancak kaygı '+(kaygiDegisim>0?'+':'')+kaygiDegisim.toFixed(1)+' puan daha arttı. ' +
               'Akademik gelişim psikolojik gelişimin önüne geçti. Öğrenci başarısını duygusal düzlemde reddediyor; netler onu tatmin etmiyor, sadece "bar"ı yükseltiyor. ' +
               'Koç görüşmelerinde nesnel verilerle öz-değer arasındaki bağ kasıtlı kurulmalıdır.',
@@ -1879,7 +1906,7 @@ async function exportPsychPDF(sName) {
             aktifNegatifler.push('Hatalı Kodlama Riski');
             kullanılanOlaylar.add('D_hatali_kodlama');
             const enKritik = hataKodlamaKonu[0];
-            kutu('Hatalı Kodlama (Misconception) Riski — ' + enKritik.konu,
+            kutu('[ID-125] Hatalı Kodlama Riski — ' + enKritik.konu,
               enKritik.konu + ' konusu bu hafta fizyolojik kriz altında (' + enKritik.gunSayisi + ' günde ' + enKritik.soru + ' soru) çalışıldı ve isabet oranı %' + (100-enKritik.hataPct).toFixed(0) + ' ile düşük kaldı. ' +
               'Yüksek kaygı/uykusuzluk altında çalışılan bu konu, beyin tarafından "tehdit" olarak algılanmış ve mantıksal şemalar yerine korku odaklı kısa yollarla kaydedilmiştir. ' +
               'Bu konu "öğrenilmiş" sayılmamalı; 72 saat içinde temiz zihinle "Hasar Tespit Testi" yapılmalıdır.' +
@@ -1892,7 +1919,7 @@ async function exportPsychPDF(sName) {
             aktifNegatifler.push('Bellek Sızıntısı');
             kullanılanOlaylar.add('D_bellek_sizintisi');
             const etkilenenDersler = [...new Set(uykuBorcuYeniKonu.flatMap(d=>soruEntries2.filter(e=>e.dateKey===d.dk).map(e=>e.subject)))].join(', ');
-            kutu('Bellek Sızıntısı (Memory Leakage) — Konsolidasyon İflası',
+            kutu('[ID-140] Bellek Sızıntısı — Konsolidasyon İflası',
               'Uyku < 6 saat olan günlerde toplam ' + uykuBorcuToplamSure + ' dakika çalışıldı. ' +
               'Beyin, uykuda gerçekleştirdiği "bilgiyi kalıcı belleğe aktarma" (konsolidasyon) işlemini uykusuzluk nedeniyle tamamlayamadı. ' +
               (etkilenenDersler ? 'Bu süreçte çalışılan ' + etkilenenDersler + ' konuları uzun süreli belleğe geçemeden silinme riski taşıyor.' : '') +
@@ -1907,7 +1934,7 @@ async function exportPsychPDF(sName) {
             const etkilenenGun = odakDusukYuksekSoru[0];
             const etkilenenDers = soruEntries2.filter(e=>e.dateKey===etkilenenGun.dk)
               .sort((a,b)=>(b.questions||0)-(a.questions||0))[0];
-            kutu('Dikkat Borcu ve Yüzeysel İşleme',
+            kutu('[ID-155] Dikkat Borcu ve Yüzeysel İşleme',
               'Odak ' + etkilenenGun.odak + '/10 iken günlük ortalamanın (' + Math.round(ortSoru) + ') üzerinde ' + etkilenenGun.soru + ' soru çözüldü. ' +
               (etkilenenDers ? etkilenenDers.subject + ' branşında ' : '') +
               'düşük odakla çözülen sorular beynin "derin işleme" (deep processing) katmanlarına ulaşmadı. ' +
@@ -1940,7 +1967,7 @@ async function exportPsychPDF(sName) {
                 'Bilgiler zihinde karışık bir yığın halindedir; hafıza bütünleşik değil parçalı kodladı.',
                 [255,240,215],[145,80,0]);
             } else if (krizKonuArr.length>0) {
-              kutu('Kriz Altında Çalışılan Konular — İzleme Altında',
+              kutu('[ID-125] Kriz Altında Çalışılan Konular — İzleme Altında',
                 krizKonuArr.slice(0,3).map(k=>k.konu+' ('+k.soru+' soru, %'+(100-(k.hataPct??0)).toFixed(0)+' isabet)').join('; ') + '. ' +
                 'Bu konular fizyolojik stres altında çalışıldı; kalıcı öğrenme garanti edilemez. Fırsatta tekrar edilmeli.',
                 [255,245,220],[145,85,0]);
@@ -2004,7 +2031,7 @@ async function exportPsychPDF(sName) {
             aktifNegatifler.push('Bilişsel Borç Bakiyesi');
             kullanılanOlaylar.add('D_aylik_borc');
             const topBorclar = borcKonular.slice(0,4);
-            kutu('Aylık Bilişsel Borç Bakiyesi — Hasar Kaydı',
+            kutu('[ID-140] Aylık Bilişsel Borç Bakiyesi — Hasar Kaydı',
               'Ay içinde ' + ayKrizGunSayisi + ' kriz günü tespit edildi. Bu günlerde çalışılan konulardan hasar riski taşıyanlar: ' +
                 topBorclar.map(k=>k.konu+' ('+k.soru+' soru, %'+(100-k.hataPct).toFixed(0)+' isabet)').join('; ') + '. ' +
                 'Bu konular akademik birer borçtur: "öğrenilmiş" sayılmamalı. ' +
@@ -2043,7 +2070,7 @@ async function exportPsychPDF(sName) {
             }).filter(v=>v!==null);
             const hataSabit = haftaHataOranlari.length>=2 &&
               Math.max(...haftaHataOranlari)-Math.min(...haftaHataOranlari) < 5;
-            kutu('Niteliksiz Nicelik Kemikleşmesi' + (hataSabit?' — Hata Farkındalığı Kaybı':''),
+            kutu('[ID-155] Niteliksiz Nicelik Kemikleşmesi' + (hataSabit?' — Hata Farkındalığı Kaybı':''),
               'Ay boyunca toplam ' + toplamSoru + ' soru çözüldü ancak hata oranı sürekli %30+ seviyesinde kaldı. ' +
               (hataSabit?'Hata oranı haftalara göre değişmiyor — öğrenci aynı yanlışları tekrarlıyor, fark etmiyor. Bu "Hata Farkındalığı Kaybı" dur. ':'')+
               (enKemikBrans?enKemikBrans.d+' branşında %'+enKemikBrans.pct.toFixed(0)+' hata oranıyla hatalı mantık otomatize ediliyor. ':'')+
@@ -2195,6 +2222,31 @@ async function exportPsychPDF(sName) {
                                         'Kaygı deneme performansını belirgin etkilemiyor — iyi.'):'';
 
           if (c1) {
+            // ID-190: Sınav Günü Riski — günlük vs deneme isabet farkı
+            (() => {
+              const _gunlukGirisler = studyEntries.filter(e =>
+                (e.userId === sUid || e.studentName === sName) &&
+                e.type === 'soru' && e.dateKey >= startKey && e.dateKey <= endKey
+              );
+              const _gQ = _gunlukGirisler.reduce((a,e)=>a+(e.questions||0),0);
+              const _gD = _gunlukGirisler.reduce((a,e)=>a+(e.correct||0),0);
+              const _gIsa = _gQ > 0 ? _gD/_gQ*100 : null;
+              const _dQ = filteredExams.reduce((a,e)=>a+(e.questions||0),0);
+              const _dD = filteredExams.reduce((a,e)=>a+(e.correct||0),0);
+              const _dIsa = _dQ > 0 ? _dD/_dQ*100 : null;
+              if (_gIsa !== null && _dIsa !== null && Math.abs(_gIsa - _dIsa) > 20) {
+                const yonMesaj = _dIsa < _gIsa
+                  ? 'Öğrenci sınav ortamında günlük performansının altına düşüyor — sınav anı yönetimi zayıf, baskı altında performans kaybı var.'
+                  : 'Denemede günlük ortalamayı aşıyor — sınav koşulları motivasyonu artırıyor, pozitif baskı çalışıyor.';
+                Y = pdfCheck(doc, Y, 20);
+                kutu('[ID-190] Sınav Günü Riski — Ortam Performans Farkı',
+                  'Günlük isabet ort. %' + _gIsa.toFixed(0) + ' vs Deneme isabet ort. %' + _dIsa.toFixed(0) +
+                  ' → ' + Math.abs(_gIsa-_dIsa).toFixed(0) + ' puan fark. ' + yonMesaj,
+                  _dIsa < _gIsa ? [255,230,215] : [220,255,235],
+                  _dIsa < _gIsa ? [168,50,10] : [14,128,62]);
+              }
+            })();
+
             kutu('Deneme Özeti', c1+(c2?' '+c2:''), [230,225,255],[80,50,200]);
           }
         }
@@ -2274,7 +2326,7 @@ async function exportPsychPDF(sName) {
               genelSosyal!==null&&genelSosyal>3 && genelIsabet!==null&&genelIsabet<65) {
             anaVaka = 'total_crash';
             aktifNegatifler.push('Akut Sistem Çöküşü');
-            kutu('BÜTÜNCÜL TANI: Akut Sistem Çöküşü (Total Crash)',
+            kutu('[ID-040+ID-001+ID-010] BÜTÜNCÜL TANI: Akut Sistem Çöküşü',
               'Dört temel kriter eş zamanlı kritik: uyku ' + genelUyku.toFixed(1) + ' sa, kaygı ' + genelKaygi.toFixed(1) + '/10, sosyal medya ' + genelSosyal.toFixed(1) + ' sa/gün, isabet %' + genelIsabet.toFixed(0) + '. ' +
               'Fizyolojik tükenmişlik ve duygusal aşırı yüklenme, dijital kaçışla birleşerek akademik üretimi niteliksiz hale getirmiştir. ' +
               'Bu hafta bitirilen konular "öğrenilmiş" değil "savuşturulmuş" veri statüsündedir. ' +
@@ -2284,7 +2336,7 @@ async function exportPsychPDF(sName) {
           // Vaka 2: Kırılgan Başarı
           } else if (genelIsabet!==null&&genelIsabet>80 && genelKaygi!==null&&genelKaygi>7 && genelUyku!==null&&genelUyku<6.5) {
             anaVaka = 'kirilgan_basari';
-            kutu('BÜTÜNCÜL TANI: Kırılgan Başarı (High-Stakes Production)',
+            kutu('[ID-045] BÜTÜNCÜL TANI: Kırılgan Başarı — Fizyolojik Bedelle Satın Alınan Başarı',
               'İsabet %' + genelIsabet.toFixed(0) + ' ile yüksek; ancak kaygı ' + genelKaygi.toFixed(1) + '/10 ve uyku ' + genelUyku.toFixed(1) + ' sa. ' +
               'Başarı ağır bir fizyolojik bedelle satın alınıyor. ' +
               'Bu tempo sürdürülemez; akademik çıktı görünürde iyi olsa da altta yatan fizyolojik erozyon devam ediyor. ' +
@@ -2294,7 +2346,7 @@ async function exportPsychPDF(sName) {
           // Vaka 3: Reaktif Kaçınma ve Telafi Döngüsü
           } else if (aktifNegatifler.includes('Reaktif Telafi') || aktifNegatifler.includes('Akademik Anestezi')) {
             anaVaka = 'telafi_dongusu';
-            kutu('BÜTÜNCÜL TANI: Reaktif Kaçınma ve Telafi Döngüsü',
+            kutu('[ID-065+ID-175] BÜTÜNCÜL TANI: Reaktif Kaçınma ve Telafi Döngüsü',
               'Bu hafta boyunca "kaçınma -> telafi" döngüsü gözlemlendi. ' +
               (aktifNegatifler.includes('Akademik Anestezi')?'Güçlü branşa sığınma ile kaçışı maskeleme; ':'')+
               (aktifNegatifler.includes('Reaktif Telafi')?'Kötü deneme sonrası kontrolsüz soru artışı. ':'') +
@@ -2306,7 +2358,7 @@ async function exportPsychPDF(sName) {
           } else if (aktifNegatifler.includes('Pasif Öğrenme İllüzyonu') ||
                      (genelSosyal!==null&&genelSosyal>2&&ortSoru<DAILY_GOAL*0.3)) {
             anaVaka = 'pasif_curume';
-            kutu('BÜTÜNCÜL TANI: Pasif Akademik Çürüme',
+            kutu('[ID-105+ID-035] BÜTÜNCÜL TANI: Pasif Akademik Çürüme',
               'Öğrenci günü ekran başında (ders izleyerek veya eğlenerek) bitiriyor; kendi başına akademik üretim yapacak bilişsel enerji bulunamıyor. ' +
               (genelSosyal!==null?'Sosyal medya: '+genelSosyal.toFixed(1)+' sa/gün. ':'')+
               (ortSoru>0?'Soru ort.: '+Math.round(ortSoru)+'/gün (hedef: '+DAILY_GOAL+'). ':'') +
@@ -2317,7 +2369,13 @@ async function exportPsychPDF(sName) {
           } else if (genelUyku!==null&&genelUyku>=7.5 && genelKaygi!==null&&genelKaygi>=4&&genelKaygi<=6 &&
                      (genelSosyal===null||genelSosyal<1.5) && genelIsabet!==null&&genelIsabet>=85) {
             anaVaka = 'optimal_flow';
-            kutu('BÜTÜNCÜL TANI: Dengeli Akış (Optimal Performance)',
+            // ID-200 kontrolü — 14 gün stabil mi?
+            const _stabil14 = sortedDays.length >= 14 && sortedDays.slice(0,14).every(dk => {
+              const _d = days[dk] || {};
+              return parseFloat(_d.uyku||0)>=7 && parseFloat(_d.enerji||0)>=6 && parseFloat(_d.odak||0)>=6;
+            });
+
+            kutu('[ID-200] BÜTÜNCÜL TANI: Dengeli Akış — İdeal LGS Formu',
               'İdeal akademik akış (Flow) koşulları: uyku ' + genelUyku.toFixed(1) + ' sa, kaygı ' + genelKaygi.toFixed(1) + '/10 (fonksiyonel bölge), isabet %' + genelIsabet.toFixed(0) + '. ' +
               'Fizyolojik dengenin duygusal stabilitiyi beslediği, bunun da doğrudan akademik isabete yansıdığı sürdürülebilir bir dönem. ' +
               'Bu ritim korunmalı; doz yavaşça artırılabilir.',
@@ -2435,7 +2493,7 @@ async function exportPsychPDF(sName) {
           if (burnoutRisk) {
             ayAnaVaka = 'burnout';
             aktifNegatifler.push('Ay Sonu Tükenmişliği');
-            kutu('AYLIK FOTOĞRAF: Süreç Sonu Tükenmişliği (Burnout)',
+            kutu('[ID-040] AYLIK FOTOĞRAF: Süreç Sonu Tükenmişliği — Burnout',
               'Ay sonunun son 10 günü: kaygı ort. '+(son10KaygiOrt??0).toFixed(1)+'/10, enerji ort. '+(son10EnerjiOrt??0).toFixed(1)+'/10, aktif gün '+son10AktifGun+'/10. ' +
               'Ay başındaki yüksek tempo ay sonunda sistemin kapanmasına yol açtı. Kapasite üstü yüklenme akademik çöküşü tetiklemiştir. ' +
               (genelIsabet!==null?'Dönem isabet: %'+genelIsabet.toFixed(0)+'. ':'')+
@@ -2448,7 +2506,7 @@ async function exportPsychPDF(sName) {
                      (sosyalTrend2===null||sosyalTrend2>0.3)) {
             ayAnaVaka = 'negatif_regresyon';
             aktifNegatifler.push('Süreç Erozyonu');
-            kutu('AYLIK FOTOĞRAF: Negatif Regresyon — Süreç Erozyonu',
+            kutu('[ID-040+ID-155] AYLIK FOTOĞRAF: Negatif Regresyon — Süreç Erozyonu',
               'Ay boyunca tüm göstergeler aşağı yönlü: ' +
               (ayBasiKaygi!==null&&aySonuKaygi!==null?'Kaygı '+ayBasiKaygi.toFixed(1)+'->'+aySonuKaygi.toFixed(1)+'/10 (+'+kaygiTrend.toFixed(1)+'), ':'')+
               (ayBasiIsabet!==null&&aySonuIsabet!==null?'İsabet %'+ayBasiIsabet.toFixed(0)+'->%'+aySonuIsabet.toFixed(0)+' ('+isabetTrend.toFixed(1)+'), ':'')+
@@ -2480,7 +2538,7 @@ async function exportPsychPDF(sName) {
               }
               return count;
             })();
-            kutu('AYLIK FOTOĞRAF: İmposter Sarmalı — Başarı İçselleştirilemiyor',
+            kutu('[ID-045] AYLIK FOTOĞRAF: İmposter Sarmalı — Zirve Felci Kemikleşmiş',
               'Dönem isabet oranı %'+genelIsabet.toFixed(0)+' ile nesnel olarak başarılı; ancak duygusal tablo bunu yansıtmıyor. ' +
               (basariSonrasiKaygi>0?'İyi geçen ' + basariSonrasiKaygi + ' deneme sonrasında ertesi gün kaygı yükseldi — başarı içselleştirilemiyor. ':'') +
               'Öğrenci başarısını şansa bağlıyor; "bu sefer denk geldi" savunma mekanizması devrede. ' +
@@ -2490,7 +2548,7 @@ async function exportPsychPDF(sName) {
           // Vaka 5: Dijital Anestezi Karakteristiği
           } else if (dijitalAnes && kritikSayisi>=3) {
             ayAnaVaka = 'dijital_anes';
-            kutu('AYLIK FOTOĞRAF: Dijital Anestezi Karakteristiği — Kaçış Refleksi Kemikleşti',
+            kutu('[ID-035] AYLIK FOTOĞRAF: Dijital Anestezi Karakteristiği',
               'Ay boyunca kriz anlarında birincil savunma: dijital dünyaya sığınma. ' +
               (genelSosyal!==null?'Sosyal medya ort. '+genelSosyal.toFixed(1)+' sa/gün. ':'')+
               aktifNegatifler.filter(r=>r.includes('Dijital')||r.includes('Kaçış')).join(', ')+'tespit edildi. ' +
@@ -2503,7 +2561,7 @@ async function exportPsychPDF(sName) {
                      son10Gun.filter(d=>d.enerji>0||d.kaygi>0).length<4 &&
                      (genelSosyal!==null&&genelSosyal>2.5)) {
             ayAnaVaka = 'gizli_kriz';
-            kutu('AYLIK FOTOĞRAF: Gizli Kriz ve Sinyal Kaybı',
+            kutu('[ID-055] AYLIK FOTOĞRAF: Gizli Kriz ve Sinyal Kaybı',
               'İsabet oranı %'+genelIsabet.toFixed(0)+' ile görünürde iyi; ancak ay sonunda veri girişleri seyrekleşti ve sosyal medya ort. '+(genelSosyal??0).toFixed(1)+' sa/gün. ' +
               'Öğrenci süreçten duygusal olarak kopuyor. Başarı gelmesine rağmen her an "vazgeçme" riski var. ' +
               'Bu sessiz kopuş en tehlikeli kriz türüdür — dışarıdan görünmez.',
@@ -2512,7 +2570,7 @@ async function exportPsychPDF(sName) {
           // Vaka 7: Patinaj ve Bilişsel Durgunluk
           } else if (patinaj && genelKaygi!==null&&genelKaygi>6) {
             ayAnaVaka = 'patinaj';
-            kutu('AYLIK FOTOĞRAF: Patinaj ve Bilişsel Durgunluk (Stagnation)',
+            kutu('[ID-085+ID-095] AYLIK FOTOĞRAF: Patinaj ve Bilişsel Durgunluk',
               'Soru hacmi hedefe yakın; ancak isabet stabil ' + (genelIsabet!==null?'(%'+genelIsabet.toFixed(0)+') ':'')+
               've kaygı sürekli yüksek (' + (genelKaygi??0).toFixed(1) + '/10). ' +
               'Öğrenci çok çalışıyor görünse de duygusal bariyerler gerçek gelişimi engelliyor. ' +
@@ -2679,6 +2737,15 @@ async function exportPsychPDF(sName) {
   doc.text(tx('LGSKoç Psikolojik Takip Raporu'), 112, Y+20);
   Y += 30;
 
+      // ── KLİNİK ID SİSTEMİ ─────────────────────────────────
+      Y = pdfCheck(doc, Y, 20);
+      const _idSonuc = klinikIDAnaliz(days, sortedDays, studyEntries, sUid, period);
+      if (_idSonuc.tetiklenen.length > 0) {
+        Y = pdfIDRaporu(doc, PF, Y, _idSonuc,
+          kutu, dipnot, pdfCheck, pdfSecHeader, tx);
+      }
+
+
       } // end weekly/monthly
       } // end if daily / else weekly-monthly
     } // end veriGunler
@@ -2696,4 +2763,3 @@ async function exportPsychPDF(sName) {
     console.error('exportPsychPDF hata:', err);
   }
 }
-
