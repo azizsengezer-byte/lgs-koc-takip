@@ -589,7 +589,7 @@ function studentAnalysis() {
         const lgsR = calcLGSScore(subR.map(s=>({...s,avgNet:s.net,count:s.q>0?1:0})));
         const examId2 = dersler[0]?.examId||k;
         const accId = 'std_den_'+i;
-        const num = dList ? dList.length-i : i+1;
+        const num = i+1;
         return `<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:8px">
           <div style="display:flex;align-items:stretch">
             <div onclick="toggleDenemeAcc('${accId}')" style="flex:1;display:flex;justify-content:space-between;align-items:center;padding:12px 10px;cursor:pointer;background:var(--surface2);user-select:none">
