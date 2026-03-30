@@ -349,8 +349,10 @@ async function exportPsychPDF(sName) {
       const bSat = doc.splitTextToSize(baslik, 156);
       const mSat = doc.splitTextToSize(metin, 156);
       const bH   = Math.max(bSat.length*5.5 + mSat.length*4.8 + 20, 24);
-      // bolumBaslik yeni sayfaya geçtiyse kutu o sayfada kalır, geçmediyse normal check
-      if (!_bolumYeniSayfa) Y = pdfCheck(doc, Y, bH+6);
+      // Her zaman sayfa kontrolü yap — başlık kaymasını önle
+      Y = pdfCheck(doc, Y, bH + 10);
+      // Sayfa başındaysa (Y < 50) bolumBaslik bazen kayıyor, küçük güvenlik tamponu
+      if (Y < 42) Y = 42;
       _bolumYeniSayfa = false;
       doc.setFillColor(bg[0],bg[1],bg[2]); doc.roundedRect(15,Y,180,bH,2,2,'F');
       doc.setFillColor(kenar[0],kenar[1],kenar[2]); doc.roundedRect(15,Y,4,bH,1,1,'F');
@@ -373,12 +375,10 @@ async function exportPsychPDF(sName) {
 
     function bolumBaslik(renk, baslik, altMetin) {
       const altSat = doc.splitTextToSize(altMetin, 170);
-      // Başlık + altMetin + ilk kutu için TEK seferlik sayfa kontrolü (80mm güvenli alan)
-      const needed = altSat.length*5 + 14 + 80;
-      const yBefore = Y;
+      const needed = altSat.length*5 + 14 + 100; // Başlık + içerik için geniş tampon
       Y = pdfCheck(doc, Y, needed);
-      // Eğer Y değişmedi VE sayfa sonuna yakınsa (250mm+) yeni sayfaya zorla
-      if (Y === yBefore && Y > 210) { Y = pdfNewPage(doc); }
+      // Sayfa sonuna yakınsa zorla yeni sayfa
+      if (Y > 200) { Y = pdfNewPage(doc); }
       _bolumYeniSayfa = true;
       Y += 3;
       doc.setFont(PF,'bold'); doc.setFontSize(8.5);

@@ -614,7 +614,7 @@ function pdfDownload(doc, fname) {
 // ORTAK ÇİZİM YARDIMCILARI
 // ============================================================
 function pdfNewPage(doc) { doc.addPage(); return 20; }
-function pdfCheck(doc, Y, needed) { return Y + needed > 278 ? pdfNewPage(doc) : Y; }
+function pdfCheck(doc, Y, needed) { return Y + needed > 268 ? pdfNewPage(doc) : Y; }
 
 function pdfDrawLogo(doc, x, y, size) {
   const r = size * 0.26;
@@ -747,7 +747,7 @@ function pdfFooter(doc, totalPages, subtitle) {
 }
 
 function pdfSecHeader(doc, title, Y, r=90, g=72, b=200) {
-  Y = pdfCheck(doc, Y, 60); // Başlık + hemen altındaki ilk içerik için geniş tampon
+  Y = pdfCheck(doc, Y, 80); // Başlık + altındaki içerik için geniş güvenli tampon
   // Yumuşak renk + sol çizgi aksanı
   doc.setFillColor(Math.min(255,Math.round(r*0.12+255*0.88)),Math.min(255,Math.round(g*0.12+255*0.88)),Math.min(255,Math.round(b*0.12+255*0.88))); doc.roundedRect(14,Y,182,8,1.5,1.5,'F');
   doc.setFillColor(r,g,b); doc.roundedRect(14,Y,3,8,1,1,'F');
