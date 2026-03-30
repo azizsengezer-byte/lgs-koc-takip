@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ejderha Yumurtası Test</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0f0830; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; font-family:'Nunito',sans-serif; }
+  #canvas-wrap { width:300px; height:300px; position:relative; cursor:pointer; }
+  canvas { width:100%!important; height:100%!important; border-radius:50%; }
+  #status { color:#aaa; font-size:13px; margin-top:12px; }
+  #tap-hint { color:rgba(255,255,255,0.3); font-size:11px; margin-top:8px; }
+</style>
+</head>
+<body>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+</div>
+<div id="status">Yükleniyor...</div>
+<div id="tap-hint">yumurtaya dokun</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// Three.js GLTFLoader — r128 için inline
+// CDN'den yükle
+const loaderScript = document.createElement('script');
+loaderScript.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+loaderScript.onload = initScene;
+document.head.appendChild(loaderScript);
+
+function initScene() {
+  const canvas = document.getElementById('c');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(300, 300);
+  renderer.shadowMap.enabled = true;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(0, 0.5, 3);
+
+  // Işıklar
+  const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambient);
+  const dirLight = new THREE.DirectionalLight(0xffa0ff, 1.5);
+  dirLight.position.set(2, 4, 3);
+  scene.add(dirLight);
+  const rimLight = new THREE.DirectionalLight(0x4cc9f0, 0.8);
+  rimLight.position.set(-3, 1, -2);
+  scene.add(rimLight);
+
+  // Model yükle
+  const loader = new THREE.GLTFLoader();
+  loader.load('egg.glb', (gltf) => {
+    const model = gltf.scene;
+
+    // Merkeze hizala
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const scale = 2.0 / maxDim;
+    model.scale.setScalar(scale);
+    model.position.sub(center.multiplyScalar(scale));
+
+    scene.add(model);
+    document.getElementById('status').textContent = '✅ Model yüklendi!';
+
+    // Animasyonlar var mı?
+    if (gltf.animations && gltf.animations.length > 0) {
+      document.getElementById('status').textContent += ` (${gltf.animations.length} animasyon)`;
+    }
+
+    // Tıklama tepkisi — sallama
+    let shaking = false;
+    let shakePower = 0;
+    document.getElementById('canvas-wrap').addEventListener('click', () => {
+      shaking = true;
+      shakePower = 0.15;
+      // Işık flaşı
+      dirLight.intensity = 3;
+      setTimeout(() => dirLight.intensity = 1.5, 200);
+    });
+
+    // Animasyon döngüsü
+    let t = 0;
+    const mixer = gltf.animations.length > 0 ? new THREE.AnimationMixer(model) : null;
+    if (mixer && gltf.animations.length > 0) {
+      const action = mixer.clipAction(gltf.animations[0]);
+      action.play();
+    }
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      t += delta;
+
+      if (mixer) mixer.update(delta);
+
+      // Pasif yavaş dönüş
+      model.rotation.y = Math.sin(t * 0.4) * 0.3;
+
+      // Nefes alma hareketi
+      model.position.y = Math.sin(t * 1.2) * 0.04;
+
+      // Sallama
+      if (shaking) {
+        model.rotation.z = Math.sin(t * 25) * shakePower;
+        shakePower *= 0.92;
+        if (shakePower < 0.002) { shaking = false; model.rotation.z = 0; }
+      }
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+  }, (xhr) => {
+    document.getElementById('status').textContent = `Yükleniyor... ${Math.round(xhr.loaded/xhr.total*100)}%`;
+  }, (err) => {
+    document.getElementById('status').textContent = '❌ Hata: ' + err.message;
+    console.error(err);
+  });
+}
+</script>
+</body>
+</html>
