@@ -132,10 +132,7 @@ function profilePage() {
           ${['Matematik','Türkçe','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce','Sınıf Öğretmeni','Diğer'].map(b=>`<option ${data.branch===b?'selected':''}>${b}</option>`).join('')}
         </select>
       </div>
-      <div class="form-group">
-        <label class="form-label">Okul Adı</label>
-        <input class="form-input" type="text" id="profileSchool" value="${data.school||''}">
-      </div>
+
       ` : `
       <div class="form-group">
         <label class="form-label">Okul</label>
@@ -241,7 +238,7 @@ function profilePage() {
       </div>
     </div>
 
-    <!-- Rozetler Butonu -->
+    ${!isTeacher ? `
     <div class="card" style="margin-top:0">
       <button class="btn btn-primary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px"
         onclick="showBadgesPage()">
@@ -249,6 +246,7 @@ function profilePage() {
         <span id="badgeCountBadge" style="background:#f9ca24;color:#222;border-radius:20px;padding:2px 10px;font-size:0.78rem;font-weight:800"></span>
       </button>
     </div>
+    ` : ''}
   `;
 }
 
@@ -718,7 +716,7 @@ async function saveProfile() {
     const updates = { name };
     if (currentRole === 'teacher') {
       updates.branch = document.getElementById('profileBranch').value;
-      updates.school = document.getElementById('profileSchool').value.trim();
+      // school: Çalıştığım Okullar kartından ayrıca yönetiliyor
       // schools array yoksa başlat
       if (!window.currentUserData?.schools) updates.schools = [];
     } else {

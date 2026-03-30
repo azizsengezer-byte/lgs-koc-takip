@@ -59,6 +59,16 @@ async function messagesPage(role) {
     unreadByPartner[n.fromUid] = (unreadByPartner[n.fromUid]||0)+1;
   });
 
+  // Son mesaja göre sırala
+  partners.sort((a, b) => {
+    const cidA = convId(myUid, a.uid);
+    const cidB = convId(myUid, b.uid);
+    const msgsA = chatMessages[cidA] || [];
+    const msgsB = chatMessages[cidB] || [];
+    const lastA = msgsA[msgsA.length-1]?.createdAt?.seconds || 0;
+    const lastB = msgsB[msgsB.length-1]?.createdAt?.seconds || 0;
+    return lastB - lastA;
+  });
   const kocPartners = partners.filter(p => !p.isSchoolMate);
   const arkadaşPartners = partners.filter(p => p.isSchoolMate);
 
@@ -78,7 +88,7 @@ async function messagesPage(role) {
       </div>
       ${unread>0?`<span style="background:var(--accent2);color:#fff;font-size:0.65rem;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0">${unread}</span>`:'<span style="color:var(--text2);font-size:1rem">›</span>'}
     </div>`;
-  }).join('');
+  });
 
 
   // Aktif sohbet penceresi
@@ -162,15 +172,11 @@ async function messagesPage(role) {
     <div class="chat-layout">
       <div class="${listClass}">
         <div class="chat-list-header">💬 Konuşmalar</div>
-        ${kocPartners.length > 0 ? `
-          <div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:6px 12px 2px;text-transform:uppercase;letter-spacing:0.06em">👨‍🏫 Koçum</div>
-          ${partnerListHTML(kocPartners).join('')}
-        ` : ''}
-        ${arkadaşPartners.length > 0 ? `
-          <div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:10px 12px 2px;text-transform:uppercase;letter-spacing:0.06em">🏫 Okul Arkadaşları</div>
-          ${partnerListHTML(arkadaşPartners).join('')}
-        ` : (!isTeacher && (window.currentUserData||{}).school ? '<div style="padding:12px;font-size:0.82rem;color:var(--text2)">Aynı okuldaki başka öğrenci yok</div>' : '')}
-        ${isTeacher ? partnerListHTML(kocPartners).join('') : ''}
+        ${isTeacher
+          ? partnerListHTML(partners).join('')
+          : `${kocPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:6px 12px 2px;letter-spacing:0.06em">👨‍🏫 KOÇUM</div>' + partnerListHTML(kocPartners).join('') : ''}
+             ${arkadaşPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:10px 12px 2px;letter-spacing:0.06em">🏫 OKUL ARKADAŞLARI</div>' + partnerListHTML(arkadaşPartners).join('') : ''}`
+        }
       </div>
       <div class="${winClass}">
         ${chatWindowHTML}
