@@ -18,7 +18,7 @@
 <!-- Font: sadece kullanılan ağırlıklar -->
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/styles.css?v=2">
 <!-- Firebase: defer ile yükle -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -480,6 +480,12 @@
     <div class="form-group">
       <label class="form-label">Şifre</label>
       <input class="form-input" type="text" id="newStudentPass" placeholder="En az 6 karakter">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Okul</label>
+      <select class="form-select" id="newStudentSchool">
+        <option value="">— Okul seçin —</option>
+      </select>
     </div>
     <div id="addStudentError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
     <div class="modal-actions">
