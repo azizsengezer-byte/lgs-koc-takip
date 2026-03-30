@@ -2741,14 +2741,6 @@ async function exportPsychPDF(sName) {
   doc.text(tx('LGSKoç Psikolojik Takip Raporu'), 112, Y+20);
   Y += 30;
 
-      // ── KLİNİK ID SİSTEMİ ─────────────────────────────────
-      Y = pdfCheck(doc, Y, 20);
-      const _idSonuc = klinikIDAnaliz(days, sortedDays, studyEntries, sUid, period);
-      if (_idSonuc.tetiklenen.length > 0) {
-        Y = pdfIDRaporu(doc, PF, Y, _idSonuc,
-          kutu, dipnot, pdfCheck, pdfSecHeader, tx);
-      }
-
 
       } // end weekly/monthly
       } // end if daily / else weekly-monthly
