@@ -1140,8 +1140,9 @@ async function badgesPageHTML(uid) {
           return `<div style="text-align:center;padding:8px 4px;border-radius:14px;
             background:${has?cat.color+'18':'var(--surface2)'};
             border:1.5px solid ${has?cat.color:'var(--border)'};
-            cursor:pointer;user-select:none"
-            onclick="_rozetDetayAc('${b.id}','${b.sym}',${has},'${cat.color}')" data-name="${b.name.replace(/"/g,'&quot;')}" data-desc="${b.desc.replace(/"/g,'&quot;')}">
+            cursor:pointer"
+            onclick="_rozetBilgiGoster(event)"
+            data-ad="${b.name}" data-aciklama="${b.desc.replace(/"/g,'&quot;')}" data-has="${has}" data-renk="${cat.color}">
             ${getBadgeHTML(b,!has,52)}
             <div style="font-size:0.6rem;font-weight:700;margin-top:3px;line-height:1.2;color:${has?'var(--text)':'var(--text2)'}">${b.name}</div>
           </div>`;
@@ -1211,162 +1212,30 @@ async function showBadgesPage() {
 // ============================================================
 
 
+// Rozet bilgi modalı
+function _rozetBilgiGoster(e) {
+  const el = e.currentTarget;
+  const ad = el.dataset.ad || '';
+  const aciklama = el.dataset.aciklama || '';
+  const has = el.dataset.has === 'true';
+  const renk = el.dataset.renk || '#6c63ff';
 
-// ============================================================
-// 🏆 ROZET DETAY MODALI
-// ============================================================
-function _rozetDetayAc(id, sym, has, renk) {
-  // name ve desc data attribute'tan al
-  // Bu fonksiyon artık element veya id ile çağrılıyor
-  // Eğer element ise data attribute'tan oku
-  let name = '', desc = '';
-  if (typeof id === 'object' && id.dataset) {
-    const el = id;
-    id = el.getAttribute('onclick').match(/'([^']+)'/)?.[1] || '';
-    sym = el.getAttribute('onclick').match(/'([^']+)'/g)?.[1]?.replace(/'/g,'') || '';
-    has = el.getAttribute('onclick').includes('true');
-    renk = el.getAttribute('onclick').match(/'([^']+)'[^']*$/)?.[1] || '#6c63ff';
-    name = el.dataset.name || '';
-    desc = el.dataset.desc || '';
-  } else {
-    // Eski çağrı — BADGES'tan bul
-    const badge = (typeof BADGES !== 'undefined') ? BADGES.find(b => b.id === id) : null;
-    name = badge?.name || '';
-    desc = badge?.desc || '';
-  }
-  let modal = document.getElementById('rozetDetayModal');
+  let modal = document.getElementById('_rozetModal');
   if (!modal) {
     modal = document.createElement('div');
-    modal.id = 'rozetDetayModal';
-    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;align-items:center;justify-content:center;backdrop-filter:blur(6px)';
-    modal.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:24px;max-width:300px;width:88%;text-align:center" onclick="event.stopPropagation()">
-      <div id="rdEmoji"  style="font-size:3rem;margin-bottom:8px"></div>
-      <div id="rdName"   style="font-weight:900;font-size:1.1rem;margin-bottom:6px"></div>
-      <div id="rdDesc"   style="font-size:.85rem;color:var(--text2);margin-bottom:14px;line-height:1.5"></div>
-      <div id="rdDurum"  style="font-size:.8rem;font-weight:700;margin-bottom:16px;padding:6px 16px;border-radius:99px;display:inline-block"></div>
-      <br>
-      <button onclick="document.getElementById('rozetDetayModal').style.display='none'"
-        style="background:var(--surface2);border:none;border-radius:10px;padding:10px 28px;font-size:.85rem;font-weight:700;cursor:pointer;color:var(--text);font-family:inherit">
-        Tamam
-      </button>
-    </div>`;
-    modal.onclick = (e) => { if(e.target===modal) modal.style.display='none'; };
-    document.body.appendChild(modal);
-  }
-  document.getElementById('rdEmoji').textContent = sym;
-  document.getElementById('rdName').textContent = name;
-  document.getElementById('rdDesc').textContent = desc;
-  const durumEl = document.getElementById('rdDurum');
-  if (has) {
-    durumEl.textContent = '✅ Kazanıldı!';
-    durumEl.style.cssText = `background:rgba(67,233,122,.15);color:#43e97b;font-size:.8rem;font-weight:700;padding:6px 16px;border-radius:99px;display:inline-block`;
-  } else {
-    durumEl.textContent = '🔒 Henüz kazanılmadı';
-    durumEl.style.cssText = `background:rgba(255,255,255,.08);color:var(--text2);font-size:.8rem;font-weight:700;padding:6px 16px;border-radius:99px;display:inline-block`;
-  }
-  modal.style.display = 'flex';
-}
-
-// ============================================================
-// 🛒 MARKET ÜRÜN ÖNİZLEME MODALI
-// ============================================================
-function _marketUrunDetayAc(urunId) {
-  if (typeof MARKET_URUNLER === 'undefined') return;
-  const u = MARKET_URUNLER[urunId];
-  if (!u) return;
-
-  const altin = window.currentUserData?.altin || 0;
-  const satinAlinanlar = window.currentUserData?.satin_alinanlar || [];
-  const sahip = satinAlinanlar.includes(urunId);
-  const aktif = window.currentUserData?.aktif || {};
-  const aktifMi = aktif[urunId] === true || (aktif[urunId] && new Date(aktif[urunId]) > new Date());
-
-  // Ürün tipi açıklaması
-  const tipAcikla = {
-    renk:     'Ejderhanın rengini değiştirir. Macera sayfasında görünür.',
-    ates:     'Ejderhanın ateş rengini değiştirir. Güçlü ejderhada (300+ doğru) görünür.',
-    diyalog:  'Ejderhanın söyleyebileceği yeni replikler ekler. Dokunma tepkilerinde görünür.',
-    harita:   'Müfredat haritasında görsel değişiklik yapar.',
-    profil_bg:'Profil sayfanızın arka plan temasını değiştirir.',
-    efekt:    'Soru girişi yaptıktan sonra ekranda özel animasyon oynar.',
-    paket:    'Birden fazla ürün içeren indirimli paket.',
-    ozel:     'Nadir ve özel bir ürün.',
-    isim:     'Ejderhana özel bir isim verebilirsin.',
-  };
-
-  let modal = document.getElementById('marketUrunModal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'marketUrunModal';
-    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;align-items:center;justify-content:center;backdrop-filter:blur(6px)';
+    modal.id = '_rozetModal';
+    modal.onclick = function(ev) { if(ev.target===modal) modal.style.display='none'; };
     document.body.appendChild(modal);
   }
 
-  modal.onclick = (e) => { if(e.target===modal) modal.style.display='none'; };
-
-  // Renk önizleme
-  let onizleme = '';
-  if (u.tip === 'renk' && u.css) {
-    onizleme = `<div style="margin:12px auto;width:60px;height:60px;border-radius:50%;
-      background:radial-gradient(circle,#7c74ff,#5040c0);
-      filter:${u.css};border:2px solid rgba(255,255,255,.2)"></div>`;
-  } else if (u.tip === 'ates' && u.css) {
-    onizleme = `<div style="margin:12px auto;font-size:2.5rem;filter:${u.css}">🔥</div>`;
-  } else if (u.tip === 'profil_bg' && u.css) {
-    onizleme = `<div style="margin:12px auto;width:80px;height:40px;border-radius:10px;background:${u.css};border:1px solid rgba(255,255,255,.15)"></div>`;
-  } else if (u.tip === 'efekt') {
-    onizleme = `<div style="margin:12px auto;font-size:2rem">${u.ikon}${u.ikon}${u.ikon}</div>`;
-  }
-
-  // Paket içeriği
-  let paketIcerik = '';
-  if (u.tip === 'paket') {
-    const paketMap = {
-      baslangic: ['ejderha_kizil','ates_mavi','efekt_konfeti'],
-      efsane:    ['ejderha_altin','ates_beyaz','profil_galaksi','efekt_yildiz'],
-      kahraman:  ['ejderha_buz','ates_mor','profil_uzay'],
-    };
-    const icerik = paketMap[u.deger] || [];
-    if (icerik.length) {
-      paketIcerik = `<div style="text-align:left;margin-bottom:12px">
-        <div style="font-size:.72rem;color:var(--text2);margin-bottom:6px">Pakete dahil:</div>
-        ${icerik.map(id => {
-          const p = MARKET_URUNLER[id];
-          return p ? `<div style="font-size:.8rem;padding:4px 0;color:var(--text)">${p.ikon} ${p.ad}</div>` : '';
-        }).join('')}
-      </div>`;
-    }
-  }
-
-  modal.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;max-width:300px;width:88%;text-align:center" onclick="event.stopPropagation()">
-    <div style="font-size:2.5rem;margin-bottom:6px">${u.ikon}</div>
-    <div style="font-weight:900;font-size:1.05rem;margin-bottom:6px">${u.ad}</div>
-    ${onizleme}
-    <div style="font-size:.8rem;color:var(--text2);margin-bottom:8px;line-height:1.5">${u.aciklama}</div>
-    <div style="font-size:.75rem;background:var(--surface2);border-radius:10px;padding:8px 12px;margin-bottom:12px;color:var(--text2);text-align:left">
-      💡 ${tipAcikla[u.tip] || ''}
-    </div>
-    ${paketIcerik}
-    <div style="font-size:1.1rem;font-weight:900;color:#f9ca24;margin-bottom:14px">💰 ${u.fiyat} altın</div>
-    ${sahip
-      ? `<button onclick="marketAktifEt('${urunId}');document.getElementById('marketUrunModal').style.display='none'"
-          style="background:${aktifMi?'var(--surface2)':'var(--accent)'};color:${aktifMi?'var(--text2)':'white'};border:none;border-radius:10px;padding:10px 24px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;width:100%">
-          ${aktifMi ? '✓ Aktif' : 'Aktif Et'}
-        </button>`
-      : altin >= u.fiyat
-        ? `<button onclick="marketSatinAl('${urunId}');document.getElementById('marketUrunModal').style.display='none'"
-            style="background:var(--accent);color:white;border:none;border-radius:10px;padding:10px 24px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;width:100%;margin-bottom:8px">
-            Satın Al — ${u.fiyat} 💰
-          </button>`
-        : `<div style="background:rgba(255,255,255,.06);border-radius:10px;padding:10px;font-size:.78rem;color:var(--text2);margin-bottom:8px">
-            ${u.fiyat - altin} altın daha lazım
-          </div>`
-    }
-    <button onclick="document.getElementById('marketUrunModal').style.display='none'"
-      style="background:transparent;border:none;color:var(--text2);font-size:.8rem;cursor:pointer;margin-top:4px;font-family:inherit">
-      Kapat
-    </button>
-  </div>`;
-
-  modal.style.display = 'flex';
+  modal.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:3000;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+  modal.innerHTML = '<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:18px;padding:22px 20px;max-width:280px;width:86%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.4)">'
+    + '<div style="font-size:1.1rem;font-weight:900;margin-bottom:8px;color:var(--text)">' + ad + '</div>'
+    + '<div style="font-size:.85rem;color:var(--text2);margin-bottom:14px;line-height:1.5">' + aciklama + '</div>'
+    + '<div style="display:inline-block;padding:5px 16px;border-radius:99px;font-size:.78rem;font-weight:700;margin-bottom:16px;'
+    + (has ? 'background:rgba(67,233,122,.15);color:#43e97b' : 'background:rgba(255,255,255,.08);color:var(--text2)') + '">'
+    + (has ? '✅ Kazanıldı!' : '🔒 Henüz kazanılmadı') + '</div><br>'
+    + '<button onclick="document.getElementById(\'_rozetModal\').style.display=\'none\'" '
+    + 'style="background:var(--surface2);border:none;border-radius:10px;padding:9px 24px;font-size:.85rem;font-weight:700;cursor:pointer;color:var(--text);font-family:inherit">Tamam</button>'
+    + '</div>';
 }

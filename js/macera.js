@@ -4,26 +4,18 @@
 
 function maceraPage() {
   return `
-    <!-- Başlık + altın sayacı -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
       <div class="page-title" style="margin:0">🗺️ Macera</div>
-      <div onclick="_maceraAltinDebug()" style="
-        display:flex;align-items:center;gap:6px;
-        background:linear-gradient(135deg,#2a2000,#1a1500);
-        border:1.5px solid #f9ca2455;border-radius:99px;
-        padding:6px 14px;cursor:pointer;
-        box-shadow:0 2px 8px rgba(249,202,36,.15)">
-        <span style="font-size:1rem">💰</span>
-        <span id="maceraAltinSayac" style="font-weight:900;color:#f9ca24;font-size:.95rem">${window.currentUserData?.altin||0}</span>
+      <div onclick="showPage('market')" style="display:flex;align-items:center;gap:5px;background:linear-gradient(135deg,#2a2000,#1a1500);border:1.5px solid #f9ca2455;border-radius:99px;padding:5px 12px;cursor:pointer">
+        <span>💰</span>
+        <span style="font-weight:900;color:#f9ca24;font-size:.9rem">${window.currentUserData && window.currentUserData.altin ? window.currentUserData.altin : 0}</span>
       </div>
     </div>
-    <div class="page-sub" style="margin-bottom:16px">Gelişimini oyun gibi takip et</div>
-
-    ${maceraEjderha()}
-
-    ${_maceraMarketOzet()}
+    <div class="page-sub" style="margin-bottom:12px">Gelişimini oyun gibi takip et</div>
 
     ${maceraHarita()}
+
+    ${maceraEjderha()}
 
     ${maceraYakitTanki()}
 
@@ -480,111 +472,3 @@ function maceraEjderha() {
     }
   },8000);
 })();
-
-// ============================================================
-// 🛒 MARKET ÖN İZLEME KARTI (Macera sayfasında)
-// ============================================================
-function _maceraMarketOzet() {
-  const altin = window.currentUserData?.altin || 0;
-  const aktif = window.currentUserData?.aktif || {};
-  const satinAlinanlar = window.currentUserData?.satin_alinanlar || [];
-
-  // Aktif ürünleri göster
-  const aktifUrunler = Object.keys(aktif)
-    .filter(id => aktif[id] === true || (aktif[id] && new Date(aktif[id]) > new Date()))
-    .map(id => (typeof MARKET_URUNLER !== 'undefined') ? MARKET_URUNLER[id] : null)
-    .filter(Boolean);
-
-  // Sahip olunan toplam
-  const sahipSayisi = satinAlinanlar.length;
-
-  // Önerilen sonraki ürün (en ucuz sahip olunmayan)
-  let oneriUrun = null;
-  if (typeof MARKET_URUNLER !== 'undefined') {
-    const oneri = Object.entries(MARKET_URUNLER)
-      .filter(([id]) => !satinAlinanlar.includes(id))
-      .sort((a,b) => a[1].fiyat - b[1].fiyat)[0];
-    if (oneri) oneriUrun = { id: oneri[0], ...oneri[1] };
-  }
-
-  const eksik = oneriUrun ? Math.max(0, oneriUrun.fiyat - altin) : 0;
-
-  return `
-    <div class="card" style="margin-bottom:14px;cursor:pointer" onclick="showPage('market')">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div class="card-title" style="margin:0">🛒 Ejderha Marketi</div>
-        <div style="font-size:.72rem;color:var(--accent);font-weight:700">Tümünü Gör →</div>
-      </div>
-
-      <!-- Altın durumu -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <div style="background:linear-gradient(135deg,#2a2000,#1a1500);border:1px solid #f9ca2444;
-          border-radius:12px;padding:10px 16px;flex:1;text-align:center">
-          <div style="font-size:.65rem;color:#8b7a30;margin-bottom:2px">Altınım</div>
-          <div style="font-size:1.3rem;font-weight:900;color:#f9ca24">💰 ${altin.toLocaleString()}</div>
-        </div>
-        <div style="background:var(--surface2);border-radius:12px;padding:10px 16px;flex:1;text-align:center">
-          <div style="font-size:.65rem;color:var(--text2);margin-bottom:2px">Sahip</div>
-          <div style="font-size:1.3rem;font-weight:900;color:var(--accent)">${sahipSayisi} ürün</div>
-        </div>
-      </div>
-
-      <!-- Aktif ürünler -->
-      ${aktifUrunler.length > 0 ? `
-        <div style="font-size:.7rem;color:var(--text2);margin-bottom:6px">Aktif ürünler</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-          ${aktifUrunler.slice(0,4).map(u=>`
-            <div style="background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.3);
-              border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:700">
-              ${u.ikon} ${u.ad}
-            </div>`).join('')}
-          ${aktifUrunler.length > 4 ? `<div style="font-size:.72rem;color:var(--text2);padding:4px">+${aktifUrunler.length-4} daha</div>` : ''}
-        </div>` : ''}
-
-      <!-- Sonraki hedef -->
-      ${oneriUrun ? `
-        <div style="background:var(--surface2);border-radius:10px;padding:10px 12px;
-          display:flex;align-items:center;gap:10px">
-          <div style="font-size:1.4rem">${oneriUrun.ikon}</div>
-          <div style="flex:1">
-            <div style="font-size:.78rem;font-weight:800">${oneriUrun.ad}</div>
-            <div style="font-size:.65rem;color:var(--text2)">${oneriUrun.aciklama}</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:.75rem;font-weight:900;color:#f9ca24">💰 ${oneriUrun.fiyat}</div>
-            ${eksik > 0
-              ? `<div style="font-size:.6rem;color:var(--text2)">${eksik} altın eksik</div>`
-              : `<div style="font-size:.6rem;color:#43e97b">Satın alabilirsin!</div>`}
-          </div>
-        </div>` : ''}
-    </div>
-  `;
-}
-
-// ── Debug: Altın sayacına 5 kez tıklayınca +1000 altın ──
-let _debugTapCount = 0, _debugTapTimer = null;
-function _maceraAltinDebug() {
-  _debugTapCount++;
-  clearTimeout(_debugTapTimer);
-  _debugTapTimer = setTimeout(() => { _debugTapCount = 0; }, 2000);
-
-  if (_debugTapCount >= 5) {
-    _debugTapCount = 0;
-    // +1000 altın ekle (Firebase'e de yaz)
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
-    const yeni = (window.currentUserData?.altin || 0) + 1000;
-    window.currentUserData.altin = yeni;
-    db.collection('users').doc(uid).update({ altin: yeni }).then(() => {
-      document.getElementById('maceraAltinSayac').textContent = yeni;
-      const div = document.createElement('div');
-      div.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#1a2a1a;border:1.5px solid #43e97b;border-radius:12px;padding:10px 20px;font-size:.85rem;font-weight:700;color:#43e97b;z-index:9999';
-      div.textContent = '🔧 Dev: +1000 altın eklendi!';
-      document.body.appendChild(div);
-      setTimeout(() => div.remove(), 2000);
-    });
-  } else if (_debugTapCount === 1) {
-    // Normal tıklama — market sayfasına git
-    showPage('market');
-  }
-}
