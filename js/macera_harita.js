@@ -105,7 +105,13 @@ function maceraHarita() {
     const cx=ada.cx*VW,cy=ada.cy*VH;
     const rx=ada.rx*VW,ry=ada.ry*VH;
     const dusuk=d.isabet>0&&d.isabet<65;
-    const r=dusuk?'180,80,80':'200,215,230';
+    // Market sis rengi override
+    let r;
+    if(dusuk) r='180,80,80';
+    else if(window._haritaSisRenk==='mor') r='120,80,200';
+    else if(window._haritaSisRenk==='kizil') r='200,60,60';
+    else if(window._haritaSisRenk==='yesil') r='60,160,80';
+    else r='200,215,230';
 
     // 3 katman
     [1.0,0.75,0.52].forEach((mul,li)=>{
@@ -130,7 +136,8 @@ function maceraHarita() {
     const hicYok=(d.toplamSoru||0)===0;
     const dusuk=d.isabet>0&&d.isabet<65;
     let ikon,renk,bg;
-    if(tamAcik)    {ikon='🚩';renk='#f9ca24';bg='rgba(20,15,0,.82)';}
+    const _bayrakR=window._haritaBayrakRenk||'#f9ca24';
+    if(tamAcik)    {ikon='🚩';renk=_bayrakR;bg='rgba(20,15,0,.82)';}
     else if(hicYok){ikon='🔒';renk='#aaa';   bg='rgba(0,0,0,.72)';}
     else if(dusuk) {ikon='⚡';renk='#ff8080';bg='rgba(50,0,0,.78)';}
     else           {ikon='';  renk=ada.renk; bg='rgba(0,0,0,.72)';}

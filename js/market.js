@@ -20,10 +20,12 @@ const MARKET_URUNLER = {
   efekt_yildiz:      { kategori:'efekt', ad:'Yıldız Yağmuru', fiyat:500, ikon:'⭐', aciklama:'Soru girişi yapınca yıldızlar uçar',    tip:'efekt', deger:'yildiz' },
   efekt_kalp:        { kategori:'efekt', ad:'Kalp Yağmuru',   fiyat:350, ikon:'💜', aciklama:'Soru girişi yapınca kalpler uçar',     tip:'efekt', deger:'kalp' },
   // 🏝️ HARİTA
-  harita_sis_mor:    { kategori:'harita', ad:'Mor Sis',         fiyat:450, ikon:'🟣', aciklama:'Haritadaki sis rengini mora çevirir',   tip:'harita_sis', css:'hue-rotate(260deg)' },
-  harita_sis_kizil:  { kategori:'harita', ad:'Kızıl Sis',       fiyat:450, ikon:'🔴', aciklama:'Haritadaki sis rengini kızıla çevirir', tip:'harita_sis', css:'hue-rotate(330deg) saturate(1.5)' },
-  harita_sis_yesil:  { kategori:'harita', ad:'Yeşil Sis',       fiyat:400, ikon:'🟢', aciklama:'Haritadaki sis rengini yeşile çevirir', tip:'harita_sis', css:'hue-rotate(100deg) saturate(1.4)' },
-  harita_bayrak_altin:{ kategori:'harita', ad:'Altın Bayrak',   fiyat:300, ikon:'🏴', aciklama:'Fethedilen adalarda altın bayrak',      tip:'harita_bayrak', css:'hue-rotate(45deg) saturate(2)' },
+  harita_sis_mor:    { kategori:'harita', ad:'Mor Sis',      fiyat:450, ikon:'🟣', aciklama:'Haritadaki sis rengini mora çevirir',   tip:'harita_sis', deger:'mor' },
+  harita_sis_kizil:  { kategori:'harita', ad:'Kızıl Sis',    fiyat:450, ikon:'🔴', aciklama:'Haritadaki sis rengini kızıla çevirir', tip:'harita_sis', deger:'kizil' },
+  harita_sis_yesil:  { kategori:'harita', ad:'Yeşil Sis',    fiyat:400, ikon:'🟢', aciklama:'Haritadaki sis rengini yeşile çevirir', tip:'harita_sis', deger:'yesil' },
+  harita_bayrak_altin:{ kategori:'harita', ad:'Altın Bayrak', fiyat:300, ikon:'🏅', aciklama:'Fethedilen adalarda altın bayrak rengi', tip:'harita_bayrak', deger:'#f9ca24' },
+  harita_bayrak_mor:  { kategori:'harita', ad:'Mor Bayrak',   fiyat:250, ikon:'🟣', aciklama:'Fethedilen adalarda mor bayrak rengi',  tip:'harita_bayrak', deger:'#a29bfe' },
+  harita_bayrak_kizil:{ kategori:'harita', ad:'Kızıl Bayrak', fiyat:250, ikon:'🔴', aciklama:'Fethedilen adalarda kızıl bayrak rengi',tip:'harita_bayrak', deger:'#ff6b6b' },
   // 🎨 PROFİL TEMALAR
   profil_uzay:       { kategori:'profil', ad:'Uzay Teması',   fiyat:500, ikon:'🚀', aciklama:'Uygulama arka planını uzay temasına çevirir', tip:'profil_bg', css:'linear-gradient(135deg,#0a0a2e,#1a1060,#0d0030)' },
   profil_orman:      { kategori:'profil', ad:'Orman Teması',  fiyat:500, ikon:'🌲', aciklama:'Uygulama arka planını orman temasına çevirir', tip:'profil_bg', css:'linear-gradient(135deg,#0a2a0a,#1a4020,#0d2010)' },
@@ -148,20 +150,15 @@ function _marketUygulaEfektler() {
       document.querySelectorAll('#fire-group').forEach(el => { el.style.filter = u.css; });
     }
     if (u.tip === 'profil_bg') {
-      // Transparan overlay - yazılar bozulmasın
-      const app = document.getElementById('app');
-      if (app) {
-        app.style.position = 'relative';
-        let overlay = document.getElementById('_temaOverlay');
-        if (!overlay) {
-          overlay = document.createElement('div');
-          overlay.id = '_temaOverlay';
-          overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.18';
-          app.insertBefore(overlay, app.firstChild);
-        }
-        overlay.style.background = u.css;
-        overlay.style.display = 'block';
+      let overlay = document.getElementById('_temaOverlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = '_temaOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.15';
+        document.body.appendChild(overlay);
       }
+      overlay.style.background = u.css;
+      overlay.style.display = 'block';
     }
     if (u.tip === 'harita_sis') {
       // Harita sisi - SVG elipsleri
@@ -311,7 +308,11 @@ function _mDetay(id) {
       + '<div style="position:relative;color:white;font-size:.75rem;font-weight:700">Önizleme</div>'
       + '</div>';
   } else if (u.tip === 'harita_sis') {
-    onizleme = '<div style="font-size:2rem;' + (u.css ? 'filter:' + u.css + ';' : '') + 'margin:10px auto;display:block;text-align:center">☁️</div>';
+    const sisRenkler = { mor:'rgba(120,80,200,.7)', kizil:'rgba(200,60,60,.7)', yesil:'rgba(60,160,80,.7)' };
+    const sisR = sisRenkler[u.deger] || 'rgba(200,215,230,.7)';
+    onizleme = '<div style="margin:10px auto;width:80px;height:40px;border-radius:50%;background:radial-gradient(ellipse,' + sisR + ' 0%,transparent 80%);filter:blur(4px)"></div>';
+  } else if (u.tip === 'harita_bayrak') {
+    onizleme = '<div style="font-size:2rem;margin:10px auto;display:block;text-align:center;color:' + (u.deger||'#f9ca24') + '">🚩</div>';
   } else {
     onizleme = '<div style="font-size:2.5rem;margin:10px auto;display:block;text-align:center">' + u.ikon + '</div>';
   }
@@ -342,6 +343,17 @@ function _mDetay(id) {
 }
 
 // ── Yardımcılar ────────────────────────────────────────────
+// Haritayı yeniden render et
+function _marketHaritaYenile() {
+  const wrap = document.getElementById('haritaWrap');
+  if (!wrap) return; // Harita sayfada değil, render edilince global'den okuyacak
+  if (typeof maceraHarita === 'function') {
+    // Haritanın olduğu card'ı bul ve yenile
+    const card = wrap.closest('.card');
+    if (card) card.outerHTML = maceraHarita();
+  }
+}
+
 function _mBildirim(mesaj, renk) {
   const div = document.createElement('div');
   div.textContent = mesaj;
