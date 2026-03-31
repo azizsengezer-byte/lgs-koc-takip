@@ -3,102 +3,119 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Harita Test</title>
+<title>Harita Test v2</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#0f1117; color:#e8eaf6; font-family:'Segoe UI',sans-serif; padding:12px; font-size:14px; }
-.log { background:#1a1d27; border-radius:8px; padding:10px; margin-bottom:8px; font-size:11px; font-family:monospace; }
-.ok  { border-left:3px solid #43e97b; }
-.err { border-left:3px solid #ff6b6b; }
-.warn{ border-left:3px solid #f9ca24; }
+body { background:#0f1117; color:#e8eaf6; font-family:'Segoe UI',sans-serif; padding:12px; }
+.log { border-radius:8px; padding:10px; margin-bottom:8px; font-size:11px; font-family:monospace; }
+.ok  { background:#1a2a1a; border-left:3px solid #43e97b; }
+.err { background:#2a1a1a; border-left:3px solid #ff6b6b; }
+.warn{ background:#2a2a1a; border-left:3px solid #f9ca24; }
 
-/* Animasyon testi */
+/* Animasyon testi — inline, class yok */
 @keyframes hSis1 {
-  0%,100%{transform:translate(0,0) scale(1)}
-  50%{transform:translate(10%,8%) scale(1.1)}
-}
-.test-sis {
-  width:80px; height:80px; border-radius:50%; overflow:hidden;
-  position:relative; margin:8px auto;
-  border:1px solid rgba(255,255,255,.2);
-}
-.test-sis-ic {
-  position:absolute; width:100%; height:100%; border-radius:50%;
-  background:radial-gradient(ellipse,rgba(10,14,35,.85) 0%,transparent 70%);
-  animation:hSis1 4s ease-in-out infinite;
+  0%,100%{ transform:translate(0,0) scale(1); }
+  50%    { transform:translate(15%,10%) scale(1.15); }
 }
 </style>
 </head>
 <body>
 
-<h3 style="margin-bottom:12px">🔍 Harita Animasyon Testi</h3>
+<h3 style="margin-bottom:12px;font-size:1rem">🔍 Harita Debug v2</h3>
+<div id="log"></div>
 
-<div class="log ok">✅ HTML ve CSS yüklendi</div>
-
-<div style="margin-bottom:12px">
-  <div style="font-size:11px;color:#8b90b8;margin-bottom:6px">CSS Animasyon testi (dönen sis görünmeli):</div>
-  <div class="test-sis">
-    <div class="test-sis-ic"></div>
+<!-- Sis demo — tamamen inline -->
+<div style="margin:12px 0">
+  <div style="font-size:11px;color:#8b90b8;margin-bottom:6px">Inline sis animasyon testi:</div>
+  <div style="position:relative;width:120px;height:80px;margin:0 auto;background:#1a2a3a;border-radius:8px;overflow:hidden">
+    <div style="position:absolute;width:100%;height:100%;border-radius:50%;
+      background:radial-gradient(ellipse,rgba(10,14,35,.9) 0%,transparent 70%);
+      animation:hSis1 3s ease-in-out infinite"></div>
+    <div style="position:absolute;width:70%;height:70%;top:15%;left:15%;border-radius:50%;
+      background:radial-gradient(ellipse,rgba(10,14,35,.7) 0%,transparent 70%);
+      animation:hSis1 4s ease-in-out infinite 0.5s"></div>
   </div>
-  <div style="font-size:10px;color:#8b90b8;text-align:center">Yukarıdaki daire hareket ediyorsa animasyon çalışıyor</div>
+  <div style="font-size:10px;color:#8b90b8;text-align:center;margin-top:4px">Hareket ediyor mu?</div>
 </div>
-
-<div id="loglar"></div>
 
 <script>
 function log(msg, tip='ok') {
-  const d = document.getElementById('loglar');
-  d.innerHTML += `<div class="log ${tip}">${tip==='ok'?'✅':tip==='err'?'❌':'⚠️'} ${msg}</div>`;
+  document.getElementById('log').innerHTML +=
+    `<div class="log ${tip}">${tip==='ok'?'✅':tip==='err'?'❌':'⚠️'} ${msg}</div>`;
 }
 
-// 1. fetch ile JS dosyasını kontrol et
-fetch('https://azizsengezer-byte.github.io/lgs-koc-takip/js/macera_harita.js')
-  .then(r => r.text())
-  .then(txt => {
-    if (txt.includes('SAVAŞ SİSİ HARİTASI v2')) {
-      log('macera_harita.js v2 GitHub\'da mevcut ✓');
-    } else if (txt.includes('SAVAŞ SİSİ HARİTASI')) {
-      log('macera_harita.js var ama ESKİ versiyon! v2 yüklenmemiş.', 'err');
+// macera_harita.js'i yükle ve fonksiyonları test et
+const s = document.createElement('script');
+s.src = 'https://azizsengezer-byte.github.io/lgs-koc-takip/js/macera_harita.js';
+s.onload = function() {
+  log('macera_harita.js yüklendi');
+
+  // HARITA_ADALAR var mı?
+  if (typeof HARITA_ADALAR !== 'undefined') {
+    log('HARITA_ADALAR tanımlı, ' + HARITA_ADALAR.length + ' ada var');
+  } else {
+    log('HARITA_ADALAR tanımsız!', 'err');
+  }
+
+  // maceraHarita fonksiyonu var mı?
+  if (typeof maceraHarita === 'function') {
+    log('maceraHarita() fonksiyonu mevcut');
+  } else {
+    log('maceraHarita() fonksiyonu YOK!', 'err');
+    return;
+  }
+
+  // Sahte veri ile çalıştır
+  window.studyEntries = [];
+  window.currentUserData = { uid: 'test', name: 'Test' };
+  window.kazanimlar = {
+    'Matematik': ['Konu1','Konu2','Konu3'],
+    'Fen Bilimleri': ['Konu1','Konu2'],
+    'Türkçe': ['Konu1','Konu2'],
+    'İngilizce': ['Konu1','Konu2'],
+    'İnkılap Tarihi': ['Konu1','Konu2'],
+    'Din Kültürü': ['Konu1','Konu2'],
+  };
+  window.getTodayKey = () => '2026-03-31';
+  window.getDateKey = (d) => d.toISOString().split('T')[0];
+  window._getW = () => ({ data: { days: {} } });
+
+  try {
+    const html = maceraHarita();
+    log('maceraHarita() çalıştı, ' + html.length + ' karakter HTML üretildi');
+
+    // sis div var mı?
+    if (html.includes('hSis1')) {
+      log('hSis1 animasyonu HTML içinde var ✓');
     } else {
-      log('macera_harita.js içeriği tanınamadı: ' + txt.substring(0,80), 'warn');
+      log('hSis1 animasyonu HTML içinde YOK — sis render edilmedi', 'err');
     }
 
-    if (txt.includes('hSis1')) {
-      log('hSis1 animasyonu kod içinde var ✓');
-    } else {
-      log('hSis1 animasyonu kod içinde YOK — eski animasyon kullanılıyor', 'err');
-    }
-
-    if (txt.includes('radial-gradient')) {
-      log('radial-gradient mevcut ✓');
+    if (html.includes('radial-gradient')) {
+      log('radial-gradient HTML içinde var ✓');
     } else {
       log('radial-gradient YOK', 'err');
     }
 
-    // Satır sayısı
-    const satirSayisi = txt.split('\n').length;
-    log(`Dosya satır sayısı: ${satirSayisi} (344-346 olmalı)`);
-  })
-  .catch(e => log('Dosya fetch edilemedi: ' + e.message, 'err'));
+    // Ada sayısı
+    const sisCount = (html.match(/hSis1/g)||[]).length;
+    log('hSis1 referans sayısı: ' + sisCount + ' (6+ olmalı)');
 
-// 2. macera.js kontrol
-fetch('https://azizsengezer-byte.github.io/lgs-koc-takip/js/macera.js')
-  .then(r => r.text())
-  .then(txt => {
-    if (txt.includes('maceraHarita()')) {
-      log('macera.js içinde maceraHarita() çağrısı var ✓');
-    } else {
-      log('macera.js içinde maceraHarita() çağrısı YOK', 'err');
-    }
-    if (txt.includes('_svgYumurta')) {
-      log('macera.js yeni versiyon (ejderha v3) ✓');
-    } else {
-      log('macera.js eski versiyon', 'warn');
-    }
-  })
-  .catch(e => log('macera.js fetch edilemedi: ' + e.message, 'err'));
+    // Render et
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    document.body.appendChild(div);
+    log('HTML sayfaya eklendi — aşağı kaydır, harita görünüyor mu?', 'warn');
 
-log('Test tamamlandı, sonuçlar yukarıda');
+  } catch(e) {
+    log('maceraHarita() HATA: ' + e.message, 'err');
+    log('Stack: ' + e.stack?.substring(0,200), 'err');
+  }
+};
+s.onerror = function() {
+  log('macera_harita.js yüklenemedi!', 'err');
+};
+document.head.appendChild(s);
 </script>
 </body>
 </html>
