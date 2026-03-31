@@ -7,7 +7,7 @@ function maceraPage() {
     <!-- Başlık + altın sayacı -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
       <div class="page-title" style="margin:0">🗺️ Macera</div>
-      <div onclick="showPage('market')" style="
+      <div onclick="_maceraAltinDebug()" style="
         display:flex;align-items:center;gap:6px;
         background:linear-gradient(135deg,#2a2000,#1a1500);
         border:1.5px solid #f9ca2455;border-radius:99px;
@@ -559,4 +559,32 @@ function _maceraMarketOzet() {
         </div>` : ''}
     </div>
   `;
+}
+
+// ── Debug: Altın sayacına 5 kez tıklayınca +1000 altın ──
+let _debugTapCount = 0, _debugTapTimer = null;
+function _maceraAltinDebug() {
+  _debugTapCount++;
+  clearTimeout(_debugTapTimer);
+  _debugTapTimer = setTimeout(() => { _debugTapCount = 0; }, 2000);
+
+  if (_debugTapCount >= 5) {
+    _debugTapCount = 0;
+    // +1000 altın ekle (Firebase'e de yaz)
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    const yeni = (window.currentUserData?.altin || 0) + 1000;
+    window.currentUserData.altin = yeni;
+    db.collection('users').doc(uid).update({ altin: yeni }).then(() => {
+      document.getElementById('maceraAltinSayac').textContent = yeni;
+      const div = document.createElement('div');
+      div.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#1a2a1a;border:1.5px solid #43e97b;border-radius:12px;padding:10px 20px;font-size:.85rem;font-weight:700;color:#43e97b;z-index:9999';
+      div.textContent = '🔧 Dev: +1000 altın eklendi!';
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 2000);
+    });
+  } else if (_debugTapCount === 1) {
+    // Normal tıklama — market sayfasına git
+    showPage('market');
+  }
 }
