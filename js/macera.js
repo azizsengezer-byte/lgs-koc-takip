@@ -294,18 +294,16 @@ function maceraEjderha() {
         <ellipse cx="63" cy="56" rx="5" ry="8" fill="#4cc9f0" transform="rotate(-15 63 56)"/>
         <ellipse cx="97" cy="56" rx="5" ry="8" fill="#4cc9f0" transform="rotate(15 97 56)"/>
         <g id="fire-group" style="display:none">
-          <!-- Ana alev — JS ile canlandırılacak -->
-          <ellipse id="fire-core" cx="115" cy="92" rx="18" ry="8" fill="#ff5500"/>
-          <ellipse id="fire-mid" cx="122" cy="92" rx="11" ry="5" fill="#ff8800"/>
-          <ellipse id="fire-tip" cx="128" cy="92" rx="6" ry="3" fill="#ffcc00"/>
-          <ellipse id="fire-white" cx="132" cy="92" rx="3" ry="1.5" fill="white" opacity="0.9"/>
-          <!-- Alev dilleri -->
-          <path id="fire-tongue1" d="M100 88 Q112 76 120 84 Q114 90 118 88 Q112 96 104 93 Z" fill="#ff3300"/>
-          <path id="fire-tongue2" d="M102 90 Q110 80 116 86 Q111 91 115 89 Q110 96 104 93 Z" fill="#ff6600"/>
-          <!-- Kıvılcımlar -->
-          <circle id="fire-spark1" cx="118" cy="82" r="2.5" fill="#ffaa00"/>
-          <circle id="fire-spark2" cx="124" cy="79" r="2" fill="#ffcc00"/>
-          <circle id="fire-spark3" cx="130" cy="85" r="1.5" fill="#ff8800"/>
+          <ellipse id="fire-core" cx="105" cy="100" rx="14" ry="7"    fill="#ff4400"/>
+          <ellipse id="fire-mid"  cx="117" cy="100" rx="9"  ry="4.5"  fill="#ff7700"/>
+          <ellipse id="fire-tip"  cx="125" cy="100" rx="5"  ry="2.8"  fill="#ffaa00"/>
+          <ellipse id="fire-wht"  cx="131" cy="100" rx="2.5" ry="1.5" fill="#ffee88"/>
+          <path id="fire-t1" d="M92 98 Q104 85 116 91 Q110 97 118 94 Q112 104 100 102 Z" fill="#ff2200" opacity="0.9"/>
+          <path id="fire-t2" d="M93 102 Q104 113 115 108 Q109 102 117 105 Q111 95 100 99 Z" fill="#ff5500" opacity="0.75"/>
+          <circle id="fire-s1" cx="112" cy="90" r="2"   fill="#ffcc00"/>
+          <circle id="fire-s2" cx="121" cy="86" r="1.5" fill="#ffaa00"/>
+          <circle id="fire-s3" cx="127" cy="93" r="1.5" fill="#ff8800"/>
+          <circle id="fire-s4" cx="119" cy="95" r="1"   fill="#ffee00"/>
         </g>
       </g>
       <ellipse cx="58" cy="170" rx="14" ry="9" fill="#5a4fcf" transform="rotate(-20 58 170)"/>
@@ -449,9 +447,19 @@ function maceraEjderha() {
       if(t1) t1.setAttribute('transform', 'translate(0,' + (Math.sin(t*10)*3) + ')');
       if(t2) t2.setAttribute('transform', 'translate(0,' + (Math.sin(t*8+1)*2) + ')');
       // Kıvılcım yüksel
-      if(s1) { s1.setAttribute('cy', 82 - ((t*55)%22)); s1.setAttribute('opacity', 1-((t*55)%22)/22); }
-      if(s2) { s2.setAttribute('cy', 79 - ((t*45+8)%28)); s2.setAttribute('opacity', 1-((t*45+8)%28)/28); }
-      if(s3) { s3.setAttribute('cy', 85 - ((t*65+4)%18)); s3.setAttribute('opacity', 1-((t*65+4)%18)/18); }
+      // Kıvılcımlar
+      const _fs1=document.getElementById('fire-s1'), _fs2=document.getElementById('fire-s2');
+      const _fs3=document.getElementById('fire-s3'), _fs4=document.getElementById('fire-s4');
+      const _ft1=document.getElementById('fire-t1'), _ft2=document.getElementById('fire-t2');
+      const _fwht=document.getElementById('fire-wht');
+      if(_ft1) _ft1.setAttribute('transform','translate(0,'+(Math.sin(t*11)*3)+')');
+      if(_ft2) _ft2.setAttribute('transform','translate(0,'+(Math.sin(t*8+1.2)*2.5)+')');
+      if(_fwht) _fwht.setAttribute('rx', 2.5*(1+Math.sin(t*12)*0.2));
+      const _ph1=(t%0.6)/0.6, _ph2=((t+.2)%0.8)/0.8, _ph3=((t+.1)%0.5)/0.5, _ph4=((t+.35)%0.7)/0.7;
+      if(_fs1){_fs1.setAttribute('cy',90-_ph1*16);_fs1.setAttribute('cx',112+_ph1*5);_fs1.setAttribute('opacity',1-_ph1);}
+      if(_fs2){_fs2.setAttribute('cy',86-_ph2*20);_fs2.setAttribute('cx',121+_ph2*4);_fs2.setAttribute('opacity',1-_ph2);}
+      if(_fs3){_fs3.setAttribute('cy',93-_ph3*12);_fs3.setAttribute('cx',127+_ph3*3);_fs3.setAttribute('opacity',1-_ph3);}
+      if(_fs4){_fs4.setAttribute('cy',95-_ph4*18);_fs4.setAttribute('cx',119+_ph4*6);_fs4.setAttribute('opacity',1-_ph4);}
       _fireRaf = requestAnimationFrame(frame);
     }
     _fireRaf = requestAnimationFrame(frame);
