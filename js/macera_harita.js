@@ -1,5 +1,5 @@
 // ============================================================
-// 🗺️ SAVAŞ SİSİ HARİTASI v2
+// 🗺️ SAVAŞ SİSİ HARİTASI v3 — JS Animasyonlu
 // ============================================================
 
 const HARITA_ADALAR = [
@@ -12,49 +12,48 @@ const HARITA_ADALAR = [
 ];
 
 const HEDEF_SORU = {
-  'Matematik':1000, 'Fen Bilimleri':1000, 'Türkçe':1000,
-  'İngilizce':500,  'İnkılap Tarihi':500, 'Din Kültürü':500,
+  'Matematik':1000,'Fen Bilimleri':1000,'Türkçe':1000,
+  'İngilizce':500,'İnkılap Tarihi':500,'Din Kültürü':500,
 };
 
 const HARITA_YOL = [
-  {x:0.285,y:0.48}, {x:0.50,y:0.30}, {x:0.70,y:0.50},
-  {x:0.735,y:0.78}, {x:0.50,y:0.80}, {x:0.255,y:0.735},
+  {x:0.285,y:0.48},{x:0.50,y:0.30},{x:0.70,y:0.50},
+  {x:0.735,y:0.78},{x:0.50,y:0.80},{x:0.255,y:0.735},
   {x:0.83,y:0.12},
 ];
 
 function _haritaKonuListesi(ders) {
-  const raw = (typeof kazanimlar !== 'undefined') ? (kazanimlar[ders] || []) : [];
+  const raw = (typeof kazanimlar !== 'undefined') ? (kazanimlar[ders]||[]) : [];
   if (!raw.length) return [];
-  if (typeof raw[0] === 'object' && raw[0].unite) return raw.map(u => u.unite);
+  if (typeof raw[0]==='object' && raw[0].unite) return raw.map(u=>u.unite);
   return raw;
 }
 
 function haritaGetirVeri() {
-  const myUid = (window.currentUserData||{}).uid || '';
-  const soruEntries = studyEntries.filter(e =>
-    e.type === 'soru' &&
-    (e.userId === myUid || e.studentName === (window.currentUserData||{}).name)
+  const myUid = (window.currentUserData||{}).uid||'';
+  const soruEntries = studyEntries.filter(e=>
+    e.type==='soru'&&(e.userId===myUid||e.studentName===(window.currentUserData||{}).name)
   );
   const result = {};
-  Object.keys(HEDEF_SORU).forEach(ders => {
-    const de = soruEntries.filter(e => e.subject === ders);
-    const toplamSoru  = de.reduce((a,e) => a+(e.questions||0), 0);
-    const toplamDogru = de.reduce((a,e) => a+(e.correct||0), 0);
-    const isabet = toplamSoru > 0 ? Math.round(toplamDogru/toplamSoru*100) : 0;
-    const girilenKonular = new Set(de.map(e => e.unit||e.topic||'').filter(Boolean));
+  Object.keys(HEDEF_SORU).forEach(ders=>{
+    const de = soruEntries.filter(e=>e.subject===ders);
+    const toplamSoru  = de.reduce((a,e)=>a+(e.questions||0),0);
+    const toplamDogru = de.reduce((a,e)=>a+(e.correct||0),0);
+    const isabet = toplamSoru>0?Math.round(toplamDogru/toplamSoru*100):0;
+    const girilenKonular = new Set(de.map(e=>e.unit||e.topic||'').filter(Boolean));
     const tumKonular  = _haritaKonuListesi(ders);
-    const toplamKonu  = tumKonular.length || 1;
-    const girilenSayi = tumKonular.filter(k => girilenKonular.has(k)).length;
-    const hedef       = HEDEF_SORU[ders];
-    const soruPct     = Math.min(100, Math.round(toplamSoru/hedef*100));
-    const konuPct     = Math.min(100, Math.round(girilenSayi/toplamKonu*100));
-    const genelPct    = Math.round((soruPct + konuPct) / 2);
-    const ada         = HARITA_ADALAR.find(a => a.ad===ders || (ders==='İnkılap Tarihi'&&a.id==='ink'));
-    result[ders] = {
-      ad:ders, renk:ada?.renk||'#888',
-      toplamSoru, toplamDogru, isabet, hedef,
-      soruPct, konuPct, genelPct,
-      girilenSayi, toplamKonu, tumKonular, girilenKonular,
+    const toplamKonu  = tumKonular.length||1;
+    const girilenSayi = tumKonular.filter(k=>girilenKonular.has(k)).length;
+    const hedef = HEDEF_SORU[ders];
+    const soruPct  = Math.min(100,Math.round(toplamSoru/hedef*100));
+    const konuPct  = Math.min(100,Math.round(girilenSayi/toplamKonu*100));
+    const genelPct = Math.round((soruPct+konuPct)/2);
+    const ada = HARITA_ADALAR.find(a=>a.ad===ders||(ders==='İnkılap Tarihi'&&a.id==='ink'));
+    result[ders]={
+      ad:ders,renk:ada?.renk||'#888',
+      toplamSoru,toplamDogru,isabet,hedef,
+      soruPct,konuPct,genelPct,
+      girilenSayi,toplamKonu,tumKonular,girilenKonular,
     };
   });
   return result;
@@ -62,133 +61,91 @@ function haritaGetirVeri() {
 
 function maceraHarita() {
   const veri = haritaGetirVeri();
-  const toplamPct = Math.round(Object.values(veri).reduce((a,d)=>a+d.genelPct,0)/6);
-
-  // Adaya göre delay
   const delays = {mat:0,fen:1.2,tur:0.6,ing:1.8,ink:0.4,din:1.0};
 
-  // Ada HTML: sis + bayrak + badge
+  // Ada HTML
   let adaHTML = '';
-  HARITA_ADALAR.forEach(ada => {
-    const dAdi  = ada.id==='ink' ? 'İnkılap Tarihi' : ada.ad;
-    const d     = veri[dAdi] || {};
-    const pct   = d.genelPct || 0;
-    const sisOp = Math.max(0, Math.min(0.96, (100-pct)/100 * 1.05)).toFixed(2);
-    const delay = delays[ada.id] || 0;
-    const tamAcik     = pct >= 100;
-    const hicGirilmedi= (d.toplamSoru||0) === 0;
-    const dusuk       = d.isabet>0 && d.isabet<65;
+  HARITA_ADALAR.forEach(ada=>{
+    const dAdi = ada.id==='ink'?'İnkılap Tarihi':ada.ad;
+    const d    = veri[dAdi]||{};
+    const pct  = d.genelPct||0;
+    const sisOp= Math.max(0,Math.min(0.95,(100-pct)/100)).toFixed(2);
+    const delay= delays[ada.id]||0;
+    const tamAcik      = pct>=100;
+    const hicGirilmedi = (d.toplamSoru||0)===0;
+    const dusuk        = d.isabet>0&&d.isabet<65;
+    const sr = dusuk?'60,0,0':'8,12,32';
 
-    // Sis rengi
-    const sr = dusuk ? '60,0,0' : '10,14,35';
-
-    // Sis div (sadece %4'ten fazla sis varsa)
-    if ((100-pct) > 4) {
-      adaHTML += `<div style="
+    if ((100-pct)>4) {
+      adaHTML += `
+      <div id="sis_${ada.id}" style="
         position:absolute;
         left:${ada.cx*100}%;top:${ada.cy*100}%;
         width:${ada.rx*200}%;height:${ada.ry*200}%;
         transform:translate(-50%,-50%);
         border-radius:50%;overflow:hidden;
         opacity:${sisOp};
-        ${dusuk?'border:1.5px solid rgba(255,60,60,.55)':''}
+        ${dusuk?'box-shadow:0 0 0 2px rgba(255,60,60,.4)':''}
       ">
-        <div style="position:absolute;width:100%;height:100%;top:0;left:0;border-radius:50%;
-          background:radial-gradient(ellipse,rgba(${sr},.82) 0%,transparent 70%);
-          animation:hSis1 ${6.5+delay*0.3}s ease-in-out infinite;
-          animation-delay:${delay}s"></div>
-        <div style="position:absolute;width:82%;height:82%;top:9%;left:9%;border-radius:50%;
-          background:radial-gradient(ellipse,rgba(${sr},.65) 0%,transparent 68%);
-          animation:hSis2 ${8.5+delay*0.4}s ease-in-out infinite;
-          animation-delay:${delay+0.7}s"></div>
-        <div style="position:absolute;width:65%;height:65%;top:17%;left:17%;border-radius:50%;
-          background:radial-gradient(ellipse,rgba(${sr},.52) 0%,transparent 62%);
-          animation:hSis3 ${10+delay*0.5}s ease-in-out infinite;
-          animation-delay:${delay+1.4}s"></div>
-        <div style="position:absolute;width:50%;height:50%;top:25%;left:25%;border-radius:50%;
-          background:radial-gradient(ellipse,rgba(${sr},.44) 0%,transparent 58%);
-          animation:hSis4 ${7.5+delay*0.3}s ease-in-out infinite;
-          animation-delay:${delay+0.35}s"></div>
+        <div id="sb1_${ada.id}" style="position:absolute;width:100%;height:100%;border-radius:50%;
+          background:radial-gradient(ellipse,rgba(${sr},.85) 0%,rgba(${sr},.3) 40%,transparent 70%);"></div>
+        <div id="sb2_${ada.id}" style="position:absolute;width:78%;height:78%;top:11%;left:11%;border-radius:50%;
+          background:radial-gradient(ellipse,rgba(${sr},.7) 0%,rgba(${sr},.2) 50%,transparent 72%);"></div>
+        <div id="sb3_${ada.id}" style="position:absolute;width:58%;height:58%;top:21%;left:21%;border-radius:50%;
+          background:radial-gradient(ellipse,rgba(${sr},.55) 0%,transparent 65%);"></div>
+        <div id="sb4_${ada.id}" style="position:absolute;width:42%;height:42%;top:29%;left:29%;border-radius:50%;
+          background:radial-gradient(ellipse,rgba(${sr},.45) 0%,transparent 60%);"></div>
       </div>`;
     }
 
-    // Altın parlama (tam açık)
     if (tamAcik) {
-      adaHTML += `<div style="
+      adaHTML += `<div id="parlama_${ada.id}" style="
         position:absolute;
         left:${ada.cx*100}%;top:${ada.cy*100}%;
         width:${ada.rx*240}%;height:${ada.ry*240}%;
         transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
-        background:radial-gradient(ellipse,rgba(249,202,36,.22) 0%,transparent 70%);
-        animation:hParlama 3s ease-in-out infinite;
-        animation-delay:${delay}s"></div>`;
-
-      // Bayrak
-      adaHTML += `<div style="
+        background:radial-gradient(ellipse,rgba(249,202,36,.2) 0%,transparent 70%);"></div>
+      <div id="bayrak_${ada.id}" style="
         position:absolute;
-        left:${ada.cx*100}%;
-        top:${(ada.cy - ada.ry*1.15)*100}%;
+        left:${ada.cx*100}%;top:${(ada.cy-ada.ry*1.15)*100}%;
         transform:translate(-50%,-100%);
         font-size:15px;z-index:10;
-        animation:hBayrak 2.5s ease-in-out infinite;
-        filter:drop-shadow(0 2px 5px rgba(0,0,0,.7))">🚩</div>`;
+        filter:drop-shadow(0 2px 5px rgba(0,0,0,.8))">🚩</div>`;
     }
 
-    // Badge
-    let bRenk, bText, bBg;
-    if      (tamAcik)       { bRenk='#f9ca24'; bText=`${ada.emoji} ${ada.ad} 🚩`; bBg='rgba(249,202,36,.2)'; }
-    else if (hicGirilmedi)  { bRenk='#666';    bText=`${ada.emoji} ${ada.ad} 🔒`; bBg='rgba(0,0,0,.5)'; }
-    else if (dusuk)         { bRenk='#ff6b6b'; bText=`${ada.emoji} ${ada.ad} ⚠️${pct}%`; bBg='rgba(255,60,60,.2)'; }
-    else                    { bRenk=ada.renk;  bText=`${ada.emoji} ${ada.ad} ${pct}%`; bBg='rgba(0,0,0,.6)'; }
+    let bRenk,bText,bBg;
+    if      (tamAcik)       {bRenk='#f9ca24';bText=`${ada.emoji} ${ada.ad} 🚩`;bBg='rgba(249,202,36,.18)';}
+    else if (hicGirilmedi)  {bRenk='#555';   bText=`${ada.emoji} ${ada.ad} 🔒`;bBg='rgba(0,0,0,.55)';}
+    else if (dusuk)         {bRenk='#ff6b6b';bText=`${ada.emoji} ${ada.ad} ⚠️${pct}%`;bBg='rgba(255,60,60,.18)';}
+    else                    {bRenk=ada.renk; bText=`${ada.emoji} ${ada.ad} ${pct}%`;bBg='rgba(0,0,0,.6)';}
 
     adaHTML += `<div onclick="_haritaModalAc('${ada.id}')" style="
       position:absolute;
       left:${ada.cx*100}%;
-      top:${Math.min(96,(ada.cy + ada.ry*1.18)*100)}%;
+      top:${Math.min(95,(ada.cy+ada.ry*1.18)*100)}%;
       transform:translateX(-50%);
-      background:${bBg};
-      border:1px solid ${bRenk}55;
-      border-radius:99px;
-      padding:3px 9px;
-      font-size:9px;font-weight:800;
-      color:${bRenk};
-      white-space:nowrap;
-      cursor:pointer;z-index:20;
-      backdrop-filter:blur(4px);
+      background:${bBg};border:1px solid ${bRenk}55;
+      border-radius:99px;padding:3px 9px;
+      font-size:9px;font-weight:800;color:${bRenk};
+      white-space:nowrap;cursor:pointer;z-index:20;
       box-shadow:0 2px 8px rgba(0,0,0,.5);
-      pointer-events:all">
-      ${bText}
-    </div>`;
+      pointer-events:all">${bText}</div>`;
   });
 
-  // Genel sis katmanı HTML
-  const genelSisHTML = `
-    <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:0 0 14px 14px">
-      <div style="position:absolute;width:75%;height:65%;top:-15%;left:-10%;border-radius:50%;filter:blur(22px);
-        background:radial-gradient(ellipse,rgba(10,14,35,.48) 0%,transparent 70%);
-        animation:hGSis1 16s ease-in-out infinite"></div>
-      <div style="position:absolute;width:68%;height:60%;top:25%;right:-10%;border-radius:50%;filter:blur(20px);
-        background:radial-gradient(ellipse,rgba(10,14,35,.4) 0%,transparent 70%);
-        animation:hGSis2 20s ease-in-out infinite 2.5s"></div>
-      <div style="position:absolute;width:90%;height:55%;bottom:-20%;left:5%;border-radius:50%;filter:blur(25px);
-        background:radial-gradient(ellipse,rgba(10,14,35,.44) 0%,transparent 70%);
-        animation:hGSis3 24s ease-in-out infinite 1.2s"></div>
-    </div>`;
-
   // Yol SVG
-  const dersSirasi = ['Matematik','Fen Bilimleri','Türkçe','Din Kültürü','İnkılap Tarihi','İngilizce'];
-  let yolPaths = '';
-  dersSirasi.forEach((ders,i) => {
-    const d = veri[ders]||{};
-    if ((d.genelPct||0) < 5) return;
-    const a = HARITA_YOL[i], b = HARITA_YOL[i+1];
-    if (!a||!b) return;
+  const dersSirasi=['Matematik','Fen Bilimleri','Türkçe','Din Kültürü','İnkılap Tarihi','İngilizce'];
+  let yolPaths='';
+  dersSirasi.forEach((ders,i)=>{
+    const d=veri[ders]||{};
+    if((d.genelPct||0)<5) return;
+    const a=HARITA_YOL[i],b=HARITA_YOL[i+1];
+    if(!a||!b) return;
     const x1=a.x*1600,y1=a.y*872,x2=b.x*1600,y2=b.y*872;
-    const renk = HARITA_ADALAR.find(a=>a.ad===ders||(ders==='İnkılap Tarihi'&&a.id==='ink'))?.renk||'#4ecdc4';
-    yolPaths += `
+    const renk=HARITA_ADALAR.find(a=>a.ad===ders||(ders==='İnkılap Tarihi'&&a.id==='ink'))?.renk||'#4ecdc4';
+    yolPaths+=`
       <path d="M${x1},${y1} Q${(x1+x2)/2},${(y1+y2)/2-32} ${x2},${y2}"
         stroke="${renk}" stroke-width="3.5" fill="none" stroke-linecap="round"
-        stroke-dasharray="7 5" opacity=".8">
+        stroke-dasharray="7 5" opacity=".8" id="yol_${i}">
         <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="2.5s" repeatCount="indefinite"/>
       </path>
       <circle cx="${x2}" cy="${y2}" r="5" fill="${renk}" opacity=".6">
@@ -197,15 +154,13 @@ function maceraHarita() {
       </circle>`;
   });
 
-  // Hedef yolu sadece tüm adalar %50+ ise
-  const acikAdaSayisi = HARITA_ADALAR.filter(ada => {
-    const dAdi = ada.id==='ink'?'İnkılap Tarihi':ada.ad;
-    return (veri[dAdi]?.genelPct||0) >= 50;
+  const acikAdaSayisi=HARITA_ADALAR.filter(ada=>{
+    const dAdi=ada.id==='ink'?'İnkılap Tarihi':ada.ad;
+    return (veri[dAdi]?.genelPct||0)>=50;
   }).length;
-
-  if (acikAdaSayisi >= 4) {
-    const son=HARITA_YOL[5], hdf=HARITA_YOL[6];
-    yolPaths += `
+  if(acikAdaSayisi>=4){
+    const son=HARITA_YOL[5],hdf=HARITA_YOL[6];
+    yolPaths+=`
       <path d="M${son.x*1600},${son.y*872} Q${(son.x+hdf.x)/2*1600},${(son.y+hdf.y)/2*872-55} ${hdf.x*1600},${hdf.y*872}"
         stroke="#f9ca24" stroke-width="4" fill="none" stroke-linecap="round"
         stroke-dasharray="8 5" opacity=".9">
@@ -217,37 +172,27 @@ function maceraHarita() {
       </circle>`;
   }
 
-  // Özet grid — tam isimler
-  const ozetHTML = Object.values(veri).map(d => {
-    const renk = d.genelPct>=80?d.renk:d.genelPct>=40?'#EF9F27':'#888';
-    const ada  = HARITA_ADALAR.find(a=>a.ad===d.ad||(d.ad==='İnkılap Tarihi'&&a.id==='ink'));
-    const adAdi = d.ad === 'İnkılap Tarihi' ? 'İnkılap' : d.ad === 'Fen Bilimleri' ? 'Fen Bil.' : d.ad;
+  // Özet
+  const ozetHTML=Object.values(veri).map(d=>{
+    const renk=d.genelPct>=80?d.renk:d.genelPct>=40?'#EF9F27':'#888';
+    const ada=HARITA_ADALAR.find(a=>a.ad===d.ad||(d.ad==='İnkılap Tarihi'&&a.id==='ink'));
+    const adAdi=d.ad==='İnkılap Tarihi'?'İnkılap':d.ad==='Fen Bilimleri'?'Fen Bil.':d.ad;
     return `<div onclick="_haritaModalAc('${ada?.id||''}')" style="
-      background:var(--surface2);border-radius:8px;padding:8px;
-      text-align:center;cursor:pointer;transition:.15s">
+      background:var(--surface2);border-radius:8px;padding:8px;text-align:center;cursor:pointer">
       <div style="font-size:.65rem;color:var(--text2);margin-bottom:2px">${ada?.emoji||''} ${adAdi}</div>
       <div style="font-size:.92rem;font-weight:900;color:${renk}">%${d.genelPct}</div>
       <div style="font-size:.58rem;color:var(--text2);margin-top:1px">${d.girilenSayi}/${d.toplamKonu}k · ${d.toplamSoru}/${d.hedef}s</div>
     </div>`;
   }).join('');
 
+  // JS animasyon başlat (setTimeout ile DOM hazır olunca)
+  setTimeout(()=>_haritaSisBaslat(veri), 200);
+
   return `
     <style>
-      @keyframes hSis1{0%,100%{transform:translate(0,0) scale(1) rotate(0deg)}33%{transform:translate(7%,-5%) scale(1.09) rotate(3deg)}66%{transform:translate(-5%,7%) scale(.94) rotate(-2deg)}}
-      @keyframes hSis2{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(-9%,7%) scale(1.13) rotate(5deg)}50%{transform:translate(7%,-5%) scale(.89) rotate(-4deg)}75%{transform:translate(-4%,-9%) scale(1.06) rotate(3deg)}}
-      @keyframes hSis3{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(11%,5%) scale(.86)}80%{transform:translate(-7%,-7%) scale(1.11)}}
-      @keyframes hSis4{0%,100%{transform:scale(1) translate(0,0);opacity:.9}50%{transform:scale(1.24) translate(3%,-3%);opacity:1}}
-      @keyframes hGSis1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(10%,8%) scale(1.12)}}
-      @keyframes hGSis2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-12%,-10%) scale(1.16)}}
-      @keyframes hGSis3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(8%,-7%) scale(.9)}}
-      @keyframes hParlama{0%,100%{opacity:.6;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}}
-      @keyframes hBayrak{0%,100%{transform:translate(-50%,-100%) rotate(-4deg)}50%{transform:translate(-50%,-100%) rotate(4deg)}}
-
-      /* Modal */
-      .hModal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+      .hModal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
       .hModal-bg.acik{display:flex}
-      .hModal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;max-width:320px;width:90%;max-height:82vh;overflow-y:auto;animation:hModalGel .22s ease-out}
-      @keyframes hModalGel{from{opacity:0;transform:scale(.93) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+      .hModal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;max-width:320px;width:90%;max-height:82vh;overflow-y:auto}
       .hModal-kapat{float:right;background:transparent;border:none;color:var(--text2);font-size:1.5rem;cursor:pointer;line-height:1}
       .hKonu-sat{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:.8rem}
       .hKonu-sat:last-child{border-bottom:none}
@@ -259,11 +204,19 @@ function maceraHarita() {
         <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Konulara giriş yap + soru hedefine ulaş → sis dağılır</div>
       </div>
 
-      <div style="position:relative;width:100%">
+      <div id="haritaWrap" style="position:relative;width:100%">
         <img src="map.png" style="width:100%;display:block"
           onerror="this.src='https://azizsengezer-byte.github.io/lgs-koc-takip/map.png'">
 
-        ${genelSisHTML}
+        <!-- Genel sis — JS ile hareket ettirilecek -->
+        <div id="hGenelSis" style="position:absolute;inset:0;pointer-events:none;overflow:hidden">
+          <div id="hGS1" style="position:absolute;width:75%;height:65%;top:-15%;left:-10%;border-radius:50%;
+            background:radial-gradient(ellipse,rgba(8,12,32,.52) 0%,transparent 70%);filter:blur(20px)"></div>
+          <div id="hGS2" style="position:absolute;width:65%;height:60%;top:25%;right:-10%;border-radius:50%;
+            background:radial-gradient(ellipse,rgba(8,12,32,.44) 0%,transparent 70%);filter:blur(18px)"></div>
+          <div id="hGS3" style="position:absolute;width:88%;height:55%;bottom:-20%;left:5%;border-radius:50%;
+            background:radial-gradient(ellipse,rgba(8,12,32,.48) 0%,transparent 70%);filter:blur(22px)"></div>
+        </div>
 
         <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible"
           viewBox="0 0 1600 872" preserveAspectRatio="xMidYMid meet">
@@ -289,6 +242,91 @@ function maceraHarita() {
   `;
 }
 
+// ── JS Animasyon Motoru ────────────────────────────────────
+function _haritaSisBaslat(veri) {
+  const delays = {mat:0,fen:1.2,tur:0.6,ing:1.8,ink:0.4,din:1.0};
+  const t0 = performance.now();
+
+  // Her bulut için faz ve hız parametreleri
+  const sisParams = {};
+  HARITA_ADALAR.forEach(ada=>{
+    const d = delays[ada.id]||0;
+    sisParams[ada.id] = [
+      {el:null, sx:0,  sy:0,  sc:1,  spd:0.00045, phX:d*0.8, phY:d*0.5, phS:d*0.3, ampX:8, ampY:6, ampS:0.09},
+      {el:null, sx:0,  sy:0,  sc:1,  spd:0.00038, phX:d*0.6, phY:d*0.9, phS:d*0.7, ampX:10,ampY:8, ampS:0.12},
+      {el:null, sx:0,  sy:0,  sc:1,  spd:0.00052, phX:d*1.1, phY:d*0.3, phS:d*0.5, ampX:12,ampY:6, ampS:0.08},
+      {el:null, sx:0,  sy:0,  sc:1,  spd:0.00041, phX:d*0.4, phY:d*1.2, phS:d*0.9, ampX:7, ampY:9, ampS:0.14},
+    ];
+    sisParams[ada.id].forEach((p,i)=>{
+      p.el = document.getElementById(`sb${i+1}_${ada.id}`);
+    });
+  });
+
+  // Genel sis parametreleri
+  const genelParams = [
+    {el:document.getElementById('hGS1'), spd:0.00022, phX:0,   phY:0,   ampX:10, ampY:8,  ampS:0.12},
+    {el:document.getElementById('hGS2'), spd:0.00018, phX:1.5, phY:0.8, ampX:12, ampY:10, ampS:0.16},
+    {el:document.getElementById('hGS3'), spd:0.00015, phX:0.7, phY:1.3, ampX:8,  ampY:7,  ampS:0.1 },
+  ];
+
+  // Bayrak için
+  const bayrakParams = {};
+  HARITA_ADALAR.forEach(ada=>{
+    const el = document.getElementById(`bayrak_${ada.id}`);
+    if (el) bayrakParams[ada.id] = {el, ph: delays[ada.id]*0.5};
+  });
+
+  // Parlama için
+  const parlamaParams = {};
+  HARITA_ADALAR.forEach(ada=>{
+    const el = document.getElementById(`parlama_${ada.id}`);
+    if (el) parlamaParams[ada.id] = {el, ph: delays[ada.id]*0.3};
+  });
+
+  function tick(now) {
+    const t = now - t0;
+
+    // Ada sisleri
+    Object.keys(sisParams).forEach(id=>{
+      sisParams[id].forEach(p=>{
+        if (!p.el) return;
+        const tx = Math.sin(t*p.spd + p.phX) * p.ampX;
+        const ty = Math.cos(t*p.spd*0.8 + p.phY) * p.ampY;
+        const sc = 1 + Math.sin(t*p.spd*0.6 + p.phS) * p.ampS;
+        p.el.style.transform = `translate(${tx}%,${ty}%) scale(${sc})`;
+      });
+    });
+
+    // Genel sis
+    genelParams.forEach(p=>{
+      if (!p.el) return;
+      const tx = Math.sin(t*p.spd + p.phX) * p.ampX;
+      const ty = Math.cos(t*p.spd*0.75 + p.phY) * p.ampY;
+      const sc = 1 + Math.sin(t*p.spd*0.5) * p.ampS;
+      p.el.style.transform = `translate(${tx}%,${ty}%) scale(${sc})`;
+    });
+
+    // Bayrak sallama
+    Object.values(bayrakParams).forEach(p=>{
+      const rot = Math.sin(t*0.0025 + p.ph) * 5;
+      p.el.style.transform = `translate(-50%,-100%) rotate(${rot}deg)`;
+    });
+
+    // Parlama nabzı
+    Object.values(parlamaParams).forEach(p=>{
+      const sc = 1 + Math.sin(t*0.0018 + p.ph) * 0.1;
+      const op = 0.6 + Math.sin(t*0.0018 + p.ph) * 0.35;
+      p.el.style.transform = `translate(-50%,-50%) scale(${sc})`;
+      p.el.style.opacity = op;
+    });
+
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+}
+
+// ── Modal ──────────────────────────────────────────────────
 window._haritaModalAc = function(id) {
   const ada = HARITA_ADALAR.find(a=>a.id===id); if(!ada) return;
   const dAdi = id==='ink'?'İnkılap Tarihi':ada.ad;
