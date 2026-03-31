@@ -162,7 +162,7 @@ function maceraHarita() {
         width:36px;height:70px;
         pointer-events:none;
         z-index:30;
-        opacity:0;">
+        opacity:1;">
         <svg width="36" height="70" viewBox="0 0 36 70" overflow="visible">
           <defs>
             <filter id="sg${ada.id}" x="-80%" y="-40%" width="260%" height="180%">
@@ -255,7 +255,7 @@ function _hAnimBaslat(veri) {
 
   // Şimşek durumları
   const simState=HARITA_ADALAR.map((ada,i)=>({
-    nextFlash:t0+1000+i*800,
+    nextFlash:t0+300+i*200,
     on:false,
     onUntil:0,
   }));
@@ -294,8 +294,8 @@ function _hAnimBaslat(veri) {
       if(simEl && pct<70){
         if(!ss.on && now>=ss.nextFlash){
           ss.on=true;
-          ss.onUntil=now+120;
-          ss.nextFlash=now+2500+Math.random()*3000+idx*400;
+          ss.onUntil=now+220;
+          ss.nextFlash=now+1500+Math.random()*1500+idx*200;
         }
         if(ss.on && now>ss.onUntil){
           ss.on=false;
@@ -304,7 +304,7 @@ function _hAnimBaslat(veri) {
             ss.nextFlash=now+80;
           }
         }
-        simEl.setAttribute('opacity',ss.on?'1':'0');
+        simEl.style.opacity = ss.on ? '1' : '0';
       }
     });
 
