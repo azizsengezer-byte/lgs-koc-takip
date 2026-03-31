@@ -19,6 +19,11 @@ const MARKET_URUNLER = {
   efekt_konfeti:     { kategori:'efekt', ad:'Konfeti',        fiyat:400, ikon:'🎊', aciklama:'Soru girişi yapınca konfeti düşer',      tip:'efekt', deger:'konfeti' },
   efekt_yildiz:      { kategori:'efekt', ad:'Yıldız Yağmuru', fiyat:500, ikon:'⭐', aciklama:'Soru girişi yapınca yıldızlar uçar',    tip:'efekt', deger:'yildiz' },
   efekt_kalp:        { kategori:'efekt', ad:'Kalp Yağmuru',   fiyat:350, ikon:'💜', aciklama:'Soru girişi yapınca kalpler uçar',     tip:'efekt', deger:'kalp' },
+  // 🏝️ HARİTA
+  harita_sis_mor:    { kategori:'harita', ad:'Mor Sis',         fiyat:450, ikon:'🟣', aciklama:'Haritadaki sis rengini mora çevirir',   tip:'harita_sis', css:'hue-rotate(260deg)' },
+  harita_sis_kizil:  { kategori:'harita', ad:'Kızıl Sis',       fiyat:450, ikon:'🔴', aciklama:'Haritadaki sis rengini kızıla çevirir', tip:'harita_sis', css:'hue-rotate(330deg) saturate(1.5)' },
+  harita_sis_yesil:  { kategori:'harita', ad:'Yeşil Sis',       fiyat:400, ikon:'🟢', aciklama:'Haritadaki sis rengini yeşile çevirir', tip:'harita_sis', css:'hue-rotate(100deg) saturate(1.4)' },
+  harita_bayrak_altin:{ kategori:'harita', ad:'Altın Bayrak',   fiyat:300, ikon:'🏴', aciklama:'Fethedilen adalarda altın bayrak',      tip:'harita_bayrak', css:'hue-rotate(45deg) saturate(2)' },
   // 🎨 PROFİL TEMALAR
   profil_uzay:       { kategori:'profil', ad:'Uzay Teması',   fiyat:500, ikon:'🚀', aciklama:'Uygulama arka planını uzay temasına çevirir', tip:'profil_bg', css:'linear-gradient(135deg,#0a0a2e,#1a1060,#0d0030)' },
   profil_orman:      { kategori:'profil', ad:'Orman Teması',  fiyat:500, ikon:'🌲', aciklama:'Uygulama arka planını orman temasına çevirir', tip:'profil_bg', css:'linear-gradient(135deg,#0a2a0a,#1a4020,#0d2010)' },
@@ -29,6 +34,7 @@ const MARKET_KATEGORILER = [
   { id:'ejderha', ad:'🐉 Ejderha Rengi' },
   { id:'ates',    ad:'🔥 Ateş Rengi'   },
   { id:'efekt',   ad:'✨ Efektler'      },
+  { id:'harita',  ad:'🏝️ Harita'       },
   { id:'profil',  ad:'🎨 Profil Tema'  },
 ];
 
@@ -92,7 +98,18 @@ async function marketAktifEt(urunId) {
   const uid = auth.currentUser?.uid;
   if (!uid) return;
   const aktif = window.currentUserData?.aktif || {};
-  // Aynı kategorideki eski aktifi kaldır
+  // Zaten aktifse → kapat (toggle)
+  if (aktif[urunId] === true) {
+    delete aktif[urunId];
+    window.currentUserData.aktif = aktif;
+    await db.collection('users').doc(uid).update({ aktif: aktif });
+    _mBildirim('Deaktif edildi', '#f9ca24');
+    _marketUygulaEfektler();
+    const el = document.getElementById('marketSayfa');
+    if (el) el.innerHTML = _marketIcerik();
+    return;
+  }
+  // Aynı tipteki eski aktifi kaldır
   Object.keys(aktif).forEach(k => {
     const u = MARKET_URUNLER[k];
     if (u && u.tip === urun.tip && k !== urunId) delete aktif[k];
@@ -125,8 +142,14 @@ function _marketUygulaEfektler() {
       document.querySelectorAll('#fire-group').forEach(el => { el.style.filter = u.css; });
     }
     if (u.tip === 'profil_bg') {
+      // Sadece arka planı değiştir, --bg variable'ını güncelle
+      document.documentElement.style.setProperty('--bg', u.css.match(/#[a-f0-9]+/gi)?.[0] || '#0f1117');
       const app = document.getElementById('app');
       if (app) app.style.background = u.css;
+    }
+    if (u.tip === 'harita_sis') {
+      // Harita sisi - SVG elipsleri
+      document.querySelectorAll('[id^="sis_"]').forEach(el => { el.style.filter = u.css; });
     }
     // Harita sis rengi
     if (u.tip === 'harita' && id.startsWith('harita_sis')) {

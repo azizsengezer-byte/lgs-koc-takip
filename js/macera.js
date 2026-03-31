@@ -17,6 +17,8 @@ function maceraPage() {
 
     ${maceraEjderha()}
 
+    ${_maceraMarketKart()}
+
     ${maceraYakitTanki()}
 
     <!-- Yakında gelecekler -->
@@ -474,3 +476,52 @@ function maceraEjderha() {
     }
   },8000);
 })();
+
+// ============================================================
+// 🛒 MARKET KARTI (Macera sayfasında)
+// ============================================================
+function _maceraMarketKart() {
+  const altin = window.currentUserData?.altin || 0;
+  const liste = window.currentUserData?.satin_alinanlar || [];
+  const aktif = window.currentUserData?.aktif || {};
+  const aktifSayisi = Object.keys(aktif).filter(k => aktif[k] === true).length;
+  const sahipSayisi = liste.length;
+
+  // En ucuz alınabilecek ürün
+  let hedef = null;
+  if (typeof MARKET_URUNLER !== 'undefined') {
+    const siradaki = Object.entries(MARKET_URUNLER)
+      .filter(([id]) => !liste.includes(id))
+      .sort((a, b) => a[1].fiyat - b[1].fiyat)[0];
+    if (siradaki) hedef = { id: siradaki[0], ...siradaki[1] };
+  }
+
+  return '<div class="card" style="margin-bottom:14px;cursor:pointer" onclick="showPage(\'market\')">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    + '<div class="card-title" style="margin:0">🛒 Ejderha Marketi</div>'
+    + '<div style="font-size:.72rem;color:var(--accent);font-weight:700">Tümünü Gör →</div>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;margin-bottom:' + (hedef ? '10px' : '0') + '">'
+    + '<div style="flex:1;background:linear-gradient(135deg,#2a2000,#1a1500);border:1px solid #f9ca2444;border-radius:12px;padding:10px;text-align:center">'
+    + '<div style="font-size:.62rem;color:#8b7a30;margin-bottom:2px">Altınım</div>'
+    + '<div style="font-size:1.2rem;font-weight:900;color:#f9ca24">💰 ' + altin + '</div>'
+    + '</div>'
+    + '<div style="flex:1;background:var(--surface2);border-radius:12px;padding:10px;text-align:center">'
+    + '<div style="font-size:.62rem;color:var(--text2);margin-bottom:2px">Sahip</div>'
+    + '<div style="font-size:1.2rem;font-weight:900;color:var(--accent)">' + sahipSayisi + ' ürün</div>'
+    + '</div>'
+    + '<div style="flex:1;background:var(--surface2);border-radius:12px;padding:10px;text-align:center">'
+    + '<div style="font-size:.62rem;color:var(--text2);margin-bottom:2px">Aktif</div>'
+    + '<div style="font-size:1.2rem;font-weight:900;color:#43e97b">' + aktifSayisi + ' ürün</div>'
+    + '</div>'
+    + '</div>'
+    + (hedef ? '<div style="background:var(--surface2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">'
+      + '<div style="font-size:1.4rem">' + hedef.ikon + '</div>'
+      + '<div style="flex:1"><div style="font-size:.78rem;font-weight:800">' + hedef.ad + '</div>'
+      + '<div style="font-size:.65rem;color:var(--text2)">Sonraki hedef</div></div>'
+      + '<div style="text-align:right"><div style="font-size:.78rem;font-weight:900;color:#f9ca24">💰 ' + hedef.fiyat + '</div>'
+      + '<div style="font-size:.6rem;color:' + (altin >= hedef.fiyat ? '#43e97b' : 'var(--text2)') + '">'
+      + (altin >= hedef.fiyat ? 'Alınabilir!' : (hedef.fiyat - altin) + ' eksik') + '</div>'
+      + '</div></div>' : '')
+    + '</div>';
+}
