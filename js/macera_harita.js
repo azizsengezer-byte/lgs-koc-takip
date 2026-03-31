@@ -152,27 +152,28 @@ function maceraHarita() {
         transform:translate(-50%,-100%);font-size:18px;z-index:21;
         filter:drop-shadow(0 2px 6px rgba(0,0,0,.9))">🚩</div>`;
     }
-    // Şimşek — pct<70 ise, z-index:30 ile etiketin ÜSTÜNDE
+    // Şimşek — pct<70 ise, z-index:30 ile her şeyin ÜSTÜNDE
     if(pct<70){
-      const lx=ada.cx*100+ada.rx*8, ly=ada.cy*100-ada.ry*22;
-      const lh=ada.ry*55, lw=ada.rx*14;
       etiketHTML+=`<div id="sim_${ada.id}" style="
         position:absolute;
-        left:${lx}%;top:${ly}%;
-        width:${lw}%;height:${lh}%;
+        left:${ada.cx*100}%;
+        top:${ada.cy*100}%;
+        transform:translate(-20px,-60px);
+        width:36px;height:70px;
         pointer-events:none;
         z-index:30;
-        opacity:0;
-        overflow:visible">
-        <svg width="100%" height="100%" viewBox="0 0 40 80" preserveAspectRatio="none" overflow="visible">
-          <filter id="simGlow">
-            <feGaussianBlur stdDeviation="2" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-          <ellipse cx="20" cy="40" rx="18" ry="28" fill="rgba(255,240,60,0.25)" filter="url(#simGlow)"/>
-          <path d="M22,4 L10,36 L20,36 L14,76 L32,28 L22,28 Z"
-            fill="#fff9a0" stroke="#ffe000" stroke-width="1.2"
-            filter="url(#simGlow)"/>
+        opacity:0;">
+        <svg width="36" height="70" viewBox="0 0 36 70" overflow="visible">
+          <defs>
+            <filter id="sg${ada.id}" x="-80%" y="-40%" width="260%" height="180%">
+              <feGaussianBlur stdDeviation="3" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <ellipse cx="18" cy="35" rx="22" ry="32" fill="rgba(255,235,50,0.28)" filter="url(#sg${ada.id})"/>
+          <path d="M21,2 L6,30 L17,30 L11,68 L30,22 L19,22 Z"
+            fill="#ffee44" stroke="#ffffff" stroke-width="1"
+            filter="url(#sg${ada.id})"/>
         </svg>
       </div>`;
     }
