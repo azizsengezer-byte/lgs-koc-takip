@@ -30,6 +30,10 @@ function saveWellnessDay(field, value, btn) {
     const todayData = data.days[todayKey];
     checkAllWellnessNotifications(myUid, data, todayKey);
   }
+  // Altın sistemi — mood girişi
+  if (field === 'mood' && typeof _marketMoodKontrol === 'function') {
+    _marketMoodKontrol(field);
+  }
   // Bildirimler sadece kaydet butonuna basılınca gönderilir (saveWellnessAll)
 }
 
@@ -63,6 +67,8 @@ function saveWellnessAll(btn) {
   if (uykuVal > 0 && uykuVal < 5) uykuBildirimiGonder(uykuVal);
   if (btn) { btn.textContent = '✅ Kaydedildi!'; setTimeout(()=>{ btn.textContent = '💾 Kaydet'; }, 1500); }
   checkBadges();
+  // Altın sistemi — wellness tam kontrolü
+  if (typeof _marketWellnessTamKontrol === 'function') _marketWellnessTamKontrol();
 }
 
 // ============================================================
