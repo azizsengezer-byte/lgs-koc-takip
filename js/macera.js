@@ -225,7 +225,9 @@ function maceraEjderha() {
     if (typeof window._ejderhaSetState === 'function') {
       window._ejderhaSetState(initState);
     }
-  }, 100);
+    // Market efektlerini uygula (ejderha rengi vb.)
+    if (typeof _marketUygulaEfektler === 'function') _marketUygulaEfektler();
+  }, 150);
 
   return `
     <div class="card" style="margin-bottom:14px">
