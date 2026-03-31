@@ -1,5 +1,5 @@
 // ============================================================
-// 🗺️ SAVAŞ SİSİ HARİTASI v4 — Canvas Animasyonlu
+// 🗺️ SAVAŞ SİSİ HARİTASI v5
 // ============================================================
 
 const HARITA_ADALAR = [
@@ -16,16 +16,10 @@ const HEDEF_SORU = {
   'İngilizce':500,'İnkılap Tarihi':500,'Din Kültürü':500,
 };
 
-const HARITA_YOL = [
-  {x:0.285,y:0.48},{x:0.50,y:0.30},{x:0.70,y:0.50},
-  {x:0.735,y:0.78},{x:0.50,y:0.80},{x:0.255,y:0.735},
-  {x:0.83,y:0.12},
-];
-
 function _haritaKonuListesi(ders) {
-  const raw = (typeof kazanimlar!=='undefined')?(kazanimlar[ders]||[]):[];
-  if (!raw.length) return [];
-  if (typeof raw[0]==='object'&&raw[0].unite) return raw.map(u=>u.unite);
+  const raw=(typeof kazanimlar!=='undefined')?(kazanimlar[ders]||[]):[];
+  if(!raw.length) return [];
+  if(typeof raw[0]==='object'&&raw[0].unite) return raw.map(u=>u.unite);
   return raw;
 }
 
@@ -41,12 +35,12 @@ function haritaGetirVeri() {
     const toplamDogru=de.reduce((a,e)=>a+(e.correct||0),0);
     const isabet=toplamSoru>0?Math.round(toplamDogru/toplamSoru*100):0;
     const girilenKonular=new Set(de.map(e=>e.unit||e.topic||'').filter(Boolean));
-    const tumKonular =_haritaKonuListesi(ders);
-    const toplamKonu =tumKonular.length||1;
+    const tumKonular=_haritaKonuListesi(ders);
+    const toplamKonu=tumKonular.length||1;
     const girilenSayi=tumKonular.filter(k=>girilenKonular.has(k)).length;
     const hedef=HEDEF_SORU[ders];
-    const soruPct =Math.min(100,Math.round(toplamSoru/hedef*100));
-    const konuPct =Math.min(100,Math.round(girilenSayi/toplamKonu*100));
+    const soruPct=Math.min(100,Math.round(toplamSoru/hedef*100));
+    const konuPct=Math.min(100,Math.round(girilenSayi/toplamKonu*100));
     const genelPct=Math.round((soruPct+konuPct)/2);
     const ada=HARITA_ADALAR.find(a=>a.ad===ders||(ders==='İnkılap Tarihi'&&a.id==='ink'));
     result[ders]={
@@ -59,97 +53,179 @@ function haritaGetirVeri() {
   return result;
 }
 
-// Global animasyon handle
-let _haritaAnimId = null;
-
 function maceraHarita() {
-  // Önceki animasyonu durdur
-  if (_haritaAnimId) { cancelAnimationFrame(_haritaAnimId); _haritaAnimId=null; }
-
   const veri=haritaGetirVeri();
 
-  // Badge HTML
-  let badgeHTML='';
-  HARITA_ADALAR.forEach(ada=>{
+  // SVG viewBox = harita oranı 1600x872
+  // Her ada için sis bulutu + şimşek (düşükse) + yüzde etiketi
+  const VW=1600, VH=872;
+
+  let svgIcerik='';
+
+  // ── Hareketli sis bulutları (SVG animasyonlu) ──
+  // Her ada için 3 elips katman, farklı animasyon delay
+  HARITA_ADALAR.forEach((ada,idx)=>{
     const dAdi=ada.id==='ink'?'İnkılap Tarihi':ada.ad;
     const d=veri[dAdi]||{};
     const pct=d.genelPct||0;
-    const tamAcik=pct>=100;
-    const hicGirilmedi=(d.toplamSoru||0)===0;
+    if(pct>=100) return; // Tam açık adada sis yok
+
+    const op=Math.max(0.15,(100-pct)/100*0.88).toFixed(2);
+    const cx=ada.cx*VW, cy=ada.cy*VH;
+    const rx=ada.rx*VW, ry=ada.ry*VH;
+    const dl=[0,1.4,0.7,2.1,0.4,1.8][idx];
     const dusuk=d.isabet>0&&d.isabet<65;
-    let bRenk,bText,bBg;
-    if      (tamAcik)      {bRenk='#f9ca24';bText=`${ada.emoji} ${ada.ad} 🚩`;bBg='rgba(249,202,36,.2)';}
-    else if (hicGirilmedi) {bRenk='#666';   bText=`${ada.emoji} ${ada.ad} 🔒`;bBg='rgba(0,0,0,.6)';}
-    else if (dusuk)        {bRenk='#ff6b6b';bText=`${ada.emoji} ${ada.ad} ⚠️${pct}%`;bBg='rgba(255,60,60,.2)';}
-    else                   {bRenk=ada.renk; bText=`${ada.emoji} ${ada.ad} ${pct}%`;bBg='rgba(0,0,0,.65)';}
-    badgeHTML+=`<div onclick="_haritaModalAc('${ada.id}')" style="
-      position:absolute;
-      left:${ada.cx*100}%;
-      top:${Math.min(94,(ada.cy+ada.ry*1.18)*100)}%;
-      transform:translateX(-50%);
-      background:${bBg};border:1px solid ${bRenk}66;
-      border-radius:99px;padding:3px 9px;
-      font-size:9px;font-weight:800;color:${bRenk};
-      white-space:nowrap;cursor:pointer;z-index:20;
-      box-shadow:0 2px 8px rgba(0,0,0,.6);
-      pointer-events:all">${bText}</div>`;
-    if (tamAcik) {
-      badgeHTML+=`<div style="position:absolute;left:${ada.cx*100}%;top:${(ada.cy-ada.ry*1.15)*100}%;
-        transform:translate(-50%,-100%);font-size:15px;z-index:10;
-        filter:drop-shadow(0 2px 5px rgba(0,0,0,.8))">🚩</div>`;
+    // Düşük isabet = gri-mavi sis, düşük değil = beyaz-gri sis
+    const sisRenk=dusuk?'100,60,60':'210,220,235';
+
+    // 3 katman bulut - farklı boyut ve animasyon
+    [
+      {rMul:1.0,  opMul:1.0,  dur:8,  dxA:rx*0.12, dyA:ry*0.09},
+      {rMul:0.82, opMul:0.75, dur:11, dxA:rx*0.16, dyA:ry*0.12},
+      {rMul:0.62, opMul:0.55, dur:7,  dxA:rx*0.1,  dyA:ry*0.14},
+    ].forEach((l,li)=>{
+      const ld=(dl+li*0.9).toFixed(1);
+      const lop=(parseFloat(op)*l.opMul).toFixed(2);
+      svgIcerik+=`
+        <ellipse cx="${cx}" cy="${cy}" rx="${rx*l.rMul}" ry="${ry*l.rMul}"
+          fill="rgba(${sisRenk},${lop})"
+          filter="url(#sisBlur)">
+          <animateTransform attributeName="transform" type="translate"
+            values="0,0; ${l.dxA},${-l.dyA}; ${-l.dxA},${l.dyA}; 0,0"
+            dur="${l.dur}s" repeatCount="indefinite" begin="${ld}s"/>
+        </ellipse>`;
+    });
+
+    // Şimşek (düşük yüzde veya hiç girilmemiş)
+    if(pct<40) {
+      const lx=cx+rx*0.1, ly=cy-ry*0.3;
+      const simDur=(3+idx*0.7).toFixed(1);
+      const simDl=(dl+0.5).toFixed(1);
+      svgIcerik+=`
+        <g opacity="0">
+          <animate attributeName="opacity"
+            values="0;0;0;1;0;1;0;0"
+            dur="${simDur}s" repeatCount="indefinite" begin="${simDl}s"/>
+          <!-- Şimşek yıldırımı -->
+          <path d="M${lx},${ly-ry*0.3}
+                   L${lx-rx*0.06},${ly}
+                   L${lx+rx*0.04},${ly}
+                   L${lx-rx*0.05},${ly+ry*0.35}"
+            stroke="#ffe066" stroke-width="3" fill="none"
+            stroke-linecap="round" stroke-linejoin="round"/>
+          <!-- Parlama hale -->
+          <ellipse cx="${lx}" cy="${ly+ry*0.02}" rx="${rx*0.18}" ry="${ry*0.12}"
+            fill="rgba(255,220,50,0.18)"/>
+        </g>`;
     }
   });
 
-  // Yol SVG
+  // ── Yol çizgileri ──
   const dersSirasi=['Matematik','Fen Bilimleri','Türkçe','Din Kültürü','İnkılap Tarihi','İngilizce'];
-  let yolPaths='';
+  const yolNoktalari=[
+    {x:0.285,y:0.48},{x:0.50,y:0.30},{x:0.70,y:0.50},
+    {x:0.735,y:0.78},{x:0.50,y:0.80},{x:0.255,y:0.735},
+    {x:0.83,y:0.12},
+  ];
   dersSirasi.forEach((ders,i)=>{
     const d=veri[ders]||{};
     if((d.genelPct||0)<5) return;
-    const a=HARITA_YOL[i],b=HARITA_YOL[i+1];
+    const a=yolNoktalari[i],b=yolNoktalari[i+1];
     if(!a||!b) return;
-    const x1=a.x*1600,y1=a.y*872,x2=b.x*1600,y2=b.y*872;
-    const renk=HARITA_ADALAR.find(a=>a.ad===ders||(ders==='İnkılap Tarihi'&&a.id==='ink'))?.renk||'#4ecdc4';
-    yolPaths+=`<path d="M${x1},${y1} Q${(x1+x2)/2},${(y1+y2)/2-32} ${x2},${y2}"
-      stroke="${renk}" stroke-width="3.5" fill="none" stroke-linecap="round"
-      stroke-dasharray="7 5" opacity=".8">
-      <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="2.5s" repeatCount="indefinite"/>
-    </path>
-    <circle cx="${x2}" cy="${y2}" r="5" fill="${renk}" opacity=".6">
-      <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite"/>
-    </circle>`;
+    const x1=a.x*VW,y1=a.y*VH,x2=b.x*VW,y2=b.y*VH;
+    const renk=HARITA_ADALAR.find(a=>a.ad===ders||(ders==='İnkılap Tarihi'&&a.id==='ink'))?.renk||'#fff';
+    svgIcerik+=`
+      <path d="M${x1},${y1} Q${(x1+x2)/2},${(y1+y2)/2-35} ${x2},${y2}"
+        stroke="${renk}" stroke-width="4" fill="none" stroke-linecap="round"
+        stroke-dasharray="8 6" opacity=".85">
+        <animate attributeName="stroke-dashoffset" from="0" to="-28" dur="2s" repeatCount="indefinite"/>
+      </path>
+      <circle cx="${x2}" cy="${y2}" r="6" fill="${renk}" opacity=".7">
+        <animate attributeName="r" values="5;9;5" dur="1.8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values=".6;1;.6" dur="1.8s" repeatCount="indefinite"/>
+      </circle>`;
   });
 
+  // Hedef okul yolu
   const acikSayisi=HARITA_ADALAR.filter(ada=>{
     const dAdi=ada.id==='ink'?'İnkılap Tarihi':ada.ad;
     return(veri[dAdi]?.genelPct||0)>=50;
   }).length;
   if(acikSayisi>=4){
-    const s=HARITA_YOL[5],h=HARITA_YOL[6];
-    yolPaths+=`<path d="M${s.x*1600},${s.y*872} Q${(s.x+h.x)/2*1600},${(s.y+h.y)/2*872-55} ${h.x*1600},${h.y*872}"
-      stroke="#f9ca24" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="8 5" opacity=".9">
-      <animate attributeName="stroke-dashoffset" from="0" to="-26" dur="2s" repeatCount="indefinite"/>
-    </path>
-    <circle cx="${h.x*1600}" cy="${h.y*872}" r="9" fill="#f9ca24" opacity=".85">
-      <animate attributeName="r" values="7;13;7" dur="1.5s" repeatCount="indefinite"/>
-    </circle>`;
+    const s=yolNoktalari[5],h=yolNoktalari[6];
+    svgIcerik+=`
+      <path d="M${s.x*VW},${s.y*VH} Q${(s.x+h.x)/2*VW},${(s.y+h.y)/2*VH-60} ${h.x*VW},${h.y*VH}"
+        stroke="#f9ca24" stroke-width="5" fill="none" stroke-linecap="round"
+        stroke-dasharray="9 6" opacity=".95">
+        <animate attributeName="stroke-dashoffset" from="0" to="-30" dur="1.8s" repeatCount="indefinite"/>
+      </path>
+      <circle cx="${h.x*VW}" cy="${h.y*VH}" r="10" fill="#f9ca24" opacity=".9">
+        <animate attributeName="r" values="8;14;8" dur="1.4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values=".7;1;.7" dur="1.4s" repeatCount="indefinite"/>
+      </circle>`;
   }
 
-  // Özet
+  // ── Ada yüzde etiketleri — ada MERKEZİNDE ──
+  let etiketHTML='';
+  HARITA_ADALAR.forEach(ada=>{
+    const dAdi=ada.id==='ink'?'İnkılap Tarihi':ada.ad;
+    const d=veri[dAdi]||{};
+    const pct=d.genelPct||0;
+    const tamAcik=pct>=100;
+    const hicYok=(d.toplamSoru||0)===0;
+    const dusuk=d.isabet>0&&d.isabet<65;
+
+    let ikon,renk,bg;
+    if(tamAcik)    {ikon='🚩';renk='#f9ca24';bg='rgba(30,24,0,.75)';}
+    else if(hicYok){ikon='🔒';renk='#aaa';   bg='rgba(0,0,0,.65)';}
+    else if(dusuk) {ikon='⚡';renk='#ff6b6b';bg='rgba(60,0,0,.7)';}
+    else           {ikon='';  renk=ada.renk; bg='rgba(0,0,0,.65)';}
+
+    const tekst=tamAcik?`${ikon}`:hicYok?`${ikon}`:`${ikon}${pct}%`;
+
+    etiketHTML+=`
+      <div onclick="_haritaModalAc('${ada.id}')"
+        style="position:absolute;
+          left:${ada.cx*100}%;
+          top:${ada.cy*100}%;
+          transform:translate(-50%,-50%);
+          background:${bg};
+          border:1.5px solid ${renk}88;
+          border-radius:99px;
+          padding:4px 11px;
+          font-size:11px;font-weight:900;
+          color:${renk};
+          white-space:nowrap;
+          cursor:pointer;z-index:20;
+          box-shadow:0 2px 10px rgba(0,0,0,.7);
+          letter-spacing:.02em;
+          pointer-events:all">
+        ${tekst}
+      </div>`;
+
+    // Bayrak ayrıca (tam açık)
+    if(tamAcik){
+      etiketHTML+=`<div style="position:absolute;
+        left:${ada.cx*100}%;
+        top:${(ada.cy-ada.ry*1.2)*100}%;
+        transform:translate(-50%,-100%);
+        font-size:18px;z-index:21;
+        filter:drop-shadow(0 2px 6px rgba(0,0,0,.9))">🚩</div>`;
+    }
+  });
+
+  // ── Özet grid ──
   const ozetHTML=Object.values(veri).map(d=>{
     const renk=d.genelPct>=80?d.renk:d.genelPct>=40?'#EF9F27':'#888';
     const ada=HARITA_ADALAR.find(a=>a.ad===d.ad||(d.ad==='İnkılap Tarihi'&&a.id==='ink'));
-    const adAdi=d.ad==='İnkılap Tarihi'?'İnkılap':d.ad==='Fen Bilimleri'?'Fen Bil.':d.ad;
-    return `<div onclick="_haritaModalAc('${ada?.id||''}')" style="
-      background:var(--surface2);border-radius:8px;padding:8px;text-align:center;cursor:pointer">
-      <div style="font-size:.65rem;color:var(--text2);margin-bottom:2px">${ada?.emoji||''} ${adAdi}</div>
-      <div style="font-size:.92rem;font-weight:900;color:${renk}">%${d.genelPct}</div>
-      <div style="font-size:.58rem;color:var(--text2);margin-top:1px">${d.girilenSayi}/${d.toplamKonu}k · ${d.toplamSoru}/${d.hedef}s</div>
+    const kAdi=d.ad==='İnkılap Tarihi'?'İnkılap':d.ad==='Fen Bilimleri'?'Fen Bil.':d.ad;
+    return `<div onclick="_haritaModalAc('${ada?.id||''}')"
+      style="background:var(--surface2);border-radius:8px;padding:8px;text-align:center;cursor:pointer">
+      <div style="font-size:.63rem;color:var(--text2);margin-bottom:2px">${ada?.emoji||''} ${kAdi}</div>
+      <div style="font-size:.9rem;font-weight:900;color:${renk}">%${d.genelPct}</div>
+      <div style="font-size:.56rem;color:var(--text2);margin-top:1px">${d.girilenSayi}/${d.toplamKonu}k · ${d.toplamSoru}/${d.hedef}s</div>
     </div>`;
   }).join('');
-
-  // Canvas animasyonu başlat (DOM hazır olunca)
-  setTimeout(()=>_haritaCanvasBaslat(veri),300);
 
   return `
     <style>
@@ -164,26 +240,29 @@ function maceraHarita() {
     <div class="card" style="margin-bottom:14px;padding:0;overflow:hidden">
       <div style="padding:14px 16px 10px">
         <div class="card-title" style="margin:0">🗺️ Müfredat Takımadası</div>
-        <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Konulara giriş yap + soru hedefine ulaş → sis dağılır</div>
+        <div style="font-size:.75rem;color:var(--text2);margin-top:2px">Adaları fethettikçe sis dağılır, Hedef Okul'a ulaş!</div>
       </div>
 
-      <div id="haritaWrap" style="position:relative;width:100%">
-        <img id="haritaImg" src="map.png" style="width:100%;display:block;visibility:hidden"
-          onload="this.style.visibility='visible';_haritaImgYuklendi()"
-          onerror="this.src='https://azizsengezer-byte.github.io/lgs-koc-takip/map.png';this.style.visibility='visible'">
+      <!-- Harita container: padding-bottom ile oran korunur -->
+      <div style="position:relative;width:100%;padding-bottom:54.5%">
+        <img src="map.png"
+          style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover"
+          onerror="this.src='https://azizsengezer-byte.github.io/lgs-koc-takip/map.png'">
 
-        <!-- Canvas: sis tam üstte -->
-        <canvas id="haritaSisCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5"></canvas>
-
-        <!-- SVG yollar -->
-        <svg id="haritaYolSvg" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:6;overflow:visible"
-          viewBox="0 0 1600 872" preserveAspectRatio="xMidYMid meet">
-          ${yolPaths}
+        <!-- SVG sis + yollar, haritayla tam örtüşür -->
+        <svg style="position:absolute;top:0;left:0;width:100%;height:100%"
+          viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <filter id="sisBlur" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="18"/>
+            </filter>
+          </defs>
+          ${svgIcerik}
         </svg>
 
-        <!-- Badge overlay -->
-        <div style="position:absolute;inset:0;pointer-events:none;z-index:10">
-          ${badgeHTML}
+        <!-- Etiketler: aynı padding-bottom trick ile konumlanır -->
+        <div style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none">
+          ${etiketHTML}
         </div>
       </div>
 
@@ -201,131 +280,11 @@ function maceraHarita() {
   `;
 }
 
-window._haritaImgYuklendi = function() {
-  const img = document.getElementById('haritaImg');
-  const canvas = document.getElementById('haritaSisCanvas');
-  if (!canvas||!img) return;
-  canvas.width  = img.naturalWidth  || img.offsetWidth;
-  canvas.height = img.naturalHeight || img.offsetHeight;
-};
-
-function _haritaCanvasBaslat(veri) {
-  if (_haritaAnimId) { cancelAnimationFrame(_haritaAnimId); _haritaAnimId=null; }
-
-  const canvas = document.getElementById('haritaSisCanvas');
-  const img    = document.getElementById('haritaImg');
-  if (!canvas||!img) return;
-
-  // Canvas boyutunu görselin gerçek boyutuna eşitle
-  const setSize = ()=>{
-    canvas.width  = img.offsetWidth  * (window.devicePixelRatio||1);
-    canvas.height = img.offsetHeight * (window.devicePixelRatio||1);
-  };
-  setSize();
-
-  const ctx = canvas.getContext('2d');
-  const t0  = performance.now();
-
-  // Her ada için sis bulut parametreleri
-  const adaParams = HARITA_ADALAR.map((ada,idx)=>{
-    const dAdi = ada.id==='ink'?'İnkılap Tarihi':ada.ad;
-    const d    = veri[dAdi]||{};
-    const pct  = d.genelPct||0;
-    const sisOp= Math.max(0, Math.min(0.92, (100-pct)/100));
-    if (sisOp<0.04) return null;
-    const dusuk= d.isabet>0&&d.isabet<65;
-    const delay= [0,1.2,0.6,1.8,0.4,1.0][idx]||0;
-    return {
-      ada, sisOp, dusuk, delay,
-      // 4 katman bulut
-      layers:[
-        {rMul:1.0,  op:0.82, spd:0.00045, phX:delay*0.8, phY:delay*0.5, phS:delay*0.3, ampX:0.015, ampY:0.012, ampS:0.08},
-        {rMul:0.78, op:0.65, spd:0.00038, phX:delay*0.6, phY:delay*0.9, phS:delay*0.7, ampX:0.018, ampY:0.014, ampS:0.1},
-        {rMul:0.58, op:0.52, spd:0.00052, phX:delay*1.1, phY:delay*0.3, phS:delay*0.5, ampX:0.022, ampY:0.01,  ampS:0.07},
-        {rMul:0.40, op:0.42, spd:0.00041, phX:delay*0.4, phY:delay*1.2, phS:delay*0.9, ampX:0.012, ampY:0.018, ampS:0.12},
-      ],
-    };
-  }).filter(Boolean);
-
-  function drawRadialCloud(ctx, cx, cy, rx, ry, opacity, r, g, b) {
-    const grad = ctx.createRadialGradient(cx,cy,0, cx,cy, Math.max(rx,ry));
-    grad.addColorStop(0,   `rgba(${r},${g},${b},${opacity})`);
-    grad.addColorStop(0.4, `rgba(${r},${g},${b},${opacity*0.55})`);
-    grad.addColorStop(0.75,`rgba(${r},${g},${b},${opacity*0.15})`);
-    grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
-    ctx.save();
-    ctx.scale(1, ry/rx);
-    ctx.beginPath();
-    ctx.arc(cx, cy*(rx/ry), rx, 0, Math.PI*2);
-    ctx.fillStyle = grad;
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function frame(now) {
-    const t  = now - t0;
-    const cw = canvas.width;
-    const ch = canvas.height;
-    ctx.clearRect(0,0,cw,ch);
-
-    // Genel sis katmanı (3 büyük bulut)
-    const genelBulutlar=[
-      {cx:0.25, cy:0.3,  rx:0.5, ry:0.45, op:0.38, spd:0.00016, phX:0,   phY:0},
-      {cx:0.75, cy:0.55, rx:0.45,ry:0.5,  op:0.32, spd:0.00013, phX:1.5, phY:0.8},
-      {cx:0.45, cy:0.85, rx:0.6, ry:0.4,  op:0.35, spd:0.00011, phX:0.7, phY:1.3},
-    ];
-    genelBulutlar.forEach(gb=>{
-      const tx = Math.sin(t*gb.spd+gb.phX)*0.06;
-      const ty = Math.cos(t*gb.spd*0.8+gb.phY)*0.05;
-      const cx = (gb.cx+tx)*cw;
-      const cy = (gb.cy+ty)*ch;
-      drawRadialCloud(ctx, cx,cy, gb.rx*cw, gb.ry*ch, gb.op, 8,12,32);
-    });
-
-    // Ada sisleri
-    adaParams.forEach(p=>{
-      const {ada,sisOp,dusuk,layers}=p;
-      const baseCX = ada.cx*cw;
-      const baseCY = ada.cy*ch;
-      const baseRX = ada.rx*cw;
-      const baseRY = ada.ry*ch;
-      const r=dusuk?55:8, g=dusuk?0:12, b=dusuk?0:32;
-
-      layers.forEach(l=>{
-        const tx = Math.sin(t*l.spd+l.phX)*l.ampX*cw;
-        const ty = Math.cos(t*l.spd*0.8+l.phY)*l.ampY*ch;
-        const sc = 1+Math.sin(t*l.spd*0.6+l.phS)*l.ampS;
-        const cx = baseCX+tx;
-        const cy = baseCY+ty;
-        const rx = baseRX*l.rMul*sc;
-        const ry = baseRY*l.rMul*sc;
-        drawRadialCloud(ctx, cx,cy, rx,ry, l.op*sisOp, r,g,b);
-      });
-
-      // Kırmızı border (düşük isabet)
-      if (dusuk) {
-        ctx.save();
-        ctx.strokeStyle='rgba(255,60,60,0.5)';
-        ctx.lineWidth=2;
-        ctx.beginPath();
-        ctx.ellipse(baseCX,baseCY, baseRX,baseRY, 0,0,Math.PI*2);
-        ctx.stroke();
-        ctx.restore();
-      }
-    });
-
-    _haritaAnimId = requestAnimationFrame(frame);
-  }
-
-  _haritaAnimId = requestAnimationFrame(frame);
-}
-
-// ── Modal ──────────────────────────────────────────────────
-window._haritaModalAc = function(id) {
-  const ada=HARITA_ADALAR.find(a=>a.id===id); if(!ada) return;
+window._haritaModalAc=function(id){
+  const ada=HARITA_ADALAR.find(a=>a.id===id);if(!ada)return;
   const dAdi=id==='ink'?'İnkılap Tarihi':ada.ad;
   const veri=haritaGetirVeri();
-  const d=veri[dAdi]; if(!d) return;
+  const d=veri[dAdi];if(!d)return;
   const sR=d.soruPct>=100?'#43e97b':d.soruPct>=50?'#f9ca24':'#ff6b6b';
   const kR=d.konuPct>=100?'#43e97b':d.konuPct>=50?'#f9ca24':'#ff6b6b';
   document.getElementById('hModalIcerik').innerHTML=`
@@ -344,14 +303,14 @@ window._haritaModalAc = function(id) {
           <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px">
             <div style="width:${d.soruPct}%;height:100%;background:${sR};border-radius:3px"></div>
           </div>
-          <div style="font-size:.74rem;font-weight:800;color:${sR}">${d.toplamSoru} / ${d.hedef}</div>
+          <div style="font-size:.74rem;font-weight:800;color:${sR}">${d.toplamSoru}/${d.hedef}</div>
         </div>
         <div style="background:var(--surface2);border-radius:10px;padding:10px">
           <div style="font-size:.62rem;color:var(--text2);margin-bottom:4px">📚 Konu taraması</div>
           <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px">
             <div style="width:${d.konuPct}%;height:100%;background:${kR};border-radius:3px"></div>
           </div>
-          <div style="font-size:.74rem;font-weight:800;color:${kR}">${d.girilenSayi} / ${d.toplamKonu}</div>
+          <div style="font-size:.74rem;font-weight:800;color:${kR}">${d.girilenSayi}/${d.toplamKonu}</div>
         </div>
       </div>
       ${d.isabet>0?`<div style="font-size:.74rem;color:var(--text2)">🎯 İsabet: <span style="font-weight:800;color:${d.isabet>=70?ada.renk:d.isabet>=50?'#f9ca24':'#ff6b6b'}">%${d.isabet}</span></div>`:''}
