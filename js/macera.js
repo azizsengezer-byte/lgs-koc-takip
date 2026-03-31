@@ -294,18 +294,18 @@ function maceraEjderha() {
         <ellipse cx="63" cy="56" rx="5" ry="8" fill="#4cc9f0" transform="rotate(-15 63 56)"/>
         <ellipse cx="97" cy="56" rx="5" ry="8" fill="#4cc9f0" transform="rotate(15 97 56)"/>
         <g id="fire-group" style="display:none">
-          <!-- Kıvılcım parçacıkları -->
-          <circle cx="110" cy="86" r="3" fill="#ff9500" style="animation:firebreath 0.35s ease-in-out infinite 0s"/>
-          <circle cx="118" cy="88" r="2.5" fill="#ffcc00" style="animation:firebreath 0.35s ease-in-out infinite 0.05s"/>
-          <circle cx="106" cy="90" r="2" fill="#ff6600" style="animation:firebreath 0.35s ease-in-out infinite 0.1s"/>
-          <!-- Ana alev gövdesi — yatay uzayan damlacık -->
-          <ellipse cx="112" cy="92" rx="20" ry="7" fill="#ff6600" style="animation:firebreath 0.4s ease-in-out infinite 0s" transform-origin="94px 92px"/>
-          <ellipse cx="116" cy="92" rx="14" ry="5" fill="#ff9500" style="animation:firebreath 0.4s ease-in-out infinite 0.07s" transform-origin="94px 92px"/>
-          <ellipse cx="120" cy="92" rx="9" ry="3.5" fill="#ffcc00" style="animation:firebreath 0.4s ease-in-out infinite 0.14s" transform-origin="94px 92px"/>
-          <ellipse cx="124" cy="92" rx="5" ry="2" fill="white" opacity="0.9" style="animation:firebreath 0.4s ease-in-out infinite 0.21s" transform-origin="94px 92px"/>
-          <!-- Alev dili — yukarı kıvrılan -->
-          <path d="M98 92 Q108 82 118 86 Q112 90 120 88 Q114 96 104 94 Z" fill="#ff4500" style="animation:firebreath 0.5s ease-in-out infinite 0.05s" transform-origin="94px 92px"/>
-          <path d="M100 92 Q108 85 115 88 Q110 92 116 90 Q111 96 104 94 Z" fill="#ff7700" style="animation:firebreath 0.5s ease-in-out infinite 0.12s" transform-origin="94px 92px"/>
+          <!-- Ana alev — JS ile canlandırılacak -->
+          <ellipse id="fire-core" cx="115" cy="92" rx="18" ry="8" fill="#ff5500"/>
+          <ellipse id="fire-mid" cx="122" cy="92" rx="11" ry="5" fill="#ff8800"/>
+          <ellipse id="fire-tip" cx="128" cy="92" rx="6" ry="3" fill="#ffcc00"/>
+          <ellipse id="fire-white" cx="132" cy="92" rx="3" ry="1.5" fill="white" opacity="0.9"/>
+          <!-- Alev dilleri -->
+          <path id="fire-tongue1" d="M100 88 Q112 76 120 84 Q114 90 118 88 Q112 96 104 93 Z" fill="#ff3300"/>
+          <path id="fire-tongue2" d="M102 90 Q110 80 116 86 Q111 91 115 89 Q110 96 104 93 Z" fill="#ff6600"/>
+          <!-- Kıvılcımlar -->
+          <circle id="fire-spark1" cx="118" cy="82" r="2.5" fill="#ffaa00"/>
+          <circle id="fire-spark2" cx="124" cy="79" r="2" fill="#ffcc00"/>
+          <circle id="fire-spark3" cx="130" cy="85" r="1.5" fill="#ff8800"/>
         </g>
       </g>
       <ellipse cx="58" cy="170" rx="14" ry="9" fill="#5a4fcf" transform="rotate(-20 58 170)"/>
@@ -423,6 +423,43 @@ function maceraEjderha() {
     }
   };
 
+  // ── JS Ateş Animasyonu ──────────────────────────────────
+  let _fireRaf = null;
+  function _startFire() {
+    if (_fireRaf) return;
+    const t0 = performance.now();
+    function frame(now) {
+      const t = (now - t0) * 0.001;
+      const core = document.getElementById('fire-core');
+      if (!core) { _fireRaf = null; return; }
+      const mid   = document.getElementById('fire-mid');
+      const tip   = document.getElementById('fire-tip');
+      const t1    = document.getElementById('fire-tongue1');
+      const t2    = document.getElementById('fire-tongue2');
+      const s1    = document.getElementById('fire-spark1');
+      const s2    = document.getElementById('fire-spark2');
+      const s3    = document.getElementById('fire-spark3');
+      // Alev nefes
+      const p = Math.sin(t * 9) * 0.18 + 1;
+      const w = Math.sin(t * 12) * 0.12 + 1;
+      core.setAttribute('rx', 18 * p); core.setAttribute('ry', 8 * w);
+      if(mid) { mid.setAttribute('rx', 11 * p); mid.setAttribute('ry', 5 * w); }
+      if(tip) { tip.setAttribute('rx', 6 * p); }
+      // Dil dalgası
+      if(t1) t1.setAttribute('transform', 'translate(0,' + (Math.sin(t*10)*3) + ')');
+      if(t2) t2.setAttribute('transform', 'translate(0,' + (Math.sin(t*8+1)*2) + ')');
+      // Kıvılcım yüksel
+      if(s1) { s1.setAttribute('cy', 82 - ((t*55)%22)); s1.setAttribute('opacity', 1-((t*55)%22)/22); }
+      if(s2) { s2.setAttribute('cy', 79 - ((t*45+8)%28)); s2.setAttribute('opacity', 1-((t*45+8)%28)/28); }
+      if(s3) { s3.setAttribute('cy', 85 - ((t*65+4)%18)); s3.setAttribute('opacity', 1-((t*65+4)%18)/18); }
+      _fireRaf = requestAnimationFrame(frame);
+    }
+    _fireRaf = requestAnimationFrame(frame);
+  }
+  function _stopFire() {
+    if (_fireRaf) { cancelAnimationFrame(_fireRaf); _fireRaf = null; }
+  }
+
   window._ejderhaSetState = function(s){
     curState=s;
     const head=document.getElementById('head');
@@ -436,7 +473,7 @@ function maceraEjderha() {
     if(s==='hungry'){
       dragon.style.filter='grayscale(0.5) brightness(0.75)';
       head.style.animation='ejSleepy 4s ease-in-out infinite';
-      if(fire) fire.style.display='none';
+      if(fire) fire.style.display='none'; _stopFire();
       if(mouth) mouth.setAttribute('d','M72 98 Q80 95 88 98');
       if(lEye) lEye.style.transform='scaleY(0.35) translateY(8px)';
       if(rEye) rEye.style.transform='scaleY(0.35) translateY(8px)';
@@ -452,7 +489,7 @@ function maceraEjderha() {
     } else if(s==='fire'){
       dragon.style.filter='none';
       head.style.animation='ejIdle 2s ease-in-out infinite';
-      if(fire) fire.style.display='block';
+      if(fire) fire.style.display='block'; _startFire();
       if(mouth) mouth.setAttribute('d','M70 97 Q80 106 90 97');
       if(lEye) lEye.style.transform='';
       if(rEye) rEye.style.transform='';
@@ -460,7 +497,7 @@ function maceraEjderha() {
     } else {
       dragon.style.filter='none';
       head.style.animation='ejIdle 3s ease-in-out infinite';
-      if(fire) fire.style.display='none';
+      if(fire) fire.style.display='none'; _stopFire();
       if(mouth) mouth.setAttribute('d','M72 96 Q80 102 88 96');
       if(lEye) lEye.style.transform='';
       if(rEye) rEye.style.transform='';
