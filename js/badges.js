@@ -1141,7 +1141,7 @@ async function badgesPageHTML(uid) {
             background:${has?cat.color+'18':'var(--surface2)'};
             border:1.5px solid ${has?cat.color:'var(--border)'};
             cursor:pointer;user-select:none"
-            onclick="_rozetDetayAc('${b.id}','${b.name.replace(/'/g,'\\'')}','${b.desc.replace(/'/g,'\\'')}','${b.sym}',${has},'${cat.color}')">
+            onclick="_rozetDetayAc('${b.id}','${b.sym}',${has},'${cat.color}')" data-name="${b.name.replace(/"/g,'&quot;')}" data-desc="${b.desc.replace(/"/g,'&quot;')}">
             ${getBadgeHTML(b,!has,52)}
             <div style="font-size:0.6rem;font-weight:700;margin-top:3px;line-height:1.2;color:${has?'var(--text)':'var(--text2)'}">${b.name}</div>
           </div>`;
@@ -1215,7 +1215,25 @@ async function showBadgesPage() {
 // ============================================================
 // 🏆 ROZET DETAY MODALI
 // ============================================================
-function _rozetDetayAc(id, name, desc, sym, has, renk) {
+function _rozetDetayAc(id, sym, has, renk) {
+  // name ve desc data attribute'tan al
+  // Bu fonksiyon artık element veya id ile çağrılıyor
+  // Eğer element ise data attribute'tan oku
+  let name = '', desc = '';
+  if (typeof id === 'object' && id.dataset) {
+    const el = id;
+    id = el.getAttribute('onclick').match(/'([^']+)'/)?.[1] || '';
+    sym = el.getAttribute('onclick').match(/'([^']+)'/g)?.[1]?.replace(/'/g,'') || '';
+    has = el.getAttribute('onclick').includes('true');
+    renk = el.getAttribute('onclick').match(/'([^']+)'[^']*$/)?.[1] || '#6c63ff';
+    name = el.dataset.name || '';
+    desc = el.dataset.desc || '';
+  } else {
+    // Eski çağrı — BADGES'tan bul
+    const badge = (typeof BADGES !== 'undefined') ? BADGES.find(b => b.id === id) : null;
+    name = badge?.name || '';
+    desc = badge?.desc || '';
+  }
   let modal = document.getElementById('rozetDetayModal');
   if (!modal) {
     modal = document.createElement('div');
