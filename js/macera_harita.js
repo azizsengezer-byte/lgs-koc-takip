@@ -152,30 +152,19 @@ function maceraHarita() {
         transform:translate(-50%,-100%);font-size:18px;z-index:21;
         filter:drop-shadow(0 2px 6px rgba(0,0,0,.9))">🚩</div>`;
     }
-    // Şimşek — pct<70 ise, z-index:30 ile her şeyin ÜSTÜNDE
+    // Şimşek emoji — pct<70 ise
     if(pct<70){
       etiketHTML+=`<div id="sim_${ada.id}" style="
         position:absolute;
         left:${ada.cx*100}%;
-        top:${ada.cy*100}%;
-        transform:translate(-10px,-42px);
-        width:20px;height:38px;
+        top:${(ada.cy - ada.ry*0.6)*100}%;
+        transform:translate(-50%,-50%);
+        font-size:28px;
         pointer-events:none;
         z-index:30;
-        opacity:0;">
-        <svg width="20" height="38" viewBox="0 0 20 38" overflow="visible">
-          <defs>
-            <filter id="sg${ada.id}" x="-100%" y="-40%" width="300%" height="180%">
-              <feGaussianBlur stdDeviation="2" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          <ellipse cx="10" cy="19" rx="13" ry="17" fill="rgba(255,235,50,0.3)" filter="url(#sg${ada.id})"/>
-          <path d="M12,1 L3,16 L9,16 L6,37 L17,12 L11,12 Z"
-            fill="#ffee44" stroke="#ffffff" stroke-width="0.8"
-            filter="url(#sg${ada.id})"/>
-        </svg>
-      </div>`;
+        opacity:0;
+        text-shadow:0 0 12px #ffe066, 0 0 24px #ffaa00;
+        filter:drop-shadow(0 0 8px #ffcc00)">⚡</div>`;
     }
   });
 
