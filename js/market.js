@@ -39,7 +39,7 @@ const MARKET_KATEGORILER = [
 ];
 
 // ── Altın Kazanma ──────────────────────────────────────────
-const MARKET_ALTIN = { MOOD:15, WELLNESS_TAM:25, SORU_10:5, SERI_7:100 };
+const MARKET_ALTIN = { MOOD:15, WELLNESS_TAM:100, SORU_10:5, SERI_7:100 };
 
 async function marketAldinEkle(miktar, sebep) {
   const uid = auth.currentUser?.uid;
@@ -102,11 +102,17 @@ async function marketAktifEt(urunId) {
   if (aktif[urunId] === true) {
     delete aktif[urunId];
     window.currentUserData.aktif = aktif;
-    await db.collection('users').doc(uid).update({ aktif: aktif });
-    _mBildirim('Deaktif edildi', '#f9ca24');
-    _marketUygulaEfektler();
-    const el = document.getElementById('marketSayfa');
-    if (el) el.innerHTML = _marketIcerik();
+    try {
+      await db.collection('users').doc(uid).update({ aktif: aktif });
+      _mBildirim(urun.ikon + ' Deaktif edildi', '#f9ca24');
+      // Sıfırla
+      if (urun.tip === 'renk') document.querySelectorAll('#dragon-svg').forEach(el => { el.style.filter = ''; });
+      if (urun.tip === 'ates') document.querySelectorAll('#fire-group').forEach(el => { el.style.filter = ''; });
+      if (urun.tip === 'profil_bg') { const ov=document.getElementById('_temaOverlay'); if(ov) ov.style.display='none'; }
+      if (urun.tip === 'harita_sis') document.querySelectorAll('[id^="sis_"]').forEach(el => { el.style.filter = ''; });
+      const el = document.getElementById('marketSayfa');
+      if (el) el.innerHTML = _marketIcerik();
+    } catch(e) { _mBildirim('Hata oluştu', '#ff6b6b'); }
     return;
   }
   // Aynı tipteki eski aktifi kaldır
@@ -142,10 +148,20 @@ function _marketUygulaEfektler() {
       document.querySelectorAll('#fire-group').forEach(el => { el.style.filter = u.css; });
     }
     if (u.tip === 'profil_bg') {
-      // Sadece arka planı değiştir, --bg variable'ını güncelle
-      document.documentElement.style.setProperty('--bg', u.css.match(/#[a-f0-9]+/gi)?.[0] || '#0f1117');
+      // Transparan overlay - yazılar bozulmasın
       const app = document.getElementById('app');
-      if (app) app.style.background = u.css;
+      if (app) {
+        app.style.position = 'relative';
+        let overlay = document.getElementById('_temaOverlay');
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.id = '_temaOverlay';
+          overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.18';
+          app.insertBefore(overlay, app.firstChild);
+        }
+        overlay.style.background = u.css;
+        overlay.style.display = 'block';
+      }
     }
     if (u.tip === 'harita_sis') {
       // Harita sisi - SVG elipsleri
@@ -275,10 +291,30 @@ function _mDetay(id) {
   const aktifMi = aktif[id] === true;
 
   let onizleme = '';
-  if (u.tip === 'renk') onizleme = '<div style="width:56px;height:56px;border-radius:50%;background:radial-gradient(circle,#7c74ff,#5040c0);filter:' + u.css + ';margin:10px auto;border:2px solid rgba(255,255,255,.2)"></div>';
-  else if (u.tip === 'ates') onizleme = '<div style="font-size:2.5rem;filter:' + u.css + ';margin:10px auto">🔥</div>';
-  else if (u.tip === 'profil_bg') onizleme = '<div style="width:90px;height:40px;border-radius:10px;background:' + u.css + ';margin:10px auto;border:1px solid rgba(255,255,255,.15)"></div>';
-  else onizleme = '<div style="font-size:2.5rem;margin:10px auto">' + u.ikon + '</div>';
+  if (u.tip === 'renk') {
+    // Ejderha SVG mini önizleme - mevcut aktif rengi göster
+    const aktifRenk = (window.currentUserData?.aktif || {})[id] === true ? u.css : '';
+    onizleme = '<div style="width:60px;height:60px;border-radius:50%;'
+      + 'background:radial-gradient(circle at 38% 35%, #8a83ff, #6c63ff 50%, #5040c8);'
+      + (u.css ? 'filter:' + u.css + ';' : '')
+      + 'margin:10px auto;border:2px solid rgba(255,255,255,.25);'
+      + 'box-shadow:0 4px 16px rgba(0,0,0,.3)"></div>';
+  } else if (u.tip === 'ates') {
+    onizleme = '<div style="font-size:2.5rem;' + (u.css ? 'filter:' + u.css + ';' : '') + 'margin:10px auto;display:block;text-align:center">🔥</div>';
+  } else if (u.tip === 'profil_bg') {
+    // Transparan overlay önizleme
+    onizleme = '<div style="width:100%;height:60px;border-radius:12px;'
+      + 'background:' + u.css + ';'
+      + 'margin:10px auto;border:1px solid rgba(255,255,255,.15);'
+      + 'display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden">'
+      + '<div style="position:absolute;inset:0;background:rgba(0,0,0,.3)"></div>'
+      + '<div style="position:relative;color:white;font-size:.75rem;font-weight:700">Önizleme</div>'
+      + '</div>';
+  } else if (u.tip === 'harita_sis') {
+    onizleme = '<div style="font-size:2rem;' + (u.css ? 'filter:' + u.css + ';' : '') + 'margin:10px auto;display:block;text-align:center">☁️</div>';
+  } else {
+    onizleme = '<div style="font-size:2.5rem;margin:10px auto;display:block;text-align:center">' + u.ikon + '</div>';
+  }
 
   let btn = '';
   if (sahip && aktifMi) btn = '<button disabled style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--surface2);color:var(--text2);font-size:.85rem;font-weight:700;font-family:inherit">✓ Aktif</button>';
