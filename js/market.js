@@ -197,7 +197,16 @@ function _marketUygulaEfektler() {
     const u = MARKET_URUNLER[id];
     if (!u) return;
     if (u.tip === 'renk') {
-      document.querySelectorAll('#dragon-svg').forEach(el => { el.style.filter = u.css; });
+      // Fill renklerini direkt değiştir — filter yok
+      const ana = u.renk || '#6c63ff';
+      const r = parseInt(ana.slice(1,3),16), g = parseInt(ana.slice(3,5),16), b = parseInt(ana.slice(5,7),16);
+      const koyu = '#' + Math.floor(r*0.75).toString(16).padStart(2,'0') + Math.floor(g*0.75).toString(16).padStart(2,'0') + Math.floor(b*0.75).toString(16).padStart(2,'0');
+      const acik = '#' + Math.min(255,Math.floor(r*1.2)).toString(16).padStart(2,'0') + Math.min(255,Math.floor(g*1.2)).toString(16).padStart(2,'0') + Math.min(255,Math.floor(b*1.2)).toString(16).padStart(2,'0');
+      document.querySelectorAll('#dragon-svg [fill="#6c63ff"]').forEach(el => el.setAttribute('fill', ana));
+      document.querySelectorAll('#dragon-svg [fill="#5a4fcf"]').forEach(el => el.setAttribute('fill', koyu));
+      document.querySelectorAll('#dragon-svg [fill="#7c74ff"]').forEach(el => el.setAttribute('fill', acik));
+      // style.filter'ı temizle
+      document.querySelectorAll('#dragon-svg').forEach(el => { el.style.filter = ''; });
     }
     if (u.tip === 'ates') {
       document.querySelectorAll('#fire-group').forEach(el => { el.style.filter = u.css; });
@@ -587,14 +596,19 @@ function _mDetay(id) {
   // Önizleme
   let onizleme = '';
   if (u.tip === 'renk') {
-    // Ejderha SVG'si — gerçek filter ile
+    // Fill renklerini direkt kullan — filter yok
+    const ana = u.renk || '#6c63ff';
+    // Koyu versiyon: hex'i karart
+    const r = parseInt(ana.slice(1,3),16), g = parseInt(ana.slice(3,5),16), b = parseInt(ana.slice(5,7),16);
+    const koyu = '#' + Math.floor(r*0.75).toString(16).padStart(2,'0') + Math.floor(g*0.75).toString(16).padStart(2,'0') + Math.floor(b*0.75).toString(16).padStart(2,'0');
+    const acik = '#' + Math.min(255,Math.floor(r*1.2)).toString(16).padStart(2,'0') + Math.min(255,Math.floor(g*1.2)).toString(16).padStart(2,'0') + Math.min(255,Math.floor(b*1.2)).toString(16).padStart(2,'0');
     onizleme = '<div style="width:80px;height:80px;margin:10px auto">'
-      + '<svg width="80" height="80" viewBox="20 30 120 140" style="filter:' + u.css + '">'
-      + '<ellipse cx="80" cy="148" rx="40" ry="28" fill="#6c63ff"/>'
-      + '<path d="M50 120 Q10 88 8 56 Q24 72 38 96 Q44 110 52 122" fill="#5a4fcf"/>'
-      + '<path d="M110 120 Q150 88 152 56 Q136 72 122 96 Q116 110 108 122" fill="#5a4fcf"/>'
-      + '<path d="M66 120 Q70 102 78 98 Q82 96 86 98 Q94 102 94 120" fill="#6c63ff"/>'
-      + '<ellipse cx="80" cy="82" rx="36" ry="32" fill="#6c63ff"/>'
+      + '<svg width="80" height="80" viewBox="20 30 120 140">'
+      + '<ellipse cx="80" cy="148" rx="40" ry="28" fill="' + ana + '"/>'
+      + '<path d="M50 120 Q10 88 8 56 Q24 72 38 96 Q44 110 52 122" fill="' + koyu + '"/>'
+      + '<path d="M110 120 Q150 88 152 56 Q136 72 122 96 Q116 110 108 122" fill="' + koyu + '"/>'
+      + '<path d="M66 120 Q70 102 78 98 Q82 96 86 98 Q94 102 94 120" fill="' + ana + '"/>'
+      + '<ellipse cx="80" cy="82" rx="36" ry="32" fill="' + ana + '"/>'
       + '<ellipse cx="65" cy="74" rx="11" ry="12" fill="white"/><circle cx="65" cy="75" r="5" fill="#1a0050"/><circle cx="67.5" cy="72.5" r="2" fill="white"/>'
       + '<ellipse cx="95" cy="74" rx="11" ry="12" fill="white"/><circle cx="95" cy="75" r="5" fill="#1a0050"/><circle cx="97.5" cy="72.5" r="2" fill="white"/>'
       + '</svg></div>';
