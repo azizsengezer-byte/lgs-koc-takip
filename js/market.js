@@ -356,26 +356,37 @@ function _marketAldinAnimasyon(miktar) {
   if (sayac) sayac.textContent = `💰 ${(window.currentUserData?.altin||0).toLocaleString()}`;
 }
 
-// Efektleri uygula (ejderha rengi vb.)
+// Efektleri uygula
 function _marketUygulaEfektler() {
   const aktif = window.currentUserData?.aktif || {};
-  // Ejderha rengi
+  if (!aktif || !Object.keys(aktif).length) return;
+
   Object.keys(aktif).forEach(id => {
     const u = MARKET_URUNLER[id];
-    if (!u || !aktif[id]) return;
-    if (u.tip === 'renk') {
+    if (!u) return;
+    const aktifMi = aktif[id] === true || (aktif[id] && new Date(aktif[id]) > new Date());
+    if (!aktifMi) return;
+
+    // Ejderha rengi
+    if (u.tip === 'renk' && u.css) {
       const svg = document.getElementById('dragon-svg');
       if (svg) svg.style.filter = u.css;
     }
-    if (u.tip === 'ates') {
+    // Ateş rengi
+    if (u.tip === 'ates' && u.css) {
       const fg = document.getElementById('fire-group');
       if (fg) fg.style.filter = u.css;
+    }
+    // Profil arka planı
+    if (u.tip === 'profil_bg' && u.css) {
+      const app = document.getElementById('app');
+      if (app) app.style.background = u.css;
     }
   });
 }
 
-// Sayfa yüklenince efektleri uygula
-window.addEventListener('marketReady', _marketUygulaEfektler);
+// maceraPage render edilince efektleri uygula
+const _origMaceraEjderha = window.maceraEjderha;
 
 // ── Koç Bonus Verme ────────────────────────────────────────
 async function kocBonusAltin(ogrenciUid, miktar, sebep) {
@@ -392,6 +403,14 @@ async function kocBonusAltin(ogrenciUid, miktar, sebep) {
   }
 }
 
+// maceraPage açılınca efektleri uygula (setTimeout ile SVG DOM'a geldikten sonra)
+const _origShowPage = window.showPage;
+// macera sayfası açılınca efektleri uygula
+document.addEventListener('DOMContentLoaded', () => {
+  // Sayfa zaten açıksa uygula
+  setTimeout(_marketUygulaEfektler, 500);
+});
+
 // CSS animasyonları
 const _marketStyle = document.createElement('style');
 _marketStyle.textContent = `
@@ -406,3 +425,68 @@ _marketStyle.textContent = `
   }
 `;
 document.head.appendChild(_marketStyle);
+
+// ============================================================
+// ✨ GÖRSEL EFEKTLer
+// ============================================================
+
+function _marketKonfetiEfekt() {
+  const aktif = window.currentUserData?.aktif || {};
+  // Hangi efekt aktif?
+  let efektTip = null;
+  if (aktif.efekt_konfeti === true) efektTip = 'konfeti';
+  else if (aktif.efekt_yildiz === true) efektTip = 'yildiz';
+  else if (aktif.efekt_altin_p === true) efektTip = 'altin';
+  else if (aktif.efekt_kalp === true) efektTip = 'kalp';
+  if (!efektTip) return;
+
+  const renkler = {
+    konfeti: ['#ff6b6b','#4ecdc4','#f9ca24','#a29bfe','#fd79a8','#55efc4'],
+    yildiz:  ['#f9ca24','#fff','#ffd700','#ffe066','#ffec8b'],
+    altin:   ['#f9ca24','#ffd700','#daa520','#b8860b','#ffec8b'],
+    kalp:    ['#ff6b9d','#ff8fb0','#ff5c8a','#c0392b','#e84393'],
+  };
+  const emojiler = {
+    konfeti: ['🎊','🎉','✨','⭐'],
+    yildiz:  ['⭐','🌟','✨','💫'],
+    altin:   ['💰','✨','⭐','🌟'],
+    kalp:    ['💜','💕','❤️','💖'],
+  };
+
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;overflow:hidden';
+  document.body.appendChild(container);
+
+  const rList = renkler[efektTip];
+  const eList = emojiler[efektTip];
+
+  for (let i = 0; i < 30; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      const x = Math.random() * 100;
+      const emoji = Math.random() > 0.5;
+      el.style.cssText = `
+        position:absolute;
+        left:${x}%;top:-20px;
+        font-size:${emoji ? '18px' : '12px'};
+        ${emoji ? '' : `width:10px;height:10px;border-radius:${Math.random()>0.5?'50%':'2px'};background:${rList[Math.floor(Math.random()*rList.length)]};`}
+        animation:efektDus ${1.5 + Math.random()}s ease-in forwards;
+        animation-delay:${Math.random()*0.5}s;
+      `;
+      if (emoji) el.textContent = eList[Math.floor(Math.random()*eList.length)];
+      container.appendChild(el);
+    }, i * 50);
+  }
+
+  setTimeout(() => container.remove(), 3000);
+}
+
+// Efekt CSS
+const _efektStyle = document.createElement('style');
+_efektStyle.textContent = `
+  @keyframes efektDus {
+    0%   { transform:translateY(0) rotate(0deg); opacity:1; }
+    100% { transform:translateY(100vh) rotate(${Math.random()>0.5?'':'-'}720deg); opacity:0; }
+  }
+`;
+document.head.appendChild(_efektStyle);

@@ -1226,6 +1226,14 @@ function saveEntry() {
   showPage('daily-entry');
   // Rozet kontrolü
   setTimeout(()=>checkBadges(), 500);
+  // Altın sistemi — soru hook
+  if (type === 'soru' && correct > 0 && typeof _marketSoruKontrol === 'function') {
+    _marketSoruKontrol(correct);
+  }
+  // Konfeti efekti
+  if (typeof _marketKonfetiEfekt === 'function') {
+    setTimeout(()=>_marketKonfetiEfekt(), 300);
+  }
 }
 
 async function deleteStudent(i) {
