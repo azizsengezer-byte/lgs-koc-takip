@@ -95,7 +95,7 @@ function maceraHarita() {
   }
 
   // Sis elipsleri (statik, JS hareket ettirecek)
-  let sisHTML='';
+  let sisHTML='',simHTML='';
   HARITA_ADALAR.forEach((ada,idx)=>{
     const dAdi=ada.id==='ink'?'İnkılap Tarihi':ada.ad;
     const d=veri[dAdi]||{};
@@ -118,12 +118,12 @@ function maceraHarita() {
 
     // Şimşek path (başlangıçta gizli) — her ada için
     const lx=cx+rx*0.08, ly=cy-ry*0.25;
-    sisHTML+=`<g id="sim_${ada.id}" opacity="0">
+    simHTML+=`<g id="sim_${ada.id}" opacity="0">
       <path d="M${lx},${ly-ry*0.28} L${lx-rx*0.07},${ly} L${lx+rx*0.05},${ly} L${lx-rx*0.06},${ly+ry*0.32}"
-        stroke="#ffe566" stroke-width="${Math.max(2,rx*0.018)}" fill="none"
+        stroke="#fff176" stroke-width="${Math.max(3.5,rx*0.028)}" fill="none"
         stroke-linecap="round" stroke-linejoin="round"/>
       <ellipse cx="${lx-rx*0.01}" cy="${ly+ry*0.02}" rx="${rx*0.2}" ry="${ry*0.13}"
-        fill="rgba(255,230,50,0.22)"/>
+        fill="rgba(255,240,80,0.38)"/>
     </g>`;
   });
 
@@ -148,8 +148,8 @@ function maceraHarita() {
           left:${ada.cx*100}%;top:${ada.cy*100}%;
           transform:translate(-50%,-50%);
           background:${bg};border:1.5px solid ${renk}99;
-          border-radius:99px;padding:4px 12px;
-          font-size:11px;font-weight:900;color:${renk};
+          border-radius:99px;padding:2px 8px;
+          font-size:9.5px;font-weight:800;color:${renk};
           white-space:nowrap;cursor:pointer;z-index:20;
           box-shadow:0 2px 12px rgba(0,0,0,.75);
           pointer-events:all">${tekst}</div>`;
@@ -208,6 +208,7 @@ function maceraHarita() {
           </defs>
           ${sisHTML}
           ${yolHTML}
+          ${simHTML}
         </svg>
 
         <div style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none">
