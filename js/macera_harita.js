@@ -158,21 +158,21 @@ function maceraHarita() {
         position:absolute;
         left:${ada.cx*100}%;
         top:${ada.cy*100}%;
-        transform:translate(-20px,-60px);
-        width:36px;height:70px;
+        transform:translate(-10px,-42px);
+        width:20px;height:38px;
         pointer-events:none;
         z-index:30;
-        opacity:1;">
-        <svg width="36" height="70" viewBox="0 0 36 70" overflow="visible">
+        opacity:0;">
+        <svg width="20" height="38" viewBox="0 0 20 38" overflow="visible">
           <defs>
-            <filter id="sg${ada.id}" x="-80%" y="-40%" width="260%" height="180%">
-              <feGaussianBlur stdDeviation="3" result="b"/>
+            <filter id="sg${ada.id}" x="-100%" y="-40%" width="300%" height="180%">
+              <feGaussianBlur stdDeviation="2" result="b"/>
               <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
           </defs>
-          <ellipse cx="18" cy="35" rx="22" ry="32" fill="rgba(255,235,50,0.28)" filter="url(#sg${ada.id})"/>
-          <path d="M21,2 L6,30 L17,30 L11,68 L30,22 L19,22 Z"
-            fill="#ffee44" stroke="#ffffff" stroke-width="1"
+          <ellipse cx="10" cy="19" rx="13" ry="17" fill="rgba(255,235,50,0.3)" filter="url(#sg${ada.id})"/>
+          <path d="M12,1 L3,16 L9,16 L6,37 L17,12 L11,12 Z"
+            fill="#ffee44" stroke="#ffffff" stroke-width="0.8"
             filter="url(#sg${ada.id})"/>
         </svg>
       </div>`;
