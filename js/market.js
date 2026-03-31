@@ -150,15 +150,14 @@ function _marketUygulaEfektler() {
       document.querySelectorAll('#fire-group').forEach(el => { el.style.filter = u.css; });
     }
     if (u.tip === 'profil_bg') {
-      let overlay = document.getElementById('_temaOverlay');
-      if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id = '_temaOverlay';
-        overlay.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.15';
-        document.body.appendChild(overlay);
-      }
-      overlay.style.background = u.css;
-      overlay.style.display = 'block';
+      // CSS variable değiştir - tüm app etkilensin
+      const renk1 = u.css.match(/#[a-fA-F0-9]{6}/g)?.[0] || '#0f1117';
+      const renk2 = u.css.match(/#[a-fA-F0-9]{6}/g)?.[1] || '#1a1d2e';
+      document.documentElement.style.setProperty('--bg', renk1);
+      document.documentElement.style.setProperty('--surface', renk2);
+      // Content area
+      const content = document.getElementById('content');
+      if (content) content.style.background = renk1;
     }
     if (u.tip === 'harita_sis') {
       // Harita sisi - SVG elipsleri
@@ -289,13 +288,18 @@ function _mDetay(id) {
 
   let onizleme = '';
   if (u.tip === 'renk') {
-    // Ejderha SVG mini önizleme - mevcut aktif rengi göster
-    const aktifRenk = (window.currentUserData?.aktif || {})[id] === true ? u.css : '';
-    onizleme = '<div style="width:60px;height:60px;border-radius:50%;'
-      + 'background:radial-gradient(circle at 38% 35%, #8a83ff, #6c63ff 50%, #5040c8);'
-      + (u.css ? 'filter:' + u.css + ';' : '')
-      + 'margin:10px auto;border:2px solid rgba(255,255,255,.25);'
-      + 'box-shadow:0 4px 16px rgba(0,0,0,.3)"></div>';
+    // Ejderhanın gerçek SVG'sini küçük göster - base renk #6c63ff
+    onizleme = '<div style="width:64px;height:64px;margin:10px auto;position:relative">'
+      + '<svg width="64" height="64" viewBox="0 0 160 160" style="filter:' + u.css + '">'
+      + '<ellipse cx="80" cy="110" rx="40" ry="28" fill="#6c63ff"/>'
+      + '<ellipse cx="80" cy="72" rx="36" ry="32" fill="#6c63ff"/>'
+      + '<ellipse cx="68" cy="60" rx="10" ry="7" fill="#5040c0" opacity=".8"/>'
+      + '<ellipse cx="92" cy="60" rx="10" ry="7" fill="#5040c0" opacity=".8"/>'
+      + '<circle cx="72" cy="68" r="5" fill="white"/>'
+      + '<circle cx="88" cy="68" r="5" fill="white"/>'
+      + '<circle cx="73" cy="68" r="2.5" fill="#222"/>'
+      + '<circle cx="89" cy="68" r="2.5" fill="#222"/>'
+      + '</svg></div>';
   } else if (u.tip === 'ates') {
     onizleme = '<div style="font-size:2.5rem;' + (u.css ? 'filter:' + u.css + ';' : '') + 'margin:10px auto;display:block;text-align:center">🔥</div>';
   } else if (u.tip === 'profil_bg') {
@@ -318,7 +322,7 @@ function _mDetay(id) {
   }
 
   let btn = '';
-  if (sahip && aktifMi) btn = '<button disabled style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--surface2);color:var(--text2);font-size:.85rem;font-weight:700;font-family:inherit">✓ Aktif</button>';
+  if (sahip && aktifMi) btn = '<button onclick="marketAktifEt(\'' + id + '\');document.getElementById(\'_mModal\').style.display=\'none\'" style="width:100%;padding:11px;border-radius:10px;border:none;background:rgba(255,107,107,.15);color:#ff6b6b;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #ff6b6b44">✓ Aktif — Kapat</button>';
   else if (sahip) btn = '<button onclick="marketAktifEt(\'' + id + '\');document.getElementById(\'_mModal\').style.display=\'none\'" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit">Aktif Et</button>';
   else if (altin >= u.fiyat) btn = '<button onclick="marketSatinAl(\'' + id + '\');document.getElementById(\'_mModal\').style.display=\'none\'" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit">Satın Al — ' + u.fiyat + ' 💰</button>';
   else btn = '<div style="background:var(--surface2);border-radius:10px;padding:10px;font-size:.78rem;color:var(--text2);text-align:center">' + (u.fiyat - altin) + ' altın daha lazım</div>';
