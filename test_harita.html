@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harita Test</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0f1117; color:#e8eaf6; font-family:'Segoe UI',sans-serif; padding:12px; font-size:14px; }
+.log { background:#1a1d27; border-radius:8px; padding:10px; margin-bottom:8px; font-size:11px; font-family:monospace; }
+.ok  { border-left:3px solid #43e97b; }
+.err { border-left:3px solid #ff6b6b; }
+.warn{ border-left:3px solid #f9ca24; }
+
+/* Animasyon testi */
+@keyframes hSis1 {
+  0%,100%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(10%,8%) scale(1.1)}
+}
+.test-sis {
+  width:80px; height:80px; border-radius:50%; overflow:hidden;
+  position:relative; margin:8px auto;
+  border:1px solid rgba(255,255,255,.2);
+}
+.test-sis-ic {
+  position:absolute; width:100%; height:100%; border-radius:50%;
+  background:radial-gradient(ellipse,rgba(10,14,35,.85) 0%,transparent 70%);
+  animation:hSis1 4s ease-in-out infinite;
+}
+</style>
+</head>
+<body>
+
+<h3 style="margin-bottom:12px">🔍 Harita Animasyon Testi</h3>
+
+<div class="log ok">✅ HTML ve CSS yüklendi</div>
+
+<div style="margin-bottom:12px">
+  <div style="font-size:11px;color:#8b90b8;margin-bottom:6px">CSS Animasyon testi (dönen sis görünmeli):</div>
+  <div class="test-sis">
+    <div class="test-sis-ic"></div>
+  </div>
+  <div style="font-size:10px;color:#8b90b8;text-align:center">Yukarıdaki daire hareket ediyorsa animasyon çalışıyor</div>
+</div>
+
+<div id="loglar"></div>
+
+<script>
+function log(msg, tip='ok') {
+  const d = document.getElementById('loglar');
+  d.innerHTML += `<div class="log ${tip}">${tip==='ok'?'✅':tip==='err'?'❌':'⚠️'} ${msg}</div>`;
+}
+
+// 1. fetch ile JS dosyasını kontrol et
+fetch('https://azizsengezer-byte.github.io/lgs-koc-takip/js/macera_harita.js')
+  .then(r => r.text())
+  .then(txt => {
+    if (txt.includes('SAVAŞ SİSİ HARİTASI v2')) {
+      log('macera_harita.js v2 GitHub\'da mevcut ✓');
+    } else if (txt.includes('SAVAŞ SİSİ HARİTASI')) {
+      log('macera_harita.js var ama ESKİ versiyon! v2 yüklenmemiş.', 'err');
+    } else {
+      log('macera_harita.js içeriği tanınamadı: ' + txt.substring(0,80), 'warn');
+    }
+
+    if (txt.includes('hSis1')) {
+      log('hSis1 animasyonu kod içinde var ✓');
+    } else {
+      log('hSis1 animasyonu kod içinde YOK — eski animasyon kullanılıyor', 'err');
+    }
+
+    if (txt.includes('radial-gradient')) {
+      log('radial-gradient mevcut ✓');
+    } else {
+      log('radial-gradient YOK', 'err');
+    }
+
+    // Satır sayısı
+    const satirSayisi = txt.split('\n').length;
+    log(`Dosya satır sayısı: ${satirSayisi} (344-346 olmalı)`);
+  })
+  .catch(e => log('Dosya fetch edilemedi: ' + e.message, 'err'));
+
+// 2. macera.js kontrol
+fetch('https://azizsengezer-byte.github.io/lgs-koc-takip/js/macera.js')
+  .then(r => r.text())
+  .then(txt => {
+    if (txt.includes('maceraHarita()')) {
+      log('macera.js içinde maceraHarita() çağrısı var ✓');
+    } else {
+      log('macera.js içinde maceraHarita() çağrısı YOK', 'err');
+    }
+    if (txt.includes('_svgYumurta')) {
+      log('macera.js yeni versiyon (ejderha v3) ✓');
+    } else {
+      log('macera.js eski versiyon', 'warn');
+    }
+  })
+  .catch(e => log('macera.js fetch edilemedi: ' + e.message, 'err'));
+
+log('Test tamamlandı, sonuçlar yukarıda');
+</script>
+</body>
+</html>
