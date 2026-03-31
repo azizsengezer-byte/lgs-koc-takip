@@ -95,7 +95,7 @@ function maceraHarita() {
   }
 
   // Sis elipsleri (statik, JS hareket ettirecek)
-  let sisHTML='',simHTML='';
+  let sisHTML='';
   HARITA_ADALAR.forEach((ada,idx)=>{
     const dAdi=ada.id==='ink'?'İnkılap Tarihi':ada.ad;
     const d=veri[dAdi]||{};
@@ -118,13 +118,6 @@ function maceraHarita() {
 
     // Şimşek path (başlangıçta gizli) — her ada için
     const lx=cx+rx*0.08, ly=cy-ry*0.25;
-    simHTML+=`<g id="sim_${ada.id}" opacity="0">
-      <path d="M${lx},${ly-ry*0.28} L${lx-rx*0.07},${ly} L${lx+rx*0.05},${ly} L${lx-rx*0.06},${ly+ry*0.32}"
-        stroke="#fff176" stroke-width="${Math.max(3.5,rx*0.028)}" fill="none"
-        stroke-linecap="round" stroke-linejoin="round"/>
-      <ellipse cx="${lx-rx*0.01}" cy="${ly+ry*0.02}" rx="${rx*0.2}" ry="${ry*0.13}"
-        fill="rgba(255,240,80,0.38)"/>
-    </g>`;
   });
 
   // Etiketler (ada merkezi)
@@ -158,6 +151,30 @@ function maceraHarita() {
         left:${ada.cx*100}%;top:${(ada.cy-ada.ry*1.2)*100}%;
         transform:translate(-50%,-100%);font-size:18px;z-index:21;
         filter:drop-shadow(0 2px 6px rgba(0,0,0,.9))">🚩</div>`;
+    }
+    // Şimşek — pct<70 ise, z-index:30 ile etiketin ÜSTÜNDE
+    if(pct<70){
+      const lx=ada.cx*100+ada.rx*8, ly=ada.cy*100-ada.ry*22;
+      const lh=ada.ry*55, lw=ada.rx*14;
+      etiketHTML+=`<div id="sim_${ada.id}" style="
+        position:absolute;
+        left:${lx}%;top:${ly}%;
+        width:${lw}%;height:${lh}%;
+        pointer-events:none;
+        z-index:30;
+        opacity:0;
+        overflow:visible">
+        <svg width="100%" height="100%" viewBox="0 0 40 80" preserveAspectRatio="none" overflow="visible">
+          <filter id="simGlow">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <ellipse cx="20" cy="40" rx="18" ry="28" fill="rgba(255,240,60,0.25)" filter="url(#simGlow)"/>
+          <path d="M22,4 L10,36 L20,36 L14,76 L32,28 L22,28 Z"
+            fill="#fff9a0" stroke="#ffe000" stroke-width="1.2"
+            filter="url(#simGlow)"/>
+        </svg>
+      </div>`;
     }
   });
 
@@ -208,7 +225,6 @@ function maceraHarita() {
           </defs>
           ${sisHTML}
           ${yolHTML}
-          ${simHTML}
         </svg>
 
         <div style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none">
