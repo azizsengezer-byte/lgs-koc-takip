@@ -1,5 +1,5 @@
 // ============================================================
-// 🗺️ SAVAŞ SİSİ HARİTASI v3 — JS Animasyonlu
+// 🗺️ SAVAŞ SİSİ HARİTASI v4 — Canvas Animasyonlu
 // ============================================================
 
 const HARITA_ADALAR = [
@@ -23,32 +23,32 @@ const HARITA_YOL = [
 ];
 
 function _haritaKonuListesi(ders) {
-  const raw = (typeof kazanimlar !== 'undefined') ? (kazanimlar[ders]||[]) : [];
+  const raw = (typeof kazanimlar!=='undefined')?(kazanimlar[ders]||[]):[];
   if (!raw.length) return [];
-  if (typeof raw[0]==='object' && raw[0].unite) return raw.map(u=>u.unite);
+  if (typeof raw[0]==='object'&&raw[0].unite) return raw.map(u=>u.unite);
   return raw;
 }
 
 function haritaGetirVeri() {
-  const myUid = (window.currentUserData||{}).uid||'';
-  const soruEntries = studyEntries.filter(e=>
+  const myUid=(window.currentUserData||{}).uid||'';
+  const soruEntries=studyEntries.filter(e=>
     e.type==='soru'&&(e.userId===myUid||e.studentName===(window.currentUserData||{}).name)
   );
-  const result = {};
+  const result={};
   Object.keys(HEDEF_SORU).forEach(ders=>{
-    const de = soruEntries.filter(e=>e.subject===ders);
-    const toplamSoru  = de.reduce((a,e)=>a+(e.questions||0),0);
-    const toplamDogru = de.reduce((a,e)=>a+(e.correct||0),0);
-    const isabet = toplamSoru>0?Math.round(toplamDogru/toplamSoru*100):0;
-    const girilenKonular = new Set(de.map(e=>e.unit||e.topic||'').filter(Boolean));
-    const tumKonular  = _haritaKonuListesi(ders);
-    const toplamKonu  = tumKonular.length||1;
-    const girilenSayi = tumKonular.filter(k=>girilenKonular.has(k)).length;
-    const hedef = HEDEF_SORU[ders];
-    const soruPct  = Math.min(100,Math.round(toplamSoru/hedef*100));
-    const konuPct  = Math.min(100,Math.round(girilenSayi/toplamKonu*100));
-    const genelPct = Math.round((soruPct+konuPct)/2);
-    const ada = HARITA_ADALAR.find(a=>a.ad===ders||(ders==='İnkılap Tarihi'&&a.id==='ink'));
+    const de=soruEntries.filter(e=>e.subject===ders);
+    const toplamSoru =de.reduce((a,e)=>a+(e.questions||0),0);
+    const toplamDogru=de.reduce((a,e)=>a+(e.correct||0),0);
+    const isabet=toplamSoru>0?Math.round(toplamDogru/toplamSoru*100):0;
+    const girilenKonular=new Set(de.map(e=>e.unit||e.topic||'').filter(Boolean));
+    const tumKonular =_haritaKonuListesi(ders);
+    const toplamKonu =tumKonular.length||1;
+    const girilenSayi=tumKonular.filter(k=>girilenKonular.has(k)).length;
+    const hedef=HEDEF_SORU[ders];
+    const soruPct =Math.min(100,Math.round(toplamSoru/hedef*100));
+    const konuPct =Math.min(100,Math.round(girilenSayi/toplamKonu*100));
+    const genelPct=Math.round((soruPct+konuPct)/2);
+    const ada=HARITA_ADALAR.find(a=>a.ad===ders||(ders==='İnkılap Tarihi'&&a.id==='ink'));
     result[ders]={
       ad:ders,renk:ada?.renk||'#888',
       toplamSoru,toplamDogru,isabet,hedef,
@@ -59,77 +59,45 @@ function haritaGetirVeri() {
   return result;
 }
 
+// Global animasyon handle
+let _haritaAnimId = null;
+
 function maceraHarita() {
-  const veri = haritaGetirVeri();
-  const delays = {mat:0,fen:1.2,tur:0.6,ing:1.8,ink:0.4,din:1.0};
+  // Önceki animasyonu durdur
+  if (_haritaAnimId) { cancelAnimationFrame(_haritaAnimId); _haritaAnimId=null; }
 
-  // Ada HTML
-  let adaHTML = '';
+  const veri=haritaGetirVeri();
+
+  // Badge HTML
+  let badgeHTML='';
   HARITA_ADALAR.forEach(ada=>{
-    const dAdi = ada.id==='ink'?'İnkılap Tarihi':ada.ad;
-    const d    = veri[dAdi]||{};
-    const pct  = d.genelPct||0;
-    const sisOp= Math.max(0,Math.min(0.95,(100-pct)/100)).toFixed(2);
-    const delay= delays[ada.id]||0;
-    const tamAcik      = pct>=100;
-    const hicGirilmedi = (d.toplamSoru||0)===0;
-    const dusuk        = d.isabet>0&&d.isabet<65;
-    const sr = dusuk?'60,0,0':'8,12,32';
-
-    if ((100-pct)>4) {
-      adaHTML += `
-      <div id="sis_${ada.id}" style="
-        position:absolute;
-        left:${ada.cx*100}%;top:${ada.cy*100}%;
-        width:${ada.rx*200}%;height:${ada.ry*200}%;
-        transform:translate(-50%,-50%);
-        border-radius:50%;overflow:hidden;
-        opacity:${sisOp};
-        ${dusuk?'box-shadow:0 0 0 2px rgba(255,60,60,.4)':''}
-      ">
-        <div id="sb1_${ada.id}" style="position:absolute;width:100%;height:100%;border-radius:50%;
-          background:radial-gradient(ellipse,rgba(${sr},.85) 0%,rgba(${sr},.3) 40%,transparent 70%);"></div>
-        <div id="sb2_${ada.id}" style="position:absolute;width:78%;height:78%;top:11%;left:11%;border-radius:50%;
-          background:radial-gradient(ellipse,rgba(${sr},.7) 0%,rgba(${sr},.2) 50%,transparent 72%);"></div>
-        <div id="sb3_${ada.id}" style="position:absolute;width:58%;height:58%;top:21%;left:21%;border-radius:50%;
-          background:radial-gradient(ellipse,rgba(${sr},.55) 0%,transparent 65%);"></div>
-        <div id="sb4_${ada.id}" style="position:absolute;width:42%;height:42%;top:29%;left:29%;border-radius:50%;
-          background:radial-gradient(ellipse,rgba(${sr},.45) 0%,transparent 60%);"></div>
-      </div>`;
-    }
-
-    if (tamAcik) {
-      adaHTML += `<div id="parlama_${ada.id}" style="
-        position:absolute;
-        left:${ada.cx*100}%;top:${ada.cy*100}%;
-        width:${ada.rx*240}%;height:${ada.ry*240}%;
-        transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
-        background:radial-gradient(ellipse,rgba(249,202,36,.2) 0%,transparent 70%);"></div>
-      <div id="bayrak_${ada.id}" style="
-        position:absolute;
-        left:${ada.cx*100}%;top:${(ada.cy-ada.ry*1.15)*100}%;
-        transform:translate(-50%,-100%);
-        font-size:15px;z-index:10;
-        filter:drop-shadow(0 2px 5px rgba(0,0,0,.8))">🚩</div>`;
-    }
-
+    const dAdi=ada.id==='ink'?'İnkılap Tarihi':ada.ad;
+    const d=veri[dAdi]||{};
+    const pct=d.genelPct||0;
+    const tamAcik=pct>=100;
+    const hicGirilmedi=(d.toplamSoru||0)===0;
+    const dusuk=d.isabet>0&&d.isabet<65;
     let bRenk,bText,bBg;
-    if      (tamAcik)       {bRenk='#f9ca24';bText=`${ada.emoji} ${ada.ad} 🚩`;bBg='rgba(249,202,36,.18)';}
-    else if (hicGirilmedi)  {bRenk='#555';   bText=`${ada.emoji} ${ada.ad} 🔒`;bBg='rgba(0,0,0,.55)';}
-    else if (dusuk)         {bRenk='#ff6b6b';bText=`${ada.emoji} ${ada.ad} ⚠️${pct}%`;bBg='rgba(255,60,60,.18)';}
-    else                    {bRenk=ada.renk; bText=`${ada.emoji} ${ada.ad} ${pct}%`;bBg='rgba(0,0,0,.6)';}
-
-    adaHTML += `<div onclick="_haritaModalAc('${ada.id}')" style="
+    if      (tamAcik)      {bRenk='#f9ca24';bText=`${ada.emoji} ${ada.ad} 🚩`;bBg='rgba(249,202,36,.2)';}
+    else if (hicGirilmedi) {bRenk='#666';   bText=`${ada.emoji} ${ada.ad} 🔒`;bBg='rgba(0,0,0,.6)';}
+    else if (dusuk)        {bRenk='#ff6b6b';bText=`${ada.emoji} ${ada.ad} ⚠️${pct}%`;bBg='rgba(255,60,60,.2)';}
+    else                   {bRenk=ada.renk; bText=`${ada.emoji} ${ada.ad} ${pct}%`;bBg='rgba(0,0,0,.65)';}
+    badgeHTML+=`<div onclick="_haritaModalAc('${ada.id}')" style="
       position:absolute;
       left:${ada.cx*100}%;
-      top:${Math.min(95,(ada.cy+ada.ry*1.18)*100)}%;
+      top:${Math.min(94,(ada.cy+ada.ry*1.18)*100)}%;
       transform:translateX(-50%);
-      background:${bBg};border:1px solid ${bRenk}55;
+      background:${bBg};border:1px solid ${bRenk}66;
       border-radius:99px;padding:3px 9px;
       font-size:9px;font-weight:800;color:${bRenk};
       white-space:nowrap;cursor:pointer;z-index:20;
-      box-shadow:0 2px 8px rgba(0,0,0,.5);
+      box-shadow:0 2px 8px rgba(0,0,0,.6);
       pointer-events:all">${bText}</div>`;
+    if (tamAcik) {
+      badgeHTML+=`<div style="position:absolute;left:${ada.cx*100}%;top:${(ada.cy-ada.ry*1.15)*100}%;
+        transform:translate(-50%,-100%);font-size:15px;z-index:10;
+        filter:drop-shadow(0 2px 5px rgba(0,0,0,.8))">🚩</div>`;
+    }
   });
 
   // Yol SVG
@@ -142,34 +110,29 @@ function maceraHarita() {
     if(!a||!b) return;
     const x1=a.x*1600,y1=a.y*872,x2=b.x*1600,y2=b.y*872;
     const renk=HARITA_ADALAR.find(a=>a.ad===ders||(ders==='İnkılap Tarihi'&&a.id==='ink'))?.renk||'#4ecdc4';
-    yolPaths+=`
-      <path d="M${x1},${y1} Q${(x1+x2)/2},${(y1+y2)/2-32} ${x2},${y2}"
-        stroke="${renk}" stroke-width="3.5" fill="none" stroke-linecap="round"
-        stroke-dasharray="7 5" opacity=".8" id="yol_${i}">
-        <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="2.5s" repeatCount="indefinite"/>
-      </path>
-      <circle cx="${x2}" cy="${y2}" r="5" fill="${renk}" opacity=".6">
-        <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values=".5;.95;.5" dur="2s" repeatCount="indefinite"/>
-      </circle>`;
+    yolPaths+=`<path d="M${x1},${y1} Q${(x1+x2)/2},${(y1+y2)/2-32} ${x2},${y2}"
+      stroke="${renk}" stroke-width="3.5" fill="none" stroke-linecap="round"
+      stroke-dasharray="7 5" opacity=".8">
+      <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="2.5s" repeatCount="indefinite"/>
+    </path>
+    <circle cx="${x2}" cy="${y2}" r="5" fill="${renk}" opacity=".6">
+      <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite"/>
+    </circle>`;
   });
 
-  const acikAdaSayisi=HARITA_ADALAR.filter(ada=>{
+  const acikSayisi=HARITA_ADALAR.filter(ada=>{
     const dAdi=ada.id==='ink'?'İnkılap Tarihi':ada.ad;
-    return (veri[dAdi]?.genelPct||0)>=50;
+    return(veri[dAdi]?.genelPct||0)>=50;
   }).length;
-  if(acikAdaSayisi>=4){
-    const son=HARITA_YOL[5],hdf=HARITA_YOL[6];
-    yolPaths+=`
-      <path d="M${son.x*1600},${son.y*872} Q${(son.x+hdf.x)/2*1600},${(son.y+hdf.y)/2*872-55} ${hdf.x*1600},${hdf.y*872}"
-        stroke="#f9ca24" stroke-width="4" fill="none" stroke-linecap="round"
-        stroke-dasharray="8 5" opacity=".9">
-        <animate attributeName="stroke-dashoffset" from="0" to="-26" dur="2s" repeatCount="indefinite"/>
-      </path>
-      <circle cx="${hdf.x*1600}" cy="${hdf.y*872}" r="9" fill="#f9ca24" opacity=".85">
-        <animate attributeName="r" values="7;13;7" dur="1.5s" repeatCount="indefinite"/>
-        <animate attributeName="opacity" values=".65;1;.65" dur="1.5s" repeatCount="indefinite"/>
-      </circle>`;
+  if(acikSayisi>=4){
+    const s=HARITA_YOL[5],h=HARITA_YOL[6];
+    yolPaths+=`<path d="M${s.x*1600},${s.y*872} Q${(s.x+h.x)/2*1600},${(s.y+h.y)/2*872-55} ${h.x*1600},${h.y*872}"
+      stroke="#f9ca24" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="8 5" opacity=".9">
+      <animate attributeName="stroke-dashoffset" from="0" to="-26" dur="2s" repeatCount="indefinite"/>
+    </path>
+    <circle cx="${h.x*1600}" cy="${h.y*872}" r="9" fill="#f9ca24" opacity=".85">
+      <animate attributeName="r" values="7;13;7" dur="1.5s" repeatCount="indefinite"/>
+    </circle>`;
   }
 
   // Özet
@@ -185,8 +148,8 @@ function maceraHarita() {
     </div>`;
   }).join('');
 
-  // JS animasyon başlat (setTimeout ile DOM hazır olunca)
-  setTimeout(()=>_haritaSisBaslat(veri), 200);
+  // Canvas animasyonu başlat (DOM hazır olunca)
+  setTimeout(()=>_haritaCanvasBaslat(veri),300);
 
   return `
     <style>
@@ -205,26 +168,22 @@ function maceraHarita() {
       </div>
 
       <div id="haritaWrap" style="position:relative;width:100%">
-        <img src="map.png" style="width:100%;display:block"
-          onerror="this.src='https://azizsengezer-byte.github.io/lgs-koc-takip/map.png'">
+        <img id="haritaImg" src="map.png" style="width:100%;display:block;visibility:hidden"
+          onload="this.style.visibility='visible';_haritaImgYuklendi()"
+          onerror="this.src='https://azizsengezer-byte.github.io/lgs-koc-takip/map.png';this.style.visibility='visible'">
 
-        <!-- Genel sis — JS ile hareket ettirilecek -->
-        <div id="hGenelSis" style="position:absolute;inset:0;pointer-events:none;overflow:hidden">
-          <div id="hGS1" style="position:absolute;width:75%;height:65%;top:-15%;left:-10%;border-radius:50%;
-            background:radial-gradient(ellipse,rgba(8,12,32,.52) 0%,transparent 70%);filter:blur(20px)"></div>
-          <div id="hGS2" style="position:absolute;width:65%;height:60%;top:25%;right:-10%;border-radius:50%;
-            background:radial-gradient(ellipse,rgba(8,12,32,.44) 0%,transparent 70%);filter:blur(18px)"></div>
-          <div id="hGS3" style="position:absolute;width:88%;height:55%;bottom:-20%;left:5%;border-radius:50%;
-            background:radial-gradient(ellipse,rgba(8,12,32,.48) 0%,transparent 70%);filter:blur(22px)"></div>
-        </div>
+        <!-- Canvas: sis tam üstte -->
+        <canvas id="haritaSisCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5"></canvas>
 
-        <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible"
+        <!-- SVG yollar -->
+        <svg id="haritaYolSvg" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:6;overflow:visible"
           viewBox="0 0 1600 872" preserveAspectRatio="xMidYMid meet">
           ${yolPaths}
         </svg>
 
-        <div style="position:absolute;inset:0;pointer-events:none">
-          ${adaHTML}
+        <!-- Badge overlay -->
+        <div style="position:absolute;inset:0;pointer-events:none;z-index:10">
+          ${badgeHTML}
         </div>
       </div>
 
@@ -242,100 +201,134 @@ function maceraHarita() {
   `;
 }
 
-// ── JS Animasyon Motoru ────────────────────────────────────
-function _haritaSisBaslat(veri) {
-  const delays = {mat:0,fen:1.2,tur:0.6,ing:1.8,ink:0.4,din:1.0};
-  const t0 = performance.now();
+window._haritaImgYuklendi = function() {
+  const img = document.getElementById('haritaImg');
+  const canvas = document.getElementById('haritaSisCanvas');
+  if (!canvas||!img) return;
+  canvas.width  = img.naturalWidth  || img.offsetWidth;
+  canvas.height = img.naturalHeight || img.offsetHeight;
+};
 
-  // Her bulut için faz ve hız parametreleri
-  const sisParams = {};
-  HARITA_ADALAR.forEach(ada=>{
-    const d = delays[ada.id]||0;
-    sisParams[ada.id] = [
-      {el:null, sx:0,  sy:0,  sc:1,  spd:0.00045, phX:d*0.8, phY:d*0.5, phS:d*0.3, ampX:8, ampY:6, ampS:0.09},
-      {el:null, sx:0,  sy:0,  sc:1,  spd:0.00038, phX:d*0.6, phY:d*0.9, phS:d*0.7, ampX:10,ampY:8, ampS:0.12},
-      {el:null, sx:0,  sy:0,  sc:1,  spd:0.00052, phX:d*1.1, phY:d*0.3, phS:d*0.5, ampX:12,ampY:6, ampS:0.08},
-      {el:null, sx:0,  sy:0,  sc:1,  spd:0.00041, phX:d*0.4, phY:d*1.2, phS:d*0.9, ampX:7, ampY:9, ampS:0.14},
-    ];
-    sisParams[ada.id].forEach((p,i)=>{
-      p.el = document.getElementById(`sb${i+1}_${ada.id}`);
-    });
-  });
+function _haritaCanvasBaslat(veri) {
+  if (_haritaAnimId) { cancelAnimationFrame(_haritaAnimId); _haritaAnimId=null; }
 
-  // Genel sis parametreleri
-  const genelParams = [
-    {el:document.getElementById('hGS1'), spd:0.00022, phX:0,   phY:0,   ampX:10, ampY:8,  ampS:0.12},
-    {el:document.getElementById('hGS2'), spd:0.00018, phX:1.5, phY:0.8, ampX:12, ampY:10, ampS:0.16},
-    {el:document.getElementById('hGS3'), spd:0.00015, phX:0.7, phY:1.3, ampX:8,  ampY:7,  ampS:0.1 },
-  ];
+  const canvas = document.getElementById('haritaSisCanvas');
+  const img    = document.getElementById('haritaImg');
+  if (!canvas||!img) return;
 
-  // Bayrak için
-  const bayrakParams = {};
-  HARITA_ADALAR.forEach(ada=>{
-    const el = document.getElementById(`bayrak_${ada.id}`);
-    if (el) bayrakParams[ada.id] = {el, ph: delays[ada.id]*0.5};
-  });
+  // Canvas boyutunu görselin gerçek boyutuna eşitle
+  const setSize = ()=>{
+    canvas.width  = img.offsetWidth  * (window.devicePixelRatio||1);
+    canvas.height = img.offsetHeight * (window.devicePixelRatio||1);
+  };
+  setSize();
 
-  // Parlama için
-  const parlamaParams = {};
-  HARITA_ADALAR.forEach(ada=>{
-    const el = document.getElementById(`parlama_${ada.id}`);
-    if (el) parlamaParams[ada.id] = {el, ph: delays[ada.id]*0.3};
-  });
+  const ctx = canvas.getContext('2d');
+  const t0  = performance.now();
 
-  function tick(now) {
-    const t = now - t0;
+  // Her ada için sis bulut parametreleri
+  const adaParams = HARITA_ADALAR.map((ada,idx)=>{
+    const dAdi = ada.id==='ink'?'İnkılap Tarihi':ada.ad;
+    const d    = veri[dAdi]||{};
+    const pct  = d.genelPct||0;
+    const sisOp= Math.max(0, Math.min(0.92, (100-pct)/100));
+    if (sisOp<0.04) return null;
+    const dusuk= d.isabet>0&&d.isabet<65;
+    const delay= [0,1.2,0.6,1.8,0.4,1.0][idx]||0;
+    return {
+      ada, sisOp, dusuk, delay,
+      // 4 katman bulut
+      layers:[
+        {rMul:1.0,  op:0.82, spd:0.00045, phX:delay*0.8, phY:delay*0.5, phS:delay*0.3, ampX:0.015, ampY:0.012, ampS:0.08},
+        {rMul:0.78, op:0.65, spd:0.00038, phX:delay*0.6, phY:delay*0.9, phS:delay*0.7, ampX:0.018, ampY:0.014, ampS:0.1},
+        {rMul:0.58, op:0.52, spd:0.00052, phX:delay*1.1, phY:delay*0.3, phS:delay*0.5, ampX:0.022, ampY:0.01,  ampS:0.07},
+        {rMul:0.40, op:0.42, spd:0.00041, phX:delay*0.4, phY:delay*1.2, phS:delay*0.9, ampX:0.012, ampY:0.018, ampS:0.12},
+      ],
+    };
+  }).filter(Boolean);
 
-    // Ada sisleri
-    Object.keys(sisParams).forEach(id=>{
-      sisParams[id].forEach(p=>{
-        if (!p.el) return;
-        const tx = Math.sin(t*p.spd + p.phX) * p.ampX;
-        const ty = Math.cos(t*p.spd*0.8 + p.phY) * p.ampY;
-        const sc = 1 + Math.sin(t*p.spd*0.6 + p.phS) * p.ampS;
-        p.el.style.transform = `translate(${tx}%,${ty}%) scale(${sc})`;
-      });
-    });
-
-    // Genel sis
-    genelParams.forEach(p=>{
-      if (!p.el) return;
-      const tx = Math.sin(t*p.spd + p.phX) * p.ampX;
-      const ty = Math.cos(t*p.spd*0.75 + p.phY) * p.ampY;
-      const sc = 1 + Math.sin(t*p.spd*0.5) * p.ampS;
-      p.el.style.transform = `translate(${tx}%,${ty}%) scale(${sc})`;
-    });
-
-    // Bayrak sallama
-    Object.values(bayrakParams).forEach(p=>{
-      const rot = Math.sin(t*0.0025 + p.ph) * 5;
-      p.el.style.transform = `translate(-50%,-100%) rotate(${rot}deg)`;
-    });
-
-    // Parlama nabzı
-    Object.values(parlamaParams).forEach(p=>{
-      const sc = 1 + Math.sin(t*0.0018 + p.ph) * 0.1;
-      const op = 0.6 + Math.sin(t*0.0018 + p.ph) * 0.35;
-      p.el.style.transform = `translate(-50%,-50%) scale(${sc})`;
-      p.el.style.opacity = op;
-    });
-
-    requestAnimationFrame(tick);
+  function drawRadialCloud(ctx, cx, cy, rx, ry, opacity, r, g, b) {
+    const grad = ctx.createRadialGradient(cx,cy,0, cx,cy, Math.max(rx,ry));
+    grad.addColorStop(0,   `rgba(${r},${g},${b},${opacity})`);
+    grad.addColorStop(0.4, `rgba(${r},${g},${b},${opacity*0.55})`);
+    grad.addColorStop(0.75,`rgba(${r},${g},${b},${opacity*0.15})`);
+    grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+    ctx.save();
+    ctx.scale(1, ry/rx);
+    ctx.beginPath();
+    ctx.arc(cx, cy*(rx/ry), rx, 0, Math.PI*2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.restore();
   }
 
-  requestAnimationFrame(tick);
+  function frame(now) {
+    const t  = now - t0;
+    const cw = canvas.width;
+    const ch = canvas.height;
+    ctx.clearRect(0,0,cw,ch);
+
+    // Genel sis katmanı (3 büyük bulut)
+    const genelBulutlar=[
+      {cx:0.25, cy:0.3,  rx:0.5, ry:0.45, op:0.38, spd:0.00016, phX:0,   phY:0},
+      {cx:0.75, cy:0.55, rx:0.45,ry:0.5,  op:0.32, spd:0.00013, phX:1.5, phY:0.8},
+      {cx:0.45, cy:0.85, rx:0.6, ry:0.4,  op:0.35, spd:0.00011, phX:0.7, phY:1.3},
+    ];
+    genelBulutlar.forEach(gb=>{
+      const tx = Math.sin(t*gb.spd+gb.phX)*0.06;
+      const ty = Math.cos(t*gb.spd*0.8+gb.phY)*0.05;
+      const cx = (gb.cx+tx)*cw;
+      const cy = (gb.cy+ty)*ch;
+      drawRadialCloud(ctx, cx,cy, gb.rx*cw, gb.ry*ch, gb.op, 8,12,32);
+    });
+
+    // Ada sisleri
+    adaParams.forEach(p=>{
+      const {ada,sisOp,dusuk,layers}=p;
+      const baseCX = ada.cx*cw;
+      const baseCY = ada.cy*ch;
+      const baseRX = ada.rx*cw;
+      const baseRY = ada.ry*ch;
+      const r=dusuk?55:8, g=dusuk?0:12, b=dusuk?0:32;
+
+      layers.forEach(l=>{
+        const tx = Math.sin(t*l.spd+l.phX)*l.ampX*cw;
+        const ty = Math.cos(t*l.spd*0.8+l.phY)*l.ampY*ch;
+        const sc = 1+Math.sin(t*l.spd*0.6+l.phS)*l.ampS;
+        const cx = baseCX+tx;
+        const cy = baseCY+ty;
+        const rx = baseRX*l.rMul*sc;
+        const ry = baseRY*l.rMul*sc;
+        drawRadialCloud(ctx, cx,cy, rx,ry, l.op*sisOp, r,g,b);
+      });
+
+      // Kırmızı border (düşük isabet)
+      if (dusuk) {
+        ctx.save();
+        ctx.strokeStyle='rgba(255,60,60,0.5)';
+        ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.ellipse(baseCX,baseCY, baseRX,baseRY, 0,0,Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    });
+
+    _haritaAnimId = requestAnimationFrame(frame);
+  }
+
+  _haritaAnimId = requestAnimationFrame(frame);
 }
 
 // ── Modal ──────────────────────────────────────────────────
 window._haritaModalAc = function(id) {
-  const ada = HARITA_ADALAR.find(a=>a.id===id); if(!ada) return;
-  const dAdi = id==='ink'?'İnkılap Tarihi':ada.ad;
-  const veri = haritaGetirVeri();
-  const d = veri[dAdi]; if(!d) return;
-  const sR = d.soruPct>=100?'#43e97b':d.soruPct>=50?'#f9ca24':'#ff6b6b';
-  const kR = d.konuPct>=100?'#43e97b':d.konuPct>=50?'#f9ca24':'#ff6b6b';
-
-  document.getElementById('hModalIcerik').innerHTML = `
+  const ada=HARITA_ADALAR.find(a=>a.id===id); if(!ada) return;
+  const dAdi=id==='ink'?'İnkılap Tarihi':ada.ad;
+  const veri=haritaGetirVeri();
+  const d=veri[dAdi]; if(!d) return;
+  const sR=d.soruPct>=100?'#43e97b':d.soruPct>=50?'#f9ca24':'#ff6b6b';
+  const kR=d.konuPct>=100?'#43e97b':d.konuPct>=50?'#f9ca24':'#ff6b6b';
+  document.getElementById('hModalIcerik').innerHTML=`
     <div style="margin-bottom:14px">
       <div style="font-size:2rem;margin-bottom:4px">${ada.emoji}</div>
       <div style="font-weight:900;font-size:1.1rem;margin-bottom:10px">${dAdi}</div>
@@ -376,7 +369,7 @@ window._haritaModalAc = function(id) {
   document.getElementById('hModalBg').classList.add('acik');
 };
 
-window._haritaModalKapat = function(e) {
+window._haritaModalKapat=function(e){
   if(!e||e.target===document.getElementById('hModalBg'))
     document.getElementById('hModalBg').classList.remove('acik');
 };
