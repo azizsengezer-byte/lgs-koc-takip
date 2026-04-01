@@ -15,9 +15,10 @@ const MARKET_URUNLER = {
   // 🎩 EJDERHA AKSESUAR
   aksesuar_sapka:  { kategori:'aksesuar', ad:'Sihirbaz Şapkası', fiyat:400, ikon:'🎩', aciklama:'Ejderhanın başında sihirbaz şapkası', tip:'aksesuar', deger:'sapka' },
   aksesuar_tac:    { kategori:'aksesuar', ad:'Altın Taç',        fiyat:600, ikon:'👑', aciklama:'Ejderhanın başında altın taç',      tip:'aksesuar', deger:'tac' },
-  aksesuar_gozluk: { kategori:'aksesuar', ad:'Süper Gözlük',     fiyat:350, ikon:'🕶️', aciklama:'Ejderhaya süper gözlük tak',        tip:'aksesuar', deger:'gozluk' },
-  aksesuar_kilic:  { kategori:'aksesuar', ad:'Ejderha Kılıcı',   fiyat:500, ikon:'⚔️', aciklama:'Ejderha kılıç tutsun',              tip:'aksesuar', deger:'kilic' },
-  aksesuar_yildiz: { kategori:'aksesuar', ad:'Yıldız Tacı',      fiyat:450, ikon:'⭐', aciklama:'Ejderhanın başında yıldızlar',      tip:'aksesuar', deger:'yildiz' },
+  aksesuar_gozluk: { kategori:'aksesuar', ad:'Güneş Gözlüğü',   fiyat:350, ikon:'🕶️', aciklama:'Ejderhaya güneş gözlüğü tak',      tip:'aksesuar', deger:'gozluk' },
+  aksesuar_fiyonk: { kategori:'aksesuar', ad:'Pembe Fiyonk',     fiyat:300, ikon:'🎀', aciklama:'Ejderhanın başında pembe fiyonk',   tip:'aksesuar', deger:'fiyonk' },
+  aksesuar_kolye:  { kategori:'aksesuar', ad:'Elmas Kolye',      fiyat:450, ikon:'💎', aciklama:'Ejderhanın boynunda elmas kolye',   tip:'aksesuar', deger:'kolye' },
+  aksesuar_yildiz: { kategori:'aksesuar', ad:'Yıldız Tacı',      fiyat:450, ikon:'⭐', aciklama:'Ejderhanın başında yıldız tacı',    tip:'aksesuar', deger:'yildiz' },
 
   // 🌋 EJDERHA ARKA PLANI
   arkaplan_volkan: { kategori:'arkaplan', ad:'Volkan Sahne',  fiyat:600, ikon:'🌋', aciklama:'Ejderha lavların üstünde duruyor',  tip:'arkaplan', deger:'volkan' },
@@ -243,7 +244,8 @@ function _mAksesuarUygula(tip) {
     sapka: '<ellipse cx="80" cy="54" rx="34" ry="7" fill="#1a1030"/><path d="M56 54 Q58 20 80 14 Q102 20 104 54 Z" fill="#1a1030"/><ellipse cx="80" cy="54" rx="34" ry="5" fill="none" stroke="#f9ca24" stroke-width="2.5"/><ellipse cx="80" cy="17" rx="6" ry="4" fill="#f9ca24"/>',
     tac: '<rect x="54" y="50" width="52" height="10" rx="2" fill="#f9ca24"/><polygon points="54,50 60,34 66,50" fill="#f9ca24"/><polygon points="67,50 74,30 81,50" fill="#f9ca24"/><polygon points="80,50 87,30 94,50" fill="#f9ca24"/><polygon points="94,50 100,34 106,50" fill="#f9ca24"/><circle cx="63" cy="34" r="3" fill="#ff4444"/><circle cx="77" cy="30" r="3.5" fill="#4444ff"/><circle cx="91" cy="30" r="3.5" fill="#44cc44"/><circle cx="103" cy="34" r="3" fill="#ff4444"/>',
     gozluk: '<rect x="46" y="67" width="24" height="17" rx="8" fill="#111" opacity="0.85"/><rect x="90" y="67" width="24" height="17" rx="8" fill="#111" opacity="0.85"/><ellipse cx="54" cy="71" rx="4" ry="2.5" fill="white" opacity="0.25"/><ellipse cx="98" cy="71" rx="4" ry="2.5" fill="white" opacity="0.25"/><path d="M70 74 Q80 70 90 74" stroke="#333" stroke-width="2.5" fill="none"/><path d="M46 74 Q38 78 36 80" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M114 74 Q122 78 124 80" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>',
-    kilic: '<polygon points="118,60 122,64 90,130 86,126" fill="#c8d8e8"/><polygon points="118,60 122,64 120,62" fill="white" opacity="0.6"/><rect x="82" y="122" width="22" height="6" rx="3" fill="#f9ca24" transform="rotate(-45 93 125)"/><rect x="75" y="130" width="8" height="20" rx="4" fill="#8B4513" transform="rotate(-45 79 140)"/><circle cx="72" cy="148" r="5" fill="#f9ca24"/><ellipse cx="120" cy="61" rx="4" ry="5" fill="#4ecdc4" opacity="0.8"/>',
+    fiyonk: '<path d="M80,46 Q68,38 62,44 Q66,50 80,48 Z" fill="#ff6b9d"/><path d="M80,46 Q92,38 98,44 Q94,50 80,48 Z" fill="#ff6b9d"/><path d="M80,46 Q68,38 62,44 Q66,50 80,48 Z" fill="#ff9dc0" opacity="0.5"/><circle cx="80" cy="47" r="4" fill="#ff4488"/><path d="M76,47 Q72,52 70,56" stroke="#ff6b9d" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M84,47 Q88,52 90,56" stroke="#ff6b9d" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+    kolye: '<path d="M60 110 Q70 118 80 116 Q90 118 100 110" fill="none" stroke="#f9ca24" stroke-width="1.5"/><polygon points="80,116 74,122 80,132 86,122" fill="#7dd3fc"/><polygon points="80,116 74,122 80,124" fill="white" opacity="0.5"/><polygon points="80,132 74,122 80,124" fill="#38bdf8" opacity="0.7"/><polygon points="80,132 86,122 80,124" fill="#0ea5e9" opacity="0.7"/><circle cx="78" cy="120" r="1.5" fill="white" opacity="0.8"/>',
     yildiz: '<path d="M52 56 Q80 50 108 56 Q108 62 80 62 Q52 62 52 56 Z" fill="#5a4fcf"/><polygon points="80,36 83,46 94,46 85,53 88,63 80,56 72,63 75,53 66,46 77,46" fill="#f9ca24"/><polygon points="60,44 62,50 68,50 63,54 65,60 60,56 55,60 57,54 52,50 58,50" fill="#f9ca24" opacity="0.85"/><polygon points="100,44 102,50 108,50 103,54 105,60 100,56 95,60 97,54 92,50 98,50" fill="#f9ca24" opacity="0.85"/>',
   };
   el.innerHTML = aksesuarSVG[tip] || '';
@@ -619,7 +621,7 @@ function _mDetay(id) {
     const miniBg = { volkan:'linear-gradient(180deg,#1a0500,#8b1a00)', buz:'linear-gradient(180deg,#001830,#004080)', orman:'linear-gradient(180deg,#001a0a,#004020)', uzay:'linear-gradient(180deg,#000010,#0f0050)', deniz:'linear-gradient(180deg,#000820,#003070)' };
     onizleme = '<div style="width:100%;height:70px;border-radius:10px;background:' + (miniBg[u.deger]||'#333') + ';margin:10px auto;display:flex;align-items:center;justify-content:center;font-size:2rem">' + u.ikon + '</div>';
   } else if (u.tip === 'aksesuar') {
-    const akOnizleme = { sapka:'🎩', tac:'👑', gozluk:'🕶️', kilic:'⚔️', yildiz:'⭐' };
+    const akOnizleme = { sapka:'🎩', tac:'👑', gozluk:'🕶️', fiyonk:'🎀', kolye:'💎', yildiz:'⭐' };
     onizleme = '<div style="font-size:3rem;margin:10px auto;display:block;text-align:center">' + (akOnizleme[u.deger]||u.ikon) + '</div>';
   } else if (u.tip === 'etiket') {
     onizleme = '<div style="margin:10px auto;text-align:center"><span style="background:rgba(108,99,255,.2);border:1px solid rgba(108,99,255,.4);border-radius:99px;padding:4px 14px;font-size:.85rem;font-weight:700;color:var(--accent)">' + u.deger + '</span></div>';
