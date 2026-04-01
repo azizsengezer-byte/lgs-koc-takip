@@ -289,6 +289,8 @@ function maceraEjderha() {
           <circle cx="97.5" cy="72.5" r="2" fill="white"/>
         </g>
         <path id="mouth" d="M72 96 Q80 102 88 96" stroke="#4a40c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <!-- Aksesuar placeholder — head grubu içinde, kafayla hareket eder -->
+        <g id="ej-aksesuar"></g>
         <ellipse cx="55" cy="84" rx="8" ry="5" fill="#ff6b9d" opacity="0.35"/>
         <ellipse cx="105" cy="84" rx="8" ry="5" fill="#ff6b9d" opacity="0.35"/>
         <ellipse cx="63" cy="56" rx="5" ry="8" fill="#4cc9f0" transform="rotate(-15 63 56)"/>

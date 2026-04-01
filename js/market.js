@@ -227,7 +227,7 @@ function _marketUygulaEfektler() {
 function _mSifirlaEfekt(urun) {
   if (urun.tip === 'renk') document.querySelectorAll('#dragon-svg').forEach(el => { el.style.filter = ''; });
   if (urun.tip === 'ates') document.querySelectorAll('#fire-group').forEach(el => { el.style.filter = ''; });
-  if (urun.tip === 'aksesuar') { const el = document.getElementById('ej-aksesuar'); if (el) el.remove(); }
+  if (urun.tip === 'aksesuar') { const el = document.getElementById('ej-aksesuar'); if (el) el.innerHTML = ''; }
   if (urun.tip === 'arkaplan') _mArkaplanSifirla();
   if (urun.tip === 'etiket') _mEtiketSifirla();
 }
@@ -249,8 +249,15 @@ function _mAksesuarUygula(tip) {
     yildiz: '<path d="M52 56 Q80 50 108 56 Q108 62 80 62 Q52 62 52 56 Z" fill="#5a4fcf"/><polygon points="80,36 83,46 94,46 85,53 88,63 80,56 72,63 75,53 66,46 77,46" fill="#f9ca24"/><polygon points="60,44 62,50 68,50 63,54 65,60 60,56 55,60 57,54 52,50 58,50" fill="#f9ca24" opacity="0.85"/><polygon points="100,44 102,50 108,50 103,54 105,60 100,56 95,60 97,54 92,50 98,50" fill="#f9ca24" opacity="0.85"/>',
   };
   el.innerHTML = aksesuarSVG[tip] || '';
-  const svg = document.getElementById('dragon-svg');
-  if (svg) svg.appendChild(el);
+  // Placeholder head grubunda — kafayla hareket eder
+  const placeholder = document.getElementById('ej-aksesuar');
+  if (placeholder) {
+    placeholder.innerHTML = aksesuarSVG[tip] || '';
+  } else {
+    // Fallback: svg'ye ekle
+    const svg = document.getElementById('dragon-svg');
+    if (svg) svg.appendChild(el);
+  }
 }
 
 // ── Arka Plan ─────────────────────────────────────────────
