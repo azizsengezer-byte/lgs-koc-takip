@@ -566,7 +566,7 @@ function _marketIcerik() {
   const secili = window._mKat || 'ejderha';
 
   const katHTML = MARKET_KATEGORILER.map(k =>
-    '<button onclick="window._mKat=\'' + k.id + '\';var _sp=document.getElementById(\'marketSayfa\');var _ct=document.getElementById(\'mainContent\');var _sy=_ct?_ct.scrollTop:0;_sp.innerHTML=_marketIcerik();if(_ct)setTimeout(function(){_ct.scrollTop=_sy},0)" style="flex-shrink:0;padding:7px 14px;border-radius:99px;border:none;cursor:pointer;font-size:.78rem;font-weight:700;font-family:inherit;'
+    '<button onclick="window._mKat=\'' + k.id + '\';var _sp=document.getElementById(\'marketSayfa\');var _ct=document.getElementById(\'mainContent\');var _sy=_ct?_ct.scrollTop:0;_sp.innerHTML=_marketIcerik();if(_ct)setTimeout(function(){_ct.scrollTop=_sy},0);setTimeout(function(){var _ab=document.querySelector(\'#marketSayfa .active-kat\');if(_ab)_ab.scrollIntoView({behavior:\'smooth\',block:\'nearest\',inline:\'center\'})},50)" style="flex-shrink:0;padding:7px 14px;border-radius:99px;border:none;cursor:pointer;font-size:.78rem;font-weight:700;font-family:inherit;'
     + (k.id===secili ? 'background:var(--accent);color:white' : 'background:var(--surface2);color:var(--text2)') + '">'
     + k.ad + '</button>'
   ).join('');
