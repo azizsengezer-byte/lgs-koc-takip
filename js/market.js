@@ -566,7 +566,7 @@ function _marketIcerik() {
   const secili = window._mKat || 'ejderha';
 
   const katHTML = MARKET_KATEGORILER.map(k =>
-    '<button onclick="window._mKat=\'' + k.id + '\';var _sp=document.getElementById(\'marketSayfa\');var _ct=document.getElementById(\'mainContent\');var _sy=_ct?_ct.scrollTop:0;_sp.innerHTML=_marketIcerik();if(_ct)setTimeout(function(){_ct.scrollTop=_sy},0);setTimeout(function(){var _ab=document.querySelector(\'#marketSayfa .active-kat\');if(_ab)_ab.scrollIntoView({behavior:\'smooth\',block:\'nearest\',inline:\'center\'})},50)" style="flex-shrink:0;padding:7px 14px;border-radius:99px;border:none;cursor:pointer;font-size:.78rem;font-weight:700;font-family:inherit;'
+    '<button onclick="window._mKat=\'' + k.id + '\';var _kb=document.getElementById(\'mKatBar\');var _ksx=_kb?_kb.scrollLeft:0;var _sp=document.getElementById(\'marketSayfa\');_sp.innerHTML=_marketIcerik();var _kb2=document.getElementById(\'mKatBar\');if(_kb2)_kb2.scrollLeft=_ksx" style="flex-shrink:0;padding:7px 14px;border-radius:99px;border:none;cursor:pointer;font-size:.78rem;font-weight:700;font-family:inherit;'
     + (k.id===secili ? 'background:var(--accent);color:white' : 'background:var(--surface2);color:var(--text2)') + '">'
     + k.ad + '</button>'
   ).join('');
@@ -595,7 +595,7 @@ function _marketIcerik() {
     + '<div>Duygu girişi: +' + MARKET_ALTIN.MOOD + ' 💰</div>'
     + '<div>Günlük takip tam: +' + MARKET_ALTIN.WELLNESS_TAM + ' 💰</div>'
     + '<div>10 doğru: +' + MARKET_ALTIN.SORU_10 + ' 💰</div></div></div>'
-    + '<div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:14px">' + katHTML + '</div>'
+    + '<div id="mKatBar" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:14px">' + katHTML + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' + urunHTML + '</div>';
 }
 
