@@ -1,4 +1,101 @@
 
+// ── OKUL ARKADAŞLARI ─────────────────────────────────────────
+async function okulArkadaslariniYukle() {
+  const myData = window.currentUserData || {};
+  const myUid = myData.uid || '';
+  const mySchool = myData.school || '';
+  const liste = document.getElementById('okul-arkadaslar-liste');
+  if (!liste) return;
+
+  if (!mySchool) {
+    liste.innerHTML = '<div style="color:var(--text2);font-size:0.82rem">Okul bilgin henüz eklenmemiş.</div>';
+    return;
+  }
+
+  try {
+    const snap = await db.collection('users')
+      .where('role', '==', 'student')
+      .where('school', '==', mySchool)
+      .get();
+
+    const arkadaslar = [];
+    snap.forEach(d => {
+      if (d.id !== myUid) arkadaslar.push({ uid: d.id, ...d.data() });
+    });
+
+    if (arkadaslar.length === 0) {
+      liste.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;padding:8px 0">Henüz aynı okulda başka öğrenci yok.</div>';
+      return;
+    }
+
+    liste.innerHTML = arkadaslar.map(a => {
+      const isim = a.name || '?';
+      const renk = a.color || '#6c63ff';
+      const foto = a.photo
+        ? `<img src="${a.photo}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+        : `<div style="width:44px;height:44px;border-radius:50%;background:${renk}22;color:${renk};display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;flex-shrink:0">${isim[0]}</div>`;
+
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          ${foto}
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:0.9rem">${isim}</div>
+            <div style="font-size:0.72rem;color:var(--text2);margin-top:1px">${a.classroom||''} ${a.school||''}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button onclick="arkadasMesajAt('${a.uid}','${isim}','${renk}')"
+              style="background:var(--accent)15;color:var(--accent);border:1px solid var(--accent)44;border-radius:8px;padding:5px 10px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
+              💬
+            </button>
+            <button onclick="arkadasProfil('${a.uid}','${isim}','${renk}','${a.photo||''}')"
+              style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
+              👤
+            </button>
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch(e) {
+    liste.innerHTML = '<div style="color:var(--accent2);font-size:0.82rem">Yüklenemedi: ' + e.message + '</div>';
+  }
+}
+
+function arkadasMesajAt(uid, isim, renk) {
+  activeChat = uid;
+  showPage('messages');
+}
+
+function arkadasProfil(uid, isim, renk, foto) {
+  const existing = document.getElementById('arkadaProfilModal');
+  if (existing) existing.remove();
+
+  const avatarHTML = foto
+    ? `<img src="${foto}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin:0 auto 12px;display:block">`
+    : `<div style="width:80px;height:80px;border-radius:50%;background:${renk}22;color:${renk};display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin:0 auto 12px">${isim[0]}</div>`;
+
+  const modal = document.createElement('div');
+  modal.id = 'arkadaProfilModal';
+  modal.className = 'modal-overlay open';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:320px;text-align:center">
+      ${avatarHTML}
+      <div style="font-size:1.2rem;font-weight:900;margin-bottom:4px">${isim}</div>
+      <div style="font-size:0.82rem;color:var(--text2);margin-bottom:20px">🏫 Okul Arkadaşı</div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:8px"
+        onclick="document.getElementById('arkadaProfilModal').remove();arkadasMesajAt('${uid}','${isim}','${renk}')">
+        💬 Mesaj Gönder
+      </button>
+      <button class="btn btn-outline" style="width:100%"
+        onclick="document.getElementById('arkadaProfilModal').remove()">
+        Kapat
+      </button>
+    </div>
+  `;
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+
 // ── Koç Okul Yönetimi ────────────────────────────────────────
 async function teacherOkulEkle() {
   const input = document.getElementById('newSchoolInput');
@@ -89,7 +186,7 @@ function denemeSoruKontrol(ders) {
   }
 }
 
-function profilePage() {
+async function profilePage() {
   const user = auth.currentUser;
   const name = document.getElementById('menuName')?.textContent;
   const data = window.currentUserData || {};
@@ -245,6 +342,10 @@ function profilePage() {
         🏆 <span>Rozetlerim</span>
         <span id="badgeCountBadge" style="background:#f9ca24;color:#222;border-radius:20px;padding:2px 10px;font-size:0.78rem;font-weight:800"></span>
       </button>
+    </div>
+    <div class="card" style="margin-top:16px" id="okul-arkadaslar-kart">
+      <div class="card-title">🏫 Okul Arkadaşlarım</div>
+      <div id="okul-arkadaslar-liste" style="color:var(--text2);font-size:0.85rem">Yükleniyor...</div>
     </div>
     ` : ''}
   `;

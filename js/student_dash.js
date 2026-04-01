@@ -60,7 +60,7 @@ function renderStudentPage(id, el) {
     messagesPage('student').then(html => { el.innerHTML = html; });
   }
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
-  else if(id==='profile') { el.innerHTML = profilePage(); setTimeout(initApiSettings, 50); }
+  else if(id==='profile') { profilePage().then(html => { el.innerHTML = html; setTimeout(initApiSettings, 50); setTimeout(okulArkadaslariniYukle, 100); }); }
   setTimeout(()=>drawCharts(), 50);
 }
 
