@@ -367,11 +367,15 @@ async function sendMessage(role) {
     const todayKey = getTodayKey();
     const limitKey = `msgLimit_${myUid}_${activeChat}_${todayKey}`;
     const count = parseInt(localStorage.getItem(limitKey) || '0');
-    if (count >= 50) {
-      showToast('⚠️', 'Bugünlük 50 mesaj limitine ulaştın!');
+    if (count >= 25) {
+      showToast('⚠️', 'Bugünlük 25 mesaj limitine ulaştın! Yarın devam edebilirsin.');
       return;
     }
     localStorage.setItem(limitKey, count + 1);
+    // 5 mesaj kala uyarı
+    if (count === 20) {
+      showToast('💬', 'Dikkat: Bugün sadece 5 mesaj hakkın kaldı!');
+    }
   }
   const cId = convId(myUid, activeChat);
   const now = new Date();
