@@ -246,6 +246,8 @@ auth.onAuthStateChanged(async (user) => {
       // Rozet menü butonunu göster/gizle
       const _bmb = document.getElementById('badgeMenuBtn');
       if (_bmb) _bmb.style.display = currentRole==='student' ? 'flex' : 'none';
+      const _oab = document.getElementById('okulArkadasBtn');
+      if (_oab) _oab.style.display = currentRole==='student' ? 'flex' : 'none';
       // Çerçeveyi uygula — önce Firestore'dan oku
       if (currentRole === 'student') {
         if (db) {

@@ -1,4 +1,26 @@
 
+function vpMesajAt() {
+  const uid = window._vpCurrentUid;
+  if (!uid) return;
+  closeModal('viewProfileModal');
+  activeChat = uid;
+  showPage('messages');
+}
+
+function vpHediyeGonder() {
+  const uid = window._vpCurrentUid;
+  const vpName = document.getElementById('vpName')?.textContent || '';
+  if (!uid) return;
+  closeModal('viewProfileModal');
+  // Market hediye fonksiyonunu çağır
+  if (typeof marketHediyeAc === 'function') {
+    marketHediyeAc(uid, vpName);
+  } else {
+    showToast('⚠️', 'Hediye için önce markete git');
+  }
+}
+
+
 // Öğrenci etiket HTML yardımcısı
 function _ogrenciEtiketHTML(etiket) {
   if (!etiket) return '';
@@ -330,6 +352,20 @@ async function showUserProfile(uid, fallbackName, fallbackColor) {
 
   // Sekmeyi sıfırla
   vpSwitchTab('info');
+
+  // Mesaj + Hediye butonları — öğrenci başka öğrenci profiline bakarsa göster
+  const actionBtns = document.getElementById('vpActionBtns');
+  if (actionBtns) {
+    const benimUid = (window.currentUserData||{}).uid || '';
+    const hedefOgrenci = data.role === 'student';
+    const kendimDegilim = uid !== benimUid;
+    const okulArkadasi = data.school && data.school === (window.currentUserData||{}).school;
+    if (hedefOgrenci && kendimDegilim && (okulArkadasi || currentRole === 'teacher')) {
+      actionBtns.style.display = 'flex';
+    } else {
+      actionBtns.style.display = 'none';
+    }
+  }
 
   // Çerçeve uygula
   const _oldOverlay = vpPhoto.querySelector('._anyFrameOverlay');
