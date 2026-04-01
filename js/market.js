@@ -55,9 +55,16 @@ const MARKET_URUNLER = {
   boost_3x_soru: { kategori:'boost', ad:'3x Soru Altın', fiyat:600,  ikon:'🎯', aciklama:'24 saat soru başına 3x altın',       tip:'boost', deger:'3x_soru',tuket:true },
 
   // 🎁 SOSYAL
-  hediye_altin_100: { kategori:'sosyal', ad:'100 Altın Hediye',  fiyat:150,  ikon:'🎁', aciklama:'Bir arkadaşına 100 altın gönder',  tip:'hediye', deger:100 },
-  hediye_altin_500: { kategori:'sosyal', ad:'500 Altın Hediye',  fiyat:600,  ikon:'🎀', aciklama:'Bir arkadaşına 500 altın gönder',  tip:'hediye', deger:500 },
-  meydan_okuma:     { kategori:'sosyal', ad:'Meydan Okuma',      fiyat:200,  ikon:'⚔️', aciklama:'Arkadaşına haftalık yarış gönder', tip:'meydan', deger:'hafta', tuket:true },
+  hediye_altin_50:   { kategori:'sosyal', ad:'50 Altın Hediye',   fiyat:80,   ikon:'🎁', aciklama:'Bir arkadaşına 50 altın gönder',   tip:'hediye', deger:50 },
+  hediye_altin_100:  { kategori:'sosyal', ad:'100 Altın Hediye',  fiyat:150,  ikon:'🎀', aciklama:'Bir arkadaşına 100 altın gönder',  tip:'hediye', deger:100 },
+  hediye_altin_250:  { kategori:'sosyal', ad:'250 Altın Hediye',  fiyat:350,  ikon:'💝', aciklama:'Bir arkadaşına 250 altın gönder',  tip:'hediye', deger:250 },
+  hediye_altin_500:  { kategori:'sosyal', ad:'500 Altın Hediye',  fiyat:650,  ikon:'💰', aciklama:'Bir arkadaşına 500 altın gönder',  tip:'hediye', deger:500 },
+  hediye_ejderha_isi:{ kategori:'sosyal', ad:'Ejderha Isısı',     fiyat:200,  ikon:'🔥', aciklama:'Arkadaşının ejderhasına 50 XP hediye et', tip:'hediye_xp', deger:50 },
+  hediye_sans:       { kategori:'sosyal', ad:'Şans Zarı',         fiyat:100,  ikon:'🎲', aciklama:'Arkadaşına rastgele 10-200 altın gönder', tip:'hediye_sans', deger:0 },
+  hediye_motivasyon: { kategori:'sosyal', ad:'Motivasyon Kartı',  fiyat:50,   ikon:'💌', aciklama:'Arkadaşına özel motivasyon mesajı gönder', tip:'hediye_mesaj', deger:'motivasyon' },
+  hediye_tebrik:     { kategori:'sosyal', ad:'Tebrik Kartı',      fiyat:50,   ikon:'🎊', aciklama:'Arkadaşını kutla, bildirim gönder', tip:'hediye_mesaj', deger:'tebrik' },
+  hediye_emoji_set:  { kategori:'sosyal', ad:'Emoji Paketi',      fiyat:300,  ikon:'😄', aciklama:'Arkadaşına özel emoji seti hediye et', tip:'hediye_ozel', deger:'emoji' },
+  meydan_okuma:      { kategori:'sosyal', ad:'Meydan Okuma',      fiyat:200,  ikon:'⚔️', aciklama:'Arkadaşına haftalık soru yarışı gönder', tip:'meydan', deger:'hafta', tuket:true },
 
   // 🐉 ÖZEL
   ejderha_isim: { kategori:'ozel', ad:'Ejderhaya İsim Ver', fiyat:300, ikon:'✏️', aciklama:'Ejderhana özel bir isim ver', tip:'isim', deger:'' },
@@ -539,21 +546,49 @@ async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
   if (altin < urun.fiyat) { _mBildirim('Yeterli altın yok!', '#ff6b6b'); return; }
 
   window.currentUserData.altin = altin - urun.fiyat;
+  const gonderen = window.currentUserData?.name || 'Arkadaşın';
+
   try {
-    // Gönderenden düş
     await db.collection('users').doc(uid).update({ altin: window.currentUserData.altin });
-    // Alıcıya ekle
-    const hedefDoc = await db.collection('users').doc(hedefUid).get();
-    const hedefAltin = (hedefDoc.data()?.altin || 0) + (urun.deger || 0);
-    await db.collection('users').doc(hedefUid).update({ altin: hedefAltin });
-    // Bildirim
+
+    let bildirimMetni = '';
+    let hedefGuncelleme = {};
+
+    if (urun.tip === 'hediye') {
+      // Altın hediye
+      const hedefDoc = await db.collection('users').doc(hedefUid).get();
+      const hedefAltin = (hedefDoc.data()?.altin || 0) + (urun.deger || 0);
+      hedefGuncelleme = { altin: hedefAltin };
+      bildirimMetni = '🎁 ' + gonderen + ' sana ' + urun.deger + ' altın hediye etti!';
+    } else if (urun.tip === 'hediye_sans') {
+      // Rastgele altın
+      const miktar = Math.floor(Math.random() * 191) + 10;
+      const hedefDoc = await db.collection('users').doc(hedefUid).get();
+      const hedefAltin = (hedefDoc.data()?.altin || 0) + miktar;
+      hedefGuncelleme = { altin: hedefAltin };
+      bildirimMetni = '🎲 ' + gonderen + ' sana şans zarı attı! ' + miktar + ' altın kazandın!';
+    } else if (urun.tip === 'hediye_mesaj') {
+      const mesajlar = {
+        motivasyon: ['💪 Sen yapabilirsin!', '🔥 Ateşini söndürme!', '⭐ Yıldızlara ulaş!', '🚀 Hedefine odaklan!'],
+        tebrik: ['🎊 Tebrikler!', '🏆 Harikasın!', '🌟 Muhteşemsin!', '👏 Bravo!'],
+      };
+      const liste = mesajlar[urun.deger] || ['💌 Seni düşünüyorum!'];
+      bildirimMetni = liste[Math.floor(Math.random() * liste.length)] + ' — ' + gonderen;
+    } else if (urun.tip === 'hediye_ozel') {
+      bildirimMetni = '😄 ' + gonderen + ' sana özel emoji seti hediye etti!';
+    }
+
+    if (Object.keys(hedefGuncelleme).length) {
+      await db.collection('users').doc(hedefUid).update(hedefGuncelleme);
+    }
+
     await db.collection('notifications').add({
-      toUid: hedefUid,
-      fromUid: uid,
-      text: '🎁 ' + (window.currentUserData?.name || 'Arkadaşın') + ' sana ' + urun.deger + ' altın hediye etti!',
+      toUid: hedefUid, fromUid: uid,
+      text: bildirimMetni,
       type: 'hediye', read: false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
+
     _mBildirim('🎁 ' + hedefIsim + "'e gönderildi!", '#43e97b');
     document.getElementById('_mModal').style.display = 'none';
     const sayac = document.getElementById('maceraAltinSayac');
