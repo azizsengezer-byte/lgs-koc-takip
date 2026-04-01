@@ -353,18 +353,15 @@ async function showUserProfile(uid, fallbackName, fallbackColor) {
   // Sekmeyi sıfırla
   vpSwitchTab('info');
 
-  // Mesaj + Hediye butonları — öğrenci başka öğrenci profiline bakarsa göster
+  // Mesaj + Hediye butonları
   const actionBtns = document.getElementById('vpActionBtns');
   if (actionBtns) {
     const benimUid = (window.currentUserData||{}).uid || '';
     const hedefOgrenci = data.role === 'student';
     const kendimDegilim = uid !== benimUid;
     const okulArkadasi = data.school && data.school === (window.currentUserData||{}).school;
-    if (hedefOgrenci && kendimDegilim && (okulArkadasi || currentRole === 'teacher')) {
-      actionBtns.style.display = 'flex';
-    } else {
-      actionBtns.style.display = 'none';
-    }
+    const goster = hedefOgrenci && kendimDegilim && (okulArkadasi || currentRole === 'teacher');
+    actionBtns.style.display = goster ? 'flex' : 'none';
   }
 
   // Çerçeve uygula
