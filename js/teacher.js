@@ -1,4 +1,20 @@
 
+// Öğrenci etiket HTML yardımcısı
+function _ogrenciEtiketHTML(etiket) {
+  if (!etiket) return '';
+  const stiller = {
+    '🔥 Çalışkan':  'background:linear-gradient(135deg,#ff4444,#cc1111);color:white;box-shadow:0 1px 6px rgba(255,68,68,0.4)',
+    '⚡ Hızlı':     'background:linear-gradient(135deg,#00d2ff,#0099cc);color:white;box-shadow:0 1px 6px rgba(0,210,255,0.3)',
+    '👑 Efsane':    'background:linear-gradient(135deg,#f9ca24,#e6a800);color:#1a1200;box-shadow:0 1px 6px rgba(249,202,36,0.4)',
+    '💎 Elit':      'background:linear-gradient(135deg,#a855f7,#7c22cc);color:white;box-shadow:0 1px 6px rgba(168,85,247,0.4)',
+    '🦸 Kahraman':  'background:linear-gradient(135deg,#ff6b9d,#cc2266);color:white;box-shadow:0 1px 6px rgba(255,107,157,0.35)',
+    '🦉 Bilge':     'background:linear-gradient(135deg,#45b7d1,#1a7a99);color:white;box-shadow:0 1px 6px rgba(69,183,209,0.35)',
+    '🌋 Ateş Kalbi':'background:linear-gradient(135deg,#ff8c00,#cc4400);color:white;box-shadow:0 1px 6px rgba(255,140,0,0.4)',
+  };
+  const stil = stiller[etiket] || 'background:rgba(108,99,255,.3);color:white';
+  return '<span style="' + stil + ';font-size:9px;font-weight:800;padding:2px 7px;border-radius:99px;margin-left:5px;white-space:nowrap">' + etiket + '</span>';
+}
+
 async function ogrenciOkulDegistir(i) {
   const s = students[i];
   const okullar = window.currentUserData?.schools || [];
@@ -112,7 +128,7 @@ function teacherDashboard() {
               ? `<img src="${s.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">`
               : `<div class="student-avatar" style="background:${s.color}20;color:${s.color};cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">${s.name[0]}</div>`}
             <div class="student-info">
-              <div class="student-name">${s.name}</div>
+              <div class="student-name" style="display:flex;align-items:center;gap:4px">${s.name}${_ogrenciEtiketHTML(s.etiket||"")}</div>
               <div class="student-meta">${sTasks} görev • ${totalQ} soru • Bu hafta: ${weekDays2}g</div>
             </div>
             <div style="text-align:right">

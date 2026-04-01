@@ -378,18 +378,37 @@ function _mArkaplanSifirla() {
 }
 
 // ── Etiket ────────────────────────────────────────────────
+// Etiket renk haritası
+const _ETIKET_STILLER = {
+  '🔥 Çalışkan':  'background:linear-gradient(135deg,#ff4444,#cc1111);color:white;box-shadow:0 2px 8px rgba(255,68,68,0.4)',
+  '⚡ Hızlı':     'background:linear-gradient(135deg,#00d2ff,#0099cc);color:white;box-shadow:0 2px 8px rgba(0,210,255,0.3)',
+  '👑 Efsane':    'background:linear-gradient(135deg,#f9ca24,#e6a800);color:#1a1200;box-shadow:0 2px 8px rgba(249,202,36,0.4)',
+  '💎 Elit':      'background:linear-gradient(135deg,#a855f7,#7c22cc);color:white;box-shadow:0 2px 8px rgba(168,85,247,0.4)',
+  '🦸 Kahraman':  'background:linear-gradient(135deg,#ff6b9d,#cc2266);color:white;box-shadow:0 2px 8px rgba(255,107,157,0.35)',
+  '🦉 Bilge':     'background:linear-gradient(135deg,#45b7d1,#1a7a99);color:white;box-shadow:0 2px 8px rgba(69,183,209,0.35)',
+  '🌋 Ateş Kalbi':'background:linear-gradient(135deg,#ff8c00,#cc4400);color:white;box-shadow:0 2px 8px rgba(255,140,0,0.4)',
+};
+
 function _mEtiketUygula(etiket) {
-  // Menü isminin yanına ekle
+  const stil = _ETIKET_STILLER[etiket] || 'background:rgba(108,99,255,.3);color:white';
+  // Önce eskiyi kaldır
+  const eskiEl = document.getElementById('_menuEtiket');
+  if (eskiEl) eskiEl.remove();
+  // Header isim alanına ekle
   const nameEl = document.getElementById('menuName');
-  if (!nameEl) return;
-  let etiketEl = document.getElementById('_menuEtiket');
-  if (!etiketEl) {
-    etiketEl = document.createElement('span');
-    etiketEl.id = '_menuEtiket';
-    etiketEl.style.cssText = 'font-size:.65rem;font-weight:700;background:rgba(108,99,255,.2);border:1px solid rgba(108,99,255,.4);border-radius:99px;padding:2px 7px;margin-left:6px;color:var(--accent)';
-    nameEl.parentNode.insertBefore(etiketEl, nameEl.nextSibling);
+  if (nameEl) {
+    const span = document.createElement('span');
+    span.id = '_menuEtiket';
+    span.style.cssText = stil + ';font-size:.75rem;font-weight:800;padding:3px 9px;border-radius:99px;margin-left:6px;display:inline-flex;align-items:center;vertical-align:middle';
+    span.textContent = etiket;
+    nameEl.insertAdjacentElement('afterend', span);
   }
-  etiketEl.textContent = etiket;
+  // Firebase'e kaydet — koç ve arkadaşlar görsün
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    if (window.currentUserData) window.currentUserData.etiket = etiket;
+    db.collection('users').doc(uid).update({ etiket: etiket }).catch(()=>{});
+  }
 }
 
 function _mEtiketSifirla() {
@@ -695,4 +714,9 @@ const _mStyle = document.createElement('style');
 _mStyle.textContent = '@keyframes _mDus{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}';
 document.head.appendChild(_mStyle);
 
-setTimeout(_marketUygulaEfektler, 800);
+setTimeout(() => {
+  _marketUygulaEfektler();
+  // Kayıtlı etiket varsa göster
+  const etiket = window.currentUserData?.etiket;
+  if (etiket) _mEtiketUygula(etiket);
+}, 800);

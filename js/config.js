@@ -162,7 +162,7 @@ auth.onAuthStateChanged(async (user) => {
               avg: s.avg||0, lastActive: s.lastActive||'Yeni',
               color: s.color || colors[students.length % colors.length],
               tasks: 0, classroom: s.classroom||'', school: s.school||'',
-              photo: s.photo||''
+              photo: s.photo||'', etiket: s.etiket||''
             });
           });
         } catch(e) { console.log('Öğrenci çekme hatası:', e.message); }
@@ -265,6 +265,10 @@ auth.onAuthStateChanged(async (user) => {
           const el = document.getElementById('badgeCountBadge');
           if (el) el.textContent = earned.length + ' / ' + BADGES.length;
         });
+        // Etiket varsa göster
+        if (data.etiket && typeof _mEtiketUygula === 'function') {
+          setTimeout(() => _mEtiketUygula(data.etiket), 1000);
+        }
       }
       // Sayfa yenilenince son sayfaya dön (URL'den oku)
       const _urlParams = new URLSearchParams(window.location.search);
