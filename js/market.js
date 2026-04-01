@@ -667,7 +667,11 @@ function _mDetay(id) {
 
   let btn = '';
   if (u.tip === 'isim') {
-    btn = '<button onclick="marketSatinAl(\'' + id + '\');document.getElementById(\'_mModal\').style.display=\'none\'" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit">' + (sahip ? '✏️ İsmi Değiştir' : 'İsim Ver — ' + u.fiyat + ' 💰') + '</button>';
+    if (sahip || altin >= u.fiyat) {
+      btn = '<button onclick="_mIsimVer(\'' + id + '\', MARKET_URUNLER[\'' + id + '\'])" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit">' + (sahip ? '✏️ İsmi Değiştir' : 'İsim Ver — ' + u.fiyat + ' 💰') + '</button>';
+    } else {
+      btn = '<div style="background:var(--surface2);border-radius:10px;padding:10px;font-size:.78rem;color:var(--text2);text-align:center">' + (u.fiyat-altin) + ' altın daha lazım</div>';
+    }
   } else if (u.tip === 'hediye' || u.tip === 'meydan') {
     btn = altin >= u.fiyat
       ? '<button onclick="marketSatinAl(\'' + id + '\')" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit">Gönder — ' + u.fiyat + ' 💰</button>'
