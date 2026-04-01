@@ -289,8 +289,7 @@ function maceraEjderha() {
           <circle cx="97.5" cy="72.5" r="2" fill="white"/>
         </g>
         <path id="mouth" d="M72 96 Q80 102 88 96" stroke="#4a40c8" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <!-- Aksesuar placeholder — head grubu içinde, kafayla hareket eder -->
-        <g id="ej-aksesuar"></g>
+
         <ellipse cx="55" cy="84" rx="8" ry="5" fill="#ff6b9d" opacity="0.35"/>
         <ellipse cx="105" cy="84" rx="8" ry="5" fill="#ff6b9d" opacity="0.35"/>
         <ellipse cx="63" cy="56" rx="5" ry="8" fill="#4cc9f0" transform="rotate(-15 63 56)"/>
@@ -308,6 +307,8 @@ function maceraEjderha() {
           <circle id="fire-s4" cx="119" cy="95" r="1"   fill="#ffee00"/>
         </g>
       </g>
+      <!-- Aksesuar — head ile aynı animasyon, kafayla birlikte hareket eder -->
+      <g id="ej-aksesuar" style="animation:ejIdle 3s ease-in-out infinite"></g>
       <ellipse cx="58" cy="170" rx="14" ry="9" fill="#5a4fcf" transform="rotate(-20 58 170)"/>
       <ellipse cx="102" cy="170" rx="14" ry="9" fill="#5a4fcf" transform="rotate(20 102 170)"/>
       <ellipse cx="54" cy="175" rx="7" ry="5" fill="#4a40c8"/>
