@@ -477,23 +477,58 @@ async function _mIsimKaydet(urunId) {
 function _mHediyeGonder(urunId, urun) {
   const modal = document.getElementById('_mModal');
   if (!modal) return;
-  const sinifArkadaşları = (window.students || []).filter(s => s.uid !== (window.currentUserData?.uid));
-  if (!sinifArkadaşları.length) {
-    _mBildirim('Sınıf arkadaşın yok', '#f9ca24');
+
+  // Önce yükleniyor göster
+  modal.style.display = 'flex';
+  modal.innerHTML = '<div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;max-width:290px;width:88%;text-align:center">'
+    + '<div style="font-size:1.5rem;margin-bottom:8px">🎁</div>'
+    + '<div style="color:var(--text2);font-size:.85rem">Arkadaşlar yükleniyor...</div>'
+    + '</div>';
+
+  // Aynı öğretmene bağlı öğrencileri Firebase'den çek
+  const uid = auth.currentUser?.uid;
+  const teacherId = window.currentUserData?.teacherId || '';
+  if (!uid || !teacherId) {
+    _mBildirim('Öğretmen bilgisi bulunamadı', '#ff6b6b');
+    modal.style.display = 'none';
     return;
   }
-  const arkList = sinifArkadaşları.map(s =>
-    '<button onclick="_mHediyeGonderKisi(\'' + urunId + '\',\'' + s.uid + '\',\'' + (s.name||'').replace(/'/g,'') + '\')" style="width:100%;padding:10px;background:var(--surface2);border:none;border-radius:10px;cursor:pointer;font-size:.85rem;font-weight:700;color:var(--text);text-align:left;font-family:inherit;margin-bottom:6px">' + (s.name || s.email) + '</button>'
-  ).join('');
 
-  modal.style.display = 'flex';
-  modal.innerHTML = '<div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;max-width:290px;width:88%;max-height:70vh;overflow-y:auto">'
-    + '<div style="font-size:2rem;text-align:center;margin-bottom:8px">' + urun.ikon + '</div>'
-    + '<div style="font-weight:900;font-size:1rem;text-align:center;margin-bottom:6px">' + urun.ad + '</div>'
-    + '<div style="font-size:.8rem;color:var(--text2);text-align:center;margin-bottom:14px">Kime gönderiyorsun?</div>'
-    + arkList
-    + '<button onclick="document.getElementById(\'_mModal\').style.display=\'none\'" style="width:100%;background:transparent;border:none;color:var(--text2);font-size:.8rem;cursor:pointer;margin-top:8px;font-family:inherit">Kapat</button>'
-    + '</div>';
+  db.collection('users')
+    .where('role', '==', 'student')
+    .where('teacherId', '==', teacherId)
+    .get()
+    .then(snap => {
+      const arkadaslar = [];
+      snap.forEach(d => {
+        if (d.id !== uid) arkadaslar.push({ uid: d.id, name: d.data().name || d.data().email });
+      });
+
+      if (!arkadaslar.length) {
+        modal.innerHTML = '<div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;max-width:290px;width:88%;text-align:center">'
+          + '<div style="font-size:2rem;margin-bottom:8px">😔</div>'
+          + '<div style="font-size:.85rem;color:var(--text2);margin-bottom:14px">Henüz sınıf arkadaşın yok</div>'
+          + '<button onclick="document.getElementById(\'_mModal\').style.display=\'none\'" style="background:var(--surface2);border:none;border-radius:10px;padding:9px 24px;font-size:.85rem;font-weight:700;cursor:pointer;color:var(--text);font-family:inherit">Kapat</button>'
+          + '</div>';
+        return;
+      }
+
+      const arkList = arkadaslar.map(s =>
+        '<button onclick="_mHediyeGonderKisi(\'' + urunId + '\',\'' + s.uid + '\',\'' + s.name.replace(/'/g,'') + '\')" '
+        + 'style="width:100%;padding:10px 14px;background:var(--surface2);border:none;border-radius:10px;cursor:pointer;font-size:.85rem;font-weight:700;color:var(--text);text-align:left;font-family:inherit;margin-bottom:6px;display:flex;align-items:center;gap:8px">'
+        + '<span style="width:30px;height:30px;border-radius:50%;background:var(--accent);color:white;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:900;flex-shrink:0">' + s.name[0].toUpperCase() + '</span>'
+        + s.name + '</button>'
+      ).join('');
+
+      modal.innerHTML = '<div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;max-width:290px;width:88%;max-height:70vh;overflow-y:auto">'
+        + '<div style="font-size:2rem;text-align:center;margin-bottom:6px">' + urun.ikon + '</div>'
+        + '<div style="font-weight:900;font-size:1rem;text-align:center;margin-bottom:4px">' + urun.ad + '</div>'
+        + '<div style="font-size:.78rem;color:var(--text2);text-align:center;margin-bottom:14px">Kime gönderiyorsun?</div>'
+        + arkList
+        + '<button onclick="document.getElementById(\'_mModal\').style.display=\'none\'" style="width:100%;background:transparent;border:none;color:var(--text2);font-size:.8rem;cursor:pointer;margin-top:8px;font-family:inherit">Kapat</button>'
+        + '</div>';
+    })
+    .catch(() => { _mBildirim('Arkadaşlar yüklenemedi', '#ff6b6b'); modal.style.display = 'none'; });
 }
 
 async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
