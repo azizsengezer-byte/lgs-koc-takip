@@ -55,16 +55,33 @@ const MARKET_URUNLER = {
   boost_3x_soru: { kategori:'boost', ad:'3x Soru Altın', fiyat:600,  ikon:'🎯', aciklama:'24 saat soru başına 3x altın',       tip:'boost', deger:'3x_soru',tuket:true },
 
   // 🎁 SOSYAL
-  hediye_altin_50:   { kategori:'sosyal', ad:'50 Altın Hediye',   fiyat:80,   ikon:'🎁', aciklama:'Bir arkadaşına 50 altın gönder',   tip:'hediye', deger:50 },
-  hediye_altin_100:  { kategori:'sosyal', ad:'100 Altın Hediye',  fiyat:150,  ikon:'🎀', aciklama:'Bir arkadaşına 100 altın gönder',  tip:'hediye', deger:100 },
-  hediye_altin_250:  { kategori:'sosyal', ad:'250 Altın Hediye',  fiyat:350,  ikon:'💝', aciklama:'Bir arkadaşına 250 altın gönder',  tip:'hediye', deger:250 },
-  hediye_altin_500:  { kategori:'sosyal', ad:'500 Altın Hediye',  fiyat:650,  ikon:'💰', aciklama:'Bir arkadaşına 500 altın gönder',  tip:'hediye', deger:500 },
-  hediye_ejderha_isi:{ kategori:'sosyal', ad:'Ejderha Isısı',     fiyat:200,  ikon:'🔥', aciklama:'Arkadaşının ejderhasına 50 XP hediye et', tip:'hediye_xp', deger:50 },
-  hediye_sans:       { kategori:'sosyal', ad:'Şans Zarı',         fiyat:100,  ikon:'🎲', aciklama:'Arkadaşına rastgele 10-200 altın gönder', tip:'hediye_sans', deger:0 },
-  hediye_motivasyon: { kategori:'sosyal', ad:'Motivasyon Kartı',  fiyat:50,   ikon:'💌', aciklama:'Arkadaşına özel motivasyon mesajı gönder', tip:'hediye_mesaj', deger:'motivasyon' },
-  hediye_tebrik:     { kategori:'sosyal', ad:'Tebrik Kartı',      fiyat:50,   ikon:'🎊', aciklama:'Arkadaşını kutla, bildirim gönder', tip:'hediye_mesaj', deger:'tebrik' },
-  hediye_emoji_set:  { kategori:'sosyal', ad:'Emoji Paketi',      fiyat:300,  ikon:'😄', aciklama:'Arkadaşına özel emoji seti hediye et', tip:'hediye_ozel', deger:'emoji' },
-  meydan_okuma:      { kategori:'sosyal', ad:'Meydan Okuma',      fiyat:200,  ikon:'⚔️', aciklama:'Arkadaşına haftalık soru yarışı gönder', tip:'meydan', deger:'hafta', tuket:true },
+  // Altın Hediyeleri
+  hediye_altin_25:   { kategori:'sosyal', ad:'25 Altın Hediye',   fiyat:40,   ikon:'🪙', aciklama:'Bir arkadaşına 25 altın gönder',   tip:'hediye', deger:25 },
+  hediye_altin_50:   { kategori:'sosyal', ad:'50 Altın Hediye',   fiyat:75,   ikon:'🎁', aciklama:'Bir arkadaşına 50 altın gönder',   tip:'hediye', deger:50 },
+  hediye_altin_100:  { kategori:'sosyal', ad:'100 Altın Hediye',  fiyat:140,  ikon:'🎀', aciklama:'Bir arkadaşına 100 altın gönder',  tip:'hediye', deger:100 },
+  hediye_altin_200:  { kategori:'sosyal', ad:'200 Altın Hediye',  fiyat:270,  ikon:'💝', aciklama:'Bir arkadaşına 200 altın gönder',  tip:'hediye', deger:200 },
+  hediye_altin_500:  { kategori:'sosyal', ad:'500 Altın Hediye',  fiyat:600,  ikon:'💰', aciklama:'Bir arkadaşına 500 altın gönder',  tip:'hediye', deger:500 },
+  // Şans & Sürpriz
+  hediye_sans:       { kategori:'sosyal', ad:'Şans Zarı',         fiyat:80,   ikon:'🎲', aciklama:'Arkadaşına rastgele 10-200 altın gönder', tip:'hediye_sans', deger:0 },
+  hediye_kör_kutu:   { kategori:'sosyal', ad:'Kör Kutu',          fiyat:120,  ikon:'📦', aciklama:'Sürpriz! 5-300 arası altın',      tip:'hediye_sans', deger:1 },
+  hediye_sans_buyuk: { kategori:'sosyal', ad:'Büyük Şans Zarı',   fiyat:200,  ikon:'🎰', aciklama:'50-500 arası rastgele altın',     tip:'hediye_sans', deger:2 },
+  // Motivasyon Kartları
+  hediye_motivasyon: { kategori:'sosyal', ad:'Motivasyon Kartı',  fiyat:30,   ikon:'💌', aciklama:'Arkadaşına moral ver',            tip:'hediye_mesaj', deger:'motivasyon' },
+  hediye_tebrik:     { kategori:'sosyal', ad:'Tebrik Kartı',      fiyat:30,   ikon:'🎊', aciklama:'Arkadaşını kutla',               tip:'hediye_mesaj', deger:'tebrik' },
+  hediye_basari:     { kategori:'sosyal', ad:'Başarı Kartı',      fiyat:30,   ikon:'🏆', aciklama:'Başarısını kutla',               tip:'hediye_mesaj', deger:'basari' },
+  hediye_iyi_calis:  { kategori:'sosyal', ad:'İyi Çalışmalar',    fiyat:20,   ikon:'📚', aciklama:'Sınav öncesi destek gönder',     tip:'hediye_mesaj', deger:'calis' },
+  hediye_gec_kalma:  { kategori:'sosyal', ad:'Geç Kalma!',        fiyat:20,   ikon:'⏰', aciklama:'Arkadaşını uyandır',            tip:'hediye_mesaj', deger:'gec' },
+  hediye_inaniyorum: { kategori:'sosyal', ad:'Sana İnanıyorum',   fiyat:25,   ikon:'🌟', aciklama:'Destek mesajı gönder',           tip:'hediye_mesaj', deger:'inan' },
+  hediye_guzelsin:   { kategori:'sosyal', ad:'Harikasın!',        fiyat:25,   ikon:'✨', aciklama:'Arkadaşını öv',                 tip:'hediye_mesaj', deger:'guzel' },
+  hediye_komik:      { kategori:'sosyal', ad:'Şaka Kartı',        fiyat:20,   ikon:'😂', aciklama:'Güldür arkadaşını',             tip:'hediye_mesaj', deger:'komik' },
+  // Boost Hediyeleri
+  hediye_2x_altin:   { kategori:'sosyal', ad:'2x Altın Boost',   fiyat:300,  ikon:'⚡', aciklama:'Arkadaşına 1 saatlik 2x altın kazan', tip:'hediye_boost', deger:'2x' },
+  hediye_seri_kor:   { kategori:'sosyal', ad:'Seri Koruyucu',     fiyat:250,  ikon:'🛡️', aciklama:'Arkadaşının serisini koru',     tip:'hediye_boost', deger:'seri' },
+  hediye_3x_soru:    { kategori:'sosyal', ad:'3x Soru Boost',     fiyat:400,  ikon:'🚀', aciklama:'Arkadaşına 3x soru sayısı boost', tip:'hediye_boost', deger:'3x' },
+  // Meydan Okuma
+  meydan_okuma:      { kategori:'sosyal', ad:'Meydan Okuma',      fiyat:150,  ikon:'⚔️', aciklama:'Arkadaşına haftalık soru yarışı gönder', tip:'meydan', deger:'hafta', tuket:true },
+  meydan_matematik:  { kategori:'sosyal', ad:'Matematik Düellosu', fiyat:180, ikon:'📐', aciklama:'Matematik sorusu yarışı',       tip:'meydan', deger:'matematik', tuket:true },
+  meydan_fen:        { kategori:'sosyal', ad:'Fen Savaşı',        fiyat:180,  ikon:'🔬', aciklama:'Fen sorusu yarışı',            tip:'meydan', deger:'fen', tuket:true },
 
   // 🐉 ÖZEL
   ejderha_isim: { kategori:'ozel', ad:'Ejderhaya İsim Ver', fiyat:300, ikon:'✏️', aciklama:'Ejderhana özel bir isim ver', tip:'isim', deger:'' },
@@ -501,9 +518,15 @@ function _mHediyeGonder(urunId, urun) {
     return;
   }
 
+  const okul = window.currentUserData?.school || '';
+  if (!okul) {
+    _mBildirim('Okul bilgisi bulunamadı', '#ff6b6b');
+    modal.style.display = 'none';
+    return;
+  }
   db.collection('users')
     .where('role', '==', 'student')
-    .where('teacherId', '==', teacherId)
+    .where('school', '==', okul)
     .get()
     .then(snap => {
       const arkadaslar = [];
@@ -561,21 +584,30 @@ async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
       hedefGuncelleme = { altin: hedefAltin };
       bildirimMetni = '🎁 ' + gonderen + ' sana ' + urun.deger + ' altın hediye etti!';
     } else if (urun.tip === 'hediye_sans') {
-      // Rastgele altın
-      const miktar = Math.floor(Math.random() * 191) + 10;
+      // Rastgele altın - deger'e göre aralık
+      let min=10, max=200;
+      if (urun.deger === 1) { min=5; max=300; }
+      else if (urun.deger === 2) { min=50; max=500; }
+      const miktar = Math.floor(Math.random() * (max-min+1)) + min;
       const hedefDoc = await db.collection('users').doc(hedefUid).get();
       const hedefAltin = (hedefDoc.data()?.altin || 0) + miktar;
       hedefGuncelleme = { altin: hedefAltin };
-      bildirimMetni = '🎲 ' + gonderen + ' sana şans zarı attı! ' + miktar + ' altın kazandın!';
+      bildirimMetni = (urun.ikon||'🎲') + ' ' + gonderen + ' sana şans zarı attı! ' + miktar + ' altın kazandın!';
     } else if (urun.tip === 'hediye_mesaj') {
       const mesajlar = {
-        motivasyon: ['💪 Sen yapabilirsin!', '🔥 Ateşini söndürme!', '⭐ Yıldızlara ulaş!', '🚀 Hedefine odaklan!'],
-        tebrik: ['🎊 Tebrikler!', '🏆 Harikasın!', '🌟 Muhteşemsin!', '👏 Bravo!'],
+        motivasyon: ['💪 Sen yapabilirsin!', '🔥 Ateşini söndürme!', '⭐ Yıldızlara ulaş!', '🚀 Hedefine odaklan!', '💎 Mükemmelsin!'],
+        tebrik:     ['🎊 Tebrikler!', '🏆 Harikasın!', '🌟 Muhteşemsin!', '👏 Bravo!', '🥳 Süpersin!'],
+        basari:     ['🏅 Başarın gururlandırıyor!', '🌠 Zirveye ulaş!', '💡 Parlak bir zihin!'],
+        calis:      ['📚 İyi çalışmalar!', '✏️ Bol şans!', '🎯 Odaklan, başarırsın!'],
+        gec:        ['⏰ Uyandın mı?', '😴 Kalk, seni bekliyoruz!', '🌅 Günaydın, geç kalma!'],
+        inan:       ['🌟 Sana inanıyorum!', '💙 Yapabilirsin!', '🤝 Yanındayım!'],
+        guzel:      ['✨ Harikasın!', '🌈 En iyisin!', '💫 Mükemmelsin!'],
+        komik:      ['😂 Bugün de komiksin!', '🤣 Gülüyorum sana!', '😆 Hep böyle kal!'],
       };
       const liste = mesajlar[urun.deger] || ['💌 Seni düşünüyorum!'];
       bildirimMetni = liste[Math.floor(Math.random() * liste.length)] + ' — ' + gonderen;
-    } else if (urun.tip === 'hediye_ozel') {
-      bildirimMetni = '😄 ' + gonderen + ' sana özel emoji seti hediye etti!';
+    } else if (urun.tip === 'hediye_boost') {
+      bildirimMetni = (urun.ikon||'⚡') + ' ' + gonderen + ' sana ' + urun.ad + ' hediye etti!';
     }
 
     if (Object.keys(hedefGuncelleme).length) {
