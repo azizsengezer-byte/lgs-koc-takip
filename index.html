@@ -156,7 +156,11 @@
       </div>
       <div id="vpBadgeCount" style="text-align:center;font-size:0.75rem;color:var(--text2);margin-bottom:8px"></div>
     </div>
-    <button class="btn btn-outline" style="width:100%;margin-top:4px" onclick="closeModal('viewProfileModal')">Kapat</button>
+    <div id="vpActionBtns" style="display:none;display:flex;gap:8px;margin-top:8px">
+      <button id="vpMesajBtn" class="btn btn-primary" style="flex:1" onclick="vpMesajAt()">💬 Mesaj</button>
+      <button id="vpHediyeBtn" class="btn btn-outline" style="flex:1" onclick="vpHediyeGonder()">🎁 Hediye</button>
+    </div>
+    <button class="btn btn-outline" style="width:100%;margin-top:8px" onclick="closeModal('viewProfileModal')">Kapat</button>
   </div>
 </div>
 
@@ -277,6 +281,9 @@
           </button>
           <button class="profile-menu-item" id="badgeMenuBtn" onclick="closeProfileMenu();showBadgesPage()" style="display:none">
             <span class="menu-icon">🏆</span> Rozetlerim
+          </button>
+          <button class="profile-menu-item" id="okulArkadasBtn" onclick="closeProfileMenu();showPage('profile');setTimeout(()=>document.getElementById('okul-arkadaslar-kart')?.scrollIntoView({behavior:'smooth'}),300)" style="display:none">
+            <span class="menu-icon">🏫</span> Okul Arkadaşlarım
           </button>
           <div class="profile-menu-divider"></div>
           <button class="profile-menu-item danger" onclick="closeProfileMenu();doLogout()">
