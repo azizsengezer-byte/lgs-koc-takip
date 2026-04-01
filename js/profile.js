@@ -47,7 +47,7 @@ async function okulArkadaslariniYukle() {
               style="background:var(--accent)15;color:var(--accent);border:1px solid var(--accent)44;border-radius:8px;padding:5px 10px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
               💬
             </button>
-            <button onclick="arkadasProfil('${a.uid}','${isim}','${renk}','${a.photo||''}')"
+            <button onclick="arkadasProfilGoster('${a.uid}','${isim}','${renk}','${a.photo||''}')"
               style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
               👤
             </button>
