@@ -279,94 +279,95 @@ function _mArkaplanUygula(tip) {
 
   const arkaplanlar = {
     volkan: `
-      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#1a0500 0%,#3d0f00 40%,#8b1a00 70%,#cc3300 100%)"></div>
-      <svg style="position:absolute;bottom:0;width:100%;height:100%" viewBox="0 0 300 240" preserveAspectRatio="xMidYMax slice">
-        <path d="M0 240 L60 120 L90 160 L120 80 L150 180 L180 60 L210 140 L240 100 L270 160 L300 240Z" fill="#4a0f00"/>
-        <path d="M90 160 Q105 140 120 160 Q130 150 140 160 L150 180Z" fill="#cc3300" opacity="0.8"/>
-        <path d="M60 180 Q75 160 90 180 L100 200 L50 200Z" fill="#ff4400" opacity="0.7"/>
-        <ellipse cx="120" cy="80" rx="8" ry="6" fill="#ff6600"/>
-        <ellipse cx="120" cy="80" rx="5" ry="4" fill="#ffaa00"/>
-        <path d="M115 80 Q120 50 125 80" stroke="#ff4400" stroke-width="3" fill="none" opacity="0.8"/>
-        <path d="M118 80 Q120 55 122 80" stroke="#ffcc00" stroke-width="2" fill="none"/>
-        <circle cx="80" cy="50" r="3" fill="#ff6600" opacity="0.6"><animate attributeName="cy" values="50;30;50" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.6;0;0.6" dur="2s" repeatCount="indefinite"/></circle>
-        <circle cx="150" cy="40" r="2" fill="#ff4400" opacity="0.5"><animate attributeName="cy" values="40;20;40" dur="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.5;0;0.5" dur="1.5s" repeatCount="indefinite"/></circle>
-        <path d="M0 200 Q150 180 300 200 L300 240 L0 240Z" fill="#cc3300" opacity="0.5"/>
-        <path d="M0 215 Q150 200 300 215 L300 240 L0 240Z" fill="#ff4400" opacity="0.4"/>
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#1a0800,#3d0f00,#8b1a00,#cc3300)"></div>
+      <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 300 240" preserveAspectRatio="xMidYMid slice">
+        <polygon points="0,240 50,40 80,80 110,35 160,240" fill="#2a0f00"/>
+        <polygon points="160,240 180,60 210,140 240,100 270,160 300,240" fill="#2a0f00"/>
+        <ellipse cx="110" cy="35" rx="8" ry="5" fill="#ff6600"/>
+        <ellipse cx="110" cy="35" rx="5" ry="3" fill="#ffaa00"/>
+        <path d="M105 35 Q110 10 115 35" stroke="#ff4400" stroke-width="3" fill="none"/>
+        <circle cx="90" cy="20" r="3" fill="#ff6600"><animate attributeName="cy" values="20;0;20" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0;0.8" dur="2s" repeatCount="indefinite"/></circle>
+        <circle cx="125" cy="15" r="2" fill="#ffaa00"><animate attributeName="cy" values="15;0;15" dur="1.5s" repeatCount="indefinite" begin="0.5s"/><animate attributeName="opacity" values="0.6;0;0.6" dur="1.5s" repeatCount="indefinite" begin="0.5s"/></circle>
+        <path d="M0 200 Q150 185 300 200 L300 240 L0 240Z" fill="#cc2200" opacity="0.8"/>
+        <path d="M0 215 Q150 205 300 215 L300 240 L0 240Z" fill="#ff4400" opacity="0.5">
+          <animate attributeName="d" values="M0 215 Q150 205 300 215 L300 240 L0 240Z;M0 218 Q150 208 300 218 L300 240 L0 240Z;M0 215 Q150 205 300 215 L300 240 L0 240Z" dur="3s" repeatCount="indefinite"/>
+        </path>
+        <circle cx="70" cy="60" r="2" fill="#ff8800"><animate attributeName="cy" values="60;30;60" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0;1" dur="1.8s" repeatCount="indefinite"/></circle>
+        <circle cx="150" cy="50" r="1.5" fill="#ffcc00"><animate attributeName="cy" values="50;20;50" dur="2.2s" repeatCount="indefinite" begin="0.8s"/><animate attributeName="opacity" values="1;0;1" dur="2.2s" repeatCount="indefinite" begin="0.8s"/></circle>
       </svg>`,
 
     buz: `
-      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#001830 0%,#002a4a 40%,#003d6e 70%,#004080 100%)"></div>
-      <svg style="position:absolute;bottom:0;width:100%;height:100%" viewBox="0 0 300 240" preserveAspectRatio="xMidYMax slice">
-        <path d="M0 240 L40 160 L70 200 L100 120 L130 180 L160 100 L190 170 L220 130 L260 180 L300 140 L300 240Z" fill="#002040" opacity="0.9"/>
-        <path d="M100 120 L90 140 L110 140Z" fill="#80d4ff" opacity="0.6"/>
-        <path d="M160 100 L148 128 L172 128Z" fill="#aae8ff" opacity="0.7"/>
-        <path d="M100 120 L100 80 M95 95 L105 95 M92 108 L108 108" stroke="#80d4ff" stroke-width="1.5" opacity="0.5"/>
-        <path d="M160 100 L160 60 M155 75 L165 75 M152 88 L168 88" stroke="#aae8ff" stroke-width="1.5" opacity="0.5"/>
-        <circle cx="50" cy="30" r="2" fill="white" opacity="0.8"><animate attributeName="cy" values="30;240;30" dur="4s" repeatCount="indefinite"/></circle>
-        <circle cx="120" cy="10" r="1.5" fill="white" opacity="0.7"><animate attributeName="cy" values="10;240;10" dur="5s" repeatCount="indefinite" begin="1s"/></circle>
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#001830,#002a4a,#003d6e,#004080)"></div>
+      <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 300 240" preserveAspectRatio="xMidYMid slice">
+        <polygon points="0,240 30,100 60,160 100,60 130,140 160,80 190,150 220,90 260,160 300,100 300,240" fill="#002040" opacity="0.9"/>
+        <polygon points="100,60 88,88 112,88" fill="#80d4ff" opacity="0.7"/>
+        <polygon points="160,80 148,108 172,108" fill="#aae8ff" opacity="0.6"/>
+        <line x1="100" y1="60" x2="100" y2="30" stroke="#80d4ff" stroke-width="1.5" opacity="0.5"/>
+        <line x1="95" y1="42" x2="105" y2="42" stroke="#80d4ff" stroke-width="1" opacity="0.4"/>
+        <circle cx="50" cy="10" r="2" fill="white" opacity="0.8"><animate attributeName="cy" values="10;240;10" dur="4s" repeatCount="indefinite"/></circle>
+        <circle cx="120" cy="0" r="1.5" fill="white" opacity="0.7"><animate attributeName="cy" values="0;240;0" dur="5s" repeatCount="indefinite" begin="1s"/></circle>
         <circle cx="200" cy="20" r="2" fill="#80d4ff" opacity="0.6"><animate attributeName="cy" values="20;240;20" dur="3.5s" repeatCount="indefinite" begin="2s"/></circle>
-        <circle cx="250" cy="5" r="1.5" fill="white" opacity="0.5"><animate attributeName="cy" values="5;240;5" dur="4.5s" repeatCount="indefinite" begin="0.5s"/></circle>
-        <path d="M0 220 Q150 200 300 220 L300 240 L0 240Z" fill="#80d4ff" opacity="0.2"/>
+        <circle cx="270" cy="5" r="1.5" fill="white"><animate attributeName="cy" values="5;240;5" dur="4.5s" repeatCount="indefinite" begin="0.5s"/></circle>
+        <path d="M0 180 Q75,165 150,175 Q225,185 300,175" stroke="#4488cc" stroke-width="1.5" fill="none" opacity="0.4"><animate attributeName="d" values="M0 180 Q75,165 150,175 Q225,185 300,175;M0 183 Q75,170 150,178 Q225,188 300,178;M0 180 Q75,165 150,175 Q225,185 300,175" dur="4s" repeatCount="indefinite"/></path>
       </svg>`,
 
     orman: `
-      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#001a0a 0%,#002d10 40%,#003d18 70%,#004020 100%)"></div>
-      <svg style="position:absolute;bottom:0;width:100%;height:100%" viewBox="0 0 300 240" preserveAspectRatio="xMidYMax slice">
-        <path d="M20 240 L35 180 L50 200 L65 160 L80 240Z" fill="#003315"/>
-        <path d="M60 240 L80 170 L100 200 L120 150 L140 240Z" fill="#004020"/>
-        <path d="M130 240 L150 160 L170 190 L190 140 L210 240Z" fill="#003315"/>
-        <path d="M200 240 L220 175 L240 200 L260 165 L280 240Z" fill="#004020"/>
-        <path d="M35 180 L20 165 L35 170 L25 145 L40 155 L35 130 L50 145 L45 125 L55 140 L50 160 L65 150 L50 165Z" fill="#005c22"/>
-        <path d="M80 170 L65 155 L80 162 L68 135 L85 148 L80 122 L95 138 L90 118 L100 132 L95 155 L112 145 L95 162Z" fill="#006b28"/>
-        <path d="M150 160 L135 145 L150 152 L138 125 L155 138 L150 112 L165 128 L160 108 L170 122 L165 145 L182 135 L165 152Z" fill="#005c22"/>
-        <circle cx="40" cy="80" r="2" fill="#aaffaa" opacity="0.5"/>
-        <circle cx="150" cy="60" r="1.5" fill="#88ff88" opacity="0.4"/>
-        <circle cx="250" cy="90" r="2" fill="#aaffaa" opacity="0.3"/>
-        <ellipse cx="90" cy="195" rx="4" ry="2" fill="#88ffaa" opacity="0.4"/>
-        <ellipse cx="200" cy="185" rx="3" ry="1.5" fill="#88ffaa" opacity="0.3"/>
-        <path d="M0 225 Q150 210 300 225 L300 240 L0 240Z" fill="#004020" opacity="0.6"/>
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#001a08,#002d10,#004020)"></div>
+      <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 300 240" preserveAspectRatio="xMidYMid slice">
+        <circle cx="240" cy="30" r="18" fill="#fffde0" opacity="0.9"/>
+        <circle cx="248" cy="25" r="14" fill="#001a08"/>
+        <polygon points="20,240 32,160 44,240" fill="#003318"/>
+        <polygon points="70,240 90,140 110,240" fill="#004020"/>
+        <polygon points="140,240 165,120 190,240" fill="#003318"/>
+        <polygon points="220,240 242,145 264,240" fill="#004020"/>
+        <polygon points="270,240 282,170 294,240" fill="#003318"/>
+        <path d="M32,160 Q28,148 32,138 Q36,148 32,160" fill="#005c22"/>
+        <path d="M90,140 Q85,125 90,112 Q95,125 90,140" fill="#006b28"/>
+        <path d="M165,120 Q160,105 165,92 Q170,105 165,120" fill="#005c22"/>
+        <circle cx="55" cy="100" r="2" fill="#aaff44"><animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite"/></circle>
+        <circle cx="130" cy="80" r="1.5" fill="#88ff22"><animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0.7s"/></circle>
+        <circle cx="200" cy="110" r="2" fill="#ccff44"><animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite" begin="1.2s"/></circle>
+        <circle cx="250" cy="90" r="1.5" fill="#aaff66"><animate attributeName="opacity" values="0;1;0" dur="1.3s" repeatCount="indefinite" begin="0.3s"/></circle>
+        <path d="M0 230 Q150 220 300 230 L300 240 L0 240Z" fill="#003318"/>
       </svg>`,
 
     uzay: `
-      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#000010 0%,#050028 40%,#0a0040 70%,#0f0050 100%)"></div>
-      <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 300 240">
-        <circle cx="20" cy="15" r="1.5" fill="white" opacity="0.9"/>
-        <circle cx="55" cy="30" r="1" fill="white" opacity="0.7"/>
-        <circle cx="90" cy="10" r="1.5" fill="white" opacity="0.8"/>
-        <circle cx="130" cy="25" r="1" fill="white" opacity="0.6"/>
-        <circle cx="170" cy="8" r="1.5" fill="white" opacity="0.9"/>
-        <circle cx="210" cy="20" r="1" fill="white" opacity="0.7"/>
-        <circle cx="250" cy="12" r="1.5" fill="white" opacity="0.8"/>
-        <circle cx="280" cy="35" r="1" fill="white" opacity="0.6"/>
-        <circle cx="40" cy="55" r="1" fill="white" opacity="0.5"/>
-        <circle cx="110" cy="45" r="1.5" fill="#aaaaff" opacity="0.7"/>
-        <circle cx="190" cy="50" r="1" fill="white" opacity="0.6"/>
-        <circle cx="260" cy="60" r="1.5" fill="#ffaaaa" opacity="0.6"/>
-        <ellipse cx="80" cy="80" rx="25" ry="15" fill="none" stroke="#4466ff" stroke-width="1.5" opacity="0.5" transform="rotate(-20 80 80)"/>
-        <ellipse cx="80" cy="80" rx="15" ry="10" fill="#334" opacity="0.8"/>
-        <ellipse cx="220" cy="60" rx="18" ry="11" fill="#553322" opacity="0.7"/>
-        <ellipse cx="220" cy="60" rx="11" ry="7" fill="#442211" opacity="0.9"/>
-        <path d="M0 240 Q150 200 300 240" fill="#0a0040" opacity="0.8"/>
-        <circle cx="150" cy="30" r="3" fill="#ffffff" opacity="0.6"><animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite"/></circle>
-        <circle cx="60" cy="20" r="2" fill="#aaaaff" opacity="0.5"><animate attributeName="opacity" values="0.5;0.9;0.5" dur="3s" repeatCount="indefinite"/></circle>
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#000008,#050028,#0a0040)"></div>
+      <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 300 240" preserveAspectRatio="xMidYMid slice">
+        <circle cx="20" cy="15" r="1.5" fill="white"><animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/></circle>
+        <circle cx="55" cy="8" r="1" fill="white"><animate attributeName="opacity" values="0.5;1;0.5" dur="3s" repeatCount="indefinite" begin="0.5s"/></circle>
+        <circle cx="90" cy="20" r="1.5" fill="#aaaaff"><animate attributeName="opacity" values="0.4;1;0.4" dur="2.5s" repeatCount="indefinite" begin="1s"/></circle>
+        <circle cx="150" cy="10" r="1" fill="white"><animate attributeName="opacity" values="0.3;0.9;0.3" dur="1.8s" repeatCount="indefinite"/></circle>
+        <circle cx="200" cy="25" r="1.5" fill="#ffaaaa"><animate attributeName="opacity" values="0.4;1;0.4" dur="2.2s" repeatCount="indefinite" begin="0.8s"/></circle>
+        <circle cx="260" cy="15" r="1" fill="white"><animate attributeName="opacity" values="0.3;0.8;0.3" dur="3.5s" repeatCount="indefinite" begin="1.5s"/></circle>
+        <circle cx="280" cy="40" r="1.5" fill="#aaffaa"><animate attributeName="opacity" values="0.4;1;0.4" dur="2.8s" repeatCount="indefinite" begin="2s"/></circle>
+        <circle cx="45" cy="60" r="22" fill="#7733aa"/>
+        <ellipse cx="45" cy="60" rx="34" ry="9" fill="none" stroke="#cc88ff" stroke-width="3" opacity="0.7"/>
+        <ellipse cx="45" cy="56" rx="14" ry="9" fill="#aa66cc" opacity="0.4"/>
+        <circle cx="220" cy="50" r="14" fill="#223366"/>
+        <circle cx="216" cy="46" r="4" fill="#334477" opacity="0.7"/>
+        <path d="M0,50 Q75,35 150,45 Q225,55 300,40" stroke="#00ff88" stroke-width="2" fill="none"><animate attributeName="opacity" values="0.1;0.35;0.1" dur="3s" repeatCount="indefinite"/></path>
+        <line x1="250" y1="5" x2="270" y2="25" stroke="white" stroke-width="1.5"><animate attributeName="opacity" values="0;0.8;0" dur="4s" repeatCount="indefinite" begin="2s"/></line>
       </svg>`,
 
     deniz: `
-      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#000820 0%,#001840 40%,#002860 70%,#003070 100%)"></div>
-      <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 300 240">
-        <ellipse cx="60" cy="60" rx="30" ry="20" fill="#004488" opacity="0.4"/>
-        <ellipse cx="200" cy="40" rx="25" ry="16" fill="#0055aa" opacity="0.3"/>
-        <ellipse cx="150" cy="100" rx="40" ry="25" fill="#003366" opacity="0.5"/>
-        <path d="M30 180 Q60 160 90 180 Q120 200 150 180 Q180 160 210 180 Q240 200 270 180 L300 180 L300 240 L0 240Z" fill="#002244" opacity="0.8"/>
-        <path d="M0 200 Q50 185 100 200 Q150 215 200 200 Q250 185 300 200 L300 240 L0 240Z" fill="#001a33" opacity="0.9"/>
-        <circle cx="80" cy="120" r="3" fill="#00aaff" opacity="0.4"><animate attributeName="r" values="3;6;3" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.4;0.1;0.4" dur="3s" repeatCount="indefinite"/></circle>
-        <circle cx="180" cy="90" r="2" fill="#00ccff" opacity="0.3"><animate attributeName="r" values="2;5;2" dur="2.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.3;0.1;0.3" dur="2.5s" repeatCount="indefinite"/></circle>
-        <circle cx="240" cy="140" r="4" fill="#0088cc" opacity="0.35"><animate attributeName="r" values="4;7;4" dur="3.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.35;0.1;0.35" dur="3.5s" repeatCount="indefinite"/></circle>
-        <path d="M20 100 Q40 90 60 100 Q40 110 20 100Z" fill="#00aaff" opacity="0.2"/>
-        <path d="M200 130 Q225 118 250 130 Q225 142 200 130Z" fill="#0088ff" opacity="0.2"/>
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,#000c20,#001840,#002860)"></div>
+      <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 300 240" preserveAspectRatio="xMidYMid slice">
+        <circle cx="150" cy="30" r="18" fill="#fffde0" opacity="0.85"/>
+        <ellipse cx="150" cy="115" rx="15" ry="4" fill="#fffde0" opacity="0.2"><animate attributeName="opacity" values="0.1;0.3;0.1" dur="2s" repeatCount="indefinite"/></ellipse>
+        <path d="M0,110 Q37,95 75,110 Q112,125 150,110 Q187,95 225,110 Q262,125 300,110 L300,240 L0,240Z" fill="#001840"/>
+        <path d="M0,115 Q37,100 75,115 Q112,130 150,115 Q187,100 225,115 Q262,130 300,115" fill="none" stroke="#0044aa" stroke-width="2" opacity="0.5">
+          <animate attributeName="d" values="M0,115 Q37,100 75,115 Q112,130 150,115 Q187,100 225,115 Q262,130 300,115;M0,118 Q37,103 75,118 Q112,133 150,118 Q187,103 225,118 Q262,133 300,118;M0,115 Q37,100 75,115 Q112,130 150,115 Q187,100 225,115 Q262,130 300,115" dur="3s" repeatCount="indefinite"/>
+        </path>
+        <path d="M30,240 Q28,200 30,185 Q32,200 30,240" stroke="#ff4488" stroke-width="3" fill="none"/>
+        <path d="M30,185 Q26,175 24,165" stroke="#ff4488" stroke-width="2" fill="none"/>
+        <path d="M30,185 Q34,175 36,165" stroke="#ff4488" stroke-width="2" fill="none"/>
+        <path d="M260,240 Q258,205 260,190 Q262,205 260,240" stroke="#ff6600" stroke-width="3" fill="none"/>
+        <circle cx="100" cy="160" r="4" fill="none" stroke="#4488ff" stroke-width="1.5"><animate attributeName="cy" values="160;110;160" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0;0.7" dur="3s" repeatCount="indefinite"/></circle>
+        <circle cx="180" cy="170" r="3" fill="none" stroke="#44aaff" stroke-width="1"><animate attributeName="cy" values="170;120;170" dur="2.5s" repeatCount="indefinite" begin="0.8s"/><animate attributeName="opacity" values="0.6;0;0.6" dur="2.5s" repeatCount="indefinite" begin="0.8s"/></circle>
+        <circle cx="240" cy="155" r="4" fill="none" stroke="#4488ff" stroke-width="1.5"><animate attributeName="cy" values="155;105;155" dur="3.5s" repeatCount="indefinite" begin="1.5s"/><animate attributeName="opacity" values="0.5;0;0.5" dur="3.5s" repeatCount="indefinite" begin="1.5s"/></circle>
       </svg>`,
   };
-
   bg.innerHTML = arkaplanlar[tip] || '';
   scene.insertBefore(bg, scene.firstChild);
 }
