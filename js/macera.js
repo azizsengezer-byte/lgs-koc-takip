@@ -235,7 +235,7 @@ function maceraEjderha() {
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div>
-          <div class="card-title" style="margin:0">🐉 Soru Ejderhası</div>
+          <div class="card-title" style="margin:0">🐉 ${window.currentUserData?.ejderhaIsim || 'Soru Ejderhası'}</div>
           <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">${s.lbl}</div>
         </div>
         <div style="text-align:right">

@@ -459,9 +459,17 @@ async function _mIsimKaydet(urunId) {
     });
     _mBildirim('✏️ Ejderha adı: ' + isim, '#43e97b');
     document.getElementById('_mModal').style.display = 'none';
-    // Ejderha başlığını güncelle
-    const titleEl = document.querySelector('#ejderha-scene')?.closest('.card')?.querySelector('.card-title');
-    if (titleEl) titleEl.textContent = '🐉 ' + isim;
+    // Tüm ejderha başlıklarını güncelle
+    document.querySelectorAll('.card-title').forEach(el => {
+      if (el.textContent.includes('Soru Ejderhası') || el.textContent.includes('🐉')) {
+        el.textContent = '🐉 ' + isim;
+      }
+    });
+    // Macera sayfası açıksa yenile
+    if (typeof maceraPage === 'function' && document.getElementById('ejderha-scene')) {
+      const cont = document.getElementById('mainContent');
+      if (cont) { cont.innerHTML = maceraPage(); setTimeout(_marketUygulaEfektler, 150); }
+    }
   } catch(e) { _mBildirim('Hata', '#ff6b6b'); }
 }
 
