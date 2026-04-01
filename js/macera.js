@@ -21,50 +21,9 @@ function maceraPage() {
 
     ${maceraYakitTanki()}
 
-    <!-- Yakında gelecekler -->
-    <div class="card" style="margin-bottom:14px;opacity:0.6">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="font-size:2rem">🐉</div>
-        <div>
-          <div style="font-weight:700;font-size:0.95rem">Soru Ejderhası</div>
-          <div style="font-size:0.78rem;color:var(--text2)">Yakında — her doğru soruyla ejderhan büyüyor</div>
-        </div>
-        <div style="margin-left:auto;background:var(--surface2);color:var(--text2);font-size:0.7rem;font-weight:700;padding:4px 10px;border-radius:99px">Yakında</div>
-      </div>
-    </div>
 
-    <div class="card" style="margin-bottom:14px;opacity:0.6">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="font-size:2rem">✉️</div>
-        <div>
-          <div style="font-weight:700;font-size:0.95rem">Gelecekteki Sen'den Mektuplar</div>
-          <div style="font-size:0.78rem;color:var(--text2)">Yakında — kilometre taşlarında sana mektup geliyor</div>
-        </div>
-        <div style="margin-left:auto;background:var(--surface2);color:var(--text2);font-size:0.7rem;font-weight:700;padding:4px 10px;border-radius:99px">Yakında</div>
-      </div>
-    </div>
 
-    <div class="card" style="margin-bottom:14px;opacity:0.6">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="font-size:2rem">🌫️</div>
-        <div>
-          <div style="font-weight:700;font-size:0.95rem">Yolculuk Haritası</div>
-          <div style="font-size:0.78rem;color:var(--text2)">Yakında — konuları çözdükçe haritadaki sis dağılıyor</div>
-        </div>
-        <div style="margin-left:auto;background:var(--surface2);color:var(--text2);font-size:0.7rem;font-weight:700;padding:4px 10px;border-radius:99px">Yakında</div>
-      </div>
-    </div>
 
-    <div class="card" style="margin-bottom:14px;opacity:0.6">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="font-size:2rem">👥</div>
-        <div>
-          <div style="font-weight:700;font-size:0.95rem">Birlikte Çalışma Odaları</div>
-          <div style="font-size:0.78rem;color:var(--text2)">Yakında — arkadaşlarınla sanal odada çalış</div>
-        </div>
-        <div style="margin-left:auto;background:var(--surface2);color:var(--text2);font-size:0.7rem;font-weight:700;padding:4px 10px;border-radius:99px">Yakında</div>
-      </div>
-    </div>
   `;
 }
 
