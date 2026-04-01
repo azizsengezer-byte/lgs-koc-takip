@@ -306,9 +306,12 @@ function maceraEjderha() {
           <circle id="fire-s3" cx="127" cy="93" r="1.5" fill="#ff8800"/>
           <circle id="fire-s4" cx="119" cy="95" r="1"   fill="#ffee00"/>
         </g>
+        <!-- AKSESUARLAR — head grubu İÇİNDE, animasyonla birlikte hareket eder -->
+        <g id="ej-ak-bas"></g>
+        <g id="ej-ak-yuz"></g>
+        <g id="ej-ak-kolye"></g>
+        <g id="ej-ak-fiyonk"></g>
       </g>
-      <!-- Aksesuar — head ile aynı animasyon, kafayla birlikte hareket eder -->
-      <g id="ej-aksesuar" style="animation:ejIdle 3s ease-in-out infinite"></g>
       <ellipse cx="58" cy="170" rx="14" ry="9" fill="#5a4fcf" transform="rotate(-20 58 170)"/>
       <ellipse cx="102" cy="170" rx="14" ry="9" fill="#5a4fcf" transform="rotate(20 102 170)"/>
       <ellipse cx="54" cy="175" rx="7" ry="5" fill="#4a40c8"/>

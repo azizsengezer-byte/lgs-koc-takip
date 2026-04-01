@@ -164,10 +164,21 @@ async function marketAktifEt(urunId) {
     return;
   }
 
-  // Aynı tipteki eskiyi kaldır
+  // Aynı tipteki eskiyi kaldır — aksesuar için alt tip kontrolü
   Object.keys(aktif).forEach(k => {
     const u = MARKET_URUNLER[k];
-    if (u && u.tip === urun.tip) delete aktif[k];
+    if (!u || u.tip !== urun.tip) return;
+    // Aksesuar: sadece aynı pozisyondaki eskiyi kaldır
+    if (urun.tip === 'aksesuar') {
+      const basGrubu = ['sapka','tac','yildiz'];
+      const yuzGrubu = ['gozluk'];
+      const boynGrubu = ['kolye'];
+      const fiyonkGrubu = ['fiyonk'];
+      const hangiGrup = (d) => basGrubu.includes(d) ? 'bas' : yuzGrubu.includes(d) ? 'yuz' : boynGrubu.includes(d) ? 'boyn' : fiyonkGrubu.includes(d) ? 'fiyonk' : 'diger';
+      if (hangiGrup(u.deger) === hangiGrup(urun.deger)) delete aktif[k];
+    } else {
+      delete aktif[k];
+    }
   });
 
   // Boost — bitiş tarihi kaydet
@@ -212,9 +223,7 @@ function _marketUygulaEfektler() {
     if (u.tip === 'ates') {
       document.querySelectorAll('#fire-group').forEach(el => { el.style.filter = u.css; });
     }
-    if (u.tip === 'aksesuar') {
-      _mAksesuarUygula(u.deger);
-    }
+    if (u.tip === 'aksesuar') { _mAksesuarUygula(u.deger); }
     if (u.tip === 'arkaplan') {
       _mArkaplanUygula(u.deger);
     }
@@ -227,38 +236,36 @@ function _marketUygulaEfektler() {
 function _mSifirlaEfekt(urun) {
   if (urun.tip === 'renk') document.querySelectorAll('#dragon-svg').forEach(el => { el.style.filter = ''; });
   if (urun.tip === 'ates') document.querySelectorAll('#fire-group').forEach(el => { el.style.filter = ''; });
-  if (urun.tip === 'aksesuar') { const el = document.getElementById('ej-aksesuar'); if (el) el.innerHTML = ''; }
+  if (urun.tip === 'aksesuar') { _mAksesuarSifirla(urun.deger); }
   if (urun.tip === 'arkaplan') _mArkaplanSifirla();
   if (urun.tip === 'etiket') _mEtiketSifirla();
 }
 
 // ── Aksesuar ──────────────────────────────────────────────
+// Aksesuar SVG içerikleri
+const _AKSESUAR_SVG = {
+  sapka:  '<ellipse cx="80" cy="54" rx="34" ry="7" fill="#1a1030"/><path d="M56 54 Q58 20 80 14 Q102 20 104 54 Z" fill="#1a1030"/><ellipse cx="80" cy="54" rx="34" ry="5" fill="none" stroke="#f9ca24" stroke-width="2.5"/><ellipse cx="80" cy="17" rx="6" ry="4" fill="#f9ca24"/>',
+  tac:    '<rect x="54" y="50" width="52" height="10" rx="2" fill="#f9ca24"/><polygon points="54,50 60,34 66,50" fill="#f9ca24"/><polygon points="67,50 74,30 81,50" fill="#f9ca24"/><polygon points="80,50 87,30 94,50" fill="#f9ca24"/><polygon points="94,50 100,34 106,50" fill="#f9ca24"/><circle cx="63" cy="34" r="3" fill="#ff4444"/><circle cx="77" cy="30" r="3.5" fill="#4444ff"/><circle cx="91" cy="30" r="3.5" fill="#44cc44"/><circle cx="103" cy="34" r="3" fill="#ff4444"/>',
+  gozluk: '<rect x="46" y="67" width="24" height="17" rx="8" fill="#111" opacity="0.85"/><rect x="90" y="67" width="24" height="17" rx="8" fill="#111" opacity="0.85"/><ellipse cx="54" cy="71" rx="4" ry="2.5" fill="white" opacity="0.25"/><ellipse cx="98" cy="71" rx="4" ry="2.5" fill="white" opacity="0.25"/><path d="M70 74 Q80 70 90 74" stroke="#333" stroke-width="2.5" fill="none"/><path d="M46 74 Q38 78 36 80" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M114 74 Q122 78 124 80" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>',
+  fiyonk: '<path d="M80,46 Q68,38 62,44 Q66,50 80,48 Z" fill="#ff6b9d"/><path d="M80,46 Q92,38 98,44 Q94,50 80,48 Z" fill="#ff6b9d"/><circle cx="80" cy="47" r="4" fill="#ff4488"/><path d="M76,47 Q72,52 70,56" stroke="#ff6b9d" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M84,47 Q88,52 90,56" stroke="#ff6b9d" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+  kolye:  '<path d="M60 110 Q70 118 80 116 Q90 118 100 110" fill="none" stroke="#f9ca24" stroke-width="1.5"/><polygon points="80,116 74,122 80,132 86,122" fill="#7dd3fc"/><polygon points="80,116 74,122 80,124" fill="white" opacity="0.5"/><polygon points="80,132 74,122 80,124" fill="#38bdf8" opacity="0.7"/><polygon points="80,132 86,122 80,124" fill="#0ea5e9" opacity="0.7"/><circle cx="78" cy="120" r="1.5" fill="white" opacity="0.8"/>',
+  yildiz: '<path d="M52 56 Q80 50 108 56 Q108 62 80 62 Q52 62 52 56 Z" fill="#5a4fcf"/><polygon points="80,36 83,46 94,46 85,53 88,63 80,56 72,63 75,53 66,46 77,46" fill="#f9ca24"/><polygon points="60,44 62,50 68,50 63,54 65,60 60,56 55,60 57,54 52,50 58,50" fill="#f9ca24" opacity="0.85"/><polygon points="100,44 102,50 108,50 103,54 105,60 100,56 95,60 97,54 92,50 98,50" fill="#f9ca24" opacity="0.85"/>',
+};
+const _AKSESUAR_SLOT = {
+  sapka:'ej-ak-bas', tac:'ej-ak-bas', yildiz:'ej-ak-bas',
+  gozluk:'ej-ak-yuz', kolye:'ej-ak-kolye', fiyonk:'ej-ak-fiyonk',
+};
 function _mAksesuarUygula(tip) {
-  let el = document.getElementById('ej-aksesuar');
-  if (el) el.remove();
-  const wrap = document.getElementById('ej-wrap');
-  if (!wrap) return;
-  el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-  el.id = 'ej-aksesuar';
-  const aksesuarSVG = {
-    sapka: '<ellipse cx="80" cy="54" rx="34" ry="7" fill="#1a1030"/><path d="M56 54 Q58 20 80 14 Q102 20 104 54 Z" fill="#1a1030"/><ellipse cx="80" cy="54" rx="34" ry="5" fill="none" stroke="#f9ca24" stroke-width="2.5"/><ellipse cx="80" cy="17" rx="6" ry="4" fill="#f9ca24"/>',
-    tac: '<rect x="54" y="50" width="52" height="10" rx="2" fill="#f9ca24"/><polygon points="54,50 60,34 66,50" fill="#f9ca24"/><polygon points="67,50 74,30 81,50" fill="#f9ca24"/><polygon points="80,50 87,30 94,50" fill="#f9ca24"/><polygon points="94,50 100,34 106,50" fill="#f9ca24"/><circle cx="63" cy="34" r="3" fill="#ff4444"/><circle cx="77" cy="30" r="3.5" fill="#4444ff"/><circle cx="91" cy="30" r="3.5" fill="#44cc44"/><circle cx="103" cy="34" r="3" fill="#ff4444"/>',
-    gozluk: '<rect x="46" y="67" width="24" height="17" rx="8" fill="#111" opacity="0.85"/><rect x="90" y="67" width="24" height="17" rx="8" fill="#111" opacity="0.85"/><ellipse cx="54" cy="71" rx="4" ry="2.5" fill="white" opacity="0.25"/><ellipse cx="98" cy="71" rx="4" ry="2.5" fill="white" opacity="0.25"/><path d="M70 74 Q80 70 90 74" stroke="#333" stroke-width="2.5" fill="none"/><path d="M46 74 Q38 78 36 80" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M114 74 Q122 78 124 80" stroke="#333" stroke-width="2.5" fill="none" stroke-linecap="round"/>',
-    fiyonk: '<path d="M80,46 Q68,38 62,44 Q66,50 80,48 Z" fill="#ff6b9d"/><path d="M80,46 Q92,38 98,44 Q94,50 80,48 Z" fill="#ff6b9d"/><path d="M80,46 Q68,38 62,44 Q66,50 80,48 Z" fill="#ff9dc0" opacity="0.5"/><circle cx="80" cy="47" r="4" fill="#ff4488"/><path d="M76,47 Q72,52 70,56" stroke="#ff6b9d" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M84,47 Q88,52 90,56" stroke="#ff6b9d" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
-    kolye: '<path d="M60 110 Q70 118 80 116 Q90 118 100 110" fill="none" stroke="#f9ca24" stroke-width="1.5"/><polygon points="80,116 74,122 80,132 86,122" fill="#7dd3fc"/><polygon points="80,116 74,122 80,124" fill="white" opacity="0.5"/><polygon points="80,132 74,122 80,124" fill="#38bdf8" opacity="0.7"/><polygon points="80,132 86,122 80,124" fill="#0ea5e9" opacity="0.7"/><circle cx="78" cy="120" r="1.5" fill="white" opacity="0.8"/>',
-    yildiz: '<path d="M52 56 Q80 50 108 56 Q108 62 80 62 Q52 62 52 56 Z" fill="#5a4fcf"/><polygon points="80,36 83,46 94,46 85,53 88,63 80,56 72,63 75,53 66,46 77,46" fill="#f9ca24"/><polygon points="60,44 62,50 68,50 63,54 65,60 60,56 55,60 57,54 52,50 58,50" fill="#f9ca24" opacity="0.85"/><polygon points="100,44 102,50 108,50 103,54 105,60 100,56 95,60 97,54 92,50 98,50" fill="#f9ca24" opacity="0.85"/>',
-  };
-  el.innerHTML = aksesuarSVG[tip] || '';
-  // Placeholder head grubunda — kafayla hareket eder
-  const placeholder = document.getElementById('ej-aksesuar');
-  if (placeholder) {
-    placeholder.innerHTML = aksesuarSVG[tip] || '';
-  } else {
-    // Fallback: svg'ye ekle
-    const svg = document.getElementById('dragon-svg');
-    if (svg) svg.appendChild(el);
-  }
+  const slot = _AKSESUAR_SLOT[tip] || 'ej-ak-bas';
+  const el = document.getElementById(slot);
+  if (el) el.innerHTML = _AKSESUAR_SVG[tip] || '';
 }
+function _mAksesuarSifirla(tip) {
+  const slot = _AKSESUAR_SLOT[tip] || 'ej-ak-bas';
+  const el = document.getElementById(slot);
+  if (el) el.innerHTML = '';
+}
+
 
 // ── Arka Plan ─────────────────────────────────────────────
 function _mArkaplanUygula(tip) {
