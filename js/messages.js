@@ -147,12 +147,12 @@ async function messagesPage(role) {
 
   // Okunmamış mesaj sayısı partner başına
   const unreadByPartner = {};
-  allNotifs.filter(n=>(n.type==='message'||n.type==='hediye')&&!n.read).forEach(n=>{
+  allNotifs.filter(n=>n.type==='message'&&!n.read).forEach(n=>{
     unreadByPartner[n.fromUid] = (unreadByPartner[n.fromUid]||0)+1;
   });
 
-  // Son mesaja göre sırala
-  partners.sort((a, b) => {
+  // Arkadaşları son mesaj tarihine göre sırala (koç ayrı, her zaman üstte)
+  partners.filter(p => p.isSchoolMate).sort((a, b) => {
     const cidA = convId(myUid, a.uid);
     const cidB = convId(myUid, b.uid);
     const msgsA = chatMessages[cidA] || [];
@@ -162,7 +162,13 @@ async function messagesPage(role) {
     return lastB - lastA;
   });
   const kocPartners = partners.filter(p => !p.isSchoolMate);
-  const arkadaşPartners = partners.filter(p => p.isSchoolMate);
+  // Okul arkadaşları: sadece daha önce mesajlaşılanlar görünsün
+  const arkadaşPartners = partners.filter(p => {
+    if (!p.isSchoolMate) return false;
+    const cid = convId(myUid, p.uid);
+    const msgs = chatMessages[cid] || [];
+    return msgs.length > 0;
+  });
 
   const partnerListHTML = (pList) => pList.map(p => {
     const cid = convId(myUid, p.uid);
@@ -289,7 +295,12 @@ async function switchChatTo(uid, role) {
     const snap = await db.collection('messages').doc(cId).collection('msgs')
       .orderBy('createdAt','asc').limit(100).get();
     chatMessages[cId] = [];
-    snap.forEach(d => chatMessages[cId].push(d.data()));
+    const _el2 = JSON.parse(localStorage.getItem('engelliList') || '[]');
+    snap.forEach(d => {
+      const m = d.data();
+      // Engellenmiş kişinin mesajlarını filtrele
+      if (!_el2.includes(m.senderUid)) chatMessages[cId].push(m);
+    });
   } catch(e) { chatMessages[cId] = chatMessages[cId] || []; }
 
   // Firestore'daki TÜM okunmamış mesaj bildirimlerini (bu kişiden) okundu yap
@@ -347,10 +358,60 @@ async function switchChatTo(uid, role) {
     });
 }
 
+
+// ── Engelleme ve Bildirme ──────────────────────────────────
+function _engelleKisi(uid, isim) {
+  const liste = JSON.parse(localStorage.getItem('engelliList') || '[]');
+  const idx = liste.indexOf(uid);
+  if (idx === -1) {
+    liste.push(uid);
+    localStorage.setItem('engelliList', JSON.stringify(liste));
+    showToast('🚫', isim + ' engellendi. Mesajları artık gelmeyecek.');
+  } else {
+    liste.splice(idx, 1);
+    localStorage.setItem('engelliList', JSON.stringify(liste));
+    showToast('✅', isim + ' engeli kaldırıldı.');
+  }
+  const m = document.getElementById('chatPartnerModal');
+  if (m) m.remove();
+}
+
+async function _kocaBildir(uid, isim) {
+  const myData = window.currentUserData || {};
+  const myUid = auth.currentUser?.uid;
+  const teacherId = myData.teacherId || '';
+  if (!myUid || !teacherId) { showToast('⚠️','Koç bilgisi bulunamadı'); return; }
+  
+  try {
+    await db.collection('notifications').add({
+      toUid: teacherId,
+      fromUid: myUid,
+      text: '⚠️ ' + (myData.name||'Bir öğrenci') + ', ' + isim + ' adlı öğrenciyi rahatsız edici mesaj nedeniyle bildirdi.',
+      type: 'sikayet',
+      read: false,
+      sikayet_uid: uid,
+      sikayet_isim: isim,
+      time: new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    showToast('✅', 'Koçuna bildirildi.');
+  } catch(e) {
+    showToast('⚠️', 'Gönderilemedi.');
+  }
+  const m = document.getElementById('chatPartnerModal');
+  if (m) m.remove();
+}
+
 async function sendMessage(role) {
   const input = document.getElementById('chatInput');
   const text = input?.value?.trim();
   if (!text || !activeChat) return;
+  // Engelli kontrolü — engellenmiş kişiye mesaj gönderme
+  const _engelliListesi = JSON.parse(localStorage.getItem('engelliList') || '[]');
+  if (_engelliListesi.includes(activeChat)) {
+    showToast('🚫', 'Bu kişiyi engelledin. Mesaj gönderemezsin.');
+    return;
+  }
   // Textarea'yı sıfırla
   if (input.tagName === 'TEXTAREA') { input.style.height = 'auto'; }
   const myData = window.currentUserData || {};
@@ -368,14 +429,11 @@ async function sendMessage(role) {
     const limitKey = `msgLimit_${myUid}_${activeChat}_${todayKey}`;
     const count = parseInt(localStorage.getItem(limitKey) || '0');
     if (count >= 25) {
-      showToast('⚠️', 'Bugünlük 25 mesaj limitine ulaştın! Yarın devam edebilirsin.');
+      showToast('⚠️', 'Bugünlük 25 mesaj limitine ulaştın!');
       return;
     }
+    if (count === 20) showToast('💬', 'Dikkat: Bugün sadece 5 mesaj hakkın kaldı!');
     localStorage.setItem(limitKey, count + 1);
-    // 5 mesaj kala uyarı
-    if (count === 20) {
-      showToast('💬', 'Dikkat: Bugün sadece 5 mesaj hakkın kaldı!');
-    }
   }
   const cId = convId(myUid, activeChat);
   const now = new Date();
@@ -391,6 +449,8 @@ async function sendMessage(role) {
   if (!chatMessages[cId]) chatMessages[cId] = [];
   chatMessages[cId].push({ ...msg, createdAt: { seconds: now.getTime()/1000 } });
   input.value = '';
+  // Klavyeyi koru — focus'u geri ver
+  setTimeout(() => { const inp = document.getElementById('chatInput'); if(inp) inp.focus(); }, 50);
 
   // DOM'a ekle
   const msgEl = document.getElementById('chatMessages');
