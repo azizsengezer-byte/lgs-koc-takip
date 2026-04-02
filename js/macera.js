@@ -333,9 +333,33 @@ function maceraEjderha() {
 (function(){
   let curState = 'happy', tapCount = 0, isAnimating = false;
   const msgs = {
-    happy: ['Soru çözmeye hazırım! 💪','Bugün harika hissediyorum!','Birlikte başarırız! ⭐','Daha fazla soru!'],
-    hungry: ['Açım... biraz soru çöz 🥺','2 gündür bekledim seni...','Lütfen beni besle 😢','Soru çözmek istiyorum...'],
-    fire: ['RAWR! 🔥 Tam güçteyim!','Bugün rekor kırıyoruz!','Ateşim sönmez! 💥','En iyi günüm bu! 👑']
+    happy: [
+      'Bugün ne kadar çalıştın?',
+      'Hazır olduğunda başlayalım.',
+      'Her soru seni bir adım öne taşır.',
+      'Odaklan, yapabilirsin.',
+      'Bugün hedefin ne?',
+      'Sessizlik çalışmaya davet ediyor.',
+      'Zamanını iyi kullan.',
+      'Küçük adımlar büyük fark yaratır.'
+    ],
+    hungry: [
+      'Bir süredir görünmüyorsun.',
+      'Bugün henüz başlamadın.',
+      'Nerede kaldın?',
+      'Zaman geçiyor.',
+      'Küçük bir başlangıç bile sayılır.'
+    ],
+    fire: [
+      'İyi iş.',
+      'Bir soru daha?',
+      'Konsantrasyonunu koru.',
+      'Her gün biraz daha ilerliyorsun.',
+      'Bu çalışma tempon iyi.',
+      'Çalışmak karakter inşa eder.',
+      'Sonuç emek ister.',
+      'Hedefine yaklaşıyorsun.'
+    ]
   };
 
   function showBubble(text, dur=2000){
