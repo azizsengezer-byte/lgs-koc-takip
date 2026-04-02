@@ -47,9 +47,13 @@ async function okulArkadaslariniYukle() {
               style="background:var(--accent)15;color:var(--accent);border:1px solid var(--accent)44;border-radius:8px;padding:5px 10px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
               💬
             </button>
-            <button onclick="arkadasProfilGoster('${a.uid}','${isim}','${renk}','${a.photo||''}')"
+            <button onclick="arkadasProfil('${a.uid}','${isim}','${renk}','${a.photo||''}')"
               style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
               👤
+            </button>
+            <button onclick="arkadasHediyeGonder('${a.uid}','${isim}')"
+              style="background:#f9ca2415;color:#f9ca24;border:1px solid #f9ca2444;border-radius:8px;padding:5px 10px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
+              🎁
             </button>
           </div>
         </div>`;
@@ -63,6 +67,58 @@ async function okulArkadaslariniYukle() {
 function arkadasMesajAt(uid, isim, renk) {
   activeChat = uid;
   showPage('messages');
+}
+
+function arkadasHediyeGonder(uid, isim) {
+  const modal = document.getElementById('_mModal');
+  if (!modal) return;
+
+  const satin = window.currentUserData?.satin_alinanlar || [];
+  const hediyeTipleri = ['hediye','hediye_sans','hediye_mesaj','hediye_boost','meydan'];
+
+  // MARKET_URUNLER market.js'de tanımlı — window üzerinden eriş
+  const urunler = window.MARKET_URUNLER || (typeof MARKET_URUNLER !== 'undefined' ? MARKET_URUNLER : {});
+
+  // Stoğu say
+  const stok = {};
+  satin.forEach(id => {
+    const u = urunler[id];
+    if (u && hediyeTipleri.includes(u.tip)) {
+      stok[id] = (stok[id] || 0) + 1;
+    }
+  });
+
+  if (!Object.keys(stok).length) {
+    modal.style.display = 'flex';
+    modal.innerHTML = '<div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;max-width:290px;width:88%;text-align:center">'
+      + '<div style="font-size:2.5rem;margin-bottom:8px">🎁</div>'
+      + '<div style="font-weight:900;font-size:1rem;margin-bottom:6px">Hediye Yok</div>'
+      + '<div style="font-size:.8rem;color:var(--text2);margin-bottom:14px">Önce marketten hediye satın alman gerekiyor.</div>'
+      + '<button onclick="document.getElementById(\'_mModal\').style.display=\'none\';window._mKat=\'sosyal\';showPage(\'market\')" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">🛒 Markete Git</button>'
+      + '<button onclick="document.getElementById(\'_mModal\').style.display=\'none\'" style="background:transparent;border:none;color:var(--text2);font-size:.8rem;cursor:pointer;font-family:inherit">Kapat</button>'
+      + '</div>';
+    return;
+  }
+
+  const hediyeListesi = Object.entries(stok).map(([id, adet]) => {
+    const u = (window.MARKET_URUNLER || MARKET_URUNLER)[id];
+    const gUid = uid, gIsim = isim.replace(/'/g, "\'");
+    return '<button onclick="_mHediyeGonderKisi(\'' + id + '\',\'' + gUid + '\',\'' + gIsim + '\')" '
+      + 'style="width:100%;padding:10px 14px;background:var(--surface2);border:none;border-radius:10px;cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text);text-align:left;font-family:inherit;margin-bottom:6px;display:flex;align-items:center;gap:8px">'
+      + '<span style="font-size:1.2rem">' + u.ikon + '</span>'
+      + '<span style="flex:1">' + u.ad + '</span>'
+      + '<span style="background:var(--accent);color:white;border-radius:99px;padding:2px 8px;font-size:.72rem">' + adet + ' adet</span>'
+      + '</button>';
+  }).join('');
+
+  modal.style.display = 'flex';
+  modal.innerHTML = '<div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;max-width:290px;width:88%;max-height:75vh;overflow-y:auto">'
+    + '<div style="font-size:1.8rem;text-align:center;margin-bottom:6px">🎁</div>'
+    + '<div style="font-weight:900;font-size:1rem;text-align:center;margin-bottom:4px">' + isim + '\'e Hediye Gönder</div>'
+    + '<div style="font-size:.75rem;color:var(--text2);text-align:center;margin-bottom:14px">Hangi hediyeyi gönderiyorsun?</div>'
+    + hediyeListesi
+    + '<button onclick="document.getElementById(\'_mModal\').style.display=\'none\'" style="width:100%;background:transparent;border:none;color:var(--text2);font-size:.8rem;cursor:pointer;margin-top:8px;font-family:inherit">Kapat</button>'
+    + '</div>';
 }
 
 function arkadasProfil(uid, isim, renk, foto) {
@@ -85,7 +141,11 @@ function arkadasProfil(uid, isim, renk, foto) {
         onclick="document.getElementById('arkadaProfilModal').remove();arkadasMesajAt('${uid}','${isim}','${renk}')">
         💬 Mesaj Gönder
       </button>
-      <button class="btn btn-outline" style="width:100%"
+      <button class="btn btn-outline" style="width:100%;margin-bottom:8px"
+        onclick="document.getElementById('arkadaProfilModal').remove();arkadasHediyeGonder('${uid}','${isim}')">
+        🎁 Hediye Gönder
+      </button>
+      <button style="width:100%;background:transparent;border:none;color:var(--text2);font-size:.82rem;cursor:pointer;font-family:inherit"
         onclick="document.getElementById('arkadaProfilModal').remove()">
         Kapat
       </button>

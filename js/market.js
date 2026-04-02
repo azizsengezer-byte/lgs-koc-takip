@@ -266,6 +266,31 @@ function _mSifirlaEfekt(urun) {
 }
 
 // ── Aksesuar ──────────────────────────────────────────────
+// Hediye satın al — stoğa ekle (göndermeden önce)
+function _mHediyeSatinAl(id) {
+  const u = MARKET_URUNLER[id];
+  if (!u) return;
+  const altin = window.currentUserData?.altin || 0;
+  if (altin < u.fiyat) { _mBildirim('Yeterli altın yok!', '#ff6b6b'); return; }
+  const liste = window.currentUserData?.satin_alinanlar || [];
+  liste.push(id); // Aynı id birden fazla kez eklenebilir (stok)
+  window.currentUserData.altin = altin - u.fiyat;
+  window.currentUserData.satin_alinanlar = liste;
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    db.collection('users').doc(uid).update({
+      altin: window.currentUserData.altin,
+      satin_alinanlar: liste,
+    }).catch(()=>{});
+  }
+  _mBildirim('✅ ' + u.ad + ' stoğuna eklendi!', '#43e97b');
+  // Altın sayacını güncelle
+  const sayac = document.getElementById('maceraAltinSayac');
+  if (sayac) sayac.textContent = window.currentUserData.altin;
+  // Modalı yenile
+  setTimeout(()=>_mDetay(id), 300);
+}
+
 // Aksesuar SVG içerikleri
 const _AKSESUAR_SVG = {
   sapka:  '<ellipse cx="80" cy="54" rx="34" ry="7" fill="#1a1030"/><path d="M56 54 Q58 20 80 14 Q102 20 104 54 Z" fill="#1a1030"/><ellipse cx="80" cy="54" rx="34" ry="5" fill="none" stroke="#f9ca24" stroke-width="2.5"/><ellipse cx="80" cy="17" rx="6" ry="4" fill="#f9ca24"/>',
@@ -572,7 +597,15 @@ async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
   const gonderen = window.currentUserData?.name || 'Arkadaşın';
 
   try {
-    await db.collection('users').doc(uid).update({ altin: window.currentUserData.altin });
+    // Gönderilen hediyeyi stoktan düş
+    const liste = window.currentUserData?.satin_alinanlar || [];
+    const idx = liste.lastIndexOf(urunId);
+    if (idx !== -1) liste.splice(idx, 1);
+    window.currentUserData.satin_alinanlar = liste;
+    await db.collection('users').doc(uid).update({ 
+      altin: window.currentUserData.altin,
+      satin_alinanlar: liste,
+    });
 
     let bildirimMetni = '';
     let hedefGuncelleme = {};
@@ -782,10 +815,15 @@ function _mDetay(id) {
     } else {
       btn = '<div style="background:var(--surface2);border-radius:10px;padding:10px;font-size:.78rem;color:var(--text2);text-align:center">' + (u.fiyat-altin) + ' altın daha lazım</div>';
     }
-  } else if (u.tip === 'hediye' || u.tip === 'meydan') {
-    btn = altin >= u.fiyat
-      ? '<button onclick="marketSatinAl(\'' + id + '\')" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit">Gönder — ' + u.fiyat + ' 💰</button>'
-      : '<div style="text-align:center;font-size:.78rem;color:var(--text2)">' + (u.fiyat-altin) + ' altın daha lazım</div>';
+  } else if (['hediye','hediye_sans','hediye_mesaj','hediye_boost','meydan'].includes(u.tip)) {
+    const sahipMiktar = (window.currentUserData?.satin_alinanlar || []).filter(k=>k===id).length;
+    const sahipBtn = altin >= u.fiyat
+      ? '<button onclick="_mHediyeSatinAl(\'' + id + '\')" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--surface2);color:var(--text);font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">🛒 Satın Al — ' + u.fiyat + ' 💰</button>'
+      : '<div style="text-align:center;font-size:.78rem;color:var(--text2);margin-bottom:8px">' + (u.fiyat-altin) + ' altın daha lazım</div>';
+    const gonderBtn = sahipMiktar > 0
+      ? '<button onclick="_mHediyeGonder(\'' + id + '\',MARKET_URUNLER[\'' + id + '\'])" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit">🎁 Gönder (' + sahipMiktar + ' adet)</button>'
+      : '<div style="text-align:center;font-size:.78rem;color:var(--text2);padding:8px;background:var(--surface2);border-radius:8px">Önce satın almalısın</div>';
+    btn = sahipBtn + gonderBtn;
   } else if (sahip && aktifMi) {
     btn = '<button onclick="marketAktifEt(\'' + id + '\')" style="width:100%;padding:11px;border-radius:10px;border:none;background:rgba(255,107,107,.15);color:#ff6b6b;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #ff6b6b55">✓ Aktif — Kapat</button>';
   } else if (sahip) {
@@ -834,3 +872,5 @@ setTimeout(() => {
   const etiket = window.currentUserData?.etiket;
   if (etiket) _mEtiketUygula(etiket);
 }, 800);
+
+window.MARKET_URUNLER = MARKET_URUNLER;
