@@ -1,3 +1,74 @@
+
+// ── Ses Efektleri ─────────────────────────────────────────────
+let _audioCtx = null;
+let _sesAcik = localStorage.getItem('ejSes') !== '0'; // varsayılan açık
+
+function _audioContext() {
+  if (!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  return _audioCtx;
+}
+
+function _sesToggle() {
+  _sesAcik = !_sesAcik;
+  localStorage.setItem('ejSes', _sesAcik ? '1' : '0');
+  const btn = document.getElementById('_sesBtnIcon');
+  if (btn) btn.textContent = _sesAcik ? '🔊' : '🔇';
+}
+
+// Kısa boing sesi — ejderhaya tıklama
+function _sesBoing() {
+  if (!_sesAcik) return;
+  const ctx = _audioContext();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(520, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(320, ctx.currentTime + 0.15);
+  gain.gain.setValueAtTime(0.18, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.2);
+}
+
+// Küçük ding — neşeli
+function _sesDing() {
+  if (!_sesAcik) return;
+  const ctx = _audioContext();
+  if (!ctx) return;
+  [880, 1100].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    const t = ctx.currentTime + i * 0.08;
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0.12, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    osc.start(t); osc.stop(t + 0.25);
+  });
+}
+
+// Derin ses — üzgün/aç ejderha
+function _sesGrowl() {
+  if (!_sesAcik) return;
+  const ctx = _audioContext();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(180, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 0.3);
+  gain.gain.setValueAtTime(0.08, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.35);
+}
+
 // ============================================================
 // 🗺️ MACERA SAYFASI
 // ============================================================
@@ -146,6 +217,13 @@ function ejderhaVerisi() {
   const son5Dogru = soruEntries.filter(e => son5.includes(e.dateKey)).reduce((a, e) => a + (e.correct || 0), 0);
   const ac = son5Dogru === 0; // 5 gündür veri yok
 
+  // Son girişten kaç gün geçti?
+  const tumDateKeyler = soruEntries.map(e => e.dateKey).filter(Boolean).sort().reverse();
+  const sonGirisKey = tumDateKeyler[0] || null;
+  const gunFark = sonGirisKey
+    ? Math.floor((new Date(todayKey) - new Date(sonGirisKey)) / 86400000)
+    : 999;
+
   // Bugün kaç doğru?
   const bugunDogru = soruEntries.filter(e => e.dateKey === todayKey).reduce((a, e) => a + (e.correct || 0), 0);
 
@@ -163,11 +241,11 @@ function ejderhaVerisi() {
     else break;
   }
 
-  return { toplamDogru, gercekStage, ac, bugunDogru, seri };
+  return { toplamDogru, gercekStage, ac, bugunDogru, seri, gunFark };
 }
 
 function maceraEjderha() {
-  const { toplamDogru, gercekStage, ac, bugunDogru, seri } = ejderhaVerisi();
+  const { toplamDogru, gercekStage, ac, bugunDogru, seri, gunFark } = ejderhaVerisi();
 
   const stageInfo = [
     { lbl: 'Yumurta',          sub: 'İçinden bir şey çıkmak istiyor...',      sonraki: 100,  clr: '#AFA9EC' },
@@ -182,6 +260,7 @@ function maceraEjderha() {
 
   setTimeout(() => {
     // Duruma göre başlangıç state
+    window._ejderhaGunFark = gunFark;
     const initState = ac ? 'hungry' : gercekStage >= 3 ? 'fire' : 'happy';
     if (typeof window._ejderhaSetState === 'function') {
       window._ejderhaSetState(initState);
@@ -194,7 +273,10 @@ function maceraEjderha() {
     <div class="card" style="margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div>
-          <div class="card-title" style="margin:0">🐉 ${window.currentUserData?.ejderhaIsim || 'Soru Ejderhası'}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+            <div class="card-title" style="margin:0">🐉 ${window.currentUserData?.ejderhaIsim || 'Soru Ejderhası'}</div>
+            <button id="_sesBtnIcon" onclick="_sesToggle()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;padding:4px 8px;border-radius:8px;color:var(--text2)">${localStorage.getItem('ejSes')==='0' ? '🔇' : '🔊'}</button>
+          </div>
           <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">${s.lbl}</div>
         </div>
         <div style="text-align:right">
@@ -343,13 +425,7 @@ function maceraEjderha() {
       'Zamanını iyi kullan.',
       'Küçük adımlar büyük fark yaratır.'
     ],
-    hungry: [
-      'Bir süredir görünmüyorsun.',
-      'Bugün henüz başlamadın.',
-      'Nerede kaldın?',
-      'Zaman geçiyor.',
-      'Küçük bir başlangıç bile sayılır.'
-    ],
+    hungry: [], // dinamik — aşağıda doldurulacak
     fire: [
       'İyi iş.',
       'Bir soru daha?',
@@ -384,6 +460,37 @@ function maceraEjderha() {
     for(let i=0;i<4;i++) setTimeout(()=>spawnFx(60+Math.random()*80,20+Math.random()*60,i%2?'heart':'star'),i*150);
   }
 
+  // Hungry sözlerini günFark'a göre oluştur
+  (function() {
+    const gf = window._ejderhaGunFark || 0;
+    if (gf === 0) {
+      msgs.hungry = [
+        'Bugün henüz başlamadın.',
+        'Küçük bir başlangıç bile sayılır.',
+        'Ne zaman başlıyoruz?',
+      ];
+    } else if (gf === 1) {
+      msgs.hungry = [
+        'Dün giriş yapmadın.',
+        'Bir gün geçti, başlamak için iyi zaman.',
+        'Seriyi devam ettirmek için bugün çalış.',
+      ];
+    } else if (gf <= 3) {
+      msgs.hungry = [
+        gf + ' gündür giriş yok.',
+        'Birkaç gündür görünmüyorsun.',
+        'Küçük bir çalışma bile fark yaratır.',
+      ];
+    } else {
+      msgs.hungry = [
+        gf + ' gündür giriş yok.',
+        'LGS yaklaşıyor, zamanı iyi kullan.',
+        'Tekrar başlamak için geç değil.',
+        gf + ' günlük arayla geri döndün mü?',
+      ];
+    }
+  })();
+
   window._ejderhaTap = function(e){
     if(isAnimating) return;
     const scene=document.getElementById('ejderha-scene');
@@ -394,10 +501,12 @@ function maceraEjderha() {
     const dragon=document.getElementById('dragon-svg');
     if(!dragon){isAnimating=false;return;}
     if(curState==='hungry'){
+      _sesGrowl();
       showBubble(msgs.hungry[tapCount%msgs.hungry.length]);
       spawnFx(x,y-20,'star');
       setTimeout(()=>{isAnimating=false;},600);
     } else if(curState==='fire'){
+      _sesDing();
       dragon.style.animation='ejHappy 0.9s ease-out';
       spawnStars();
       showBubble(msgs.fire[tapCount%msgs.fire.length]);
