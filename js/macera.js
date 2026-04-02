@@ -1,5 +1,51 @@
 
 // ── Ses Efektleri ─────────────────────────────────────────────
+function _ejderhaSVGHtml(stage) {
+  if (stage === 0) {
+    // YUMURTA
+    return `<svg id="dragon-svg" width="120" height="150" viewBox="0 0 120 150" style="overflow:visible;cursor:pointer">
+      <ellipse cx="60" cy="82" rx="38" ry="50" fill="#6c63ff"/>
+      <ellipse cx="60" cy="82" rx="34" ry="46" fill="#7c74ff" opacity="0.35"/>
+      <path d="M38 65 Q50 50 60 46 Q70 50 82 65" stroke="#5a4fcf" stroke-width="1.5" fill="none" opacity="0.5"/>
+      <path d="M35 82 Q40 70 47 67" stroke="#9b95ff" stroke-width="1" fill="none" opacity="0.4"/>
+      <path d="M85 82 Q80 70 73 67" stroke="#9b95ff" stroke-width="1" fill="none" opacity="0.4"/>
+      <ellipse cx="46" cy="86" rx="7" ry="4" fill="#4cc9f0" opacity="0.25"/>
+      <ellipse cx="74" cy="86" rx="7" ry="4" fill="#4cc9f0" opacity="0.25"/>
+      <ellipse cx="60" cy="106" rx="8" ry="5" fill="#5a4fcf" opacity="0.4"/>
+    </svg>`;
+  } else if (stage === 1) {
+    // YAVRU EJDERHA — küçük, kanatları yok henüz
+    return `<svg id="dragon-svg" width="120" height="150" viewBox="0 0 160 200" style="overflow:visible;cursor:pointer">
+      <ellipse cx="80" cy="152" rx="30" ry="20" fill="#6c63ff"/>
+      <path d="M70 125 Q74 108 78 104 Q82 102 86 104 Q90 108 90 125" fill="#6c63ff"/>
+      <g id="head" style="animation:ejIdle 3s ease-in-out infinite">
+        <ellipse cx="80" cy="88" rx="28" ry="26" fill="#6c63ff"/>
+        <path d="M68 68 Q65 55 70 50 Q73 58 71 66" fill="#5a4fcf"/>
+        <path d="M80 64 Q79 52 82 47 Q85 55 83 63" fill="#7c74ff"/>
+        <path d="M92 68 Q95 55 90 50 Q87 58 89 66" fill="#5a4fcf"/>
+        <ellipse cx="80" cy="95" rx="10" ry="7" fill="#7c74ff"/>
+        <g id="eye-l"><ellipse cx="68" cy="82" rx="9" ry="10" fill="white"/><ellipse cx="68" cy="83" rx="6" ry="7" fill="#4cc9f0"/><circle cx="68" cy="83" r="4" fill="#1a0050"/><circle cx="70" cy="81" r="1.5" fill="white"/></g>
+        <g id="eye-r"><ellipse cx="92" cy="82" rx="9" ry="10" fill="white"/><ellipse cx="92" cy="83" rx="6" ry="7" fill="#4cc9f0"/><circle cx="92" cy="83" r="4" fill="#1a0050"/><circle cx="94" cy="81" r="1.5" fill="white"/></g>
+        <ellipse cx="56" cy="91" rx="6" ry="4" fill="#ff6b9d" opacity="0.3"/>
+        <ellipse cx="104" cy="91" rx="6" ry="4" fill="#ff6b9d" opacity="0.3"/>
+        <path id="mouth" d="M73 100 Q80 106 87 100" stroke="#4a40c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <g id="ej-ak-bas"></g><g id="ej-ak-yuz"></g><g id="ej-ak-kolye"></g><g id="ej-ak-fiyonk"></g>
+        <g id="fire-group" style="display:none">
+          <ellipse id="fire-core" cx="100" cy="103" rx="10" ry="5" fill="#ff4400"/>
+          <ellipse id="fire-mid" cx="108" cy="103" rx="6" ry="3.5" fill="#ff7700"/>
+          <ellipse id="fire-tip" cx="114" cy="103" rx="3.5" ry="2" fill="#ffaa00"/>
+        </g>
+      </g>
+      <ellipse cx="62" cy="166" rx="10" ry="7" fill="#5a4fcf" transform="rotate(-15 62 166)"/>
+      <ellipse cx="98" cy="166" rx="10" ry="7" fill="#5a4fcf" transform="rotate(15 98 166)"/>
+    </svg>`;
+  } else {
+    // YETİŞKİN EJDERHA (stage 2+) — mevcut SVG
+    return null; // null dönünce mevcut HTML kullanılır
+  }
+}
+
+
 let _audioCtx = null;
 let _sesAcik = localStorage.getItem('ejSes') !== '0'; // varsayılan açık
 
@@ -259,6 +305,12 @@ function maceraEjderha() {
   const sonrakiSoru = s.sonraki ? `${toplamDogru} / ${s.sonraki} doğru` : `${toplamDogru} doğru — ZİRVE!`;
 
   setTimeout(() => {
+    // Stage'e göre SVG değiştir
+    const wrap = document.getElementById('ej-wrap');
+    const altSvg = _ejderhaSVGHtml(gercekStage);
+    if (wrap && altSvg !== null) {
+      wrap.innerHTML = altSvg;
+    }
     // Duruma göre başlangıç state
     window._ejderhaGunFark = gunFark;
     const initState = ac ? 'hungry' : gercekStage >= 3 ? 'fire' : 'happy';
@@ -581,8 +633,8 @@ function maceraEjderha() {
       head.style.animation='ejSleepy 4s ease-in-out infinite';
       if(fire) fire.style.display='none'; _stopFire();
       if(mouth) mouth.setAttribute('d','M72 98 Q80 95 88 98');
-      if(lEye) lEye.style.transform='scaleY(0.35) translateY(8px)';
-      if(rEye) rEye.style.transform='scaleY(0.35) translateY(8px)';
+      if(lEye) { lEye.style.transformOrigin='65px 75px'; lEye.style.transform='scaleY(0.2)'; }
+      if(rEye) { rEye.style.transformOrigin='95px 75px'; rEye.style.transform='scaleY(0.2)'; }
       if(zzzLayer){
         zzzLayer.innerHTML='';
         for(let i=0;i<3;i++){
@@ -597,16 +649,16 @@ function maceraEjderha() {
       head.style.animation='ejIdle 2s ease-in-out infinite';
       if(fire) fire.style.display='block'; _startFire();
       if(mouth) mouth.setAttribute('d','M70 97 Q80 106 90 97');
-      if(lEye) lEye.style.transform='';
-      if(rEye) rEye.style.transform='';
+      if(lEye) { lEye.style.transform=''; lEye.style.transformOrigin=''; }
+      if(rEye) { rEye.style.transform=''; rEye.style.transformOrigin=''; }
       if(zzzLayer) zzzLayer.innerHTML='';
     } else {
       dragon.style.filter='none';
       head.style.animation='ejIdle 3s ease-in-out infinite';
       if(fire) fire.style.display='none'; _stopFire();
       if(mouth) mouth.setAttribute('d','M72 96 Q80 102 88 96');
-      if(lEye) lEye.style.transform='';
-      if(rEye) rEye.style.transform='';
+      if(lEye) { lEye.style.transform=''; lEye.style.transformOrigin=''; }
+      if(rEye) { rEye.style.transform=''; rEye.style.transformOrigin=''; }
       if(zzzLayer) zzzLayer.innerHTML='';
     }
   };
