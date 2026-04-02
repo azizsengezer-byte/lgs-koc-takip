@@ -102,8 +102,15 @@ function arkadasProfil(uid, isim, renk, foto) {
 
 // ── Hediye Gönder ────────────────────────────────────────────
 function arkadasHediyeGonder(uid, isim) {
-  const modal = document.getElementById('_mModal');
-  if (!modal) { showToast('⚠️','Market açık değil'); return; }
+  // _mModal yoksa oluştur
+  let modal = document.getElementById('_mModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = '_mModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:none;align-items:center;justify-content:center;padding:16px';
+    modal.onclick = (e) => { if(e.target===modal) modal.style.display='none'; };
+    document.body.appendChild(modal);
+  }
 
   const satin = window.currentUserData?.satin_alinanlar || [];
   const hediyeTipleri = ['hediye','hediye_sans','hediye_mesaj','hediye_boost','meydan'];
@@ -997,6 +1004,7 @@ function notificationsPage() {
           // Bildirim tipine göre hedef sayfa
           const hedef = n.type==='task' ? (currentRole==='student'?'my-tasks':'tasks-teacher')
                       : n.type==='message' ? 'messages'
+                      : n.type==='hediye' ? 'messages'
                       : n.type==='gorusme' ? (currentRole==='student'?'wellness':'students')
                       : null;
           return `

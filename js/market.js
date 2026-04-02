@@ -590,10 +590,12 @@ async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
   const urun = MARKET_URUNLER[urunId];
   const uid = auth.currentUser?.uid;
   if (!uid || !urun) return;
-  const altin = window.currentUserData?.altin || 0;
-  if (altin < urun.fiyat) { _mBildirim('Yeterli altın yok!', '#ff6b6b'); return; }
-
-  window.currentUserData.altin = altin - urun.fiyat;
+  
+  // Stokta var mı kontrol et
+  const satin = window.currentUserData?.satin_alinanlar || [];
+  const stokIdx = satin.lastIndexOf(urunId);
+  if (stokIdx === -1) { _mBildirim('Stokta hediye yok!', '#ff6b6b'); return; }
+  
   const gonderen = window.currentUserData?.name || 'Arkadaşın';
 
   try {
@@ -603,7 +605,6 @@ async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
     if (idx !== -1) liste.splice(idx, 1);
     window.currentUserData.satin_alinanlar = liste;
     await db.collection('users').doc(uid).update({ 
-      altin: window.currentUserData.altin,
       satin_alinanlar: liste,
     });
 
@@ -647,7 +648,7 @@ async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
       await db.collection('users').doc(hedefUid).update(hedefGuncelleme);
     }
 
-    // sendNotif varsa kullan (time alanı ekler), yoksa direkt yaz
+    // 1. Bildirim gönder
     if (typeof sendNotif === 'function') {
       await sendNotif(hedefUid, bildirimMetni, 'hediye', uid);
     } else {
@@ -659,6 +660,20 @@ async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
     }
+    // 2. Mesaj olarak da yaz
+    try {
+      const _cid = [uid, hedefUid].sort().join('_');
+      const convId = _cid;
+      const now = new Date();
+      await db.collection('messages').doc(convId).collection('msgs').add({
+        senderId: uid,
+        text: '🎁 ' + bildirimMetni,
+        time: now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
+        dateKey: now.toISOString().split('T')[0],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        type: 'hediye',
+      });
+    } catch(e) { console.log('Mesaj yazma hatası:', e.message); }
 
     _mBildirim('🎁 ' + hedefIsim + "'e gönderildi!", '#43e97b');
     document.getElementById('_mModal').style.display = 'none';
