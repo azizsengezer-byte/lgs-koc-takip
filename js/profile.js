@@ -1007,9 +1007,12 @@ function notificationsPage() {
                       : n.type==='hediye' ? 'messages'
                       : n.type==='gorusme' ? (currentRole==='student'?'wellness':'students')
                       : null;
+          const hedefOnClick = n.type==='hediye' && n.fromUid
+                      ? `activeChat='${n.fromUid}';showPage('messages')`
+                      : hedef ? `showPage('${hedef}')` : '';
           return `
           <div class="notif-item ${n.read ? '' : 'unread'}" 
-            onclick="${hedef?`showPage('${hedef}')`:''}" 
+            onclick="${hedefOnClick || (hedef?`showPage('${hedef}')`:'')}" 
             style="${hedef?'cursor:pointer':''};display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)22">
             <div class="notif-dot ${n.read ? 'read' : ''}"></div>
             <div style="flex:1">

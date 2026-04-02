@@ -147,7 +147,7 @@ async function messagesPage(role) {
 
   // Okunmamış mesaj sayısı partner başına
   const unreadByPartner = {};
-  allNotifs.filter(n=>n.type==='message'&&!n.read).forEach(n=>{
+  allNotifs.filter(n=>(n.type==='message'||n.type==='hediye')&&!n.read).forEach(n=>{
     unreadByPartner[n.fromUid] = (unreadByPartner[n.fromUid]||0)+1;
   });
 
