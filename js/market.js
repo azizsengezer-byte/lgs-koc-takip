@@ -647,12 +647,18 @@ async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
       await db.collection('users').doc(hedefUid).update(hedefGuncelleme);
     }
 
-    await db.collection('notifications').add({
-      toUid: hedefUid, fromUid: uid,
-      text: bildirimMetni,
-      type: 'hediye', read: false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    });
+    // sendNotif varsa kullan (time alanı ekler), yoksa direkt yaz
+    if (typeof sendNotif === 'function') {
+      await sendNotif(hedefUid, bildirimMetni, 'hediye', uid);
+    } else {
+      await db.collection('notifications').add({
+        toUid: hedefUid, fromUid: uid,
+        text: bildirimMetni,
+        type: 'hediye', read: false,
+        time: new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    }
 
     _mBildirim('🎁 ' + hedefIsim + "'e gönderildi!", '#43e97b');
     document.getElementById('_mModal').style.display = 'none';
