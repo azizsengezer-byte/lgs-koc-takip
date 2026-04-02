@@ -102,6 +102,10 @@ function arkadasProfil(uid, isim, renk, foto) {
 
 // ── Hediye Gönder ────────────────────────────────────────────
 function arkadasHediyeGonder(uid, isim) {
+  // Önce tüm açık modalları kapat
+  const existing = document.getElementById('arkadaProfilModal');
+  if (existing) existing.remove();
+  
   // _mModal yoksa oluştur
   let modal = document.getElementById('_mModal');
   if (!modal) {

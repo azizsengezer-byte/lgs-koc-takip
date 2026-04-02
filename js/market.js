@@ -184,7 +184,7 @@ async function marketAktifEt(urunId) {
       document.getElementById('_mModal') && (document.getElementById('_mModal').style.display = 'none');
       const el = document.getElementById('marketSayfa');
       if (el) el.innerHTML = _marketIcerik();
-    } catch(e) { _mBildirim('Hata', '#ff6b6b'); }
+    } catch(e) { console.error('Hediye hata:', e); _mBildirim('Hata: ' + e.message, '#ff6b6b'); }
     return;
   }
 
@@ -222,7 +222,7 @@ async function marketAktifEt(urunId) {
     document.getElementById('_mModal') && (document.getElementById('_mModal').style.display = 'none');
     const el = document.getElementById('marketSayfa');
     if (el) el.innerHTML = _marketIcerik();
-  } catch(e) { _mBildirim('Hata', '#ff6b6b'); }
+  } catch(e) { console.error('Hediye hata:', e); _mBildirim('Hata: ' + e.message, '#ff6b6b'); }
 }
 
 // ── Efekt Uygula ──────────────────────────────────────────
@@ -519,7 +519,7 @@ async function _mIsimKaydet(urunId) {
       const cont = document.getElementById('mainContent');
       if (cont) { cont.innerHTML = maceraPage(); setTimeout(_marketUygulaEfektler, 150); }
     }
-  } catch(e) { _mBildirim('Hata', '#ff6b6b'); }
+  } catch(e) { console.error('Hediye hata:', e); _mBildirim('Hata: ' + e.message, '#ff6b6b'); }
 }
 
 // ── Hediye Gönder ─────────────────────────────────────────
@@ -642,7 +642,14 @@ async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
       bildirimMetni = liste[Math.floor(Math.random() * liste.length)] + ' — ' + gonderen;
     } else if (urun.tip === 'hediye_boost') {
       bildirimMetni = (urun.ikon||'⚡') + ' ' + gonderen + ' sana ' + urun.ad + ' hediye etti!';
+    } else if (urun.tip === 'meydan') {
+      bildirimMetni = '⚔️ ' + gonderen + ' sana meydan okudu! ' + urun.ad + ' — Kabul ediyor musun?';
+    } else {
+      bildirimMetni = (urun.ikon||'🎁') + ' ' + gonderen + ' sana ' + urun.ad + ' gönderdi!';
     }
+    
+    // bildirimMetni boşsa fallback
+    if (!bildirimMetni) bildirimMetni = '🎁 ' + gonderen + ' sana bir hediye gönderdi!';
 
     if (Object.keys(hedefGuncelleme).length) {
       await db.collection('users').doc(hedefUid).update(hedefGuncelleme);
@@ -666,7 +673,7 @@ async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
       const now = new Date();
       const msgData = {
         id: Date.now().toString(),
-        text: '🎁 ' + bildirimMetni,
+        text: bildirimMetni,
         senderUid: uid,
         senderName: gonderen,
         time: now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
@@ -679,10 +686,11 @@ async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
     } catch(e) { console.log('Mesaj yazma hatası:', e.message); }
 
     _mBildirim('🎁 ' + hedefIsim + "'e gönderildi!", '#43e97b');
-    document.getElementById('_mModal').style.display = 'none';
+    const _mm = document.getElementById('_mModal');
+    if (_mm) _mm.style.display = 'none';
     const sayac = document.getElementById('maceraAltinSayac');
     if (sayac) sayac.textContent = window.currentUserData.altin;
-  } catch(e) { _mBildirim('Hata', '#ff6b6b'); }
+  } catch(e) { console.error('Hediye hata:', e); _mBildirim('Hata: ' + e.message, '#ff6b6b'); }
 }
 
 // ── Konfeti Efekti ────────────────────────────────────────
