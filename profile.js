@@ -1,4 +1,166 @@
 
+// ── OKUL ARKADAŞLARI ─────────────────────────────────────────
+async function okulArkadaslariniYukle() {
+  const myData = window.currentUserData || {};
+  const myUid = myData.uid || '';
+  const mySchool = myData.school || '';
+  const liste = document.getElementById('okul-arkadaslar-liste');
+  if (!liste) return;
+
+  if (!mySchool) {
+    liste.innerHTML = '<div style="color:var(--text2);font-size:0.82rem">Okul bilgin henüz eklenmemiş.</div>';
+    return;
+  }
+
+  try {
+    const snap = await db.collection('users')
+      .where('role', '==', 'student')
+      .where('school', '==', mySchool)
+      .get();
+
+    const arkadaslar = [];
+    snap.forEach(d => {
+      if (d.id !== myUid) arkadaslar.push({ uid: d.id, ...d.data() });
+    });
+
+    if (arkadaslar.length === 0) {
+      liste.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;padding:8px 0">Henüz aynı okulda başka öğrenci yok.</div>';
+      return;
+    }
+
+    liste.innerHTML = arkadaslar.map(a => {
+      const isim = a.name || '?';
+      const renk = a.color || '#6c63ff';
+      const foto = a.photo
+        ? `<img src="${a.photo}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+        : `<div style="width:44px;height:44px;border-radius:50%;background:${renk}22;color:${renk};display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;flex-shrink:0">${isim[0]}</div>`;
+
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+          ${foto}
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:0.9rem">${isim}</div>
+            <div style="font-size:0.72rem;color:var(--text2);margin-top:1px">${a.classroom||''} ${a.school||''}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button onclick="arkadasMesajAt('${a.uid}','${isim}','${renk}')"
+              style="background:var(--accent)15;color:var(--accent);border:1px solid var(--accent)44;border-radius:8px;padding:5px 10px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
+              💬
+            </button>
+            <button onclick="arkadasProfilGoster('${a.uid}','${isim}','${renk}','${a.photo||''}')"
+              style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
+              👤
+            </button>
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch(e) {
+    liste.innerHTML = '<div style="color:var(--accent2);font-size:0.82rem">Yüklenemedi: ' + e.message + '</div>';
+  }
+}
+
+function arkadasMesajAt(uid, isim, renk) {
+  activeChat = uid;
+  showPage('messages');
+}
+
+function arkadasProfil(uid, isim, renk, foto) {
+  const existing = document.getElementById('arkadaProfilModal');
+  if (existing) existing.remove();
+
+  const avatarHTML = foto
+    ? `<img src="${foto}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin:0 auto 12px;display:block">`
+    : `<div style="width:80px;height:80px;border-radius:50%;background:${renk}22;color:${renk};display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin:0 auto 12px">${isim[0]}</div>`;
+
+  const modal = document.createElement('div');
+  modal.id = 'arkadaProfilModal';
+  modal.className = 'modal-overlay open';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:320px;text-align:center">
+      ${avatarHTML}
+      <div style="font-size:1.2rem;font-weight:900;margin-bottom:4px">${isim}</div>
+      <div style="font-size:0.82rem;color:var(--text2);margin-bottom:20px">🏫 Okul Arkadaşı</div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:8px"
+        onclick="document.getElementById('arkadaProfilModal').remove();arkadasMesajAt('${uid}','${isim}','${renk}')">
+        💬 Mesaj Gönder
+      </button>
+      <button class="btn btn-outline" style="width:100%;margin-bottom:8px"
+        onclick="document.getElementById('arkadaProfilModal').remove();setTimeout(()=>arkadasHediyeGonder('${uid}','${isim}'),100)">
+        🎁 Hediye Gönder
+      </button>
+      <button class="btn btn-outline" style="width:100%"
+        onclick="document.getElementById('arkadaProfilModal').remove()">
+        Kapat
+      </button>
+    </div>
+  `;
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+
+// ── Hediye Gönder ────────────────────────────────────────────
+function arkadasHediyeGonder(uid, isim) {
+  // Önce tüm açık modalları kapat
+  const existing = document.getElementById('arkadaProfilModal');
+  if (existing) existing.remove();
+  
+  // _mModal yoksa oluştur
+  let modal = document.getElementById('_mModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = '_mModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:none;align-items:center;justify-content:center;padding:16px';
+    modal.onclick = (e) => { if(e.target===modal) modal.style.display='none'; };
+    document.body.appendChild(modal);
+  }
+
+  const satin = window.currentUserData?.satin_alinanlar || [];
+  const hediyeTipleri = ['hediye','hediye_sans','hediye_mesaj','hediye_boost','meydan'];
+  const urunler = window.MARKET_URUNLER || {};
+
+  // Stoğu say
+  const stok = {};
+  satin.forEach(id => {
+    const u = urunler[id];
+    if (u && hediyeTipleri.includes(u.tip)) {
+      stok[id] = (stok[id] || 0) + 1;
+    }
+  });
+
+  if (!Object.keys(stok).length) {
+    modal.style.display = 'flex';
+    modal.innerHTML = `<div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;max-width:290px;width:88%;text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:8px">🎁</div>
+      <div style="font-weight:900;font-size:1rem;margin-bottom:6px">Hediye Yok</div>
+      <div style="font-size:.8rem;color:var(--text2);margin-bottom:14px">Önce marketten hediye satın alman gerekiyor.</div>
+      <button onclick="document.getElementById('_mModal').style.display='none';window._mKat='sosyal';showPage('market')" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">🛒 Markete Git</button>
+      <button onclick="document.getElementById('_mModal').style.display='none'" style="background:transparent;border:none;color:var(--text2);font-size:.8rem;cursor:pointer;font-family:inherit">Kapat</button>
+    </div>`;
+    return;
+  }
+
+  const hediyeListesi = Object.entries(stok).map(([id, adet]) => {
+    const u = urunler[id];
+    return `<button onclick="_mHediyeGonderKisi('${id}','${uid}','${isim.replace(/'/g,"\'")}');document.getElementById('_mModal').style.display='none'"
+      style="width:100%;padding:10px 14px;background:var(--surface2);border:none;border-radius:10px;cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text);text-align:left;font-family:inherit;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:1.2rem">${u.ikon}</span>
+      <span style="flex:1">${u.ad}</span>
+      <span style="background:var(--accent);color:white;border-radius:99px;padding:2px 8px;font-size:.72rem">${adet} adet</span>
+    </button>`;
+  }).join('');
+
+  modal.style.display = 'flex';
+  modal.innerHTML = `<div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;max-width:290px;width:88%;max-height:75vh;overflow-y:auto">
+    <div style="font-size:1.8rem;text-align:center;margin-bottom:6px">🎁</div>
+    <div style="font-weight:900;font-size:1rem;text-align:center;margin-bottom:4px">${isim}'e Hediye Gönder</div>
+    <div style="font-size:.75rem;color:var(--text2);text-align:center;margin-bottom:14px">Hangi hediyeyi gönderiyorsun?</div>
+    ${hediyeListesi}
+    <button onclick="document.getElementById('_mModal').style.display='none'" style="width:100%;background:transparent;border:none;color:var(--text2);font-size:.8rem;cursor:pointer;margin-top:8px;font-family:inherit">Kapat</button>
+  </div>`;
+}
+
 // ── Koç Okul Yönetimi ────────────────────────────────────────
 async function teacherOkulEkle() {
   const input = document.getElementById('newSchoolInput');
@@ -89,7 +251,7 @@ function denemeSoruKontrol(ders) {
   }
 }
 
-function profilePage() {
+async function profilePage() {
   const user = auth.currentUser;
   const name = document.getElementById('menuName')?.textContent;
   const data = window.currentUserData || {};
@@ -239,91 +401,19 @@ function profilePage() {
     </div>
 
     ${!isTeacher ? `
-    <div class="card" style="margin-top:16px">
-      <div class="card-title">🏫 Okul Arkadaşlarım</div>
-      <div style="font-size:.75rem;color:var(--text2);margin-bottom:12px">Aynı okuldan öğrenciler — mesaj veya hediye gönder</div>
-      <div id="arkadasListesi"><div style="color:var(--text2);font-size:.82rem">Yükleniyor...</div></div>
-    </div>
-    <div class="card" style="margin-top:16px">
+    <div class="card" style="margin-top:0">
       <button class="btn btn-primary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px"
         onclick="showBadgesPage()">
         🏆 <span>Rozetlerim</span>
         <span id="badgeCountBadge" style="background:#f9ca24;color:#222;border-radius:20px;padding:2px 10px;font-size:0.78rem;font-weight:800"></span>
       </button>
     </div>
+    <div class="card" style="margin-top:16px" id="okul-arkadaslar-kart">
+      <div class="card-title">🏫 Okul Arkadaşlarım</div>
+      <div id="okul-arkadaslar-liste" style="color:var(--text2);font-size:0.85rem">Yükleniyor...</div>
+    </div>
     ` : ''}
-  \`;
-  if (!isTeacher) setTimeout(_profilArkadaslariYukle, 300);
-}
-
-async function _profilArkadaslariYukle() {
-  const el = document.getElementById('arkadasListesi');
-  if (!el) return;
-  const data = window.currentUserData || {};
-  const uid = auth.currentUser?.uid;
-  const okul = data.school || '';
-  if (!okul || !uid) {
-    el.innerHTML = '<div style="color:var(--text2);font-size:.82rem">Okul bilgisi bulunamadı</div>';
-    return;
-  }
-  try {
-    const snap = await db.collection('users')
-      .where('role','==','student')
-      .where('school','==',okul)
-      .get();
-    const arkadaslar = [];
-    snap.forEach(d => { if (d.id !== uid) arkadaslar.push({ uid: d.id, ...d.data() }); });
-    if (!arkadaslar.length) {
-      el.innerHTML = '<div style="color:var(--text2);font-size:.82rem">Henüz okul arkadaşın yok</div>';
-      return;
-    }
-    const _ETIKET_STILLER = {
-      '🔥 Çalışkan':  'background:linear-gradient(135deg,#ff4444,#cc1111);color:white',
-      '⚡ Hızlı':     'background:linear-gradient(135deg,#00d2ff,#0099cc);color:white',
-      '👑 Efsane':    'background:linear-gradient(135deg,#f9ca24,#e6a800);color:#1a1200',
-      '💎 Elit':      'background:linear-gradient(135deg,#a855f7,#7c22cc);color:white',
-      '🦸 Kahraman':  'background:linear-gradient(135deg,#ff6b9d,#cc2266);color:white',
-      '🦉 Bilge':     'background:linear-gradient(135deg,#45b7d1,#1a7a99);color:white',
-      '🌋 Ateş Kalbi':'background:linear-gradient(135deg,#ff8c00,#cc4400);color:white',
-    };
-    el.innerHTML = arkadaslar.map(a => {
-      const etiketStil = a.etiket ? (_ETIKET_STILLER[a.etiket] || 'background:rgba(108,99,255,.3);color:white') : '';
-      const etiketHTML = a.etiket ? \`<span style="\${etiketStil};font-size:9px;font-weight:800;padding:2px 7px;border-radius:99px;margin-left:5px">\${a.etiket}</span>\` : '';
-      const foto = a.photo
-        ? \`<img src="\${a.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">\`
-        : \`<div style="width:40px;height:40px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;flex-shrink:0">\${(a.name||'?')[0].toUpperCase()}</div>\`;
-      const isim = (a.name||'İsimsiz').replace(/'/g,\'\\'\'\');
-      return \`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
-        \${foto}
-        <div style="flex:1;min-width:0">
-          <div style="font-size:.88rem;font-weight:700;display:flex;align-items:center;flex-wrap:wrap">\${a.name||'İsimsiz'}\${etiketHTML}</div>
-          <div style="font-size:.7rem;color:var(--text2)">\${a.classroom||''} • \${a.school||''}</div>
-        </div>
-        <div style="display:flex;gap:6px;flex-shrink:0">
-          <button onclick="_arkadasMesaj('\${a.uid}','\${isim}')" style="padding:6px 10px;border-radius:8px;border:none;background:var(--accent);color:white;font-size:.72rem;font-weight:700;cursor:pointer">💬</button>
-          <button onclick="_arkadasHediye('\${a.uid}','\${isim}')" style="padding:6px 10px;border-radius:8px;border:none;background:rgba(249,202,36,.2);color:#f9ca24;font-size:.72rem;font-weight:700;cursor:pointer">🎁</button>
-        </div>
-      </div>\`;
-    }).join('');
-  } catch(e) {
-    el.innerHTML = '<div style="color:var(--text2);font-size:.82rem">Yüklenemedi</div>';
-  }
-}
-
-function _arkadasMesaj(uid, isim) {
-  if (typeof openChatWith === 'function') {
-    openChatWith(uid, isim);
-  } else {
-    showPage('messages');
-  }
-}
-
-function _arkadasHediye(uid, isim) {
-  window._hediyeHedefUid = uid;
-  window._hediyeHedefIsim = isim;
-  window._mKat = 'sosyal';
-  showPage('market');
-  setTimeout(() => _mBildirim('🎁 ' + isim + ' için hediye seç!', '#f9ca24'), 500);
+  `;
 }
 
 // Rozet sayfasını göster
@@ -918,11 +1008,15 @@ function notificationsPage() {
           // Bildirim tipine göre hedef sayfa
           const hedef = n.type==='task' ? (currentRole==='student'?'my-tasks':'tasks-teacher')
                       : n.type==='message' ? 'messages'
+                      : n.type==='hediye' ? 'messages'
                       : n.type==='gorusme' ? (currentRole==='student'?'wellness':'students')
                       : null;
+          const hedefOnClick = n.type==='hediye' && n.fromUid
+                      ? `activeChat='${n.fromUid}';showPage('messages')`
+                      : hedef ? `showPage('${hedef}')` : '';
           return `
           <div class="notif-item ${n.read ? '' : 'unread'}" 
-            onclick="${hedef?`showPage('${hedef}')`:''}" 
+            onclick="${hedefOnClick || (hedef?`showPage('${hedef}')`:'')}" 
             style="${hedef?'cursor:pointer':''};display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)22">
             <div class="notif-dot ${n.read ? 'read' : ''}"></div>
             <div style="flex:1">

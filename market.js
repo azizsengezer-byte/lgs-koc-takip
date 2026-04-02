@@ -55,9 +55,33 @@ const MARKET_URUNLER = {
   boost_3x_soru: { kategori:'boost', ad:'3x Soru Altın', fiyat:600,  ikon:'🎯', aciklama:'24 saat soru başına 3x altın',       tip:'boost', deger:'3x_soru',tuket:true },
 
   // 🎁 SOSYAL
-  hediye_altin_100: { kategori:'sosyal', ad:'100 Altın Hediye',  fiyat:150,  ikon:'🎁', aciklama:'Bir arkadaşına 100 altın gönder',  tip:'hediye', deger:100 },
-  hediye_altin_500: { kategori:'sosyal', ad:'500 Altın Hediye',  fiyat:600,  ikon:'🎀', aciklama:'Bir arkadaşına 500 altın gönder',  tip:'hediye', deger:500 },
-  meydan_okuma:     { kategori:'sosyal', ad:'Meydan Okuma',      fiyat:200,  ikon:'⚔️', aciklama:'Arkadaşına haftalık yarış gönder', tip:'meydan', deger:'hafta', tuket:true },
+  // Altın Hediyeleri
+  hediye_altin_25:   { kategori:'sosyal', ad:'25 Altın Hediye',   fiyat:40,   ikon:'🪙', aciklama:'Bir arkadaşına 25 altın gönder',   tip:'hediye', deger:25 },
+  hediye_altin_50:   { kategori:'sosyal', ad:'50 Altın Hediye',   fiyat:75,   ikon:'🎁', aciklama:'Bir arkadaşına 50 altın gönder',   tip:'hediye', deger:50 },
+  hediye_altin_100:  { kategori:'sosyal', ad:'100 Altın Hediye',  fiyat:140,  ikon:'🎀', aciklama:'Bir arkadaşına 100 altın gönder',  tip:'hediye', deger:100 },
+  hediye_altin_200:  { kategori:'sosyal', ad:'200 Altın Hediye',  fiyat:270,  ikon:'💝', aciklama:'Bir arkadaşına 200 altın gönder',  tip:'hediye', deger:200 },
+  hediye_altin_500:  { kategori:'sosyal', ad:'500 Altın Hediye',  fiyat:600,  ikon:'💰', aciklama:'Bir arkadaşına 500 altın gönder',  tip:'hediye', deger:500 },
+  // Şans & Sürpriz
+  hediye_sans:       { kategori:'sosyal', ad:'Şans Zarı',         fiyat:80,   ikon:'🎲', aciklama:'Arkadaşına rastgele 10-200 altın gönder', tip:'hediye_sans', deger:0 },
+  hediye_kör_kutu:   { kategori:'sosyal', ad:'Kör Kutu',          fiyat:120,  ikon:'📦', aciklama:'Sürpriz! 5-300 arası altın',      tip:'hediye_sans', deger:1 },
+  hediye_sans_buyuk: { kategori:'sosyal', ad:'Büyük Şans Zarı',   fiyat:200,  ikon:'🎰', aciklama:'50-500 arası rastgele altın',     tip:'hediye_sans', deger:2 },
+  // Motivasyon Kartları
+  hediye_motivasyon: { kategori:'sosyal', ad:'Motivasyon Kartı',  fiyat:30,   ikon:'💌', aciklama:'Arkadaşına moral ver',            tip:'hediye_mesaj', deger:'motivasyon' },
+  hediye_tebrik:     { kategori:'sosyal', ad:'Tebrik Kartı',      fiyat:30,   ikon:'🎊', aciklama:'Arkadaşını kutla',               tip:'hediye_mesaj', deger:'tebrik' },
+  hediye_basari:     { kategori:'sosyal', ad:'Başarı Kartı',      fiyat:30,   ikon:'🏆', aciklama:'Başarısını kutla',               tip:'hediye_mesaj', deger:'basari' },
+  hediye_iyi_calis:  { kategori:'sosyal', ad:'İyi Çalışmalar',    fiyat:20,   ikon:'📚', aciklama:'Sınav öncesi destek gönder',     tip:'hediye_mesaj', deger:'calis' },
+  hediye_gec_kalma:  { kategori:'sosyal', ad:'Geç Kalma!',        fiyat:20,   ikon:'⏰', aciklama:'Arkadaşını uyandır',            tip:'hediye_mesaj', deger:'gec' },
+  hediye_inaniyorum: { kategori:'sosyal', ad:'Sana İnanıyorum',   fiyat:25,   ikon:'🌟', aciklama:'Destek mesajı gönder',           tip:'hediye_mesaj', deger:'inan' },
+  hediye_guzelsin:   { kategori:'sosyal', ad:'Harikasın!',        fiyat:25,   ikon:'✨', aciklama:'Arkadaşını öv',                 tip:'hediye_mesaj', deger:'guzel' },
+  hediye_komik:      { kategori:'sosyal', ad:'Şaka Kartı',        fiyat:20,   ikon:'😂', aciklama:'Güldür arkadaşını',             tip:'hediye_mesaj', deger:'komik' },
+  // Boost Hediyeleri
+  hediye_2x_altin:   { kategori:'sosyal', ad:'2x Altın Boost',   fiyat:300,  ikon:'⚡', aciklama:'Arkadaşına 1 saatlik 2x altın kazan', tip:'hediye_boost', deger:'2x' },
+  hediye_seri_kor:   { kategori:'sosyal', ad:'Seri Koruyucu',     fiyat:250,  ikon:'🛡️', aciklama:'Arkadaşının serisini koru',     tip:'hediye_boost', deger:'seri' },
+  hediye_3x_soru:    { kategori:'sosyal', ad:'3x Soru Boost',     fiyat:400,  ikon:'🚀', aciklama:'Arkadaşına 3x soru sayısı boost', tip:'hediye_boost', deger:'3x' },
+  // Meydan Okuma
+  meydan_okuma:      { kategori:'sosyal', ad:'Meydan Okuma',      fiyat:150,  ikon:'⚔️', aciklama:'Arkadaşına haftalık soru yarışı gönder', tip:'meydan', deger:'hafta', tuket:true },
+  meydan_matematik:  { kategori:'sosyal', ad:'Matematik Düellosu', fiyat:180, ikon:'📐', aciklama:'Matematik sorusu yarışı',       tip:'meydan', deger:'matematik', tuket:true },
+  meydan_fen:        { kategori:'sosyal', ad:'Fen Savaşı',        fiyat:180,  ikon:'🔬', aciklama:'Fen sorusu yarışı',            tip:'meydan', deger:'fen', tuket:true },
 
   // 🐉 ÖZEL
   ejderha_isim: { kategori:'ozel', ad:'Ejderhaya İsim Ver', fiyat:300, ikon:'✏️', aciklama:'Ejderhana özel bir isim ver', tip:'isim', deger:'' },
@@ -160,7 +184,7 @@ async function marketAktifEt(urunId) {
       document.getElementById('_mModal') && (document.getElementById('_mModal').style.display = 'none');
       const el = document.getElementById('marketSayfa');
       if (el) el.innerHTML = _marketIcerik();
-    } catch(e) { _mBildirim('Hata', '#ff6b6b'); }
+    } catch(e) { console.error('Hediye hata:', e); _mBildirim('Hata: ' + e.message, '#ff6b6b'); }
     return;
   }
 
@@ -198,7 +222,7 @@ async function marketAktifEt(urunId) {
     document.getElementById('_mModal') && (document.getElementById('_mModal').style.display = 'none');
     const el = document.getElementById('marketSayfa');
     if (el) el.innerHTML = _marketIcerik();
-  } catch(e) { _mBildirim('Hata', '#ff6b6b'); }
+  } catch(e) { console.error('Hediye hata:', e); _mBildirim('Hata: ' + e.message, '#ff6b6b'); }
 }
 
 // ── Efekt Uygula ──────────────────────────────────────────
@@ -242,6 +266,31 @@ function _mSifirlaEfekt(urun) {
 }
 
 // ── Aksesuar ──────────────────────────────────────────────
+// Hediye satın al — stoğa ekle (göndermeden önce)
+function _mHediyeSatinAl(id) {
+  const u = MARKET_URUNLER[id];
+  if (!u) return;
+  const altin = window.currentUserData?.altin || 0;
+  if (altin < u.fiyat) { _mBildirim('Yeterli altın yok!', '#ff6b6b'); return; }
+  const liste = window.currentUserData?.satin_alinanlar || [];
+  liste.push(id); // Aynı id birden fazla kez eklenebilir (stok)
+  window.currentUserData.altin = altin - u.fiyat;
+  window.currentUserData.satin_alinanlar = liste;
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    db.collection('users').doc(uid).update({
+      altin: window.currentUserData.altin,
+      satin_alinanlar: liste,
+    }).catch(()=>{});
+  }
+  _mBildirim('✅ ' + u.ad + ' stoğuna eklendi!', '#43e97b');
+  // Altın sayacını güncelle
+  const sayac = document.getElementById('maceraAltinSayac');
+  if (sayac) sayac.textContent = window.currentUserData.altin;
+  // Modalı yenile
+  setTimeout(()=>_mDetay(id), 300);
+}
+
 // Aksesuar SVG içerikleri
 const _AKSESUAR_SVG = {
   sapka:  '<ellipse cx="80" cy="54" rx="34" ry="7" fill="#1a1030"/><path d="M56 54 Q58 20 80 14 Q102 20 104 54 Z" fill="#1a1030"/><ellipse cx="80" cy="54" rx="34" ry="5" fill="none" stroke="#f9ca24" stroke-width="2.5"/><ellipse cx="80" cy="17" rx="6" ry="4" fill="#f9ca24"/>',
@@ -378,18 +427,37 @@ function _mArkaplanSifirla() {
 }
 
 // ── Etiket ────────────────────────────────────────────────
+// Etiket renk haritası
+const _ETIKET_STILLER = {
+  '🔥 Çalışkan':  'background:linear-gradient(135deg,#ff4444,#cc1111);color:white;box-shadow:0 2px 8px rgba(255,68,68,0.4)',
+  '⚡ Hızlı':     'background:linear-gradient(135deg,#00d2ff,#0099cc);color:white;box-shadow:0 2px 8px rgba(0,210,255,0.3)',
+  '👑 Efsane':    'background:linear-gradient(135deg,#f9ca24,#e6a800);color:#1a1200;box-shadow:0 2px 8px rgba(249,202,36,0.4)',
+  '💎 Elit':      'background:linear-gradient(135deg,#a855f7,#7c22cc);color:white;box-shadow:0 2px 8px rgba(168,85,247,0.4)',
+  '🦸 Kahraman':  'background:linear-gradient(135deg,#ff6b9d,#cc2266);color:white;box-shadow:0 2px 8px rgba(255,107,157,0.35)',
+  '🦉 Bilge':     'background:linear-gradient(135deg,#45b7d1,#1a7a99);color:white;box-shadow:0 2px 8px rgba(69,183,209,0.35)',
+  '🌋 Ateş Kalbi':'background:linear-gradient(135deg,#ff8c00,#cc4400);color:white;box-shadow:0 2px 8px rgba(255,140,0,0.4)',
+};
+
 function _mEtiketUygula(etiket) {
-  // Menü isminin yanına ekle
+  const stil = _ETIKET_STILLER[etiket] || 'background:rgba(108,99,255,.3);color:white';
+  // Önce eskiyi kaldır
+  const eskiEl = document.getElementById('_menuEtiket');
+  if (eskiEl) eskiEl.remove();
+  // Header isim alanına ekle
   const nameEl = document.getElementById('menuName');
-  if (!nameEl) return;
-  let etiketEl = document.getElementById('_menuEtiket');
-  if (!etiketEl) {
-    etiketEl = document.createElement('span');
-    etiketEl.id = '_menuEtiket';
-    etiketEl.style.cssText = 'font-size:.65rem;font-weight:700;background:rgba(108,99,255,.2);border:1px solid rgba(108,99,255,.4);border-radius:99px;padding:2px 7px;margin-left:6px;color:var(--accent)';
-    nameEl.parentNode.insertBefore(etiketEl, nameEl.nextSibling);
+  if (nameEl) {
+    const span = document.createElement('span');
+    span.id = '_menuEtiket';
+    span.style.cssText = stil + ';font-size:.75rem;font-weight:800;padding:3px 9px;border-radius:99px;margin-left:6px;display:inline-flex;align-items:center;vertical-align:middle';
+    span.textContent = etiket;
+    nameEl.insertAdjacentElement('afterend', span);
   }
-  etiketEl.textContent = etiket;
+  // Firebase'e kaydet — koç ve arkadaşlar görsün
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    if (window.currentUserData) window.currentUserData.etiket = etiket;
+    db.collection('users').doc(uid).update({ etiket: etiket }).catch(()=>{});
+  }
 }
 
 function _mEtiketSifirla() {
@@ -440,63 +508,189 @@ async function _mIsimKaydet(urunId) {
     });
     _mBildirim('✏️ Ejderha adı: ' + isim, '#43e97b');
     document.getElementById('_mModal').style.display = 'none';
-    // Ejderha başlığını güncelle
-    const titleEl = document.querySelector('#ejderha-scene')?.closest('.card')?.querySelector('.card-title');
-    if (titleEl) titleEl.textContent = '🐉 ' + isim;
-  } catch(e) { _mBildirim('Hata', '#ff6b6b'); }
+    // Tüm ejderha başlıklarını güncelle
+    document.querySelectorAll('.card-title').forEach(el => {
+      if (el.textContent.includes('Soru Ejderhası') || el.textContent.includes('🐉')) {
+        el.textContent = '🐉 ' + isim;
+      }
+    });
+    // Macera sayfası açıksa yenile
+    if (typeof maceraPage === 'function' && document.getElementById('ejderha-scene')) {
+      const cont = document.getElementById('mainContent');
+      if (cont) { cont.innerHTML = maceraPage(); setTimeout(_marketUygulaEfektler, 150); }
+    }
+  } catch(e) { console.error('Hediye hata:', e); _mBildirim('Hata: ' + e.message, '#ff6b6b'); }
 }
 
 // ── Hediye Gönder ─────────────────────────────────────────
 function _mHediyeGonder(urunId, urun) {
   const modal = document.getElementById('_mModal');
   if (!modal) return;
-  const sinifArkadaşları = (window.students || []).filter(s => s.uid !== (window.currentUserData?.uid));
-  if (!sinifArkadaşları.length) {
-    _mBildirim('Sınıf arkadaşın yok', '#f9ca24');
+
+  // Önce yükleniyor göster
+  modal.style.display = 'flex';
+  modal.innerHTML = '<div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;max-width:290px;width:88%;text-align:center">'
+    + '<div style="font-size:1.5rem;margin-bottom:8px">🎁</div>'
+    + '<div style="color:var(--text2);font-size:.85rem">Arkadaşlar yükleniyor...</div>'
+    + '</div>';
+
+  // Aynı öğretmene bağlı öğrencileri Firebase'den çek
+  const uid = auth.currentUser?.uid;
+  const teacherId = window.currentUserData?.teacherId || '';
+  if (!uid || !teacherId) {
+    _mBildirim('Öğretmen bilgisi bulunamadı', '#ff6b6b');
+    modal.style.display = 'none';
     return;
   }
-  const arkList = sinifArkadaşları.map(s =>
-    '<button onclick="_mHediyeGonderKisi(\'' + urunId + '\',\'' + s.uid + '\',\'' + (s.name||'').replace(/'/g,'') + '\')" style="width:100%;padding:10px;background:var(--surface2);border:none;border-radius:10px;cursor:pointer;font-size:.85rem;font-weight:700;color:var(--text);text-align:left;font-family:inherit;margin-bottom:6px">' + (s.name || s.email) + '</button>'
-  ).join('');
 
-  modal.style.display = 'flex';
-  modal.innerHTML = '<div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;max-width:290px;width:88%;max-height:70vh;overflow-y:auto">'
-    + '<div style="font-size:2rem;text-align:center;margin-bottom:8px">' + urun.ikon + '</div>'
-    + '<div style="font-weight:900;font-size:1rem;text-align:center;margin-bottom:6px">' + urun.ad + '</div>'
-    + '<div style="font-size:.8rem;color:var(--text2);text-align:center;margin-bottom:14px">Kime gönderiyorsun?</div>'
-    + arkList
-    + '<button onclick="document.getElementById(\'_mModal\').style.display=\'none\'" style="width:100%;background:transparent;border:none;color:var(--text2);font-size:.8rem;cursor:pointer;margin-top:8px;font-family:inherit">Kapat</button>'
-    + '</div>';
+  const okul = window.currentUserData?.school || '';
+  if (!okul) {
+    _mBildirim('Okul bilgisi bulunamadı', '#ff6b6b');
+    modal.style.display = 'none';
+    return;
+  }
+  db.collection('users')
+    .where('role', '==', 'student')
+    .where('school', '==', okul)
+    .get()
+    .then(snap => {
+      const arkadaslar = [];
+      snap.forEach(d => {
+        if (d.id !== uid) arkadaslar.push({ uid: d.id, name: d.data().name || d.data().email });
+      });
+
+      if (!arkadaslar.length) {
+        modal.innerHTML = '<div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;max-width:290px;width:88%;text-align:center">'
+          + '<div style="font-size:2rem;margin-bottom:8px">😔</div>'
+          + '<div style="font-size:.85rem;color:var(--text2);margin-bottom:14px">Henüz sınıf arkadaşın yok</div>'
+          + '<button onclick="document.getElementById(\'_mModal\').style.display=\'none\'" style="background:var(--surface2);border:none;border-radius:10px;padding:9px 24px;font-size:.85rem;font-weight:700;cursor:pointer;color:var(--text);font-family:inherit">Kapat</button>'
+          + '</div>';
+        return;
+      }
+
+      const arkList = arkadaslar.map(s =>
+        '<button onclick="_mHediyeGonderKisi(\'' + urunId + '\',\'' + s.uid + '\',\'' + s.name.replace(/'/g,'') + '\')" '
+        + 'style="width:100%;padding:10px 14px;background:var(--surface2);border:none;border-radius:10px;cursor:pointer;font-size:.85rem;font-weight:700;color:var(--text);text-align:left;font-family:inherit;margin-bottom:6px;display:flex;align-items:center;gap:8px">'
+        + '<span style="width:30px;height:30px;border-radius:50%;background:var(--accent);color:white;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:900;flex-shrink:0">' + s.name[0].toUpperCase() + '</span>'
+        + s.name + '</button>'
+      ).join('');
+
+      modal.innerHTML = '<div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:22px;max-width:290px;width:88%;max-height:70vh;overflow-y:auto">'
+        + '<div style="font-size:2rem;text-align:center;margin-bottom:6px">' + urun.ikon + '</div>'
+        + '<div style="font-weight:900;font-size:1rem;text-align:center;margin-bottom:4px">' + urun.ad + '</div>'
+        + '<div style="font-size:.78rem;color:var(--text2);text-align:center;margin-bottom:14px">Kime gönderiyorsun?</div>'
+        + arkList
+        + '<button onclick="document.getElementById(\'_mModal\').style.display=\'none\'" style="width:100%;background:transparent;border:none;color:var(--text2);font-size:.8rem;cursor:pointer;margin-top:8px;font-family:inherit">Kapat</button>'
+        + '</div>';
+    })
+    .catch(() => { _mBildirim('Arkadaşlar yüklenemedi', '#ff6b6b'); modal.style.display = 'none'; });
 }
 
 async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
   const urun = MARKET_URUNLER[urunId];
   const uid = auth.currentUser?.uid;
   if (!uid || !urun) return;
-  const altin = window.currentUserData?.altin || 0;
-  if (altin < urun.fiyat) { _mBildirim('Yeterli altın yok!', '#ff6b6b'); return; }
+  
+  // Stokta var mı kontrol et
+  const satin = window.currentUserData?.satin_alinanlar || [];
+  const stokIdx = satin.lastIndexOf(urunId);
+  if (stokIdx === -1) { _mBildirim('Stokta hediye yok!', '#ff6b6b'); return; }
+  
+  const gonderen = window.currentUserData?.name || 'Arkadaşın';
 
-  window.currentUserData.altin = altin - urun.fiyat;
   try {
-    // Gönderenden düş
-    await db.collection('users').doc(uid).update({ altin: window.currentUserData.altin });
-    // Alıcıya ekle
-    const hedefDoc = await db.collection('users').doc(hedefUid).get();
-    const hedefAltin = (hedefDoc.data()?.altin || 0) + (urun.deger || 0);
-    await db.collection('users').doc(hedefUid).update({ altin: hedefAltin });
-    // Bildirim
-    await db.collection('notifications').add({
-      toUid: hedefUid,
-      fromUid: uid,
-      text: '🎁 ' + (window.currentUserData?.name || 'Arkadaşın') + ' sana ' + urun.deger + ' altın hediye etti!',
-      type: 'hediye', read: false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    // Gönderilen hediyeyi stoktan düş
+    const liste = window.currentUserData?.satin_alinanlar || [];
+    const idx = liste.lastIndexOf(urunId);
+    if (idx !== -1) liste.splice(idx, 1);
+    window.currentUserData.satin_alinanlar = liste;
+    await db.collection('users').doc(uid).update({ 
+      satin_alinanlar: liste,
     });
+
+    let bildirimMetni = '';
+    let hedefGuncelleme = {};
+
+    if (urun.tip === 'hediye') {
+      // Altın hediye
+      const hedefDoc = await db.collection('users').doc(hedefUid).get();
+      const hedefAltin = (hedefDoc.data()?.altin || 0) + (urun.deger || 0);
+      hedefGuncelleme = { altin: hedefAltin };
+      bildirimMetni = '🎁 ' + gonderen + ' sana ' + urun.deger + ' altın hediye etti!';
+    } else if (urun.tip === 'hediye_sans') {
+      // Rastgele altın - deger'e göre aralık
+      let min=10, max=200;
+      if (urun.deger === 1) { min=5; max=300; }
+      else if (urun.deger === 2) { min=50; max=500; }
+      const miktar = Math.floor(Math.random() * (max-min+1)) + min;
+      const hedefDoc = await db.collection('users').doc(hedefUid).get();
+      const hedefAltin = (hedefDoc.data()?.altin || 0) + miktar;
+      hedefGuncelleme = { altin: hedefAltin };
+      bildirimMetni = (urun.ikon||'🎲') + ' ' + gonderen + ' sana şans zarı attı! ' + miktar + ' altın kazandın!';
+    } else if (urun.tip === 'hediye_mesaj') {
+      const mesajlar = {
+        motivasyon: ['💪 Çok iyi gidiyorsun!', '⭐ Harika bir çalışma tempon var!', '🚀 Hedefine odaklan, başarırsın!', '💎 Çok değerlisin!', '🎯 Her gün biraz daha iyisin!'],
+        tebrik:     ['🎊 Tebrikler, harika iş çıkardın!', '🏆 Bu başarı seni çok yakıştı!', '🌟 Gerçekten muhteşemsin!', '👏 Bravo, devam et!', '🥳 Ne kadar güzel bir başarı!'],
+        basari:     ['🏅 Bu başarın herkesi gururlandırdı!', '🌠 Çok iyi ilerliyorsun!', '💡 Zekân ve çalışkanlığın birleşince bu oluyor!'],
+        calis:      ['📚 İyi çalışmalar, başarılar!', '✏️ Bol şans dilerim!', '🎯 Odaklan, her şeyi başarabilirsin!', '📖 Çalışmalarında kolaylıklar!'],
+        gec:        ['⏰ Yine erken uyandın mı?', '😄 Günaydın, bugün harika bir gün olacak!', '🌅 Günaydın, umarım güzel bir günün olur!'],
+        inan:       ['🌟 Sana çok inanıyorum!', '💙 Her zaman yapabilirsin!', '🤝 Yanındayım, başarırsın!'],
+        guzel:      ['✨ Gerçekten harika birisin!', '🌈 Çok güzel bir insan olduğunu unutma!', '💫 Her gün biraz daha güçleniyorsun!'],
+        komik:      ['😄 Güzel bir güne umutla bak!', '😊 Gülümsemeyi eksik etme!', '🎉 Bugün harika şeyler olacak!'],
+      };
+      const liste = mesajlar[urun.deger] || ['💌 Seni düşünüyorum!'];
+      bildirimMetni = liste[Math.floor(Math.random() * liste.length)] + ' — ' + gonderen;
+    } else if (urun.tip === 'hediye_boost') {
+      bildirimMetni = (urun.ikon||'⚡') + ' ' + gonderen + ' sana ' + urun.ad + ' hediye etti!';
+    } else if (urun.tip === 'meydan') {
+      bildirimMetni = '⚔️ ' + gonderen + ' sana meydan okudu! ' + urun.ad + ' — Kabul ediyor musun?';
+    } else {
+      bildirimMetni = (urun.ikon||'🎁') + ' ' + gonderen + ' sana ' + urun.ad + ' gönderdi!';
+    }
+    
+    // bildirimMetni boşsa fallback
+    if (!bildirimMetni) bildirimMetni = '🎁 ' + gonderen + ' sana bir hediye gönderdi!';
+
+    if (Object.keys(hedefGuncelleme).length) {
+      await db.collection('users').doc(hedefUid).update(hedefGuncelleme);
+    }
+
+    // 1. Bildirim gönder
+    if (typeof sendNotif === 'function') {
+      await sendNotif(hedefUid, bildirimMetni, 'hediye', uid);
+    } else {
+      await db.collection('notifications').add({
+        toUid: hedefUid, fromUid: uid,
+        text: bildirimMetni,
+        type: 'hediye', read: false,
+        time: new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+    // 2. Mesaj olarak da yaz — messages.js formatıyla uyumlu
+    try {
+      const _cid = [uid, hedefUid].sort().join('_');
+      const now = new Date();
+      const msgData = {
+        id: Date.now().toString(),
+        text: bildirimMetni,
+        senderUid: uid,
+        senderName: gonderen,
+        time: now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
+        dateKey: now.toISOString().split('T')[0],
+        seen: false,
+        type: 'hediye',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+      await db.collection('messages').doc(_cid).collection('msgs').add(msgData);
+    } catch(e) { console.log('Mesaj yazma hatası:', e.message); }
+
     _mBildirim('🎁 ' + hedefIsim + "'e gönderildi!", '#43e97b');
-    document.getElementById('_mModal').style.display = 'none';
+    const _mm = document.getElementById('_mModal');
+    if (_mm) _mm.style.display = 'none';
     const sayac = document.getElementById('maceraAltinSayac');
     if (sayac) sayac.textContent = window.currentUserData.altin;
-  } catch(e) { _mBildirim('Hata', '#ff6b6b'); }
+  } catch(e) { console.error('Hediye hata:', e); _mBildirim('Hata: ' + e.message, '#ff6b6b'); }
 }
 
 // ── Konfeti Efekti ────────────────────────────────────────
@@ -648,11 +842,20 @@ function _mDetay(id) {
 
   let btn = '';
   if (u.tip === 'isim') {
-    btn = '<button onclick="marketSatinAl(\'' + id + '\');document.getElementById(\'_mModal\').style.display=\'none\'" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit">' + (sahip ? '✏️ İsmi Değiştir' : 'İsim Ver — ' + u.fiyat + ' 💰') + '</button>';
-  } else if (u.tip === 'hediye' || u.tip === 'meydan') {
-    btn = altin >= u.fiyat
-      ? '<button onclick="marketSatinAl(\'' + id + '\')" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit">Gönder — ' + u.fiyat + ' 💰</button>'
-      : '<div style="text-align:center;font-size:.78rem;color:var(--text2)">' + (u.fiyat-altin) + ' altın daha lazım</div>';
+    if (sahip || altin >= u.fiyat) {
+      btn = '<button onclick="_mIsimVer(\'' + id + '\', MARKET_URUNLER[\'' + id + '\'])" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit">' + (sahip ? '✏️ İsmi Değiştir' : 'İsim Ver — ' + u.fiyat + ' 💰') + '</button>';
+    } else {
+      btn = '<div style="background:var(--surface2);border-radius:10px;padding:10px;font-size:.78rem;color:var(--text2);text-align:center">' + (u.fiyat-altin) + ' altın daha lazım</div>';
+    }
+  } else if (['hediye','hediye_sans','hediye_mesaj','hediye_boost','meydan'].includes(u.tip)) {
+    const sahipMiktar = (window.currentUserData?.satin_alinanlar || []).filter(k=>k===id).length;
+    const sahipBtn = altin >= u.fiyat
+      ? '<button onclick="_mHediyeSatinAl(\'' + id + '\')" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--surface2);color:var(--text);font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">🛒 Satın Al — ' + u.fiyat + ' 💰</button>'
+      : '<div style="text-align:center;font-size:.78rem;color:var(--text2);margin-bottom:8px">' + (u.fiyat-altin) + ' altın daha lazım</div>';
+    const gonderBtn = sahipMiktar > 0
+      ? '<button onclick="_mHediyeGonder(\'' + id + '\',MARKET_URUNLER[\'' + id + '\'])" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit">🎁 Gönder (' + sahipMiktar + ' adet)</button>'
+      : '<div style="text-align:center;font-size:.78rem;color:var(--text2);padding:8px;background:var(--surface2);border-radius:8px">Önce satın almalısın</div>';
+    btn = sahipBtn + gonderBtn;
   } else if (sahip && aktifMi) {
     btn = '<button onclick="marketAktifEt(\'' + id + '\')" style="width:100%;padding:11px;border-radius:10px;border:none;background:rgba(255,107,107,.15);color:#ff6b6b;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #ff6b6b55">✓ Aktif — Kapat</button>';
   } else if (sahip) {
@@ -695,4 +898,11 @@ const _mStyle = document.createElement('style');
 _mStyle.textContent = '@keyframes _mDus{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}';
 document.head.appendChild(_mStyle);
 
-setTimeout(_marketUygulaEfektler, 800);
+setTimeout(() => {
+  _marketUygulaEfektler();
+  // Kayıtlı etiket varsa göster
+  const etiket = window.currentUserData?.etiket;
+  if (etiket) _mEtiketUygula(etiket);
+}, 800);
+
+window.MARKET_URUNLER = MARKET_URUNLER;
