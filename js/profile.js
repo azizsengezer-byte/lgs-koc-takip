@@ -1,4 +1,19 @@
 
+function _etiketHTML(etiket) {
+  if (!etiket) return '';
+  const s = {
+    '🔥 Çalışkan':  'background:linear-gradient(135deg,#ff4444,#cc1111);color:white',
+    '⚡ Hızlı':     'background:linear-gradient(135deg,#00d2ff,#0099cc);color:white',
+    '👑 Efsane':    'background:linear-gradient(135deg,#f9ca24,#e6a800);color:#1a1200',
+    '💎 Elit':      'background:linear-gradient(135deg,#a855f7,#7c22cc);color:white',
+    '🦸 Kahraman':  'background:linear-gradient(135deg,#ff6b9d,#cc2266);color:white',
+    '🦉 Bilge':     'background:linear-gradient(135deg,#45b7d1,#1a7a99);color:white',
+    '🌋 Ateş Kalbi':'background:linear-gradient(135deg,#ff8c00,#cc4400);color:white',
+  };
+  return `<span style="${s[etiket]||'background:rgba(108,99,255,.3);color:white'};font-size:9px;font-weight:800;padding:2px 7px;border-radius:99px;margin-left:5px;vertical-align:middle">${etiket}</span>`;
+}
+
+
 // ── OKUL ARKADAŞLARI ─────────────────────────────────────────
 async function okulArkadaslariniYukle() {
   const myData = window.currentUserData || {};
@@ -39,7 +54,7 @@ async function okulArkadaslariniYukle() {
         <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
           ${foto}
           <div style="flex:1;min-width:0">
-            <div style="font-weight:800;font-size:0.9rem">${isim}</div>
+            <div style="font-weight:800;font-size:0.9rem;display:flex;align-items:center;flex-wrap:wrap">${isim}${_etiketHTML(a.etiket||"")}</div>
             <div style="font-size:0.72rem;color:var(--text2);margin-top:1px">${a.classroom||''} ${a.school||''}</div>
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0">
@@ -47,7 +62,7 @@ async function okulArkadaslariniYukle() {
               style="background:var(--accent)15;color:var(--accent);border:1px solid var(--accent)44;border-radius:8px;padding:5px 10px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
               💬
             </button>
-            <button onclick="arkadasProfilGoster('${a.uid}','${isim}','${renk}','${a.photo||''}')"
+            <button onclick="arkadasProfil('${a.uid}','${isim}','${renk}','${a.photo||''}','${a.etiket||''}')"
               style="background:var(--surface2);color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
               👤
             </button>
@@ -65,47 +80,11 @@ function arkadasMesajAt(uid, isim, renk) {
   showPage('messages');
 }
 
-function arkadasProfil(uid, isim, renk, foto) {
-  const existing = document.getElementById('arkadaProfilModal');
-  if (existing) existing.remove();
-
-  const avatarHTML = foto
-    ? `<img src="${foto}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin:0 auto 12px;display:block">`
-    : `<div style="width:80px;height:80px;border-radius:50%;background:${renk}22;color:${renk};display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin:0 auto 12px">${isim[0]}</div>`;
-
-  const modal = document.createElement('div');
-  modal.id = 'arkadaProfilModal';
-  modal.className = 'modal-overlay open';
-  modal.innerHTML = `
-    <div class="modal" style="max-width:320px;text-align:center">
-      ${avatarHTML}
-      <div style="font-size:1.2rem;font-weight:900;margin-bottom:4px">${isim}</div>
-      <div style="font-size:0.82rem;color:var(--text2);margin-bottom:20px">🏫 Okul Arkadaşı</div>
-      <button class="btn btn-primary" style="width:100%;margin-bottom:8px"
-        onclick="document.getElementById('arkadaProfilModal').remove();arkadasMesajAt('${uid}','${isim}','${renk}')">
-        💬 Mesaj Gönder
-      </button>
-      <button class="btn btn-outline" style="width:100%;margin-bottom:8px"
-        onclick="document.getElementById('arkadaProfilModal').remove();setTimeout(()=>arkadasHediyeGonder('${uid}','${isim}'),100)">
-        🎁 Hediye Gönder
-      </button>
-      <button class="btn btn-outline" style="width:100%"
-        onclick="document.getElementById('arkadaProfilModal').remove()">
-        Kapat
-      </button>
-    </div>
-  `;
-  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
-  document.body.appendChild(modal);
-}
-
-
-// ── Hediye Gönder ────────────────────────────────────────────
 function arkadasHediyeGonder(uid, isim) {
   // Önce tüm açık modalları kapat
   const existing = document.getElementById('arkadaProfilModal');
   if (existing) existing.remove();
-  
+
   // _mModal yoksa oluştur
   let modal = document.getElementById('_mModal');
   if (!modal) {
@@ -120,7 +99,6 @@ function arkadasHediyeGonder(uid, isim) {
   const hediyeTipleri = ['hediye','hediye_sans','hediye_mesaj','hediye_boost','meydan'];
   const urunler = window.MARKET_URUNLER || {};
 
-  // Stoğu say
   const stok = {};
   satin.forEach(id => {
     const u = urunler[id];
@@ -135,15 +113,16 @@ function arkadasHediyeGonder(uid, isim) {
       <div style="font-size:2.5rem;margin-bottom:8px">🎁</div>
       <div style="font-weight:900;font-size:1rem;margin-bottom:6px">Hediye Yok</div>
       <div style="font-size:.8rem;color:var(--text2);margin-bottom:14px">Önce marketten hediye satın alman gerekiyor.</div>
-      <button onclick="document.getElementById('_mModal').style.display='none';window._mKat='sosyal';showPage('market')" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">🛒 Markete Git</button>
-      <button onclick="document.getElementById('_mModal').style.display='none'" style="background:transparent;border:none;color:var(--text2);font-size:.8rem;cursor:pointer;font-family:inherit">Kapat</button>
+      <button onclick="var m=document.getElementById('_mModal');if(m)m.style.display='none';window._mKat='sosyal';showPage('market')" style="width:100%;padding:11px;border-radius:10px;border:none;background:var(--accent);color:white;font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">🛒 Markete Git</button>
+      <button onclick="var m=document.getElementById('_mModal');if(m)m.style.display='none'" style="background:transparent;border:none;color:var(--text2);font-size:.8rem;cursor:pointer;font-family:inherit">Kapat</button>
     </div>`;
     return;
   }
 
   const hediyeListesi = Object.entries(stok).map(([id, adet]) => {
     const u = urunler[id];
-    return `<button onclick="_mHediyeGonderKisi('${id}','${uid}','${isim.replace(/'/g,"\'")}');document.getElementById('_mModal').style.display='none'"
+    const gIsim = isim.replace(/'/g,"\'");
+    return `<button onclick="_mHediyeGonderKisi('${id}','${uid}','${gIsim}');var m=document.getElementById('_mModal');if(m)m.style.display='none'"
       style="width:100%;padding:10px 14px;background:var(--surface2);border:none;border-radius:10px;cursor:pointer;font-size:.82rem;font-weight:700;color:var(--text);text-align:left;font-family:inherit;margin-bottom:6px;display:flex;align-items:center;gap:8px">
       <span style="font-size:1.2rem">${u.ikon}</span>
       <span style="flex:1">${u.ad}</span>
@@ -157,9 +136,45 @@ function arkadasHediyeGonder(uid, isim) {
     <div style="font-weight:900;font-size:1rem;text-align:center;margin-bottom:4px">${isim}'e Hediye Gönder</div>
     <div style="font-size:.75rem;color:var(--text2);text-align:center;margin-bottom:14px">Hangi hediyeyi gönderiyorsun?</div>
     ${hediyeListesi}
-    <button onclick="document.getElementById('_mModal').style.display='none'" style="width:100%;background:transparent;border:none;color:var(--text2);font-size:.8rem;cursor:pointer;margin-top:8px;font-family:inherit">Kapat</button>
+    <button onclick="var m=document.getElementById('_mModal');if(m)m.style.display='none'" style="width:100%;background:transparent;border:none;color:var(--text2);font-size:.8rem;cursor:pointer;margin-top:8px;font-family:inherit">Kapat</button>
   </div>`;
 }
+
+function arkadasProfil(uid, isim, renk, foto, etiket) {
+  const existing = document.getElementById('arkadaProfilModal');
+  if (existing) existing.remove();
+  const etiketHTML = _etiketHTML(etiket||"");
+
+  const avatarHTML = foto
+    ? `<img src="${foto}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin:0 auto 12px;display:block">`
+    : `<div style="width:80px;height:80px;border-radius:50%;background:${renk}22;color:${renk};display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin:0 auto 12px">${isim[0]}</div>`;
+
+  const modal = document.createElement('div');
+  modal.id = 'arkadaProfilModal';
+  modal.className = 'modal-overlay open';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:320px;text-align:center">
+      ${avatarHTML}
+      <div style="font-size:1.2rem;font-weight:900;margin-bottom:4px">${isim}${etiketHTML}</div>
+      <div style="font-size:0.82rem;color:var(--text2);margin-bottom:20px">🏫 Okul Arkadaşı</div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:8px"
+        onclick="document.getElementById('arkadaProfilModal').remove();arkadasMesajAt('${uid}','${isim}','${renk}')">
+        💬 Mesaj Gönder
+      </button>
+      <button class="btn btn-outline" style="width:100%;margin-bottom:8px"
+        onclick="document.getElementById('arkadaProfilModal').remove();setTimeout(()=>arkadasHediyeGonder('${uid}','${isim}'),50)">
+        🎁 Hediye Gönder
+      </button>
+      <button class="btn btn-outline" style="width:100%"
+        onclick="document.getElementById('arkadaProfilModal').remove()">
+        Kapat
+      </button>
+    </div>
+  `;
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
 
 // ── Koç Okul Yönetimi ────────────────────────────────────────
 async function teacherOkulEkle() {
@@ -1011,12 +1026,9 @@ function notificationsPage() {
                       : n.type==='hediye' ? 'messages'
                       : n.type==='gorusme' ? (currentRole==='student'?'wellness':'students')
                       : null;
-          const hedefOnClick = n.type==='hediye' && n.fromUid
-                      ? `activeChat='${n.fromUid}';showPage('messages')`
-                      : hedef ? `showPage('${hedef}')` : '';
           return `
           <div class="notif-item ${n.read ? '' : 'unread'}" 
-            onclick="${hedefOnClick || (hedef?`showPage('${hedef}')`:'')}" 
+            onclick="${hedef?`showPage('${hedef}')`:''}" 
             style="${hedef?'cursor:pointer':''};display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)22">
             <div class="notif-dot ${n.read ? 'read' : ''}"></div>
             <div style="flex:1">
