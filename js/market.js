@@ -629,14 +629,14 @@ async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
       bildirimMetni = (urun.ikon||'🎲') + ' ' + gonderen + ' sana şans zarı attı! ' + miktar + ' altın kazandın!';
     } else if (urun.tip === 'hediye_mesaj') {
       const mesajlar = {
-        motivasyon: ['💪 Sen yapabilirsin!', '🔥 Ateşini söndürme!', '⭐ Yıldızlara ulaş!', '🚀 Hedefine odaklan!', '💎 Mükemmelsin!'],
-        tebrik:     ['🎊 Tebrikler!', '🏆 Harikasın!', '🌟 Muhteşemsin!', '👏 Bravo!', '🥳 Süpersin!'],
-        basari:     ['🏅 Başarın gururlandırıyor!', '🌠 Zirveye ulaş!', '💡 Parlak bir zihin!'],
-        calis:      ['📚 İyi çalışmalar!', '✏️ Bol şans!', '🎯 Odaklan, başarırsın!'],
-        gec:        ['⏰ Uyandın mı?', '😴 Kalk, seni bekliyoruz!', '🌅 Günaydın, geç kalma!'],
-        inan:       ['🌟 Sana inanıyorum!', '💙 Yapabilirsin!', '🤝 Yanındayım!'],
-        guzel:      ['✨ Harikasın!', '🌈 En iyisin!', '💫 Mükemmelsin!'],
-        komik:      ['😂 Bugün de komiksin!', '🤣 Gülüyorum sana!', '😆 Hep böyle kal!'],
+        motivasyon: ['💪 Çok iyi gidiyorsun!', '⭐ Harika bir çalışma tempon var!', '🚀 Hedefine odaklan, başarırsın!', '💎 Çok değerlisin!', '🎯 Her gün biraz daha iyisin!'],
+        tebrik:     ['🎊 Tebrikler, harika iş çıkardın!', '🏆 Bu başarı seni çok yakıştı!', '🌟 Gerçekten muhteşemsin!', '👏 Bravo, devam et!', '🥳 Ne kadar güzel bir başarı!'],
+        basari:     ['🏅 Bu başarın herkesi gururlandırdı!', '🌠 Çok iyi ilerliyorsun!', '💡 Zekân ve çalışkanlığın birleşince bu oluyor!'],
+        calis:      ['📚 İyi çalışmalar, başarılar!', '✏️ Bol şans dilerim!', '🎯 Odaklan, her şeyi başarabilirsin!', '📖 Çalışmalarında kolaylıklar!'],
+        gec:        ['⏰ Yine erken uyandın mı?', '😄 Günaydın, bugün harika bir gün olacak!', '🌅 Günaydın, umarım güzel bir günün olur!'],
+        inan:       ['🌟 Sana çok inanıyorum!', '💙 Her zaman yapabilirsin!', '🤝 Yanındayım, başarırsın!'],
+        guzel:      ['✨ Gerçekten harika birisin!', '🌈 Çok güzel bir insan olduğunu unutma!', '💫 Her gün biraz daha güçleniyorsun!'],
+        komik:      ['😄 Güzel bir güne umutla bak!', '😊 Gülümsemeyi eksik etme!', '🎉 Bugün harika şeyler olacak!'],
       };
       const liste = mesajlar[urun.deger] || ['💌 Seni düşünüyorum!'];
       bildirimMetni = liste[Math.floor(Math.random() * liste.length)] + ' — ' + gonderen;
@@ -660,19 +660,22 @@ async function _mHediyeGonderKisi(urunId, hedefUid, hedefIsim) {
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
     }
-    // 2. Mesaj olarak da yaz
+    // 2. Mesaj olarak da yaz — messages.js formatıyla uyumlu
     try {
       const _cid = [uid, hedefUid].sort().join('_');
-      const convId = _cid;
       const now = new Date();
-      await db.collection('messages').doc(convId).collection('msgs').add({
-        senderId: uid,
+      const msgData = {
+        id: Date.now().toString(),
         text: '🎁 ' + bildirimMetni,
+        senderUid: uid,
+        senderName: gonderen,
         time: now.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
         dateKey: now.toISOString().split('T')[0],
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        seen: false,
         type: 'hediye',
-      });
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+      await db.collection('messages').doc(_cid).collection('msgs').add(msgData);
     } catch(e) { console.log('Mesaj yazma hatası:', e.message); }
 
     _mBildirim('🎁 ' + hedefIsim + "'e gönderildi!", '#43e97b');

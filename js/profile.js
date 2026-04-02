@@ -86,7 +86,7 @@ function arkadasProfil(uid, isim, renk, foto) {
         💬 Mesaj Gönder
       </button>
       <button class="btn btn-outline" style="width:100%;margin-bottom:8px"
-        onclick="document.getElementById('arkadaProfilModal').remove();arkadasHediyeGonder('${uid}','${isim}')">
+        onclick="document.getElementById('arkadaProfilModal').remove();setTimeout(()=>arkadasHediyeGonder('${uid}','${isim}'),100)">
         🎁 Hediye Gönder
       </button>
       <button class="btn btn-outline" style="width:100%"
@@ -107,7 +107,7 @@ function arkadasHediyeGonder(uid, isim) {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = '_mModal';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:none;align-items:center;justify-content:center;padding:16px';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:none;align-items:center;justify-content:center;padding:16px';
     modal.onclick = (e) => { if(e.target===modal) modal.style.display='none'; };
     document.body.appendChild(modal);
   }
