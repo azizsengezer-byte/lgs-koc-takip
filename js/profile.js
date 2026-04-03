@@ -78,10 +78,6 @@ async function okulArkadaslariniYukle() {
 function arkadasMesajAt(uid, isim, renk) {
   activeChat = uid;
   showPage('messages');
-  // Sayfa render olduktan sonra konuşmayı aç
-  setTimeout(() => {
-    if (typeof switchChatTo === 'function') switchChatTo(uid, 'student');
-  }, 300);
 }
 
 function arkadasHediyeGonder(uid, isim) {
