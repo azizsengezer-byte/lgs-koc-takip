@@ -175,13 +175,7 @@ function renderStudentPage(id, el) {
   else if(id==='lgs-dagilim') el.innerHTML = lgsDagilimPage();
   else if(id==='all-denemeler') el.innerHTML = allDenemelerPage();
   else if(id==='messages') {
-    messagesPage('student').then(html => {
-      el.innerHTML = html;
-      // Profil'den yönlendirme geldiyse konuşmayı aç
-      if (activeChat && typeof switchChatTo === 'function') {
-        switchChatTo(activeChat, 'student');
-      }
-    });
+    messagesPage('student').then(html => { el.innerHTML = html; });
   }
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
   else if(id==='profile') { profilePage().then(html => { el.innerHTML = html; setTimeout(initApiSettings, 50); setTimeout(okulArkadaslariniYukle, 100); }); }
