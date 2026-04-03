@@ -354,22 +354,7 @@ async function switchChatTo(uid, role) {
 }
 
 
-// ── Engelleme ve Bildirme ──────────────────────────────────
-function _engelleKisi(uid, isim) {
-  const liste = JSON.parse(localStorage.getItem('engelliList') || '[]');
-  const idx = liste.indexOf(uid);
-  if (idx === -1) {
-    liste.push(uid);
-    localStorage.setItem('engelliList', JSON.stringify(liste));
-    showToast('🚫', isim + ' engellendi. Mesajları artık gelmeyecek.');
-  } else {
-    liste.splice(idx, 1);
-    localStorage.setItem('engelliList', JSON.stringify(liste));
-    showToast('✅', isim + ' engeli kaldırıldı.');
-  }
-  const m = document.getElementById('chatPartnerModal');
-  if (m) m.remove();
-}
+
 
 async function _kocaBildir(uid, isim) {
   const myData = window.currentUserData || {};
@@ -401,12 +386,6 @@ async function sendMessage(role) {
   const input = document.getElementById('chatInput');
   const text = input?.value?.trim();
   if (!text || !activeChat) return;
-  // Engelli kontrolü — engellenmiş kişiye mesaj gönderme
-  const _engelliListesi = JSON.parse(localStorage.getItem('engelliList') || '[]');
-  if (_engelliListesi.includes(activeChat)) {
-    showToast('🚫', 'Bu kişiyi engelledin. Mesaj gönderemezsin.');
-    return;
-  }
   // Textarea'yı sıfırla
   if (input.tagName === 'TEXTAREA') { input.style.height = 'auto'; }
   const myData = window.currentUserData || {};
