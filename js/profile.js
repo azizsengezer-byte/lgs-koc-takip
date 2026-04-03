@@ -417,7 +417,12 @@ async function profilePage() {
       </div>
     </div>
     <div class="card" style="margin-top:16px">
-      <div class="card-title">✏️ Bilgilerimi Düzenle</div>
+      <div onclick="const p=document.getElementById('bilgiDuzenlePanel');p.style.display=p.style.display==='none'?'block':'none';this.querySelector('.bd-arrow').style.transform=p.style.display==='block'?'rotate(180deg)':'rotate(0deg)'"
+        style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none">
+        <div class="card-title" style="margin-bottom:0">✏️ Bilgilerimi Düzenle</div>
+        <span class="bd-arrow" style="color:var(--text2);font-size:1.1rem;transition:transform 0.2s">▼</span>
+      </div>
+      <div id="bilgiDuzenlePanel" style="display:none;margin-top:14px">
       <div class="form-group">
         <label class="form-label">Ad Soyad</label>
         <input class="form-input" type="text" id="profileName" value="${name}">
@@ -446,6 +451,7 @@ async function profilePage() {
       `}
       <div id="profileError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
       <button class="btn btn-primary" style="width:100%" onclick="saveProfile()">Kaydet ✓</button>
+      </div>
     </div>
     ${isTeacher ? `
     <div class="card" style="margin-top:16px">
