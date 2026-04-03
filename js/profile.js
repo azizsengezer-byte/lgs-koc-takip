@@ -149,23 +149,53 @@ function arkadasProfil(uid, isim, renk, foto, etiket) {
     ? `<img src="${foto}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin:0 auto 12px;display:block">`
     : `<div style="width:80px;height:80px;border-radius:50%;background:${renk}22;color:${renk};display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin:0 auto 12px">${isim[0]}</div>`;
 
+  // Engel durumunu kontrol et
+  const engelliListe = JSON.parse(localStorage.getItem('engelliList') || '[]');
+  const engelli = engelliListe.includes(uid);
+
   const modal = document.createElement('div');
   modal.id = 'arkadaProfilModal';
   modal.className = 'modal-overlay open';
   modal.innerHTML = `
-    <div class="modal" style="max-width:320px;text-align:center">
+    <div class="modal" style="max-width:340px;text-align:center;padding:24px 20px">
       ${avatarHTML}
       <div style="font-size:1.2rem;font-weight:900;margin-bottom:4px">${isim}${etiketHTML}</div>
-      <div style="font-size:0.82rem;color:var(--text2);margin-bottom:20px">🏫 Okul Arkadaşı</div>
-      <button class="btn btn-primary" style="width:100%;margin-bottom:8px"
-        onclick="document.getElementById('arkadaProfilModal').remove();arkadasMesajAt('${uid}','${isim}','${renk}')">
-        💬 Mesaj Gönder
+      <div style="font-size:0.82rem;color:var(--accent);font-weight:600;margin-bottom:16px">🏫 Okul Arkadaşı</div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn btn-primary" style="flex:1;font-size:0.85rem;padding:10px 0"
+          onclick="document.getElementById('arkadaProfilModal').remove();arkadasMesajAt('${uid}','${isim}','${renk}')">
+          💬 Mesaj Gönder
+        </button>
+      </div>
+
+      <!-- Sekmeler -->
+      <div style="display:flex;border-bottom:2px solid var(--border);margin-bottom:12px" id="apTabs">
+        <button onclick="_apSekme('bilgi')" id="apTab_bilgi" style="flex:1;padding:8px 0;font-size:0.85rem;font-weight:700;border:none;background:transparent;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent);margin-bottom:-2px">📋 Bilgi</button>
+        <button onclick="_apSekme('rozetler')" id="apTab_rozetler" style="flex:1;padding:8px 0;font-size:0.85rem;font-weight:700;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);margin-bottom:-2px">🏆 Rozetler</button>
+      </div>
+
+      <!-- Bilgi sekmesi -->
+      <div id="apPanel_bilgi">
+        <div id="apBilgiIcerik" style="text-align:left;font-size:0.88rem;color:var(--text2);padding:4px 0">
+          Yükleniyor...
+        </div>
+      </div>
+
+      <!-- Rozetler sekmesi -->
+      <div id="apPanel_rozetler" style="display:none">
+        <div id="apRozetIcerik" style="padding:4px 0">
+          Yükleniyor...
+        </div>
+      </div>
+
+      <!-- Engelle / Engeli Kaldır -->
+      <button id="apEngelBtn" onclick="_apEngelToggle('${uid}','${isim}')"
+        style="width:100%;margin-top:14px;padding:10px;border-radius:12px;border:1.5px solid ${engelli ? 'var(--accent3)' : '#ff6584'};background:transparent;color:${engelli ? 'var(--accent3)' : '#ff6584'};font-weight:700;font-size:0.82rem;cursor:pointer">
+        ${engelli ? '✅ Engeli Kaldır' : '🚫 Engelle'}
       </button>
-      <button class="btn btn-outline" style="width:100%;margin-bottom:8px"
-        onclick="document.getElementById('arkadaProfilModal').remove();setTimeout(()=>arkadasHediyeGonder('${uid}','${isim}'),50)">
-        🎁 Hediye Gönder
-      </button>
-      <button class="btn btn-outline" style="width:100%"
+
+      <button class="btn btn-outline" style="width:100%;margin-top:8px"
         onclick="document.getElementById('arkadaProfilModal').remove()">
         Kapat
       </button>
@@ -173,6 +203,88 @@ function arkadasProfil(uid, isim, renk, foto, etiket) {
   `;
   modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
   document.body.appendChild(modal);
+
+  // Bilgi yükle
+  _apBilgiYukle(uid);
+  // Rozetler yükle
+  _apRozetYukle(uid);
+}
+
+// Sekme değiştirme
+function _apSekme(tab) {
+  ['bilgi','rozetler'].forEach(t => {
+    const panel = document.getElementById('apPanel_' + t);
+    const btn = document.getElementById('apTab_' + t);
+    if (panel) panel.style.display = t === tab ? 'block' : 'none';
+    if (btn) {
+      btn.style.borderBottomColor = t === tab ? 'var(--accent)' : 'transparent';
+      btn.style.color = t === tab ? 'var(--accent)' : 'var(--text2)';
+    }
+  });
+}
+
+// Bilgi yükle
+async function _apBilgiYukle(uid) {
+  const el = document.getElementById('apBilgiIcerik');
+  if (!el) return;
+  try {
+    const snap = await db.collection('users').doc(uid).get();
+    if (!snap.exists) { el.innerHTML = '<span style="color:var(--text2)">Bilgi bulunamadı.</span>'; return; }
+    const d = snap.data();
+    const satirlar = [];
+    if (d.school) satirlar.push(`<div style="margin-bottom:6px">🏫 <strong>Okul:</strong> ${d.school}</div>`);
+    if (d.classroom) satirlar.push(`<div style="margin-bottom:6px">📚 <strong>Sınıf:</strong> ${d.classroom}</div>`);
+    el.innerHTML = satirlar.length > 0 ? satirlar.join('') : '<span style="color:var(--text2)">Bilgi eklenmemiş.</span>';
+  } catch(e) {
+    el.innerHTML = '<span style="color:var(--text2)">Bilgi yüklenemedi.</span>';
+  }
+}
+
+// Rozetler yükle
+async function _apRozetYukle(uid) {
+  const el = document.getElementById('apRozetIcerik');
+  if (!el) return;
+  try {
+    if (typeof getBadges !== 'function' || typeof BADGES === 'undefined') {
+      el.innerHTML = '<span style="color:var(--text2);font-size:0.82rem">Rozet sistemi yüklenemedi.</span>';
+      return;
+    }
+    const earned = await getBadges(uid);
+    if (!earned || earned.length === 0) {
+      el.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;padding:8px 0">Henüz rozet kazanılmamış.</div>';
+      return;
+    }
+    el.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">' +
+      earned.map(b => `<div style="text-align:center;width:60px" title="${b.name}">
+        <div style="font-size:1.6rem">${b.icon||'🏅'}</div>
+        <div style="font-size:0.6rem;color:var(--text2);font-weight:600;line-height:1.2;margin-top:2px">${b.name}</div>
+      </div>`).join('') + '</div>';
+  } catch(e) {
+    el.innerHTML = '<span style="color:var(--text2);font-size:0.82rem">Rozetler yüklenemedi.</span>';
+  }
+}
+
+// Engelle / Engeli Kaldır toggle
+function _apEngelToggle(uid, isim) {
+  const liste = JSON.parse(localStorage.getItem('engelliList') || '[]');
+  const idx = liste.indexOf(uid);
+  if (idx === -1) {
+    liste.push(uid);
+    localStorage.setItem('engelliList', JSON.stringify(liste));
+    showToast('🚫', isim + ' engellendi. Mesajları artık gelmeyecek.');
+  } else {
+    liste.splice(idx, 1);
+    localStorage.setItem('engelliList', JSON.stringify(liste));
+    showToast('✅', isim + ' engeli kaldırıldı.');
+  }
+  // Buton güncelle
+  const btn = document.getElementById('apEngelBtn');
+  if (btn) {
+    const yeniEngelli = liste.includes(uid);
+    btn.innerHTML = yeniEngelli ? '✅ Engeli Kaldır' : '🚫 Engelle';
+    btn.style.borderColor = yeniEngelli ? 'var(--accent3)' : '#ff6584';
+    btn.style.color = yeniEngelli ? 'var(--accent3)' : '#ff6584';
+  }
 }
 
 

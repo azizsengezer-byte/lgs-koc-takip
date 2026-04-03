@@ -119,6 +119,25 @@ async function _kocaBildir(uid, isim) {
 
 // ── PROFİL MODAL ─────────────────────────────────────────
 async function chatPartnerProfil(uid, name, color, photo, isSchoolMate) {
+  const isArkadas = isSchoolMate === 'true' || isSchoolMate === true;
+
+  // Arkadaş ise profile.js'teki zengin modalı aç
+  if (isArkadas && typeof arkadasProfil === 'function') {
+    // Firestore'dan etiket bilgisini çek
+    let etiket = '';
+    try {
+      const snap = await db.collection('users').doc(uid).get();
+      if (snap.exists) {
+        const d = snap.data();
+        etiket = d.etiket || '';
+        if (!photo && d.photo) photo = d.photo;
+      }
+    } catch(e) {}
+    arkadasProfil(uid, name, color, photo || '', etiket);
+    return;
+  }
+
+  // Koç/öğretmen ise basit profil göster
   const existing = document.getElementById('chatProfilModal');
   if (existing) existing.remove();
 
@@ -141,21 +160,6 @@ async function chatPartnerProfil(uid, name, color, photo, isSchoolMate) {
   if (okul) detaylar.push(`<div style="font-size:0.85rem;color:var(--text2);margin-bottom:4px">🏫 ${okul}</div>`);
   if (sinif) detaylar.push(`<div style="font-size:0.85rem;color:var(--text2);margin-bottom:4px">📚 ${sinif}</div>`);
 
-  const engelli = _engelliListe().includes(uid);
-  const isStudent = currentRole === 'student';
-  const isArkadas = isSchoolMate === 'true' || isSchoolMate === true;
-
-  let aksiyonlar = '';
-  if (isStudent && isArkadas) {
-    aksiyonlar = `
-      <button onclick="_engelleKisi('${uid}','${name}')" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1.5px solid ${engelli ? 'var(--accent3)' : '#ff6584'};background:transparent;color:${engelli ? 'var(--accent3)' : '#ff6584'};font-weight:700;font-size:0.85rem;cursor:pointer">
-        ${engelli ? '✅ Engeli Kaldır' : '🚫 Engelle'}
-      </button>
-      <button onclick="_kocaBildir('${uid}','${name}')" style="width:100%;margin-top:6px;padding:10px;border-radius:12px;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-weight:700;font-size:0.85rem;cursor:pointer">
-        📢 Koçuma Bildir
-      </button>`;
-  }
-
   const modal = document.createElement('div');
   modal.id = 'chatProfilModal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(26,26,46,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
@@ -163,9 +167,8 @@ async function chatPartnerProfil(uid, name, color, photo, isSchoolMate) {
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:28px 24px;width:100%;max-width:320px;text-align:center;box-shadow:var(--shadow-md)">
       ${avatarHTML}
       <div style="font-size:1.2rem;font-weight:900;margin-bottom:4px">${name}</div>
-      <div style="font-size:0.82rem;color:var(--accent);font-weight:700;margin-bottom:12px">${isArkadas ? '🏫 Okul Arkadaşı' : '👨‍🎓 Öğrenci / Koç'}</div>
+      <div style="font-size:0.82rem;color:var(--accent);font-weight:700;margin-bottom:12px">👨‍🎓 Öğrenci / Koç</div>
       ${detaylar.join('')}
-      ${aksiyonlar}
       <button class="btn btn-outline" style="width:100%;margin-top:12px" onclick="document.getElementById('chatProfilModal').remove()">Kapat</button>
     </div>`;
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
@@ -371,11 +374,6 @@ async function messagesPage(role) {
 
   const hasSchoolMates = partners.some(p => p.isSchoolMate);
 
-  // activeChat varsa, HTML DOM'a yazıldığı anda en alta scroll yap
-  const scrollTrigger = activeChat
-    ? `<img src="" onerror="setTimeout(function(){var c=document.getElementById('chatMessages');if(c)c.scrollTop=c.scrollHeight},0)" style="display:none">`
-    : '';
-
   return `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
       <div>
@@ -395,8 +393,7 @@ async function messagesPage(role) {
       <div class="${winCls}">
         ${chatWindowHTML}
       </div>
-    </div>
-    ${scrollTrigger}`;
+    </div>`;
 }
 
 
@@ -447,14 +444,10 @@ async function switchChatTo(uid, role) {
   updateNotifBadge();
   showPage('messages');
 
-  // Yedek scroll — HTML içindeki scrollTrigger ana iş yapıyor ama
-  // mobilde geç render olursa diye ekstra deneme
-  let _sc = 0;
-  const _si = setInterval(() => {
+  setTimeout(() => {
     const cm = document.getElementById('chatMessages');
     if (cm) { cm.scrollTop = cm.scrollHeight; }
-    if (++_sc > 15) clearInterval(_si);
-  }, 100);
+  }, 80);
 
   // Realtime listener
   if (_chatUnsub) _chatUnsub();
