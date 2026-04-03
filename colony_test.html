@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koloni Test Paneli</title>
+<style>
+:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#252836;--border:#2e3140;--text:#e4e4e7;--text2:#9ca3af;--accent:#6c63ff;--accent2:#ff6584;--accent3:#43e97b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;padding:12px;max-width:500px;margin:0 auto}
+h1{font-size:18px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
+.card-title{font-size:14px;font-weight:700;margin-bottom:10px}
+label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.val{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:8px}
+.btn{padding:10px 16px;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:13px;font-family:inherit;width:100%;margin-bottom:6px}
+.btn-primary{background:var(--accent);color:white}
+.btn-danger{background:#ff6584;color:white}
+.btn-success{background:var(--accent3);color:#000}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text)}
+.info{font-size:11px;color:var(--text2);padding:6px 0;border-bottom:1px solid var(--border)}
+.info b{color:var(--text)}
+.chapter{padding:10px;background:var(--surface2);border-radius:10px;margin-bottom:6px;cursor:pointer;border-left:3px solid var(--accent)}
+.chapter.locked{opacity:0.4;border-left-color:var(--border)}
+.chapter-title{font-size:13px;font-weight:700}
+.chapter-text{font-size:11px;color:var(--text2);line-height:1.6;max-height:0;overflow:hidden;transition:max-height 0.3s}
+.chapter-meta{font-size:10px;color:var(--text2);margin-bottom:2px}
+.mod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.mod-item{padding:10px;background:var(--surface2);border-radius:10px;text-align:center;font-size:12px}
+.mod-item.active{border:1.5px solid var(--accent3)}
+.mod-item.building{border:1.5px dashed var(--accent)}
+.mod-item.locked{opacity:0.3}
+.mod-name{font-weight:700;margin-bottom:2px}
+.mod-status{font-size:10px;color:var(--text2)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);color:var(--text);padding:10px 20px;border-radius:99px;font-size:13px;font-weight:700;z-index:999;display:none}
+.tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto}
+.tab{padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
+.tab.active{border-color:var(--accent);background:rgba(108,99,255,0.15);color:var(--accent)}
+#preview{margin-top:12px}
+</style>
+</head>
+<body>
+
+<h1>🚀 Koloni Test Paneli</h1>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('kontrol')">Kontrol</button>
+  <button class="tab" onclick="showTab('moduller')">Modüller</button>
+  <button class="tab" onclick="showTab('hikaye')">Hikaye</button>
+  <button class="tab" onclick="showTab('xp')">XP Simülasyon</button>
+</div>
+
+<!-- KONTROL -->
+<div id="tab-kontrol">
+  <div class="card">
+    <div class="card-title">⚙️ Seviye & XP Ayarla</div>
+    <label>Seviye: <span id="lvlVal" class="val">1</span></label>
+    <input type="range" min="1" max="50" value="1" id="lvlSlider" oninput="updateLevel(this.value)">
+    
+    <label style="margin-top:10px">XP: <span id="xpVal" class="val">0</span></label>
+    <input type="range" min="0" max="26000" value="0" step="50" id="xpSlider" oninput="updateXP(this.value)">
+    
+    <label style="margin-top:10px">Giriş Serisi: <span id="streakVal" class="val">0</span></label>
+    <input type="range" min="0" max="60" value="0" id="streakSlider" oninput="updateStreak(this.value)">
+
+    <div style="display:flex;gap:6px;margin-top:12px">
+      <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" id="honestyCheck" onchange="updateHonesty()"> Dürüstlük Kalkanı</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📊 Durum Özeti</div>
+    <div id="statusInfo"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔧 Hızlı İşlemler</div>
+    <button class="btn btn-primary" onclick="simWellnessEntry()">Wellness Girişi Simüle (+15 XP)</button>
+    <button class="btn btn-success" onclick="simLevelUp()">Seviye Atla</button>
+    <button class="btn btn-outline" onclick="simQuestions(50)">50 Soru Çöz (+5 XP)</button>
+    <button class="btn btn-outline" onclick="simExam()">Deneme Gir (+30 XP)</button>
+    <button class="btn btn-danger" onclick="resetColony()">Koloniyi Sıfırla</button>
+  </div>
+</div>
+
+<!-- MODÜLLER -->
+<div id="tab-moduller" style="display:none">
+  <div class="card">
+    <div class="card-title">🏗️ Modül Durumları</div>
+    <div id="moduleGrid" class="mod-grid"></div>
+  </div>
+</div>
+
+<!-- HİKAYE -->
+<div id="tab-hikaye" style="display:none">
+  <div class="card">
+    <div class="card-title">📖 Tüm Bölümler (<span id="chapterCount">0</span>/50)</div>
+    <div style="margin-bottom:8px">
+      <label><input type="checkbox" id="showAllChapters" onchange="renderChapters()"> Kilitli bölümleri de göster</label>
+    </div>
+    <div id="chapterList"></div>
+  </div>
+</div>
+
+<!-- XP SİMÜLASYON -->
+<div id="tab-xp" style="display:none">
+  <div class="card">
+    <div class="card-title">📈 XP Kazanım Tablosu</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Her seviye için gereken XP ve açılan içerik</div>
+    <div id="xpTable" style="max-height:400px;overflow-y:auto"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🧮 Süre Hesaplama</div>
+    <label>Günlük ortalama XP: <span id="dailyXpVal" class="val">15</span></label>
+    <input type="range" min="10" max="80" value="15" id="dailyXpSlider" oninput="calcDuration()">
+    <div id="durationResult" style="margin-top:8px;font-size:12px;color:var(--text2)"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Colony story ve engine'i inline olarak yükle
+</script>
+<script src="js/colony_story.js"></script>
+<script>
+// Basit getTodayKey implementasyonu (test için)
+function getTodayKey() {
+  const now = new Date();
+  const tr = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  return tr.toISOString().split('T')[0];
+}
+
+// Basit localStorage colony veri yönetimi
+const TEST_KEY = 'colony_test';
+
+function loadColonyData() {
+  try { return JSON.parse(localStorage.getItem(TEST_KEY) || 'null') || defaultData(); } catch(e) { return defaultData(); }
+}
+function saveColonyData(data) {
+  localStorage.setItem(TEST_KEY, JSON.stringify(data));
+}
+function defaultData() {
+  return { xp:0, level:1, totalDays:0, currentStreak:0, lastEntryDate:null, chaptersRead:[], honestyShield:false, weekMoods:[], colonyName:'Arcadia', version:1 };
+}
+
+// Engine fonksiyonları (inline — colony_engine.js'ten)
+function getColonyLevel(xp) {
+  let level = 1;
+  for (let i = COLONY_LEVELS.length - 1; i >= 0; i--) {
+    if (xp >= COLONY_LEVELS[i].xpNeeded) { level = COLONY_LEVELS[i].level; break; }
+  }
+  return level;
+}
+function getColonyLevelInfo(level) { return COLONY_LEVELS.find(l => l.level === level) || COLONY_LEVELS[0]; }
+function getXpForNextLevel(level) { const n = COLONY_LEVELS.find(l => l.level === level + 1); return n ? n.xpNeeded : null; }
+function getXpProgress(xp, level) {
+  const cur = getColonyLevelInfo(level); const nextXp = getXpForNextLevel(level);
+  if (!nextXp) return { current: xp, needed: xp, percent: 100 };
+  return { current: xp - cur.xpNeeded, needed: nextXp - cur.xpNeeded, percent: Math.min(100, Math.round((xp - cur.xpNeeded) / (nextXp - cur.xpNeeded) * 100)) };
+}
+function getModuleStatus(moduleId, level) {
+  const mod = COLONY_MODULES.find(m => m.id === moduleId);
+  if (!mod) return { status:'unknown', upgradeLevel:0 };
+  if (level < mod.unlockLevel) return { status:'locked', upgradeLevel:0, unlockAt:mod.unlockLevel };
+  let ul = 0; for (const u of mod.upgradeAt) { if (level >= u) ul++; }
+  if (level === mod.unlockLevel) return { status:'building', upgradeLevel:ul, buildPercent:68 };
+  return { status:'active', upgradeLevel:ul };
+}
+function getActiveModules(level) { return COLONY_MODULES.filter(m => level >= m.unlockLevel); }
+function getUnlockedChapters(level) { return COLONY_CHAPTERS.filter(c => c.level <= level); }
+
+// ── UI ───────────────────────────────────────────────────
+function showTab(id) {
+  ['kontrol','moduller','hikaye','xp'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===id ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((b,i) => {
+    b.classList.toggle('active', ['kontrol','moduller','hikaye','xp'][i] === id);
+  });
+  if (id==='moduller') renderModules();
+  if (id==='hikaye') renderChapters();
+  if (id==='xp') { renderXPTable(); calcDuration(); }
+}
+
+function updateLevel(val) {
+  val = parseInt(val);
+  document.getElementById('lvlVal').textContent = val;
+  const info = getColonyLevelInfo(val);
+  const d = loadColonyData();
+  d.level = val;
+  d.xp = info.xpNeeded;
+  saveColonyData(d);
+  document.getElementById('xpSlider').value = info.xpNeeded;
+  document.getElementById('xpVal').textContent = info.xpNeeded;
+  renderStatus();
+}
+
+function updateXP(val) {
+  val = parseInt(val);
+  document.getElementById('xpVal').textContent = val;
+  const lvl = getColonyLevel(val);
+  document.getElementById('lvlSlider').value = lvl;
+  document.getElementById('lvlVal').textContent = lvl;
+  const d = loadColonyData();
+  d.xp = val; d.level = lvl;
+  saveColonyData(d);
+  renderStatus();
+}
+
+function updateStreak(val) {
+  document.getElementById('streakVal').textContent = val;
+  const d = loadColonyData(); d.currentStreak = parseInt(val); saveColonyData(d);
+  renderStatus();
+}
+
+function updateHonesty() {
+  const d = loadColonyData(); d.honestyShield = document.getElementById('honestyCheck').checked; saveColonyData(d);
+  renderStatus();
+}
+
+function renderStatus() {
+  const d = loadColonyData();
+  const lvl = d.level;
+  const prog = getXpProgress(d.xp, lvl);
+  const info = getColonyLevelInfo(lvl);
+  const mods = getActiveModules(lvl);
+  const chaps = getUnlockedChapters(lvl);
+  const nextMod = COLONY_MODULES.find(m => m.unlockLevel > lvl);
+
+  let html = '';
+  html += `<div class="info"><b>Seviye:</b> ${lvl} — "${info.title}"</div>`;
+  html += `<div class="info"><b>XP:</b> ${d.xp} (sonraki: ${prog.current}/${prog.needed} = %${prog.percent})</div>`;
+  html += `<div class="info"><b>Seri:</b> ${d.currentStreak} gün</div>`;
+  html += `<div class="info"><b>Dürüstlük:</b> ${d.honestyShield ? '✅ Aktif' : '❌ Pasif'}</div>`;
+  html += `<div class="info"><b>Aktif Modül:</b> ${mods.length} / ${COLONY_MODULES.length}</div>`;
+  html += `<div class="info"><b>Açık Bölüm:</b> ${chaps.length} / ${COLONY_CHAPTERS.length}</div>`;
+  if (info.unlocks) html += `<div class="info"><b>Bu seviyede:</b> ${info.unlocks}</div>`;
+  if (nextMod) html += `<div class="info"><b>Sonraki modül:</b> ${nextMod.name} (Sv.${nextMod.unlockLevel})</div>`;
+
+  document.getElementById('statusInfo').innerHTML = html;
+}
+
+function renderModules() {
+  const d = loadColonyData();
+  const html = COLONY_MODULES.map(m => {
+    const s = getModuleStatus(m.id, d.level);
+    const cls = s.status === 'active' ? 'active' : s.status === 'building' ? 'building' : 'locked';
+    const statusText = s.status === 'active' ? `Aktif (Lv.${s.upgradeLevel})` : s.status === 'building' ? 'İnşaat %' + (s.buildPercent||68) : `Kilitli (Sv.${s.unlockAt})`;
+    return `<div class="mod-item ${cls}">
+      <div class="mod-name">${m.name}</div>
+      <div class="mod-status">${statusText}</div>
+      <div style="font-size:9px;color:var(--text2);margin-top:4px">Açılış: Sv.${m.unlockLevel}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('moduleGrid').innerHTML = html;
+}
+
+function renderChapters() {
+  const d = loadColonyData();
+  const showAll = document.getElementById('showAllChapters').checked;
+  const list = showAll ? COLONY_CHAPTERS : getUnlockedChapters(d.level);
+  document.getElementById('chapterCount').textContent = getUnlockedChapters(d.level).length;
+
+  const html = list.map(ch => {
+    const unlocked = ch.level <= d.level;
+    const info = getColonyLevelInfo(ch.level);
+    return `<div class="chapter ${unlocked ? '' : 'locked'}" onclick="this.querySelector('.chapter-text').style.maxHeight=this.querySelector('.chapter-text').style.maxHeight&&this.querySelector('.chapter-text').style.maxHeight!=='0px'?'0':'500px'">
+      <div class="chapter-meta">Bölüm ${ch.level} — ${info?.title || ''} ${unlocked ? '' : '🔒'}</div>
+      <div class="chapter-title">${ch.title}</div>
+      <div class="chapter-text"><div style="padding-top:6px">${ch.text}</div>
+        ${ch.nextHint ? '<div style="color:var(--accent);margin-top:6px;font-style:italic">→ ' + ch.nextHint + '</div>' : ''}
+        <div style="margin-top:6px;font-size:10px;color:var(--text2)">Modül: ${ch.module}</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('chapterList').innerHTML = html;
+}
+
+function renderXPTable() {
+  let html = '<div style="font-size:11px">';
+  COLONY_LEVELS.forEach(l => {
+    const ch = COLONY_CHAPTERS.find(c => c.level === l.level);
+    const mod = COLONY_MODULES.find(m => m.unlockLevel === l.level);
+    html += `<div class="info">
+      <b>Sv.${l.level}</b> — ${l.xpNeeded} XP — "${l.title}"
+      ${l.unlocks ? '<br>🔧 ' + l.unlocks : ''}
+      ${ch ? '<br>📖 ' + ch.title : ''}
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('xpTable').innerHTML = html;
+}
+
+function calcDuration() {
+  const daily = parseInt(document.getElementById('dailyXpSlider').value);
+  document.getElementById('dailyXpVal').textContent = daily;
+  const maxXP = COLONY_LEVELS[COLONY_LEVELS.length - 1].xpNeeded;
+  const days = Math.ceil(maxXP / daily);
+  const months = (days / 30).toFixed(1);
+  document.getElementById('durationResult').innerHTML = `
+    <b>${days} gün</b> (~${months} ay) sürer tüm hikayeyi bitirmek<br>
+    <span style="color:var(--text2)">Toplam ${maxXP} XP gerekli · Günlük ${daily} XP ortalama</span>
+  `;
+}
+
+// ── Simülasyonlar ────────────────────────────────────────
+function simWellnessEntry() {
+  const d = loadColonyData();
+  const moods = ['enerjik','sakin','kaygili','yorgun','kararli','heyecanli'];
+  const mood = moods[Math.floor(Math.random()*moods.length)];
+  d.xp += COLONY_XP_RULES.wellnessEntry;
+  d.totalDays++;
+  d.currentStreak++;
+  if (!d.weekMoods) d.weekMoods = [];
+  d.weekMoods.push(mood);
+  if (d.weekMoods.length > 7) d.weekMoods = d.weekMoods.slice(-7);
+  d.honestyShield = new Set(d.weekMoods.slice(-7)).size >= 3;
+  d.lastEntryDate = getTodayKey();
+  const oldLvl = d.level;
+  d.level = getColonyLevel(d.xp);
+  saveColonyData(d);
+  syncSliders(d);
+  renderStatus();
+  toast('+15 XP! Mood: ' + mood + (d.level > oldLvl ? ' 🚀 SEVİYE ATLADI!' : ''));
+}
+
+function simLevelUp() {
+  const d = loadColonyData();
+  const next = COLONY_LEVELS.find(l => l.level === d.level + 1);
+  if (!next) { toast('Zaten max seviyedesin!'); return; }
+  d.xp = next.xpNeeded;
+  d.level = next.level;
+  saveColonyData(d);
+  syncSliders(d);
+  renderStatus();
+  toast('🚀 Seviye ' + next.level + ': ' + next.title);
+}
+
+function simQuestions(count) {
+  const d = loadColonyData();
+  const xp = Math.floor(count / 50) * COLONY_XP_RULES.questionsPer50;
+  d.xp += xp;
+  d.level = getColonyLevel(d.xp);
+  saveColonyData(d);
+  syncSliders(d);
+  renderStatus();
+  toast('+' + xp + ' XP (' + count + ' soru)');
+}
+
+function simExam() {
+  const d = loadColonyData();
+  d.xp += COLONY_XP_RULES.examEntry;
+  d.level = getColonyLevel(d.xp);
+  saveColonyData(d);
+  syncSliders(d);
+  renderStatus();
+  toast('+' + COLONY_XP_RULES.examEntry + ' XP (deneme)');
+}
+
+function resetColony() {
+  if (!confirm('Koloni verilerini sıfırla?')) return;
+  saveColonyData(defaultData());
+  syncSliders(defaultData());
+  renderStatus();
+  toast('Koloni sıfırlandı');
+}
+
+function syncSliders(d) {
+  document.getElementById('lvlSlider').value = d.level;
+  document.getElementById('lvlVal').textContent = d.level;
+  document.getElementById('xpSlider').value = d.xp;
+  document.getElementById('xpVal').textContent = d.xp;
+  document.getElementById('streakSlider').value = d.currentStreak;
+  document.getElementById('streakVal').textContent = d.currentStreak;
+  document.getElementById('honestyCheck').checked = d.honestyShield;
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 2000);
+}
+
+// Init
+renderStatus();
+</script>
+</body>
+</html>
