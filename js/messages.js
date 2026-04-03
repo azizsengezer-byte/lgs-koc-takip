@@ -380,7 +380,7 @@ async function messagesPage(role) {
       ${!isTeacher && hasSchoolMates ? '<button onclick="yeniSohbetModal()" style="background:var(--accent);color:white;border:none;border-radius:10px;padding:7px 14px;font-size:0.82rem;font-weight:700;cursor:pointer;flex-shrink:0">✏️ Yeni</button>' : ''}
     </div>
     <div class="chat-layout">
-      <div class="${listCls}" style="border-radius:14px;overflow:hidden;padding:0">
+      <div class="${listCls}" style="border:none;border-radius:0">
         ${isTeacher
           ? partners.map(renderItem).join('')
           : `${kocPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:8px 16px 4px;letter-spacing:0.06em">👨‍🏫 KOÇUM</div>' + kocPartners.map(renderItem).join('') : ''}
