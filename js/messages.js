@@ -401,6 +401,12 @@ async function sendMessage(role) {
   const input = document.getElementById('chatInput');
   const text = input?.value?.trim();
   if (!text || !activeChat) return;
+  // Engelli kontrolü — engellenmiş kişiye mesaj gönderme
+  const _engelliListesi = JSON.parse(localStorage.getItem('engelliList') || '[]');
+  if (_engelliListesi.includes(activeChat)) {
+    showToast('🚫', 'Bu kişiyi engelledin. Mesaj gönderemezsin.');
+    return;
+  }
   // Textarea'yı sıfırla
   if (input.tagName === 'TEXTAREA') { input.style.height = 'auto'; }
   const myData = window.currentUserData || {};
