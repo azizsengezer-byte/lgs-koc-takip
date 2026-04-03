@@ -1,4 +1,54 @@
 
+function _yeniMesajModal(role) {
+  const myData = window.currentUserData || {};
+  const myUid = myData.uid || '';
+  const mySchool = myData.school || '';
+  
+  let modal = document.getElementById('_yeniMesajModal');
+  if (modal) { modal.remove(); }
+  modal = document.createElement('div');
+  modal.id = '_yeniMesajModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  const modalInner = document.createElement('div');
+  modalInner.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;max-width:290px;width:88%;max-height:70vh;overflow-y:auto';
+  modalInner.innerHTML = '<div style="font-weight:900;font-size:1rem;margin-bottom:12px">💬 Yeni Mesaj</div>'
+    + '<div id="_yeniMesajListe"><div style="color:var(--text2);font-size:.85rem">Yükleniyor...</div></div>';
+  const kapatBtn = document.createElement('button');
+  kapatBtn.textContent = 'Kapat';
+  kapatBtn.style.cssText = 'width:100%;margin-top:12px;background:transparent;border:none;color:var(--text2);font-size:.82rem;cursor:pointer';
+  kapatBtn.onclick = () => modal.remove();
+  modalInner.appendChild(kapatBtn);
+  modal.appendChild(modalInner);
+  modal.onclick = e => { if(e.target===modal) { modal.remove(); } };
+  document.body.appendChild(modal);
+
+  // Okul arkadaşlarını çek
+  db.collection('users').where('role','==','student').where('school','==',mySchool).get().then(snap => {
+    const liste = document.getElementById('_yeniMesajListe');
+    if (!liste) return;
+    const arkadaslar = [];
+    snap.forEach(d => { if(d.id !== myUid) arkadaslar.push({uid:d.id,...d.data()}); });
+    if (!arkadaslar.length) { liste.innerHTML = '<div style="color:var(--text2);font-size:.85rem">Okul arkadaşı bulunamadı</div>'; return; }
+    liste.innerHTML = arkadaslar.map(a => {
+      const foto = a.photo
+        ? `<img src="${a.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+        : `<div style="width:36px;height:36px;border-radius:50%;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">${(a.name||'?')[0]}</div>`;
+      return `<div onclick="document.getElementById('_yeniMesajModal').remove();switchChatTo('${a.uid}','${role}')" 
+        style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;cursor:pointer;margin-bottom:4px;background:var(--surface2)">
+        ${foto}
+        <div>
+          <div style="font-weight:700;font-size:.88rem">${a.name||'İsimsiz'}</div>
+          <div style="font-size:.7rem;color:var(--text2)">${a.classroom||''}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }).catch(() => {
+    const liste = document.getElementById('_yeniMesajListe');
+    if (liste) liste.innerHTML = '<div style="color:var(--text2)">Yüklenemedi</div>';
+  });
+}
+
+
 async function chatPartnerProfil(uid, name, color, photo, isSchoolMate) {
   const existing = document.getElementById('chatProfilModal');
   if (existing) existing.remove();
@@ -163,7 +213,14 @@ async function messagesPage(role) {
   });
   const kocPartners = partners.filter(p => !p.isSchoolMate);
   // Okul arkadaşları: sadece daha önce mesajlaşılanlar görünsün
-  const arkadaşPartners = partners.filter(p => p.isSchoolMate);
+  const arkadaşPartners = partners.filter(p => {
+    if (!p.isSchoolMate) return false;
+    const cid = convId(myUid, p.uid);
+    // Bildirim veya mesaj varsa göster
+    const hasMsgs = (chatMessages[cid] || []).length > 0;
+    const hasNotif = allNotifs.some(n => n.fromUid === p.uid || n.toUid === p.uid);
+    return hasMsgs || hasNotif;
+  });
 
   const partnerListHTML = (pList) => pList.map(p => {
     const cid = convId(myUid, p.uid);
@@ -252,7 +309,7 @@ async function messagesPage(role) {
         <textarea class="chat-input" id="chatInput" placeholder="Mesaj yaz..." rows="1"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage('${role}')}"
           oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';setMyPresence(true);clearTimeout(window._tpTimeout);window._tpTimeout=setTimeout(()=>setMyPresence(false),2000)"></textarea>
-        <button class="chat-send-btn" onclick="sendMessage('${role}')">➤</button>
+        <button class="chat-send-btn" onmousedown="event.preventDefault()" onclick="sendMessage('${role}')">➤</button>
       </div>`;
   }
 
@@ -265,7 +322,10 @@ async function messagesPage(role) {
     <div class="page-sub">Birebir iletişim</div>
     <div class="chat-layout">
       <div class="${listClass}">
-        <div class="chat-list-header">💬 Konuşmalar</div>
+        <div class="chat-list-header" style="display:flex;align-items:center;justify-content:space-between">
+          <span>💬 Konuşmalar</span>
+          ${!isTeacher ? `<button onclick="_yeniMesajModal('${role}')" style="background:var(--accent);color:white;border:none;border-radius:8px;padding:4px 10px;font-size:0.78rem;font-weight:700;cursor:pointer">+ Yeni</button>` : ''}
+        </div>
         ${isTeacher
           ? partnerListHTML(partners).join('')
           : `${kocPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:6px 12px 2px;letter-spacing:0.06em">👨‍🏫 KOÇUM</div>' + partnerListHTML(kocPartners).join('') : ''}
