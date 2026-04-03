@@ -295,12 +295,7 @@ async function switchChatTo(uid, role) {
     const snap = await db.collection('messages').doc(cId).collection('msgs')
       .orderBy('createdAt','asc').limit(100).get();
     chatMessages[cId] = [];
-    const _el2 = JSON.parse(localStorage.getItem('engelliList') || '[]');
-    snap.forEach(d => {
-      const m = d.data();
-      // Engellenmiş kişinin mesajlarını filtrele
-      if (!_el2.includes(m.senderUid)) chatMessages[cId].push(m);
-    });
+    snap.forEach(d => chatMessages[cId].push(d.data()));
   } catch(e) { chatMessages[cId] = chatMessages[cId] || []; }
 
   // Firestore'daki TÜM okunmamış mesaj bildirimlerini (bu kişiden) okundu yap
