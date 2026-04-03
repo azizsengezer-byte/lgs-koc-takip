@@ -32,11 +32,64 @@ async function chatPartnerProfil(uid, name, color, photo, isSchoolMate) {
       <div style="font-size:1.2rem;font-weight:900;margin-bottom:4px">${name}</div>
       <div style="font-size:0.82rem;color:var(--accent);font-weight:700;margin-bottom:12px">${isSchoolMate==='true'?'🏫 Okul Arkadaşı':'👨‍🎓 Öğrenci'}</div>
       ${detaylar.join('')}
-      <button class="btn btn-outline" style="width:100%;margin-top:12px" onclick="document.getElementById('chatProfilModal').remove()">Kapat</button>
+      ${isSchoolMate==='true' ? `
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="_engelBtn" style="flex:1;padding:8px;border-radius:8px;border:1px solid #ff658444;background:#ff658412;color:#ff6584;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:inherit">
+          🚫 Engelle
+        </button>
+        <button onclick="_kocaBildir('${uid}','${name}')" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:0.75rem;font-weight:700;cursor:pointer;font-family:inherit">
+          ⚠️ Koça Bildir
+        </button>
+      </div>` : ''}
+      <button class="btn btn-outline" style="width:100%;margin-top:8px" onclick="document.getElementById('chatProfilModal').remove()">Kapat</button>
     </div>
   `;
+  // Engel butonunu güncelle
+  if (isSchoolMate === 'true') {
+    const liste = JSON.parse(localStorage.getItem('engelliList') || '[]');
+    const engelBtn = modal.querySelector('#_engelBtn');
+    if (engelBtn) {
+      if (liste.includes(uid)) engelBtn.textContent = '🔓 Engeli Kaldır';
+      engelBtn.onclick = () => _engelleKisi(uid, name);
+    }
+  }
   modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
   document.body.appendChild(modal);
+}
+
+function _engelleKisi(uid, isim) {
+  const liste = JSON.parse(localStorage.getItem('engelliList') || '[]');
+  const idx = liste.indexOf(uid);
+  if (idx === -1) {
+    liste.push(uid);
+    localStorage.setItem('engelliList', JSON.stringify(liste));
+    showToast('🚫', isim + ' engellendi.');
+  } else {
+    liste.splice(idx, 1);
+    localStorage.setItem('engelliList', JSON.stringify(liste));
+    showToast('✅', isim + ' engeli kaldırıldı.');
+  }
+  const m = document.getElementById('chatProfilModal');
+  if (m) m.remove();
+}
+
+async function _kocaBildir(uid, isim) {
+  const myData = window.currentUserData || {};
+  const myUid = auth.currentUser?.uid;
+  const teacherId = myData.teacherId || '';
+  if (!myUid || !teacherId) { showToast('⚠️','Koç bilgisi bulunamadı'); return; }
+  try {
+    await db.collection('notifications').add({
+      toUid: teacherId, fromUid: myUid,
+      text: '⚠️ ' + (myData.name||'Bir öğrenci') + ', ' + isim + ' adlı öğrenciyi rahatsız edici mesaj nedeniyle bildirdi.',
+      type: 'sikayet', read: false,
+      time: new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    showToast('✅', 'Koçuna bildirildi.');
+  } catch(e) { showToast('⚠️', 'Gönderilemedi.'); }
+  const m = document.getElementById('chatProfilModal');
+  if (m) m.remove();
 }
 
 
@@ -289,6 +342,8 @@ async function switchChatTo(uid, role) {
   setMyPresence(false);
   const myUid = (window.currentUserData || {}).uid || '';
   const cId = convId(myUid, uid);
+  // Partner listede yoksa (ilk mesaj) ekle
+  // Bu sayede arkadaşPartners filtresi sorun yaratmaz
   const el = document.getElementById('pageContent');
   if(el) el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text2)">💬 Yükleniyor...</div>`;
   try {
