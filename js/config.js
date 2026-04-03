@@ -74,28 +74,84 @@ function renderMobileNav() {
   const teacherNav = [
     {id:'dashboard',icon:'📊',label:'Panel'},
     {id:'students',icon:'👥',label:'Öğrenciler'},
-    {id:'messages',icon:'💬',label:'Mesaj'},
     {id:'tasks-teacher',icon:'📋',label:'Görevler'},
+    {id:'messages',icon:'💬',label:'Mesaj'},
   ];
   const studentNav = [
     {id:'dashboard',icon:'🏠',label:'Ana Sayfa'},
     {id:'daily-entry',icon:'✏️',label:'Giriş Yap'},
-    {id:'macera',icon:'🗺️',label:'Macera'},
-    {id:'messages',icon:'💬',label:'Mesaj'},
+    {id:'macera',icon:'🚀',label:'Koloni'},
     {id:'my-tasks',icon:'📋',label:'Ödevler'},
+    {id:'market',icon:'🛒',label:'Market'},
   ];
   const items = currentRole==='teacher' ? teacherNav : studentNav;
   const unreadMsg = (currentRole==='teacher' ? teacherNotifs : studentNotifs).filter(n=>!n.read&&n.type==='message').length;
   const pendingTaskCount = currentRole==='student' ? tasks.filter(t=>!t.done).length : 0;
   nav.innerHTML = `<div class="mobile-nav-inner">${items.map(n=>{
     let badge = '';
-    if(n.id==='messages' && unreadMsg>0) badge=`<span class=\"nav-badge\">${unreadMsg>9?'9+':unreadMsg}</span>`;
-    if(n.id==='my-tasks' && pendingTaskCount>0) badge=`<span class=\"nav-badge\">${pendingTaskCount>9?'9+':pendingTaskCount}</span>`;
+    if(n.id==='messages' && unreadMsg>0) badge=`<span class="nav-badge">${unreadMsg>9?'9+':unreadMsg}</span>`;
+    if(n.id==='my-tasks' && pendingTaskCount>0) badge=`<span class="nav-badge">${pendingTaskCount>9?'9+':pendingTaskCount}</span>`;
     return `<button class="mobile-nav-item ${currentPage===n.id?'active':''}" onclick="showPage('${n.id}')">
       <span class="nav-icon-wrap">${n.icon}${badge}</span><span>${n.label}</span>
     </button>`;
   }).join('')}</div>`;
+
+  // Header mesaj badge güncelle
+  _updateMsgBadge(unreadMsg);
 }
+
+function _updateMsgBadge(count) {
+  const el = document.getElementById('msgBadge');
+  if (!el) return;
+  if (count > 0) {
+    el.style.display = 'flex';
+    el.textContent = count > 9 ? '9+' : count;
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// ── Swipe ile sayfa geçişi ───────────────────────────────
+let _swipeStartX = 0, _swipeStartY = 0, _swiping = false;
+
+function _initSwipeNav() {
+  const main = document.getElementById('mainContent');
+  if (!main || main._swipeInit) return;
+  main._swipeInit = true;
+
+  main.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) return;
+    _swipeStartX = e.touches[0].clientX;
+    _swipeStartY = e.touches[0].clientY;
+    _swiping = true;
+  }, { passive: true });
+
+  main.addEventListener('touchend', e => {
+    if (!_swiping) return;
+    _swiping = false;
+    const dx = e.changedTouches[0].clientX - _swipeStartX;
+    const dy = e.changedTouches[0].clientY - _swipeStartY;
+    // Yatay swipe mi? (dikey scroll'u engelleme)
+    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.7) return;
+
+    const navItems = currentRole === 'teacher'
+      ? ['dashboard','students','tasks-teacher','messages']
+      : ['dashboard','daily-entry','macera','my-tasks','market'];
+    const idx = navItems.indexOf(currentPage);
+    if (idx === -1) return;
+
+    if (dx < -60 && idx < navItems.length - 1) {
+      // Sola kaydır → sonraki sayfa
+      showPage(navItems[idx + 1]);
+    } else if (dx > 60 && idx > 0) {
+      // Sağa kaydır → önceki sayfa
+      showPage(navItems[idx - 1]);
+    }
+  }, { passive: true });
+}
+
+// Uygulama başladığında swipe'ı aktifle
+document.addEventListener('DOMContentLoaded', () => setTimeout(_initSwipeNav, 500));
 
 let studyEntries = [];
 
@@ -278,6 +334,7 @@ auth.onAuthStateChanged(async (user) => {
       const _urlStudent = _urlParams.get('s');
       const _safePages = ['dashboard','students','student-detail','tasks-teacher','messages','notifs',
         'daily-entry','my-analysis','kazanimlar','my-tasks','wellness','lgs-dagilim','psych-report','macera',
+        'market','profile','badges','rozet'];
         'market','profile','badges','rozet'];
       const _startPage = _safePages.includes(_urlPage) ? _urlPage : 'dashboard';
       if (_urlStudent) selectedStudentName = decodeURIComponent(_urlStudent);

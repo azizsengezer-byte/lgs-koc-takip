@@ -34,6 +34,16 @@ function saveWellnessDay(field, value, btn) {
   if (field === 'mood' && typeof _marketMoodKontrol === 'function') {
     _marketMoodKontrol(field);
   }
+  // Koloni XP — mood girişinde koloniye XP ver
+  if (field === 'mood' && typeof grantWellnessXP === 'function') {
+    try {
+      const colData = loadColonyData();
+      const result = grantWellnessXP(colData, value);
+      if (result.xpGained > 0) {
+        showToast('🚀', result.reasons[0] + (result.levelUp ? ' Seviye atladın!' : ''));
+      }
+    } catch(e) {}
+  }
   // Bildirimler sadece kaydet butonuna basılınca gönderilir (saveWellnessAll)
 }
 

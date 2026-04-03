@@ -58,39 +58,23 @@ function maceraPage() {
 
       ${alreadyEntered ? `
         <div style="margin:4px 16px 12px;padding:12px 14px;background:rgba(29,158,117,0.08);border:1px solid rgba(29,158,117,0.2);border-radius:12px;text-align:center">
-          <span style="font-size:13px;color:var(--accent3);font-weight:700">✓ Bugünkü giriş tamamlandı</span>
+          <span style="font-size:13px;color:var(--accent3);font-weight:700">✓ Bugünkü giriş tamamlandı — +${COLONY_XP_RULES.wellnessEntry} XP</span>
           <div style="font-size:11px;color:var(--text2);margin-top:4px">Yarın tekrar gel — kolonin seni bekliyor</div>
         </div>
       ` : `
-        <button onclick="_colonyOpenEntry()" style="display:block;width:calc(100% - 32px);margin:4px 16px 12px;padding:13px;background:linear-gradient(135deg,#185FA5,#378ADD);color:white;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
-          Bugünkü durumunu gir → +${COLONY_XP_RULES.wellnessEntry} XP
-        </button>
-      `}
-
-      <div id="colonyEntryPanel" style="display:none;padding:0 16px 12px">
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px">
-          <div style="font-size:14px;font-weight:700;margin-bottom:12px">Bugün nasıl hissediyorsun?</div>
-          <div id="colonyMoodBtns" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
-            ${['Enerjik','Sakin','Kaygılı','Yorgun','Motivasyonsuz','Kararlı','Üzgün','Heyecanlı'].map(m =>
-              `<button onclick="_colonyPickMood(this,'${m.toLowerCase()}')" data-mood="${m.toLowerCase()}"
-                style="padding:7px 13px;border-radius:16px;border:1.5px solid var(--border);background:var(--surface);font-size:12px;cursor:pointer;color:var(--text);font-family:'Nunito',sans-serif;font-weight:600;transition:all 0.15s">${m}</button>`
-            ).join('')}
+        <div style="margin:4px 16px 12px;padding:14px;background:linear-gradient(135deg,rgba(24,95,165,0.08),rgba(55,138,221,0.08));border:1px solid rgba(55,138,221,0.2);border-radius:12px;cursor:pointer" onclick="showPage('daily-entry')">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#185FA5,#378ADD);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <span style="font-size:16px">✏️</span>
+            </div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700;color:var(--text)">Bugün nasıl hissediyorsun?</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px">Giriş Yap sayfasından veri gir → <span style="color:#378ADD;font-weight:700">+${COLONY_XP_RULES.wellnessEntry} XP</span> kazan</div>
+            </div>
+            <span style="color:var(--accent);font-size:1.2rem">→</span>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-            <span style="font-size:12px;color:var(--text2);min-width:55px">Kaygı</span>
-            <input type="range" min="1" max="10" value="4" id="colonyAnxiety" oninput="document.getElementById('colonyAnxVal').textContent=this.value" style="flex:1;accent-color:var(--accent)">
-            <span id="colonyAnxVal" style="font-size:13px;font-weight:700;min-width:16px;text-align:right">4</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-            <span style="font-size:12px;color:var(--text2);min-width:55px">Uyku</span>
-            <input type="range" min="3" max="12" value="7" step="0.5" id="colonySleep" oninput="document.getElementById('colonySleepVal').textContent=Math.round(this.value*10)/10+' saat'" style="flex:1;accent-color:var(--accent)">
-            <span id="colonySleepVal" style="font-size:13px;font-weight:700;min-width:50px;text-align:right">7 saat</span>
-          </div>
-          <button onclick="_colonySubmitEntry()" style="width:100%;padding:12px;background:linear-gradient(135deg,#0F6E56,#1D9E75);color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
-            Kaydet ve XP Kazan
-          </button>
         </div>
-      </div>
+      `}
 
       <div style="padding:4px 16px 16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -265,60 +249,6 @@ function _buildModuleSVGs(modules, level) {
 }
 
 // ── Etkileşim fonksiyonları ──────────────────────────────
-let _colonySelectedMood = null;
-
-function _colonyOpenEntry() {
-  const panel = document.getElementById('colonyEntryPanel');
-  if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
-
-function _colonyPickMood(btn, mood) {
-  _colonySelectedMood = mood;
-  document.querySelectorAll('#colonyMoodBtns button').forEach(b => {
-    b.style.background = 'var(--surface)';
-    b.style.borderColor = 'var(--border)';
-    b.style.fontWeight = '600';
-  });
-  btn.style.background = 'rgba(55,138,221,0.15)';
-  btn.style.borderColor = '#378ADD';
-  btn.style.fontWeight = '800';
-}
-
-function _colonySubmitEntry() {
-  if (!_colonySelectedMood) { showToast('⚠️', 'Önce nasıl hissettiğini seç'); return; }
-
-  const anxiety = document.getElementById('colonyAnxiety')?.value || '4';
-  const sleep = document.getElementById('colonySleep')?.value || '7';
-
-  // Wellness'a kaydet
-  const { myUid, storageKey, data: wData } = _getW();
-  const today = getTodayKey();
-  if (!wData.days) wData.days = {};
-  if (!wData.days[today]) wData.days[today] = {};
-  wData.days[today].mood = _colonySelectedMood;
-  wData.days[today].kaygi = anxiety;
-  wData.days[today].uyku = sleep;
-  _syncW(myUid, storageKey, wData);
-
-  // Koloni XP
-  const colData = loadColonyData();
-  const result = grantWellnessXP(colData, _colonySelectedMood);
-
-  if (result.xpGained === 0) { showToast('ℹ️', result.reason); return; }
-
-  if (result.levelUp) {
-    const lvlInfo = getColonyLevelInfo(result.newLevel);
-    showToast('🚀', `Seviye ${result.newLevel}: ${lvlInfo.title}!`);
-    const newChapter = COLONY_CHAPTERS.find(c => c.level === result.newLevel);
-    if (newChapter) setTimeout(() => showToast('📖', `Yeni bölüm: "${newChapter.title}"`), 1500);
-    if (lvlInfo.unlocks) setTimeout(() => showToast('🔧', lvlInfo.unlocks), 3000);
-  } else {
-    showToast('🚀', result.reasons.join(' '));
-  }
-
-  _colonySelectedMood = null;
-  setTimeout(() => showPage('macera'), 500);
-}
 
 function _colonyToggleChapter(el) {
   const text = el.querySelector('.colony-chapter-text');
