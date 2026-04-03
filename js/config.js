@@ -335,7 +335,6 @@ auth.onAuthStateChanged(async (user) => {
       const _safePages = ['dashboard','students','student-detail','tasks-teacher','messages','notifs',
         'daily-entry','my-analysis','kazanimlar','my-tasks','wellness','lgs-dagilim','psych-report','macera',
         'market','profile','badges','rozet'];
-        'market','profile','badges','rozet'];
       const _startPage = _safePages.includes(_urlPage) ? _urlPage : 'dashboard';
       if (_urlStudent) selectedStudentName = decodeURIComponent(_urlStudent);
       showPage(_startPage);
