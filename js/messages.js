@@ -163,12 +163,7 @@ async function messagesPage(role) {
   });
   const kocPartners = partners.filter(p => !p.isSchoolMate);
   // Okul arkadaşları: sadece daha önce mesajlaşılanlar görünsün
-  const arkadaşPartners = partners.filter(p => {
-    if (!p.isSchoolMate) return false;
-    const cid = convId(myUid, p.uid);
-    const msgs = chatMessages[cid] || [];
-    return msgs.length > 0;
-  });
+  const arkadaşPartners = partners.filter(p => p.isSchoolMate);
 
   const partnerListHTML = (pList) => pList.map(p => {
     const cid = convId(myUid, p.uid);
@@ -320,7 +315,6 @@ async function switchChatTo(uid, role) {
   // messages koleksiyonundaki seen flag'lerini güncelle
   markMessagesAsSeen(uid);
   updateNotifBadge();
-  showPage('messages');
   setTimeout(()=>{ const cm=document.getElementById('chatMessages'); if(cm) cm.scrollTop=cm.scrollHeight; },80);
 
   // Realtime listener — karşı taraf mesaj atınca anında göster
