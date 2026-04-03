@@ -1103,7 +1103,7 @@ async function registerFCMToken(uid) {
   try {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
     // Service Worker kayıt
-    const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
     const messaging = firebase.messaging();
     // İzin iste (henüz verilmediyse)
     const permission = await Notification.requestPermission();
