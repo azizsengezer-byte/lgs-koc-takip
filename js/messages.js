@@ -371,6 +371,11 @@ async function messagesPage(role) {
 
   const hasSchoolMates = partners.some(p => p.isSchoolMate);
 
+  // activeChat varsa, HTML DOM'a yazıldığı anda en alta scroll yap
+  const scrollTrigger = activeChat
+    ? `<img src="" onerror="setTimeout(function(){var c=document.getElementById('chatMessages');if(c)c.scrollTop=c.scrollHeight},0)" style="display:none">`
+    : '';
+
   return `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
       <div>
@@ -390,7 +395,8 @@ async function messagesPage(role) {
       <div class="${winCls}">
         ${chatWindowHTML}
       </div>
-    </div>`;
+    </div>
+    ${scrollTrigger}`;
 }
 
 
@@ -441,10 +447,14 @@ async function switchChatTo(uid, role) {
   updateNotifBadge();
   showPage('messages');
 
-  setTimeout(() => {
+  // Yedek scroll — HTML içindeki scrollTrigger ana iş yapıyor ama
+  // mobilde geç render olursa diye ekstra deneme
+  let _sc = 0;
+  const _si = setInterval(() => {
     const cm = document.getElementById('chatMessages');
     if (cm) { cm.scrollTop = cm.scrollHeight; }
-  }, 80);
+    if (++_sc > 15) clearInterval(_si);
+  }, 100);
 
   // Realtime listener
   if (_chatUnsub) _chatUnsub();
