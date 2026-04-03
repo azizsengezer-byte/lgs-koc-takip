@@ -377,8 +377,11 @@ async function switchChatTo(uid, role) {
   updateNotifBadge();
   setTimeout(()=>{ const cm=document.getElementById('chatMessages'); if(cm) cm.scrollTop=cm.scrollHeight; },80);
 
-  // Realtime listener — karşı taraf mesaj atınca anında göster
-  if (window._chatUnsub) window._chatUnsub(); // önceki listener'ı kapat
+  // (listener _startChatListener'da)
+}
+
+function _startChatListener(uid, cId, role) {
+  if (window._chatUnsub) window._chatUnsub();
   window._chatUnsub = db.collection('messages').doc(cId).collection('msgs')
     .orderBy('createdAt','asc')
     .onSnapshot(snap => {
@@ -406,9 +409,6 @@ async function switchChatTo(uid, role) {
       });
     });
 }
-
-
-
 
 async function _kocaBildir(uid, isim) {
   const myData = window.currentUserData || {};
