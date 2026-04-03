@@ -259,6 +259,13 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
+      <!-- Mesaj -->
+      <div id="headerMsgWrap" style="position:relative;cursor:pointer;padding:6px;" onclick="showPage('messages')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span id="msgBadge" style="position:absolute;top:2px;right:2px;background:var(--accent2);color:#fff;font-size:0.55rem;font-weight:800;min-width:14px;height:14px;border-radius:99px;padding:0 3px;display:none;align-items:center;justify-content:center;line-height:14px;">0</span>
+      </div>
       <!-- Bildirim -->
       <div style="position:relative;cursor:pointer;padding:6px;" onclick="toggleNotifsPage()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
