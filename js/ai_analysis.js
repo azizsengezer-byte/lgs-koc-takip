@@ -81,14 +81,19 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
   const key = localStorage.getItem('lgs_anthropic_key');
   if (!key || localStorage.getItem('lgs_api_enabled') !== 'true') return null;
 
-  const krizGunler = wellnessData.filter(d => (d.kaygi>=8) || (d.uyku>0&&d.uyku<6) || (!d.akademikVar&&d.kaygi>=7));
-  const ogrSesi = notlar.filter(n => n.negatif || n.pozitif).slice(0, 5);
+  // notlar parametresi artık wellnessData içinde geliyor (pozitif/negatif alanları)
+  const krizGunler = wellnessData.filter(d => (d.kaygi>=8) || (d.uyku>0&&d.uyku<6) || (d.soru===0&&d.kaygi>=7));
+  // Sözel veriler: wellnessData içindeki pozitif/negatif + eski notlar parametresi (uyumluluk için)
+  const _notlarArr = Array.isArray(notlar) ? notlar : [];
+  const _sozelWellness = wellnessData.filter(d => d.pozitif || d.negatif).slice(0, 5);
+  const ogrSesi = [..._sozelWellness.map(d => ({ tarih: d.tarih, pozitif: d.pozitif||'', negatif: d.negatif||'' })),
+                   ..._notlarArr].slice(0, 7);
 
   const prompt = 'Sen LGSKoc psikolojik analiz motorusun. Klinik egitim kocu gozuyle analiz et.\n\n' +
     'OGRENCI: ' + studentName + '\n' +
     'DONEM: ' + (period==='daily'?'Gunluk':period==='weekly'?'Haftalik':'Aylik') + '\n\n' +
     'WELLNESS (son ' + wellnessData.length + ' gun):\n' +
-    wellnessData.slice(0,14).map(d=>d.tarih+' Kaygi:'+d.kaygi+' Enerji:'+d.enerji+' Uyku:'+(d.uyku||0)+'sa Mood:'+(d.mood||'-')+' Soru:'+(d.soru||0)).join('\n') +
+    wellnessData.slice(0,14).map(d=>d.tarih+' Kaygi:'+d.kaygi+' Enerji:'+d.enerji+' Uyku:'+(d.uyku||0)+'sa Mood:'+(d.mood||'-')+' Soru:'+(d.soru||0)+(d.pozitif?' (+)'+d.pozitif.substring(0,40):'')+(d.negatif?' (-)'+d.negatif.substring(0,40):'')).join('\n') +
     '\n\nKRIZ GUNLERI (kaygi>=8 veya uyku<6 veya akademik felc):\n' +
     (krizGunler.length>0 ? krizGunler.map(d=>d.tarih+' Kaygi:'+(d.kaygi||0)+' Uyku:'+(d.uyku||'-')+'sa Soru:'+(d.soru||0)+(!d.akademikVar&&d.kaygi>=7?' [AKADEMIK FELC]':'')).join('\n') : 'Kriz gunu yok') +
     '\n\nGUNLUK SORU COZUMU (antrenman - deneme degil):\n' +
@@ -99,8 +104,8 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
     'DENEME SINAVI SONUCLARI (resmi olcme - ayri degerlendir):\n' +
     (denemeler.length>0 ? denemeler.map(d=>d.tarih+' | '+d.baslik+' | Toplam: '+d.toplamNet+' net | '+d.dersler).join('\n') : 'Bu donemde deneme yok') +
     '\nNOT: Ders doluluk oranlari farkli: Turkce/Mat/Fen=20soru, Inkilap/Ing/Din=10soru.\n\n' +
-    'OGRENCININ SESI:\n' +
-    (ogrSesi.length>0 ? ogrSesi.map(n=>n.tarih+':'+(n.pozitif?' (+)'+n.pozitif:'')+' '+(n.negatif?' (-)'+n.negatif:'')).join('\n') : 'Not yok') +
+    'OGRENCININ SESI (sozel ifadeler — en onemli analiz girdisi):\n' +
+    (ogrSesi.length>0 ? ogrSesi.map(n=>n.tarih+':'+(n.pozitif?' (+)'+n.pozitif:'')+' '+(n.negatif?' (-)'+n.negatif:'')).join('\n') : 'Bu donemde sozel ifade girilmemis') +
     '\n\nKURALLAR:\n' +
     '1. Kaygi>=7+Soru=0 = Amigdala Blokaji/Akademik Felc (asla dinlenme yazma)\n' +
     '2. Yuksek kaygi+yuksek enerji = Kirilgan Hiper-Aktivasyon (asla olumlu yazma)\n' +

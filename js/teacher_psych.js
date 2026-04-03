@@ -389,8 +389,47 @@ async function exportPsychPDF(sName) {
       doc.text(altSat, 16, Y); Y += altSat.length*5+5;
     }
 
-    // AI analizi devre dışı
-    const aiAnaliz = null;
+    // ── AI ANALİZİ (haftalık/aylık, API key varsa) ───────────
+    let aiAnaliz = null;
+    if (period !== 'daily' && localStorage.getItem('lgs_api_enabled') === 'true' && localStorage.getItem('lgs_anthropic_key')) {
+      try {
+        const sozelNotlar = gunler
+          .filter(d => d.pozitif || d.negatif)
+          .slice(0, 7)
+          .map(d => ({ tarih: d.dk, pozitif: d.pozitif || '', negatif: d.negatif || '' }));
+
+        const wellnessForAI = gunler.slice(0, 14).map(d => ({
+          tarih: d.dk,
+          kaygi: d.kaygi, enerji: d.enerji, uyku: d.uyku,
+          odak: d.odak, mood: d.mood, soru: d.soru,
+          pozitif: d.pozitif || '', negatif: d.negatif || ''
+        }));
+
+        const academicForAI = {
+          toplamSoru, aktifGun: aktifGunler.length,
+          ortIsabet: ortHata !== null ? Math.round(100 - ortHata) : null,
+          dersBazli: Object.entries(dersToplamHata)
+            .filter(([, v]) => v.q >= 20)
+            .map(([d, v]) => ({ d, isabet: Math.round((1 - v.y / v.q) * 100) }))
+        };
+
+        const denemelerForAI = denemEntries2.slice(0, 8).map(e => ({
+          tarih: e.dateKey,
+          baslik: e.examTitle || e.topic || 'Deneme',
+          toplamNet: Math.round((e.net || 0) * 10) / 10,
+          dersler: e.subject + (e.correct !== undefined ? ' D:' + e.correct + ' Y:' + e.wrong : '')
+        }));
+
+        aiAnaliz = await generateAIAnalysis(
+          sName, period,
+          wellnessForAI, academicForAI,
+          denemelerForAI, sozelNotlar
+        );
+      } catch (aiErr) {
+        console.warn('AI analiz atlandı:', aiErr.message);
+        aiAnaliz = null;
+      }
+    }
 
         if (veriGunler.length >= 1 || period === 'daily') {
       // ───────────────────────────────────────────────────────────
@@ -2684,6 +2723,92 @@ async function exportPsychPDF(sName) {
           doc.setTextColor(100,90,140);doc.text(notSat,22,sY);
           Y += sesH+8;
         }
+      }
+
+      // ── AI KLİNİK YORUMU (haftalık/aylık, sadece AI varsa) ──
+      if (aiAnaliz && period !== 'daily') {
+        const aiFields = [
+          { key: 'ana_tani',         label: 'Ana Tanı',                    renk: [60, 20, 120] },
+          { key: 'fizyolojik_yorum', label: 'Fizyolojik Yorum',            renk: [20, 80, 150] },
+          { key: 'duygusal_yorum',   label: 'Duygusal Yorum',              renk: [140, 40, 40] },
+          { key: 'soru_cozumu_yorum',label: 'Soru Çözümü Yorumu',          renk: [30, 100, 60] },
+          { key: 'deneme_yorum',     label: 'Deneme Sınavı Yorumu',        renk: [100, 60, 20] },
+          { key: 'brans_riski',      label: 'Branş Riski',                 renk: [160, 50, 10] },
+          { key: 'ogr_sesi_yorum',   label: 'Öğrencinin Sesi — AI Yorumu', renk: [90, 30, 160] },
+          { key: 'hafiza_borcu',     label: 'Hafıza Borcu',                renk: [40, 80, 140] },
+          { key: 'koc_stratejisi',   label: 'Koç Stratejisi',              renk: [20, 100, 80] },
+        ];
+
+        // Uyarı seviyesi rengi
+        const uvRenk = {
+          yesil:   [20, 150, 80],
+          sari:    [180, 140, 0],
+          turuncu: [200, 90, 0],
+          kirmizi: [180, 20, 20],
+        }[aiAnaliz.uyari_seviyesi] || [80, 80, 80];
+
+        // Başlık bloğu
+        const aiBaslikH = 18;
+        Y = pdfCheck(doc, Y, aiBaslikH + 10);
+        doc.setFillColor(245, 240, 255);
+        doc.roundedRect(15, Y, 180, aiBaslikH, 2, 2, 'F');
+        doc.setFillColor(uvRenk[0], uvRenk[1], uvRenk[2]);
+        doc.roundedRect(15, Y, 4, aiBaslikH, 1, 1, 'F');
+        doc.setFont(PF, 'bold'); doc.setFontSize(8.5);
+        doc.setTextColor(70, 30, 160);
+        doc.text(tx('🤖 CLAUDE AI KLİNİK YORUMU'), 22, Y + 7);
+        const uvLabel = { yesil: 'Düşük Risk', sari: 'Dikkat', turuncu: 'Yüksek Risk', kirmizi: 'Kritik' }[aiAnaliz.uyari_seviyesi] || '';
+        if (uvLabel) {
+          doc.setFillColor(uvRenk[0], uvRenk[1], uvRenk[2]);
+          doc.roundedRect(155, Y + 3, 38, 10, 2, 2, 'F');
+          doc.setFont(PF, 'bold'); doc.setFontSize(6.5); doc.setTextColor(255, 255, 255);
+          doc.text(tx(uvLabel), 174, Y + 9.5, { align: 'center' });
+        }
+        doc.setFont(PF, 'normal'); doc.setFontSize(6.5); doc.setTextColor(100, 80, 160);
+        doc.text(tx('Sözel veriler ve istatistikler birlikte yorumlandı — model: Claude Haiku'), 22, Y + 13);
+        Y += aiBaslikH + 5;
+
+        // Her alan
+        aiFields.forEach(f => {
+          const val = aiAnaliz[f.key];
+          if (!val || (typeof val === 'string' && !val.trim())) return;
+          if (Array.isArray(val) && val.length === 0) return;
+
+          const metinStr = Array.isArray(val) ? val.join(' • ') : val;
+          const mSat = doc.splitTextToSize(tx(metinStr), 154);
+          const bH = Math.max(mSat.length * 5 + 16, 18);
+          Y = pdfCheck(doc, Y, bH + 6);
+
+          doc.setFillColor(250, 247, 255);
+          doc.roundedRect(15, Y, 180, bH, 1.5, 1.5, 'F');
+          doc.setFillColor(f.renk[0], f.renk[1], f.renk[2]);
+          doc.roundedRect(15, Y, 3, bH, 1, 1, 'F');
+
+          doc.setFont(PF, 'bold'); doc.setFontSize(7);
+          doc.setTextColor(f.renk[0], f.renk[1], f.renk[2]);
+          doc.text(tx(f.label), 21, Y + 6);
+
+          doc.setFont(PF, 'normal'); doc.setFontSize(6.8);
+          doc.setTextColor(40, 35, 70);
+          doc.text(mSat, 21, Y + 6 + 6);
+          Y += bH + 5;
+        });
+
+        // Kriz günleri listesi (AI'dan geliyorsa)
+        if (aiAnaliz.kriz_gunleri && aiAnaliz.kriz_gunleri.length > 0) {
+          const krizSat = doc.splitTextToSize(tx('Tespit Edilen Kriz Günleri: ' + aiAnaliz.kriz_gunleri.join(' · ')), 156);
+          const kH = Math.max(krizSat.length * 5 + 14, 16);
+          Y = pdfCheck(doc, Y, kH + 6);
+          doc.setFillColor(255, 240, 240); doc.roundedRect(15, Y, 180, kH, 1.5, 1.5, 'F');
+          doc.setFillColor(180, 20, 20); doc.roundedRect(15, Y, 3, kH, 1, 1, 'F');
+          doc.setFont(PF, 'bold'); doc.setFontSize(7); doc.setTextColor(160, 20, 20);
+          doc.text(tx('Kriz Günleri (AI Tespiti)'), 21, Y + 6);
+          doc.setFont(PF, 'normal'); doc.setFontSize(6.8); doc.setTextColor(120, 20, 20);
+          doc.text(krizSat, 21, Y + 12);
+          Y += kH + 5;
+        }
+
+        Y += 4; // AI bloğu sonrası nefes boşluğu
       }
 
       // ── Dönem Özeti ─────────────────────────────────────────
