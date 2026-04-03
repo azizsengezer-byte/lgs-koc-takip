@@ -1,4 +1,3 @@
-// macera.js dosyandaki maceraPage() fonksiyonunu bununla değiştir
 function maceraPage() {
   const data = loadColonyData();
   const level = data.level || 1;
