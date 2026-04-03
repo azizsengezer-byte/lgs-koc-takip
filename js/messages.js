@@ -361,7 +361,7 @@ async function messagesPage(role) {
         <textarea class="chat-input" id="chatInput" placeholder="Mesaj yaz..." rows="1"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage('${role}')}"
           oninput="_onTyping()"></textarea>
-        <button class="chat-send-btn" onclick="sendMessage('${role}')">➤</button>
+        <button class="chat-send-btn" onmousedown="event.preventDefault()" onclick="sendMessage('${role}')">➤</button>
       </div>`;
   }
 
@@ -380,7 +380,7 @@ async function messagesPage(role) {
     <div class="page-sub">Birebir iletişim</div>
     <div class="chat-layout">
       <div class="${listCls}">
-        <div class="chat-list-header">💬 Konuşmalar</div>
+
         ${isTeacher
           ? partners.map(renderItem).join('')
           : `${kocPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:6px 12px 2px;letter-spacing:0.06em">👨‍🏫 KOÇUM</div>' + kocPartners.map(renderItem).join('') : ''}
@@ -444,7 +444,7 @@ async function switchChatTo(uid, role) {
 
   setTimeout(() => {
     const cm = document.getElementById('chatMessages');
-    if (cm) cm.scrollTop = cm.scrollHeight;
+    if (cm) { cm.scrollTop = cm.scrollHeight; }
   }, 80);
 
   // Realtime listener
@@ -666,12 +666,14 @@ async function yeniSohbetModal() {
 
   if (arkadaslar.length === 0) { showToast('💬', 'Okulunda başka öğrenci bulunamadı.'); return; }
 
+  // Arama fonksiyonu
+  const aramaId = 'ysArama_' + Date.now();
+
   const listHTML = arkadaslar.map(p => {
     const av = p.photo
       ? `<img src="${p.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover">`
       : `<div style="width:36px;height:36px;border-radius:50%;background:${p.color}22;color:${p.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.9rem">${p.name[0]}</div>`;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;cursor:pointer;transition:background 0.15s"
-      onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'"
+    return `<div class="ys-item" data-name="${p.name.toLowerCase()}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;cursor:pointer;"
       onclick="document.getElementById('yeniSohbetModal').remove();switchChatTo('${p.uid}','student')">
       ${av}
       <div style="font-weight:700;font-size:0.9rem">${p.name}</div>
@@ -683,8 +685,11 @@ async function yeniSohbetModal() {
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(26,26,46,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
   modal.innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:24px 16px;width:100%;max-width:360px;max-height:70vh;overflow-y:auto;box-shadow:var(--shadow-md)">
-      <div style="font-weight:900;font-size:1.1rem;margin-bottom:16px;text-align:center">🏫 Okul Arkadaşlarım</div>
-      ${listHTML}
+      <div style="font-weight:900;font-size:1.1rem;margin-bottom:12px;text-align:center">🏫 Okul Arkadaşlarım</div>
+      <input id="${aramaId}" type="text" placeholder="İsim ara..." 
+        oninput="var v=this.value.toLowerCase();document.querySelectorAll('.ys-item').forEach(el=>{el.style.display=el.dataset.name.includes(v)?'flex':'none'})"
+        style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box;margin-bottom:10px;font-family:inherit">
+      <div id="ysListe">${listHTML}</div>
       <button class="btn btn-outline" style="width:100%;margin-top:12px" onclick="document.getElementById('yeniSohbetModal').remove()">Kapat</button>
     </div>`;
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
