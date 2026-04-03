@@ -39,12 +39,6 @@ const MARKET_URUNLER = {
   boost_2x:      { kategori:'boost', ad:'2x Altın (24s)', fiyat:400,  ikon:'💰', aciklama:'24 saat boyunca 2 katı altın kazan',  tip:'boost', deger:'2x',      tuket:true },
   boost_3x_soru: { kategori:'boost', ad:'3x Soru Altın',  fiyat:600,  ikon:'🎯', aciklama:'24 saat soru başına 3x altın',        tip:'boost', deger:'3x_soru', tuket:true },
   boost_2x_xp:   { kategori:'boost', ad:'2x Koloni XP',   fiyat:500,  ikon:'🚀', aciklama:'24 saat koloni XP 2 katına çıkar',    tip:'boost', deger:'2x_xp',   tuket:true },
-
-  // ── Profil Özelleştirme ────────────────────────────────
-  profil_cerceve_mavi:   { kategori:'profil', ad:'Mavi Çerçeve',   fiyat:300, ikon:'🔵', aciklama:'Profil fotoğrafına mavi çerçeve', tip:'cerceve', deger:'mavi' },
-  profil_cerceve_altin:  { kategori:'profil', ad:'Altın Çerçeve',  fiyat:600, ikon:'🟡', aciklama:'Profil fotoğrafına altın çerçeve', tip:'cerceve', deger:'altin' },
-  profil_cerceve_mor:    { kategori:'profil', ad:'Mor Çerçeve',    fiyat:400, ikon:'🟣', aciklama:'Profil fotoğrafına mor çerçeve',   tip:'cerceve', deger:'mor' },
-  profil_cerceve_ates:   { kategori:'profil', ad:'Ateş Çerçevesi', fiyat:700, ikon:'🔥', aciklama:'Profil fotoğrafına ateş çerçeve', tip:'cerceve', deger:'ates' },
 };
 
 const MARKET_KATEGORILER = [
@@ -52,7 +46,6 @@ const MARKET_KATEGORILER = [
   { id:'tema',   ad:'🎨 Koloni Tema'   },
   { id:'efekt',  ad:'✨ Efektler'      },
   { id:'boost',  ad:'⚡ Güçlendirici'  },
-  { id:'profil', ad:'🖼️ Profil'       },
   { id:'koloni', ad:'🚀 Koloni'        },
 ];
 
@@ -146,20 +139,38 @@ async function marketAktifEt(urunId) {
   if (!uid) return;
 
   if (urun.tip === 'etiket') {
-    _mEtiketUygula(urun.deger);
-    await db.collection('users').doc(uid).update({ etiket: urun.deger }).catch(() => {});
-    showToast('✅', urun.ad + ' etiketi aktif!');
+    // Toggle — aynı etiketse kaldır
+    if (window.currentUserData?.etiket === urun.deger) {
+      _mEtiketSifirla();
+      window.currentUserData.etiket = '';
+      await db.collection('users').doc(uid).update({ etiket: '' }).catch(() => {});
+      showToast('✅', 'Etiket kaldırıldı');
+    } else {
+      _mEtiketUygula(urun.deger);
+      await db.collection('users').doc(uid).update({ etiket: urun.deger }).catch(() => {});
+      showToast('✅', urun.ad + ' etiketi aktif!');
+    }
   } else if (urun.tip === 'tema') {
-    _mKoloniTemaUygula(urun.deger);
-    showToast('✅', urun.ad + ' teması aktif!');
-  } else if (urun.tip === 'cerceve') {
-    if (typeof setActiveFrame === 'function') setActiveFrame(uid, urun.deger);
-    showToast('✅', urun.ad + ' aktif!');
+    const data = loadColonyData();
+    if (data.tema === urun.deger) {
+      data.tema = null;
+      saveColonyData(data);
+      showToast('✅', 'Tema kaldırıldı — varsayılana dönüldü');
+    } else {
+      _mKoloniTemaUygula(urun.deger);
+      showToast('✅', urun.ad + ' teması aktif!');
+    }
   } else if (urun.tip === 'efekt') {
     if (!window.currentUserData.aktif) window.currentUserData.aktif = {};
-    window.currentUserData.aktif.efekt = urun.deger;
-    await db.collection('users').doc(uid).update({ 'aktif.efekt': urun.deger }).catch(() => {});
-    showToast('✅', urun.ad + ' efekti aktif!');
+    if (window.currentUserData.aktif.efekt === urun.deger) {
+      window.currentUserData.aktif.efekt = null;
+      await db.collection('users').doc(uid).update({ 'aktif.efekt': null }).catch(() => {});
+      showToast('✅', 'Efekt kaldırıldı');
+    } else {
+      window.currentUserData.aktif.efekt = urun.deger;
+      await db.collection('users').doc(uid).update({ 'aktif.efekt': urun.deger }).catch(() => {});
+      showToast('✅', urun.ad + ' efekti aktif!');
+    }
   }
   _marketYenile();
 }
@@ -359,7 +370,7 @@ function _marketIcerik() {
 
     let butonHTML = '';
     if (aktifMi) {
-      butonHTML = '<div style="padding:8px;text-align:center;font-size:0.78rem;font-weight:700;color:var(--accent3)">✓ Aktif</div>';
+      butonHTML = `<button onclick="marketAktifEt('${id}')" style="width:100%;padding:8px;background:var(--accent3)18;border:1px solid var(--accent3);border-radius:8px;color:var(--accent3);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">✓ Aktif — Kaldır</button>`;
     } else if (boostAktif) {
       const kalan = Math.round((new Date(aktif[id]) - new Date()) / 3600000);
       butonHTML = `<div style="padding:8px;text-align:center;font-size:0.78rem;font-weight:700;color:var(--accent)">${kalan}s kaldı</div>`;
