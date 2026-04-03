@@ -119,25 +119,6 @@ async function _kocaBildir(uid, isim) {
 
 // ── PROFİL MODAL ─────────────────────────────────────────
 async function chatPartnerProfil(uid, name, color, photo, isSchoolMate) {
-  const isArkadas = isSchoolMate === 'true' || isSchoolMate === true;
-
-  // Arkadaş ise profile.js'teki zengin modalı aç
-  if (isArkadas && typeof arkadasProfil === 'function') {
-    // Firestore'dan etiket bilgisini çek
-    let etiket = '';
-    try {
-      const snap = await db.collection('users').doc(uid).get();
-      if (snap.exists) {
-        const d = snap.data();
-        etiket = d.etiket || '';
-        if (!photo && d.photo) photo = d.photo;
-      }
-    } catch(e) {}
-    arkadasProfil(uid, name, color, photo || '', etiket);
-    return;
-  }
-
-  // Koç/öğretmen ise basit profil göster
   const existing = document.getElementById('chatProfilModal');
   if (existing) existing.remove();
 
@@ -160,6 +141,21 @@ async function chatPartnerProfil(uid, name, color, photo, isSchoolMate) {
   if (okul) detaylar.push(`<div style="font-size:0.85rem;color:var(--text2);margin-bottom:4px">🏫 ${okul}</div>`);
   if (sinif) detaylar.push(`<div style="font-size:0.85rem;color:var(--text2);margin-bottom:4px">📚 ${sinif}</div>`);
 
+  const engelli = _engelliListe().includes(uid);
+  const isStudent = currentRole === 'student';
+  const isArkadas = isSchoolMate === 'true' || isSchoolMate === true;
+
+  let aksiyonlar = '';
+  if (isStudent && isArkadas) {
+    aksiyonlar = `
+      <button onclick="_engelleKisi('${uid}','${name}')" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1.5px solid ${engelli ? 'var(--accent3)' : '#ff6584'};background:transparent;color:${engelli ? 'var(--accent3)' : '#ff6584'};font-weight:700;font-size:0.85rem;cursor:pointer">
+        ${engelli ? '✅ Engeli Kaldır' : '🚫 Engelle'}
+      </button>
+      <button onclick="_kocaBildir('${uid}','${name}')" style="width:100%;margin-top:6px;padding:10px;border-radius:12px;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-weight:700;font-size:0.85rem;cursor:pointer">
+        📢 Koçuma Bildir
+      </button>`;
+  }
+
   const modal = document.createElement('div');
   modal.id = 'chatProfilModal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(26,26,46,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
@@ -167,8 +163,9 @@ async function chatPartnerProfil(uid, name, color, photo, isSchoolMate) {
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:28px 24px;width:100%;max-width:320px;text-align:center;box-shadow:var(--shadow-md)">
       ${avatarHTML}
       <div style="font-size:1.2rem;font-weight:900;margin-bottom:4px">${name}</div>
-      <div style="font-size:0.82rem;color:var(--accent);font-weight:700;margin-bottom:12px">👨‍🎓 Öğrenci / Koç</div>
+      <div style="font-size:0.82rem;color:var(--accent);font-weight:700;margin-bottom:12px">${isArkadas ? '🏫 Okul Arkadaşı' : '👨‍🎓 Öğrenci / Koç'}</div>
       ${detaylar.join('')}
+      ${aksiyonlar}
       <button class="btn btn-outline" style="width:100%;margin-top:12px" onclick="document.getElementById('chatProfilModal').remove()">Kapat</button>
     </div>`;
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
@@ -285,7 +282,7 @@ async function messagesPage(role) {
     const badge = unread > 0
       ? `<span style="background:var(--accent2);color:#fff;font-size:0.65rem;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0">${unread}</span>`
       : '<span style="color:var(--text2);font-size:1rem">›</span>';
-    return `<div class="chat-list-item" style="border-bottom:1px solid var(--border);border-radius:0" onclick="switchChatTo('${p.uid}','${role}')">
+    return `<div class="chat-list-item" onclick="switchChatTo('${p.uid}','${role}')">
       ${avatar}
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:0.9rem">${p.name}${p.isSchoolMate ? '<span style="font-size:0.65rem;color:var(--accent);margin-left:6px">🏫</span>' : ''}</div>
@@ -364,7 +361,7 @@ async function messagesPage(role) {
         <textarea class="chat-input" id="chatInput" placeholder="Mesaj yaz..." rows="1"
           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage('${role}')}"
           oninput="_onTyping()"></textarea>
-        <button class="chat-send-btn" onmousedown="event.preventDefault()" onclick="sendMessage('${role}')">➤</button>
+        <button class="chat-send-btn" onclick="sendMessage('${role}')">➤</button>
       </div>`;
   }
 
@@ -372,22 +369,23 @@ async function messagesPage(role) {
   const listCls = activeChat ? 'chat-list mobile-hidden' : 'chat-list';
   const winCls  = activeChat ? 'chat-window mobile-show' : 'chat-window';
 
+  // Yeni sohbet butonu (sadece öğrenci + okul arkadaşı varsa)
   const hasSchoolMates = partners.some(p => p.isSchoolMate);
+  const yeniSohbetBtn = (!isTeacher && hasSchoolMates)
+    ? '<button onclick="yeniSohbetModal()" style="width:calc(100% - 16px);margin:12px 8px 4px;padding:10px;border:2px dashed var(--border);border-radius:12px;background:transparent;color:var(--accent);font-weight:700;font-size:0.85rem;cursor:pointer">+ Yeni Sohbet Başlat</button>'
+    : '';
 
   return `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
-      <div>
-        <div class="page-title" style="margin-bottom:0">💬 Mesajlar</div>
-        <div class="page-sub">Birebir iletişim</div>
-      </div>
-      ${!isTeacher && hasSchoolMates ? '<button onclick="yeniSohbetModal()" style="background:var(--accent);color:white;border:none;border-radius:10px;padding:7px 14px;font-size:0.82rem;font-weight:700;cursor:pointer;flex-shrink:0">✏️ Yeni</button>' : ''}
-    </div>
+    <div class="page-title">💬 Mesajlar</div>
+    <div class="page-sub">Birebir iletişim</div>
     <div class="chat-layout">
-      <div class="${listCls}" style="border:none;border-radius:0">
+      <div class="${listCls}">
+        <div class="chat-list-header">💬 Konuşmalar</div>
         ${isTeacher
           ? partners.map(renderItem).join('')
-          : `${kocPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:8px 16px 4px;letter-spacing:0.06em">👨‍🏫 KOÇUM</div>' + kocPartners.map(renderItem).join('') : ''}
-             ${arkPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:8px 16px 4px;letter-spacing:0.06em">🏫 OKUL ARKADAŞLARI</div>' + arkPartners.map(renderItem).join('') : ''}`
+          : `${kocPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:6px 12px 2px;letter-spacing:0.06em">👨‍🏫 KOÇUM</div>' + kocPartners.map(renderItem).join('') : ''}
+             ${arkPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:10px 12px 2px;letter-spacing:0.06em">🏫 OKUL ARKADAŞLARI</div>' + arkPartners.map(renderItem).join('') : ''}
+             ${yeniSohbetBtn}`
         }
       </div>
       <div class="${winCls}">
@@ -446,7 +444,7 @@ async function switchChatTo(uid, role) {
 
   setTimeout(() => {
     const cm = document.getElementById('chatMessages');
-    if (cm) { cm.scrollTop = cm.scrollHeight; }
+    if (cm) cm.scrollTop = cm.scrollHeight;
   }, 80);
 
   // Realtime listener
@@ -668,14 +666,12 @@ async function yeniSohbetModal() {
 
   if (arkadaslar.length === 0) { showToast('💬', 'Okulunda başka öğrenci bulunamadı.'); return; }
 
-  // Arama fonksiyonu
-  const aramaId = 'ysArama_' + Date.now();
-
   const listHTML = arkadaslar.map(p => {
     const av = p.photo
       ? `<img src="${p.photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover">`
       : `<div style="width:36px;height:36px;border-radius:50%;background:${p.color}22;color:${p.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.9rem">${p.name[0]}</div>`;
-    return `<div class="ys-item" data-name="${p.name.toLowerCase()}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;cursor:pointer;"
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;cursor:pointer;transition:background 0.15s"
+      onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'"
       onclick="document.getElementById('yeniSohbetModal').remove();switchChatTo('${p.uid}','student')">
       ${av}
       <div style="font-weight:700;font-size:0.9rem">${p.name}</div>
@@ -687,11 +683,8 @@ async function yeniSohbetModal() {
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(26,26,46,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
   modal.innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:24px 16px;width:100%;max-width:360px;max-height:70vh;overflow-y:auto;box-shadow:var(--shadow-md)">
-      <div style="font-weight:900;font-size:1.1rem;margin-bottom:12px;text-align:center">🏫 Okul Arkadaşlarım</div>
-      <input id="${aramaId}" type="text" placeholder="İsim ara..." 
-        oninput="var v=this.value.toLowerCase();document.querySelectorAll('.ys-item').forEach(el=>{el.style.display=el.dataset.name.includes(v)?'flex':'none'})"
-        style="width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box;margin-bottom:10px;font-family:inherit">
-      <div id="ysListe">${listHTML}</div>
+      <div style="font-weight:900;font-size:1.1rem;margin-bottom:16px;text-align:center">🏫 Okul Arkadaşlarım</div>
+      ${listHTML}
       <button class="btn btn-outline" style="width:100%;margin-top:12px" onclick="document.getElementById('yeniSohbetModal').remove()">Kapat</button>
     </div>`;
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });

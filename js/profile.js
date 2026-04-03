@@ -249,16 +249,23 @@ async function _apRozetYukle(uid) {
       el.innerHTML = '<span style="color:var(--text2);font-size:0.82rem">Rozet sistemi yüklenemedi.</span>';
       return;
     }
-    const earned = await getBadges(uid);
-    if (!earned || earned.length === 0) {
+    const earnedIds = await getBadges(uid);
+    if (!earnedIds || earnedIds.length === 0) {
+      el.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;padding:8px 0">Henüz rozet kazanılmamış.</div>';
+      return;
+    }
+    // ID listesinden BADGES dizisindeki rozet objelerini bul
+    const earnedBadges = earnedIds.map(id => BADGES.find(b => b.id === id)).filter(Boolean);
+    if (earnedBadges.length === 0) {
       el.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;padding:8px 0">Henüz rozet kazanılmamış.</div>';
       return;
     }
     el.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">' +
-      earned.map(b => `<div style="text-align:center;width:60px" title="${b.name}">
-        <div style="font-size:1.6rem">${b.icon||'🏅'}</div>
-        <div style="font-size:0.6rem;color:var(--text2);font-weight:600;line-height:1.2;margin-top:2px">${b.name}</div>
-      </div>`).join('') + '</div>';
+      earnedBadges.slice(0, 12).map(b => `<div style="text-align:center;width:60px" title="${b.desc || ''}">
+        <div style="display:flex;justify-content:center">${typeof getBadgeHTML === 'function' ? getBadgeHTML(b, false, 40) : '<span style="font-size:1.6rem">' + (b.sym || '🏅') + '</span>'}</div>
+        <div style="font-size:0.58rem;color:var(--text2);font-weight:600;line-height:1.2;margin-top:2px">${b.name}</div>
+      </div>`).join('') + '</div>' +
+      (earnedBadges.length > 12 ? `<div style="text-align:center;font-size:0.75rem;color:var(--accent);margin-top:8px;font-weight:700">+${earnedBadges.length - 12} rozet daha</div>` : '');
   } catch(e) {
     el.innerHTML = '<span style="color:var(--text2);font-size:0.82rem">Rozetler yüklenemedi.</span>';
   }
