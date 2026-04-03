@@ -121,6 +121,12 @@ function _initSwipeNav() {
 
   main.addEventListener('touchstart', e => {
     if (e.touches.length !== 1) return;
+    // Yatay scroll olan bir eleman içindeyse swipe'ı engelle
+    const t = e.target;
+    if (t.closest('[ontouchstart]') || t.closest('.chat-messages') || t.closest('#mKatBar')) {
+      _swiping = false;
+      return;
+    }
     _swipeStartX = e.touches[0].clientX;
     _swipeStartY = e.touches[0].clientY;
     _swiping = true;
@@ -132,7 +138,7 @@ function _initSwipeNav() {
     const dx = e.changedTouches[0].clientX - _swipeStartX;
     const dy = e.changedTouches[0].clientY - _swipeStartY;
     // Yatay swipe mi? (dikey scroll'u engelleme)
-    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.7) return;
+    if (Math.abs(dx) < 80 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
 
     const navItems = currentRole === 'teacher'
       ? ['dashboard','students','tasks-teacher','messages']
@@ -140,11 +146,9 @@ function _initSwipeNav() {
     const idx = navItems.indexOf(currentPage);
     if (idx === -1) return;
 
-    if (dx < -60 && idx < navItems.length - 1) {
-      // Sola kaydır → sonraki sayfa
+    if (dx < -80 && idx < navItems.length - 1) {
       showPage(navItems[idx + 1]);
-    } else if (dx > 60 && idx > 0) {
-      // Sağa kaydır → önceki sayfa
+    } else if (dx > 80 && idx > 0) {
       showPage(navItems[idx - 1]);
     }
   }, { passive: true });
