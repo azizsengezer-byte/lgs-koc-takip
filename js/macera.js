@@ -440,11 +440,76 @@ function _cvStop() {
   if(_cvRaf){ cancelAnimationFrame(_cvRaf); _cvRaf=null; }
 }
 
+// ── Bina hit alanları (canvas koordinatlarında, 800x420 uzayı) ──
+function _cvBuildingHits(level) {
+  const CW = 800;
+  const hits = [];
+  // Her bina: {id, cx, cy, w, h, label, desc, acc, locked}
+  // Komuta — her zaman var
+  hits.push({id:'komuta', cx:400, cy:_HOR+115, w:100, h:120, label:'Komuta Merkezi', acc:'#7BC8FF', locked:false});
+  if(level>=2)  hits.push({id:'yasam',    cx:80,  cy:_HOR+55,  w:66, h:75,  label:'Yaşam Modülü',       acc:'#5DCAA5', locked:false});
+  if(level>=4)  hits.push({id:'lab',      cx:704, cy:_HOR+55,  w:80, h:80,  label:'Laboratuvar',         acc:'#FAC775', locked:false});
+  if(level>=10) hits.push({id:'gozlem',   cx:560, cy:_HOR+52,  w:55, h:70,  label:'Gözlemevi',           acc:'#a5b4fc', locked:false});
+  if(level>=14) hits.push({id:'enerji',   cx:240, cy:_HOR+50,  w:75, h:65,  label:'Enerji Santrali',     acc:'#fde047', locked:false});
+  if(level>=7)  hits.push({id:'sera',     cx:152, cy:_HOR+100, w:80, h:72,  label:'Sera',                acc:'#97C459', locked:false});
+  if(level>=18) hits.push({id:'iletisim', cx:656, cy:_HOR+95,  w:55, h:100, label:'İletişim Kulesi',     acc:'#7dd3fc', locked:false});
+  // Kilitli ama yakında açılacaklar
+  if(level<2)   hits.push({id:'yasam',    cx:80,  cy:_HOR+55,  w:66, h:75,  label:'Yaşam Modülü',        acc:'#5DCAA5', locked:true, unlockAt:2});
+  if(level<4)   hits.push({id:'lab',      cx:704, cy:_HOR+55,  w:80, h:80,  label:'Laboratuvar',         acc:'#FAC775', locked:true, unlockAt:4});
+  if(level<7  && level>=4) hits.push({id:'sera',  cx:152, cy:_HOR+100, w:80, h:72, label:'Sera',         acc:'#97C459', locked:true, unlockAt:7});
+  if(level<10 && level>=6) hits.push({id:'gozlem',cx:560, cy:_HOR+52,  w:55, h:70, label:'Gözlemevi',    acc:'#a5b4fc', locked:true, unlockAt:10});
+  if(level<14 && level>=9) hits.push({id:'enerji',cx:240, cy:_HOR+50,  w:75, h:65, label:'Enerji Santrali', acc:'#fde047', locked:true, unlockAt:14});
+  if(level<18 && level>=12) hits.push({id:'iletisim',cx:656,cy:_HOR+95,w:55,h:100, label:'İletişim Kulesi', acc:'#7dd3fc', locked:true, unlockAt:18});
+  return hits;
+}
+
+function _cvHandleClick(e, cv, level) {
+  const rect = cv.getBoundingClientRect();
+  // canvas koordinat uzayına çevir (800x420)
+  const scaleX = 800 / rect.width;
+  const scaleY = 420 / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top)  * scaleY;
+
+  const hits = _cvBuildingHits(level);
+  // Önden arkaya — en büyük z-order önce
+  const hit = hits.find(b => mx >= b.cx - b.w/2 && mx <= b.cx + b.w/2 && my >= b.cy - b.h && my <= b.cy + 10);
+  if (!hit) return;
+
+  if (hit.locked) {
+    _cvBuildingToast(`🔒 ${hit.label} — Seviye ${hit.unlockAt}'de açılacak`, hit.acc);
+    return;
+  }
+  _colonyModuleClick(hit.id);
+}
+
+function _cvBuildingToast(msg, col) {
+  const el = document.createElement('div');
+  el.textContent = msg;
+  el.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+    background:rgba(10,20,40,0.95);border:1px solid ${col}66;color:${col};
+    font-weight:700;font-size:12px;padding:9px 18px;border-radius:20px;
+    z-index:9999;pointer-events:none;white-space:nowrap;
+    animation:cvToastIn .2s ease`;
+  document.head.insertAdjacentHTML('beforeend','<style>@keyframes cvToastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}</style>');
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2000);
+}
+
 function _cvStart(level) {
   if(_cvRaf) return;
   const flickerI = setInterval(()=>{ if(!document.getElementById('colonyCanvas')){ clearInterval(flickerI); return; } _cvFlickerWins(); }, 60);
   const meteorI  = setInterval(()=>{ if(!document.getElementById('colonyCanvas')){ clearInterval(meteorI);  return; } _cvMeteorSpawn(); }, Math.max(4000,14000-level*200));
   setTimeout(_cvMeteorSpawn, 900);
+
+  // Tıklama — canvas yüklendikten sonra bağla
+  setTimeout(() => {
+    const cv = document.getElementById('colonyCanvas');
+    if (!cv) return;
+    cv.style.cursor = 'pointer';
+    cv.addEventListener('click', e => _cvHandleClick(e, cv, level));
+  }, 100);
+
   function loop(){
     const cv=document.getElementById('colonyCanvas');
     if(!cv){ _cvRaf=null; return; }
