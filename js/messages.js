@@ -282,7 +282,7 @@ async function messagesPage(role) {
     const badge = unread > 0
       ? `<span style="background:var(--accent2);color:#fff;font-size:0.65rem;font-weight:800;min-width:20px;height:20px;border-radius:99px;display:flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0">${unread}</span>`
       : '<span style="color:var(--text2);font-size:1rem">›</span>';
-    return `<div class="chat-list-item" onclick="switchChatTo('${p.uid}','${role}')">
+    return `<div class="chat-list-item" style="border-bottom:1px solid var(--border);border-radius:0" onclick="switchChatTo('${p.uid}','${role}')">
       ${avatar}
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:0.9rem">${p.name}${p.isSchoolMate ? '<span style="font-size:0.65rem;color:var(--accent);margin-left:6px">🏫</span>' : ''}</div>
@@ -369,23 +369,22 @@ async function messagesPage(role) {
   const listCls = activeChat ? 'chat-list mobile-hidden' : 'chat-list';
   const winCls  = activeChat ? 'chat-window mobile-show' : 'chat-window';
 
-  // Yeni sohbet butonu (sadece öğrenci + okul arkadaşı varsa)
   const hasSchoolMates = partners.some(p => p.isSchoolMate);
-  const yeniSohbetBtn = (!isTeacher && hasSchoolMates)
-    ? '<button onclick="yeniSohbetModal()" style="width:calc(100% - 16px);margin:12px 8px 4px;padding:10px;border:2px dashed var(--border);border-radius:12px;background:transparent;color:var(--accent);font-weight:700;font-size:0.85rem;cursor:pointer">+ Yeni Sohbet Başlat</button>'
-    : '';
 
   return `
-    <div class="page-title">💬 Mesajlar</div>
-    <div class="page-sub">Birebir iletişim</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+      <div>
+        <div class="page-title" style="margin-bottom:0">💬 Mesajlar</div>
+        <div class="page-sub">Birebir iletişim</div>
+      </div>
+      ${!isTeacher && hasSchoolMates ? '<button onclick="yeniSohbetModal()" style="background:var(--accent);color:white;border:none;border-radius:10px;padding:7px 14px;font-size:0.82rem;font-weight:700;cursor:pointer;flex-shrink:0">✏️ Yeni</button>' : ''}
+    </div>
     <div class="chat-layout">
-      <div class="${listCls}">
-
+      <div class="${listCls}" style="border-radius:14px;overflow:hidden;padding:0">
         ${isTeacher
           ? partners.map(renderItem).join('')
-          : `${kocPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:6px 12px 2px;letter-spacing:0.06em">👨‍🏫 KOÇUM</div>' + kocPartners.map(renderItem).join('') : ''}
-             ${arkPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:10px 12px 2px;letter-spacing:0.06em">🏫 OKUL ARKADAŞLARI</div>' + arkPartners.map(renderItem).join('') : ''}
-             ${yeniSohbetBtn}`
+          : `${kocPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:8px 16px 4px;letter-spacing:0.06em">👨‍🏫 KOÇUM</div>' + kocPartners.map(renderItem).join('') : ''}
+             ${arkPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:8px 16px 4px;letter-spacing:0.06em">🏫 OKUL ARKADAŞLARI</div>' + arkPartners.map(renderItem).join('') : ''}`
         }
       </div>
       <div class="${winCls}">
