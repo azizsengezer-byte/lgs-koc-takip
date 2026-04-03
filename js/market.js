@@ -155,9 +155,11 @@ async function marketAktifEt(urunId) {
     if (data.tema === urun.deger) {
       data.tema = null;
       saveColonyData(data);
+      if (typeof _colonyApplyTheme === 'function') _colonyApplyTheme();
       showToast('✅', 'Tema kaldırıldı — varsayılana dönüldü');
     } else {
       _mKoloniTemaUygula(urun.deger);
+      if (typeof _colonyApplyTheme === 'function') _colonyApplyTheme();
       showToast('✅', urun.ad + ' teması aktif!');
     }
   } else if (urun.tip === 'efekt') {
@@ -323,24 +325,57 @@ function _marketSoruKontrol(dogru) {
 let _marketSeciliKat = 'etiket';
 
 function marketPage() {
+  const altin = window.currentUserData?.altin || 0;
+  const gun = getTodayKey();
+  const moodDone = !!localStorage.getItem('altin_mood_' + gun);
+  const wellnessDone = !!localStorage.getItem('altin_wellness_' + gun);
+  const soruCount = parseInt(localStorage.getItem('altin_soru_' + gun) || '0');
+
   return `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <!-- Başlık + Altın -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div>
         <div class="page-title" style="margin-bottom:0">🛒 Market</div>
         <div class="page-sub">Altınlarınla özel ürünler al</div>
       </div>
-      <div style="background:#2a2000;border:1.5px solid #f9ca24;color:#f9ca24;font-weight:900;font-size:0.95rem;padding:6px 14px;border-radius:99px;display:flex;align-items:center;gap:4px">
-        💰 <span id="marketAltinGoster">${window.currentUserData?.altin || 0}</span>
+      <div id="marketAltinBadge" style="background:linear-gradient(135deg,#2a2000,#3a3000);border:1.5px solid #f9ca24;color:#f9ca24;font-weight:900;font-size:1rem;padding:8px 16px;border-radius:99px;display:flex;align-items:center;gap:5px;box-shadow:0 2px 12px rgba(249,202,36,0.2)">
+        💰 <span id="marketAltinGoster">${altin}</span>
       </div>
     </div>
-    <div style="margin-bottom:6px">
-      <div style="font-size:0.72rem;color:var(--text2);padding:4px 0">
-        Duygu girişi: +${MARKET_ALTIN.MOOD} 💰 · Tam takip: +${MARKET_ALTIN.WELLNESS_TAM} 💰 · 10 doğru: +${MARKET_ALTIN.SORU_10} 💰
+
+    <!-- Bugün kazanma durumu -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px;letter-spacing:0.3px">BUGÜN KAZANDIĞIN ALTIN</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:22px;height:22px;border-radius:50%;background:${moodDone ? 'rgba(29,158,117,0.2)' : 'var(--surface)'};border:1.5px solid ${moodDone ? '#1D9E75' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:11px">${moodDone ? '✓' : '·'}</div>
+            <span style="font-size:12px;color:${moodDone ? 'var(--text)' : 'var(--text2)'}">Duygu girişi</span>
+          </div>
+          <span style="font-size:12px;font-weight:700;color:${moodDone ? '#f9ca24' : 'var(--text2)'}">+${MARKET_ALTIN.MOOD} 💰</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:22px;height:22px;border-radius:50%;background:${wellnessDone ? 'rgba(29,158,117,0.2)' : 'var(--surface)'};border:1.5px solid ${wellnessDone ? '#1D9E75' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:11px">${wellnessDone ? '✓' : '·'}</div>
+            <span style="font-size:12px;color:${wellnessDone ? 'var(--text)' : 'var(--text2)'}">Tam wellness takibi</span>
+          </div>
+          <span style="font-size:12px;font-weight:700;color:${wellnessDone ? '#f9ca24' : 'var(--text2)'}">+${MARKET_ALTIN.WELLNESS_TAM} 💰</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:22px;height:22px;border-radius:50%;background:${soruCount>0?'rgba(55,138,221,0.15)':'var(--surface)'};border:1.5px solid ${soruCount>0?'#378ADD':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${soruCount>0?'#378ADD':'var(--text2)'}">${soruCount}</div>
+            <span style="font-size:12px;color:${soruCount>0?'var(--text)':'var(--text2)'}">Soru çözümü (her 10'da)</span>
+          </div>
+          <span style="font-size:12px;font-weight:700;color:${soruCount>=10?'#f9ca24':'var(--text2)'}">+${MARKET_ALTIN.SORU_10} 💰</span>
+        </div>
       </div>
     </div>
+
     <div id="marketSayfa">${_marketIcerik()}</div>
     <style>
       @keyframes mFadeUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-30px)}}
+      @keyframes mPop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+      #marketAltinBadge.mPop{animation:mPop 0.35s ease}
     </style>
   `;
 }
@@ -349,42 +384,55 @@ function _marketIcerik() {
   const sahip = window.currentUserData?.sahipUrunler || [];
   const aktif = window.currentUserData?.aktif || {};
   const secili = _marketSeciliKat;
+  const colData = loadColonyData();
 
   // Kategori tabları
-  const tabHTML = MARKET_KATEGORILER.map(k =>
-    `<button onclick="_marketSeciliKat='${k.id}';_marketYenile()" 
-      style="padding:8px 14px;border-radius:20px;border:1.5px solid ${secili === k.id ? 'var(--accent)' : 'var(--border)'};
-      background:${secili === k.id ? 'var(--accent)22' : 'var(--surface)'};color:${secili === k.id ? 'var(--accent)' : 'var(--text2)'};
-      font-size:0.78rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Nunito',sans-serif;transition:all 0.15s">${k.ad}</button>`
-  ).join('');
+  const tabHTML = MARKET_KATEGORILER.map(k => {
+    const isActive = secili === k.id;
+    // Kategorideki sahip olunan ürün sayısı
+    const katSahip = Object.values(MARKET_URUNLER).filter(u => u.kategori === k.id && sahip.includes(Object.keys(MARKET_URUNLER).find(id => MARKET_URUNLER[id] === u))).length;
+    return `<button onclick="_marketSeciliKat='${k.id}';_marketYenile()"
+      style="position:relative;padding:8px 14px;border-radius:20px;border:1.5px solid ${isActive ? 'var(--accent)' : 'var(--border)'};
+      background:${isActive ? 'var(--accent)22' : 'var(--surface)'};color:${isActive ? 'var(--accent)' : 'var(--text2)'};
+      font-size:0.78rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Nunito',sans-serif;transition:all 0.15s">${k.ad}</button>`;
+  }).join('');
 
   // Ürünler
   const urunler = Object.entries(MARKET_URUNLER).filter(([, u]) => u.kategori === secili);
+  const altin = window.currentUserData?.altin || 0;
 
   const urunHTML = urunler.map(([id, u]) => {
     const sahipMi = sahip.includes(id);
     const aktifMi = (u.tip === 'etiket' && window.currentUserData?.etiket === u.deger)
-      || (u.tip === 'tema' && loadColonyData().tema === u.deger)
+      || (u.tip === 'tema' && colData.tema === u.deger)
       || (u.tip === 'efekt' && aktif.efekt === u.deger);
     const boostAktif = u.tuket && aktif[id] && new Date(aktif[id]) > new Date();
+    const yetersiz = altin < u.fiyat && !sahipMi;
 
     let butonHTML = '';
     if (aktifMi) {
-      butonHTML = `<button onclick="marketAktifEt('${id}')" style="width:100%;padding:8px;background:var(--accent3)18;border:1px solid var(--accent3);border-radius:8px;color:var(--accent3);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">✓ Aktif — Kaldır</button>`;
+      butonHTML = `<button onclick="marketAktifEt('${id}')" style="width:100%;padding:9px;background:rgba(29,158,117,0.12);border:1.5px solid #1D9E75;border-radius:10px;color:#1D9E75;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">✓ Aktif — Kaldır</button>`;
     } else if (boostAktif) {
       const kalan = Math.round((new Date(aktif[id]) - new Date()) / 3600000);
-      butonHTML = `<div style="padding:8px;text-align:center;font-size:0.78rem;font-weight:700;color:var(--accent)">${kalan}s kaldı</div>`;
+      butonHTML = `<div style="padding:9px;text-align:center;font-size:0.78rem;font-weight:700;color:var(--accent);background:var(--accent)11;border-radius:10px;border:1px solid var(--accent)33">⏱ ${kalan}s kaldı</div>`;
     } else if (sahipMi && !u.tuket) {
-      butonHTML = `<button onclick="marketAktifEt('${id}')" style="width:100%;padding:8px;background:var(--accent)22;border:1px solid var(--accent);border-radius:8px;color:var(--accent);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">Aktif Et</button>`;
+      butonHTML = `<button onclick="marketAktifEt('${id}')" style="width:100%;padding:9px;background:var(--accent)18;border:1.5px solid var(--accent);border-radius:10px;color:var(--accent);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">Aktif Et</button>`;
     } else {
-      butonHTML = `<button onclick="marketSatinAl('${id}')" style="width:100%;padding:8px;background:var(--accent-btn);border:none;border-radius:8px;color:white;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">${u.fiyat} 💰 Satın Al</button>`;
+      const style = yetersiz
+        ? 'width:100%;padding:9px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:0.78rem;font-weight:700;cursor:not-allowed;font-family:\'Nunito\',sans-serif;opacity:0.6'
+        : 'width:100%;padding:9px;background:var(--accent-btn);border:none;border-radius:10px;color:white;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:\'Nunito\',sans-serif';
+      butonHTML = `<button ${yetersiz ? '' : `onclick="marketSatinAl('${id}')"`} style="${style}">${u.fiyat} 💰 ${yetersiz ? '— Yetersiz' : 'Satın Al'}</button>`;
     }
 
-    return `<div style="background:var(--surface);border:1px solid ${sahipMi ? 'var(--accent)44' : 'var(--border)'};border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative">
-      ${sahipMi && !u.tuket ? '<div style="position:absolute;top:6px;right:6px;font-size:8px;background:var(--accent3)22;color:var(--accent3);padding:2px 6px;border-radius:8px;font-weight:700">Sahip</div>' : ''}
+    const cardBorder = aktifMi ? '1.5px solid #1D9E75' : sahipMi ? '1px solid var(--accent)55' : '1px solid var(--border)';
+    const cardBg = aktifMi ? 'rgba(29,158,117,0.05)' : 'var(--surface)';
+
+    return `<div style="background:${cardBg};border:${cardBorder};border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;transition:border 0.2s">
+      ${aktifMi ? '<div style="position:absolute;top:7px;right:7px;width:8px;height:8px;border-radius:50%;background:#1D9E75;box-shadow:0 0 6px #1D9E75"></div>' :
+        sahipMi && !u.tuket ? '<div style="position:absolute;top:6px;right:6px;font-size:8px;background:var(--accent)22;color:var(--accent);padding:2px 7px;border-radius:8px;font-weight:700">Sahip</div>' : ''}
       <div style="font-size:2rem;margin-bottom:6px">${u.ikon}</div>
       <div style="font-size:0.82rem;font-weight:700;margin-bottom:2px">${u.ad}</div>
-      <div style="font-size:0.7rem;color:var(--text2);margin-bottom:8px;line-height:1.4">${u.aciklama}</div>
+      <div style="font-size:0.68rem;color:var(--text2);margin-bottom:10px;line-height:1.45;flex:1">${u.aciklama}</div>
       ${butonHTML}
     </div>`;
   }).join('');
@@ -403,7 +451,12 @@ function _marketYenile() {
   const el = document.getElementById('marketSayfa');
   if (el) el.innerHTML = _marketIcerik();
   const altinEl = document.getElementById('marketAltinGoster');
-  if (altinEl) altinEl.textContent = window.currentUserData?.altin || 0;
+  if (altinEl) {
+    altinEl.textContent = window.currentUserData?.altin || 0;
+    // Pop animasyonu
+    const badge = document.getElementById('marketAltinBadge');
+    if (badge) { badge.classList.remove('mPop'); void badge.offsetWidth; badge.classList.add('mPop'); }
+  }
 }
 
 // ── Bildirim ─────────────────────────────────────────────

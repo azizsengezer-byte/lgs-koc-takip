@@ -138,29 +138,116 @@ function maceraPage() {
       @keyframes colWindowFlicker{0%,90%{opacity:0.85}95%{opacity:0.3}100%{opacity:0.85}}
       @keyframes colSmoke{0%{transform:translateY(0);opacity:0.4}100%{transform:translateY(-10px);opacity:0}}
       @keyframes colPulse{0%,100%{opacity:0.3}50%{opacity:0.7}}
+      @keyframes colMeteor{0%{opacity:1;transform:rotate(25deg) translateX(0)}100%{opacity:0;transform:rotate(25deg) translateX(80px) translateY(40px)}}
+      @keyframes colAurora{0%,100%{opacity:0.7;transform:scaleX(1)}50%{opacity:1;transform:scaleX(1.08)}}
     </style>
   `;
+}
+
+// ── Tema renkleri ────────────────────────────────────────
+const _COLONY_THEMES = {
+  default:  { sky: 'linear-gradient(180deg,#020B1A 0%,#0A1628 40%,#162544 70%,#1E3352 100%)', ground: 'linear-gradient(180deg,#1a2a3a 0%,#2d1f14 40%,#3d2a18 100%)', groundTop: '#4a3520', star: 'white', aurora: null },
+  mars:     { sky: 'linear-gradient(180deg,#1a0505 0%,#3d1010 40%,#5a2020 70%,#7a3030 100%)', ground: 'linear-gradient(180deg,#3d1515 0%,#5a2020 40%,#7a3030 100%)', groundTop: '#9a4040', star: '#ffb0b0', aurora: 'rgba(255,80,80,0.12)' },
+  buz:      { sky: 'linear-gradient(180deg,#051525 0%,#0a2a4a 40%,#1a4a6a 70%,#2a6a8a 100%)', ground: 'linear-gradient(180deg,#0a3a5a 0%,#1a5a7a 40%,#2a7a9a 100%)', groundTop: '#4aaaca', star: '#b0e0ff', aurora: 'rgba(80,200,255,0.15)' },
+  orman:    { sky: 'linear-gradient(180deg,#050f05 0%,#0a2a0a 40%,#1a4a2a 70%,#2a5a3a 100%)', ground: 'linear-gradient(180deg,#0a2a0a 0%,#1a4a1a 40%,#2a6a2a 100%)', groundTop: '#3a8a3a', star: '#d0ffd0', aurora: 'rgba(80,255,80,0.1)'  },
+  nebula:   { sky: 'linear-gradient(180deg,#0a0520 0%,#1a0a3a 40%,#3a1a5a 70%,#5a2a7a 100%)', ground: 'linear-gradient(180deg,#1a0a3a 0%,#2a1a5a 40%,#3a2a7a 100%)', groundTop: '#6a4aaa', star: '#e0b0ff', aurora: 'rgba(180,80,255,0.18)' },
+  altin:    { sky: 'linear-gradient(180deg,#1a1505 0%,#2a2510 40%,#3a3520 70%,#4a4530 100%)', ground: 'linear-gradient(180deg,#2a2510 0%,#3a3520 40%,#4a4530 100%)', groundTop: '#7a6a40', star: '#ffe88a', aurora: 'rgba(255,210,80,0.13)' },
+  karanlik: { sky: 'linear-gradient(180deg,#000005 0%,#050510 40%,#0a0a1a 70%,#101020 100%)', ground: 'linear-gradient(180deg,#050510 0%,#0a0a1a 40%,#101020 100%)', groundTop: '#202030', star: '#9090ff', aurora: null },
+};
+
+function _colonyGetTheme() {
+  const data = loadColonyData();
+  return _COLONY_THEMES[data.tema] || _COLONY_THEMES.default;
+}
+
+// ── Sahneye tema uygula ──────────────────────────────────
+function _colonyApplyTheme() {
+  const scene = document.getElementById('colonyScene');
+  const ground = scene?.querySelector('.colony-ground');
+  if (!scene) return;
+  const t = _colonyGetTheme();
+  scene.style.background = t.sky;
+  if (ground) {
+    ground.style.background = t.ground;
+    ground.style.borderTopColor = t.groundTop;
+  }
+  // Aurora efekti
+  let aurora = scene.querySelector('.colony-aurora');
+  if (t.aurora) {
+    if (!aurora) {
+      aurora = document.createElement('div');
+      aurora.className = 'colony-aurora';
+      aurora.style.cssText = `position:absolute;top:0;left:0;right:0;height:50%;pointer-events:none;z-index:1`;
+      scene.insertBefore(aurora, scene.firstChild);
+    }
+    aurora.style.background = `radial-gradient(ellipse 80% 40% at 50% 0%, ${t.aurora}, transparent)`;
+    aurora.style.animation = 'colAurora 6s ease-in-out infinite';
+  } else if (aurora) {
+    aurora.remove();
+  }
+}
+
+// ── Meteor animasyonu ────────────────────────────────────
+function _colonySpawnMeteor(container) {
+  const m = document.createElement('div');
+  const startX = Math.random() * 80 + 10;
+  m.style.cssText = `position:absolute;top:${Math.random()*30}%;left:${startX}%;width:${40+Math.random()*30}px;height:1px;
+    background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.8));
+    transform:rotate(${20+Math.random()*20}deg);border-radius:1px;pointer-events:none;z-index:2;
+    animation:colMeteor 0.8s ease-out forwards`;
+  container.appendChild(m);
+  setTimeout(() => m.remove(), 900);
+}
+
+// ── Zemin ışıltısı (aktif modül sayısına göre) ───────────
+function _colonyUpdateGroundGlow(level) {
+  const ground = document.querySelector('#colonyScene .colony-ground');
+  if (!ground) return;
+  const intensity = Math.min(1, level / 30);
+  const t = _colonyGetTheme();
+  ground.style.boxShadow = intensity > 0.1
+    ? `0 -8px ${Math.round(intensity * 40)}px rgba(255,255,255,${(intensity * 0.15).toFixed(2)})`
+    : 'none';
 }
 
 // ── Yıldızları oluştur ───────────────────────────────────
 function _colonyInitStars() {
   const el = document.getElementById('colonyStars');
   if (!el || el.children.length > 0) return;
-  for (let i = 0; i < 50; i++) {
+  const t = _colonyGetTheme();
+
+  // Yıldızlar
+  for (let i = 0; i < 60; i++) {
     const s = document.createElement('div');
-    s.style.cssText = `position:absolute;border-radius:50%;background:white;
-      width:${1 + Math.random() * 2}px;height:${1 + Math.random() * 2}px;
+    const big = Math.random() < 0.08;
+    s.style.cssText = `position:absolute;border-radius:50%;background:${t.star};
+      width:${big ? 2.5 : 1 + Math.random() * 1.5}px;
+      height:${big ? 2.5 : 1 + Math.random() * 1.5}px;
       left:${Math.random() * 100}%;top:${Math.random() * 55}%;
       animation:colTwinkle ${2 + Math.random() * 4}s ease-in-out infinite;
-      animation-delay:${Math.random() * 4}s`;
+      animation-delay:${Math.random() * 4}s;
+      opacity:${0.4 + Math.random() * 0.6}`;
     el.appendChild(s);
   }
+
+  // Meteor: level yükseldikçe sıklaşır
+  const data = loadColonyData();
+  const meteorInterval = Math.max(4000, 14000 - data.level * 200);
+  setInterval(() => {
+    const scene = document.getElementById('colonyScene');
+    if (scene) _colonySpawnMeteor(scene);
+  }, meteorInterval);
+
+  // XP bar animasyonu
   const bar = document.getElementById('colonyXpBar');
   if (bar) {
-    const data = loadColonyData();
     const prog = getXpProgress(data.xp, data.level);
     setTimeout(() => { bar.style.width = prog.percent + '%'; }, 100);
   }
+
+  // Tema & zemin ışığı
+  _colonyApplyTheme();
+  _colonyUpdateGroundGlow(data.level);
 }
 
 // ── Modül SVG'leri ───────────────────────────────────────
@@ -311,5 +398,9 @@ function _colonyShowAllChapters() {
 }
 
 function _colonyPostRender() {
-  setTimeout(_colonyInitStars, 50);
+  setTimeout(() => {
+    _colonyInitStars();
+    // Tema yeniden açılışta uygula (market'ten dönülünce gerekli)
+    _colonyApplyTheme();
+  }, 50);
 }

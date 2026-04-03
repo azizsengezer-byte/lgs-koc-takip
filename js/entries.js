@@ -186,6 +186,22 @@ function saveEntry() {
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(()=>{});
     }
+    // Koloni XP — deneme girişi (günde 1 kez)
+    if (saved > 0 && typeof grantExamXP === 'function') {
+      try {
+        const _examKey = 'colony_exam_' + getTodayKey();
+        if (!localStorage.getItem(_examKey)) {
+          localStorage.setItem(_examKey, '1');
+          const colData = loadColonyData();
+          const xpGained = grantExamXP(colData);
+          if (xpGained > 0) showToast('🚀', `+${xpGained} XP deneme girişi!`);
+        }
+      } catch(e) {}
+    }
+    // Konfeti efekti
+    if (typeof _marketKonfetiEfekt === 'function') {
+      setTimeout(() => _marketKonfetiEfekt(), 400);
+    }
     showPage('daily-entry');
     return;
   }
@@ -250,6 +266,14 @@ function saveEntry() {
   // Altın sistemi — soru hook
   if (type === 'soru' && correct > 0 && typeof _marketSoruKontrol === 'function') {
     _marketSoruKontrol(correct);
+  }
+  // Koloni XP — soru çözme
+  if (type === 'soru' && q > 0 && typeof grantQuestionXP === 'function') {
+    try {
+      const colData = loadColonyData();
+      const xpGained = grantQuestionXP(colData, q);
+      if (xpGained > 0) showToast('🚀', `+${xpGained} XP ${q} soru çözümü!`);
+    } catch(e) {}
   }
   // Konfeti efekti
   if (typeof _marketKonfetiEfekt === 'function') {
