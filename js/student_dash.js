@@ -843,7 +843,7 @@ function generateAnalysisComment(filtered, subjectStats, totalDur, totalQ, total
   }
 
   // Genel öneri
-  const lgsDate = new Date('2026-06-14T09:30:00+03:00');
+  const lgsDate = new Date('2026-06-13T09:30:00+03:00');
   const daysLeft = Math.floor((lgsDate - new Date())/(1000*60*60*24));
   comments.push(`<b>LGS'ye ${daysLeft} gün</b> kaldı — her gün düzenli çalışmak seni hedefe taşır! 🚀`);
 

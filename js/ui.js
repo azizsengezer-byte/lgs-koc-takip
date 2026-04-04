@@ -36,7 +36,7 @@ function startCountdown() {
   function update() {
     const card = document.getElementById('lgsCountdownCard');
     if (!card) { clearInterval(_countdownTimer); _countdownTimer = null; return; }
-    const lgs = new Date('2026-06-14T09:30:00+03:00');
+    const lgs = new Date('2026-06-13T09:30:00+03:00');
     const now = new Date();
     const diff = lgs - now;
     if (diff <= 0) {

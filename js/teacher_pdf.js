@@ -503,7 +503,7 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
   const withQ = subStats.filter(s=>s.q>0).sort((a,b)=>b.pct-a.pct);
   const best = withQ[0];
   const worst = withQ.length>1 ? [...withQ].sort((a,b)=>a.pct-b.pct)[0] : null;
-  const lgs = new Date('2026-06-14T09:30:00+03:00');
+  const lgs = new Date('2026-06-13T09:30:00+03:00');
   const daysLeft = Math.floor((lgs-new Date())/(1000*60*60*24));
   const avgDurDay = activeDays>0 ? Math.round(totalDur/activeDays) : 0;
   const avgQDay = activeDays>0 ? Math.round(totalQ/activeDays) : 0;
