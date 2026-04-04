@@ -278,12 +278,13 @@ const COLONY_CHAPTERS = [
 
 // XP kazanma kuralları
 const COLONY_XP_RULES = {
-  wellnessEntry: 15,        // Günlük wellness girişi
-  wellnessStreak3: 10,      // 3 gün seri bonus
-  wellnessStreak7: 25,      // 7 gün seri bonus
-  wellnessStreak14: 50,     // 14 gün seri bonus
-  wellnessStreak30: 100,    // 30 gün seri bonus
-  honestyShield: 20,        // Dürüstlük kalkanı (haftada 3+ farklı duygu)
-  questionsPer50: 5,        // Her 50 soru için
-  examEntry: 30,            // Deneme girişi
+  wellnessEntry: 30,        // Günlük wellness girişi (alan başına 10, max 3 alan)
+  wellnessStreak3: 15,      // 3 gün seri bonus
+  wellnessStreak7: 40,      // 7 gün seri bonus
+  wellnessStreak14: 80,     // 14 gün seri bonus
+  wellnessStreak30: 150,    // 30 gün seri bonus
+  honestyShield: 30,        // Dürüstlük kalkanı (haftada 3+ farklı duygu)
+  questionsPer50: 8,        // Her 50 soru için
+  examEntry: 50,            // Deneme girişi
+  wellnessPerField: 10,     // Her doldurulmuş wellness alanı başına
 };

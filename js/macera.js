@@ -555,13 +555,6 @@ function maceraPage() {
               <div style="font-size:8px;margin-top:2px;color:rgba(255,255,255,0.18)">${levelInfo.title}</div>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:7px;padding:6px 13px 4px">
-            <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.35);min-width:32px">Sv.${level}</span>
-            <div style="flex:1;height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden">
-              <div id="colonyXpBar" style="height:100%;border-radius:2px;background:linear-gradient(90deg,#185FA5,#5BBFFF);width:0%;transition:width 1s ease"></div>
-            </div>
-            <span style="font-size:10px;color:rgba(255,255,255,0.22);min-width:68px;text-align:right">${xpProg.current} / ${xpProg.needed} XP</span>
-          </div>
         </div>
 
         <div style="position:absolute;bottom:10px;right:10px;display:flex;gap:5px;pointer-events:none">
@@ -582,6 +575,14 @@ function maceraPage() {
             <div style="font-size:8px;color:rgba(255,255,255,0.35)">gün</div>
           </div>
         </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:var(--surface);border-bottom:1px solid var(--border)">
+        <span style="font-size:10px;font-weight:700;color:var(--text2);min-width:32px">Sv.${level}</span>
+        <div style="flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">
+          <div id="colonyXpBar" style="height:100%;border-radius:3px;background:linear-gradient(90deg,#185FA5,#5BBFFF);width:0%;transition:width 1s ease"></div>
+        </div>
+        <span style="font-size:10px;color:var(--text2);min-width:68px;text-align:right">${xpProg.current} / ${xpProg.needed} XP</span>
       </div>
 
       ${alreadyEntered ? `

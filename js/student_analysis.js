@@ -30,9 +30,9 @@ function saveWellnessDay(field, value, btn) {
     const todayData = data.days[todayKey];
     checkAllWellnessNotifications(myUid, data, todayKey);
   }
-  // Altın sistemi — mood girişi
-  if (field === 'mood' && typeof _marketMoodKontrol === 'function') {
-    _marketMoodKontrol(field);
+  // Altın sistemi — her alan girişinde kontrol et
+  if (typeof _marketWellnessTamKontrol === 'function') {
+    _marketWellnessTamKontrol();
   }
   // Koloni XP — mood girişinde koloniye XP ver
   if (field === 'mood' && typeof grantWellnessXP === 'function') {

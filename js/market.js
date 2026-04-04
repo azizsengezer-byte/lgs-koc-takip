@@ -25,7 +25,7 @@ const MARKET_URUNLER = {
   tema_karanlik:{ kategori:'tema', ad:'Karanlık Madde',   fiyat:650, ikon:'🌑', aciklama:'Koloni sahnesini derin uzay temasına çevir',  tip:'tema', deger:'karanlik' },
 
   // ── Koloni İsimlendirme ────────────────────────────────
-  koloni_isim:  { kategori:'koloni', ad:'Koloni İsmi Değiştir', fiyat:200, ikon:'✏️', aciklama:'Kolonine özel bir isim ver', tip:'isim', deger:'' },
+  koloni_isim:  { kategori:'koloni', ad:'Koloni İsmi Değiştir', fiyat:200, ikon:'✏️', aciklama:'Kolonine özel bir isim ver', tip:'isim', deger:'', tuket:true },
 
   // ── Efektler (soru girişinde animasyon) ────────────────
   efekt_konfeti: { kategori:'efekt', ad:'Konfeti',        fiyat:400, ikon:'🎊', aciklama:'Soru girişinde konfeti patlar',      tip:'efekt', deger:'konfeti' },
@@ -33,6 +33,11 @@ const MARKET_URUNLER = {
   efekt_kalp:    { kategori:'efekt', ad:'Kalp Yağmuru',   fiyat:350, ikon:'💜', aciklama:'Soru girişinde kalpler uçar',       tip:'efekt', deger:'kalp' },
   efekt_altin:   { kategori:'efekt', ad:'Altın Patlama',  fiyat:550, ikon:'💰', aciklama:'Soru girişinde altınlar yağar',     tip:'efekt', deger:'altin' },
   efekt_roket:   { kategori:'efekt', ad:'Roket Fırlatma', fiyat:600, ikon:'🚀', aciklama:'Soru girişinde roket fırlar',       tip:'efekt', deger:'roket' },
+
+  // ── XP Paketleri ──────────────────────────────────────────
+  xp_kucuk:  { kategori:'xp', ad:'50 XP Paketi',   fiyat:300,  ikon:'⚡', aciklama:'Kolonine anında 50 XP ekle',   tip:'xp', deger:50,  tuket:true },
+  xp_orta:   { kategori:'xp', ad:'150 XP Paketi',  fiyat:800,  ikon:'🚀', aciklama:'Kolonine anında 150 XP ekle',  tip:'xp', deger:150, tuket:true },
+  xp_buyuk:  { kategori:'xp', ad:'400 XP Paketi',  fiyat:2000, ikon:'🌟', aciklama:'Kolonine anında 400 XP ekle',  tip:'xp', deger:400, tuket:true },
 
   // ── Güçlendiriciler (süreli, tüketilir) ────────────────
   boost_seri:    { kategori:'boost', ad:'Seri Koruyucu',  fiyat:500,  ikon:'🛡️', aciklama:'1 gün çalışmasan serin bozulmaz',     tip:'boost', deger:'seri',    tuket:true },
@@ -46,10 +51,12 @@ const MARKET_KATEGORILER = [
   { id:'tema',   ad:'🎨 Koloni Tema'   },
   { id:'efekt',  ad:'✨ Efektler'      },
   { id:'boost',  ad:'⚡ Güçlendirici'  },
+  { id:'xp',     ad:'⭐ XP Paketi'     },
   { id:'koloni', ad:'🚀 Koloni'        },
 ];
 
-const MARKET_ALTIN = { MOOD: 15, WELLNESS_TAM: 100, SORU_10: 5, SERI_7: 100 };
+const MARKET_ALTIN = { MOOD: 20, WELLNESS_TAM: 50, WELLNESS_ALAN: 20, SORU_10: 5, SERI_7: 100 };
+// MOOD: duygu girişi, WELLNESS_TAM: tüm alanlar dolunca bonus, WELLNESS_ALAN: her alan başına
 
 const _ETIKET_STILLER = {
   '🔥 Çalışkan':  'background:linear-gradient(135deg,#ff4444,#cc1111);color:white;box-shadow:0 2px 8px rgba(255,68,68,0.4)',
@@ -121,7 +128,14 @@ async function marketSatinAl(urunId) {
 
     // Özel işlemler
     if (urun.tip === 'etiket') _mEtiketUygula(urun.deger);
-    if (urun.tip === 'isim') _mKoloniIsimVer();
+    if (urun.tip === 'isim') {
+      // Altın düş, isim modalını aç — ama sahipUrunler'e ekleme (tekrar kullanılabilir)
+      window.currentUserData.altin = altin - urun.fiyat;
+      try { await db.collection('users').doc(uid).update({ altin: window.currentUserData.altin }); } catch(e) {}
+      _mKoloniIsimVer();
+      _marketYenile();
+      return;
+    }
     if (urun.tip === 'tema') _mKoloniTemaUygula(urun.deger);
 
     _marketYenile();
@@ -138,6 +152,18 @@ async function marketAktifEt(urunId) {
   const uid = auth.currentUser?.uid;
   if (!uid) return;
 
+  if (urun.tip === 'xp') {
+    const colData = loadColonyData();
+    const eskiXp = colData.xp || 0;
+    const eskiSeviye = colData.level || 1;
+    colData.xp += urun.deger;
+    colData.level = getColonyLevel(colData.xp);
+    saveColonyData(colData);
+    const seviyeAtladi = colData.level > eskiSeviye;
+    showToast('⭐', '+' + urun.deger + ' XP kolonine eklendi!' + (seviyeAtladi ? ' Seviye atladın!' : ''));
+    _marketYenile();
+    return;
+  }
   if (urun.tip === 'etiket') {
     // Toggle — aynı etiketse kaldır
     if (window.currentUserData?.etiket === urun.deger) {
@@ -302,12 +328,28 @@ function _marketMoodKontrol() {
 
 function _marketWellnessTamKontrol() {
   const gun = getTodayKey();
-  if (localStorage.getItem('altin_wellness_' + gun)) return;
   const { data } = _getW();
   const bugun = (data.days || {})[gun] || {};
-  if (bugun.mood && bugun.uyku && bugun.enerji) {
-    localStorage.setItem('altin_wellness_' + gun, '1');
-    marketAldinEkle(MARKET_ALTIN.WELLNESS_TAM, 'Günlük takip tamamlandı');
+  // Alan başına — her alan günde 1 kez altın verir
+  const alanlar = [
+    { key: 'mood',   label: 'Duygu girişi' },
+    { key: 'uyku',   label: 'Uyku verisi' },
+    { key: 'enerji', label: 'Enerji verisi' },
+    { key: 'kaygi',  label: 'Kaygı verisi' },
+    { key: 'odak',   label: 'Odak verisi' },
+  ];
+  alanlar.forEach(a => {
+    const aKey = 'altin_alan_' + a.key + '_' + gun;
+    if (bugun[a.key] && !localStorage.getItem(aKey)) {
+      localStorage.setItem(aKey, '1');
+      marketAldinEkle(MARKET_ALTIN.WELLNESS_ALAN, a.label);
+    }
+  });
+  // Bonus: tüm 5 alan doluysa
+  const tamKey = 'altin_wellness_tam_' + gun;
+  if (!localStorage.getItem(tamKey) && alanlar.every(a => bugun[a.key])) {
+    localStorage.setItem(tamKey, '1');
+    marketAldinEkle(MARKET_ALTIN.WELLNESS_TAM, 'Tam günlük takip bonusu!');
   }
 }
 
@@ -327,12 +369,22 @@ let _marketSeciliKat = 'etiket';
 function marketPage() {
   const altin = window.currentUserData?.altin || 0;
   const gun = getTodayKey();
-  const moodDone = !!localStorage.getItem('altin_mood_' + gun);
-  const wellnessDone = !!localStorage.getItem('altin_wellness_' + gun);
   const soruCount = parseInt(localStorage.getItem('altin_soru_' + gun) || '0');
+  // Alan bazlı kontrol
+  const alanlar = [
+    { key:'mood',   label:'Duygu' },
+    { key:'uyku',   label:'Uyku' },
+    { key:'enerji', label:'Enerji' },
+    { key:'kaygi',  label:'Kaygı' },
+    { key:'odak',   label:'Odak' },
+  ];
+  const alanDurumu = alanlar.map(a => ({
+    ...a, done: !!localStorage.getItem('altin_alan_' + a.key + '_' + gun)
+  }));
+  const tamDone = !!localStorage.getItem('altin_wellness_tam_' + gun);
+  const doldurulan = alanDurumu.filter(a => a.done).length;
 
   return `
-    <!-- Başlık + Altın -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div>
         <div class="page-title" style="margin-bottom:0">🛒 Market</div>
@@ -343,24 +395,31 @@ function marketPage() {
       </div>
     </div>
 
-    <!-- Bugün kazanma durumu -->
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px;letter-spacing:0.3px">BUGÜN KAZANDIĞIN ALTIN</div>
       <div style="display:flex;flex-direction:column;gap:7px">
+
+        <!-- Alan bazlı satır -->
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div style="display:flex;align-items:center;gap:8px">
-            <div style="width:22px;height:22px;border-radius:50%;background:${moodDone ? 'rgba(29,158,117,0.2)' : 'var(--surface)'};border:1.5px solid ${moodDone ? '#1D9E75' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:11px">${moodDone ? '✓' : '·'}</div>
-            <span style="font-size:12px;color:${moodDone ? 'var(--text)' : 'var(--text2)'}">Duygu girişi</span>
+            <div style="display:flex;gap:3px">
+              ${alanDurumu.map(a => '<div style="width:8px;height:8px;border-radius:50%;background:' + (a.done ? '#1D9E75' : 'var(--border)') + ';title=' + a.label + '"></div>').join('')}
+            </div>
+            <span style="font-size:12px;color:var(--text2)">Nasıl hissediyorum verisi <span style="color:var(--text);font-weight:700">(${doldurulan}/5)</span></span>
           </div>
-          <span style="font-size:12px;font-weight:700;color:${moodDone ? '#f9ca24' : 'var(--text2)'}">+${MARKET_ALTIN.MOOD} 💰</span>
+          <span style="font-size:12px;font-weight:700;color:#f9ca24">+${MARKET_ALTIN.WELLNESS_ALAN} 💰/alan</span>
         </div>
+
+        <!-- Tam takip bonusu -->
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div style="display:flex;align-items:center;gap:8px">
-            <div style="width:22px;height:22px;border-radius:50%;background:${wellnessDone ? 'rgba(29,158,117,0.2)' : 'var(--surface)'};border:1.5px solid ${wellnessDone ? '#1D9E75' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:11px">${wellnessDone ? '✓' : '·'}</div>
-            <span style="font-size:12px;color:${wellnessDone ? 'var(--text)' : 'var(--text2)'}">Tam wellness takibi</span>
+            <div style="width:22px;height:22px;border-radius:50%;background:${tamDone ? 'rgba(29,158,117,0.2)' : 'var(--surface)'};border:1.5px solid ${tamDone ? '#1D9E75' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:11px">${tamDone ? '✓' : '·'}</div>
+            <span style="font-size:12px;color:${tamDone ? 'var(--text)' : 'var(--text2)'}">Tam takip bonusu (5/5 alan)</span>
           </div>
-          <span style="font-size:12px;font-weight:700;color:${wellnessDone ? '#f9ca24' : 'var(--text2)'}">+${MARKET_ALTIN.WELLNESS_TAM} 💰</span>
+          <span style="font-size:12px;font-weight:700;color:${tamDone ? '#f9ca24' : 'var(--text2)'}">+${MARKET_ALTIN.WELLNESS_TAM} 💰</span>
         </div>
+
+        <!-- Soru -->
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div style="display:flex;align-items:center;gap:8px">
             <div style="width:22px;height:22px;border-radius:50%;background:${soruCount>0?'rgba(55,138,221,0.15)':'var(--surface)'};border:1.5px solid ${soruCount>0?'#378ADD':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${soruCount>0?'#378ADD':'var(--text2)'}">${soruCount}</div>
