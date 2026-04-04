@@ -426,7 +426,9 @@ async function exportPsychPDF(sName) {
           wellnessForAI, academicForAI,
           denemelerForAI, sozelNotlar
         );
+        showToast('🔍', 'AI sonuç: ' + (aiAnaliz ? JSON.stringify(Object.keys(aiAnaliz)).substring(0,40) : 'NULL'));
       } catch (aiErr) {
+        showToast('❌', 'AI hata: ' + aiErr.message.substring(0,50));
         console.warn('AI analiz atlandı:', aiErr.message);
         aiAnaliz = null;
       }
