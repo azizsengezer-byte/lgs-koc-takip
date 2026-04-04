@@ -127,6 +127,7 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
     '"koc_stratejisi":"1- 2- 3- seklinde acil eylem",' +
     '"hafiza_borcu":"kriz altinda calisilanlar icin tekrar onerileri"}';
 
+  showToast('⏳', 'AI isteği gönderiliyor...');
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 saniye timeout
@@ -139,6 +140,7 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
     clearTimeout(timeoutId);
     const data = await res.json();
     if (!res.ok) {
+      showToast('❌', 'API hata ' + res.status + ': ' + (data?.error?.message||'').substring(0,40));
       console.error('AI API hata:', res.status, data?.error?.message);
       return null;
     }
@@ -195,9 +197,10 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
         parsed[key] = parsed[key].map(v => typeof v === 'string' ? turkcelestir(v) : v);
       }
     }
-    showToast('✅', 'AI hazır: ' + (parsed.ana_tani||'?').substring(0,30));
+    showToast('✅', 'AI yanıt geldi: ' + (parsed.ana_tani||'?').substring(0,30));
     return parsed;
   } catch(e) {
+    showToast('❌', 'AI catch: ' + e.message.substring(0,50));
     console.error('AI analiz HATA:', e.message, e);
     return null;
   }
