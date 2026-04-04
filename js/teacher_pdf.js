@@ -346,34 +346,29 @@ function _aiToggleUI(sNameKey, acik) {
     const apiYok = localStorage.getItem('lgs_api_enabled') !== 'true' || !localStorage.getItem('lgs_anthropic_key');
 
     if (apiYok) {
-      bilgi.innerHTML = \`<div style="font-size:11px;color:#ff6584;margin-top:8px;padding:8px 10px;background:rgba(255,101,132,0.08);border-radius:8px;border:1px solid rgba(255,101,132,0.2)">
-        ⚠️ Profil sayfasından API anahtarı eklemen gerekiyor.
-      </div>\`;
+      bilgi.innerHTML = '<div style="font-size:11px;color:#ff6584;margin-top:8px;padding:8px 10px;background:rgba(255,101,132,0.08);border-radius:8px;border:1px solid rgba(255,101,132,0.2)">⚠️ Profil sayfasından API anahtarı eklemen gerekiyor.</div>';
       return;
     }
 
     if (aiKotaDolu()) {
-      bilgi.innerHTML = \`<div style="font-size:11px;color:#ff6584;margin-top:8px;padding:8px 10px;background:rgba(255,101,132,0.08);border-radius:8px;border:1px solid rgba(255,101,132,0.2)">
-        🚫 Bu ay için <strong>${AI_AYLIK_KOTA} rapor</strong> kotanı doldurdun. Sıfırlanma: önümüzdeki ay başı.
-      </div>\`;
+      bilgi.innerHTML = '<div style="font-size:11px;color:#ff6584;margin-top:8px;padding:8px 10px;background:rgba(255,101,132,0.08);border-radius:8px;border:1px solid rgba(255,101,132,0.2)">🚫 Bu ay için <strong>' + AI_AYLIK_KOTA + ' rapor</strong> kotanı doldurdun. Sıfırlanma: önümüzdeki ay başı.</div>';
       return;
     }
 
     const renkBar = doluluk >= 80 ? '#ff6584' : doluluk >= 50 ? '#f9ca24' : '#6c63ff';
-    bilgi.innerHTML = \`
-      <div style="margin-top:8px;padding:10px 12px;background:rgba(108,99,255,0.06);border-radius:10px;border:1px solid rgba(108,99,255,0.15)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span style="font-size:11px;font-weight:700;color:var(--text)">Aylık AI Kotası</span>
-          <span style="font-size:11px;font-weight:700;color:\${renkBar}">\${kullanim} / \${AI_AYLIK_KOTA}</span>
-        </div>
-        <div style="height:5px;background:var(--surface);border-radius:3px;overflow:hidden;margin-bottom:6px">
-          <div style="height:100%;width:\${doluluk}%;background:\${renkBar};border-radius:3px;transition:width 0.4s ease"></div>
-        </div>
-        <div style="font-size:10px;color:var(--text2)">
-          \${kalan} rapor kaldı · Haftalık ve aylık raporlarda kullanılır · Sıfırlanma: ay başı
-        </div>
-      </div>
-    \`;
+    bilgi.innerHTML =
+      '<div style="margin-top:8px;padding:10px 12px;background:rgba(108,99,255,0.06);border-radius:10px;border:1px solid rgba(108,99,255,0.15)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+          '<span style="font-size:11px;font-weight:700;color:var(--text)">Aylık AI Kotası</span>' +
+          '<span style="font-size:11px;font-weight:700;color:' + renkBar + '">' + kullanim + ' / ' + AI_AYLIK_KOTA + '</span>' +
+        '</div>' +
+        '<div style="height:5px;background:var(--surface);border-radius:3px;overflow:hidden;margin-bottom:6px">' +
+          '<div style="height:100%;width:' + doluluk + '%;background:' + renkBar + ';border-radius:3px;transition:width 0.4s ease"></div>' +
+        '</div>' +
+        '<div style="font-size:10px;color:var(--text2)">' +
+          kalan + ' rapor kaldı · Haftalık ve aylık raporlarda kullanılır · Sıfırlanma: ay başı' +
+        '</div>' +
+      '</div>';
   }
 }
 
