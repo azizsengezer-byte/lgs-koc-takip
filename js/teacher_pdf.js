@@ -230,7 +230,7 @@ function dpSelectWeek(monKey, btn) {
   document.getElementById('dpConfirmBtn').style.display = 'block';
 }
 
-function dpConfirm() {
+async function dpConfirm() {
   const sName = _dpSName;
   const isPsych = sName.startsWith('psych_');
   const realName = isPsych ? sName.replace(/^psych_/,'').replace(/_/g,' ') : sName;
@@ -259,7 +259,7 @@ function dpConfirm() {
 
   if (isPsych) {
     window._psychPeriod = _dpMode;
-    exportPsychPDF(realName);
+    await exportPsychPDF(realName);
   } else {
     const btn = document.querySelector(`#raporAlPanel_${key} .dp-btn-pdf`);
     preparePdfLink(realName, btn || null).finally(() => { window._pdfDateOverride = null; });

@@ -391,7 +391,6 @@ async function exportPsychPDF(sName) {
 
     // ── AI ANALİZİ (haftalık/aylık, API key varsa) ───────────
     let aiAnaliz = null;
-    showToast('🤖', 'AI kontrol: period=' + period + ' acik=' + window._psychAIAcik + ' key=' + !!localStorage.getItem('lgs_anthropic_key') + ' enabled=' + localStorage.getItem('lgs_api_enabled'));
     if (period !== 'daily' && window._psychAIAcik && localStorage.getItem('lgs_api_enabled') === 'true' && localStorage.getItem('lgs_anthropic_key')) {
       try {
         const sozelNotlar = gunler
@@ -426,9 +425,7 @@ async function exportPsychPDF(sName) {
           wellnessForAI, academicForAI,
           denemelerForAI, sozelNotlar
         );
-        showToast('🔍', 'AI sonuç: ' + (aiAnaliz ? JSON.stringify(Object.keys(aiAnaliz)).substring(0,40) : 'NULL'));
       } catch (aiErr) {
-        showToast('❌', 'AI hata: ' + aiErr.message.substring(0,50));
         console.warn('AI analiz atlandı:', aiErr.message);
         aiAnaliz = null;
       }
