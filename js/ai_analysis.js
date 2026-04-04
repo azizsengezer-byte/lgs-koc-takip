@@ -107,25 +107,13 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
     'OGRENCININ SESI (sozel ifadeler — en onemli analiz girdisi):\n' +
     (ogrSesi.length>0 ? ogrSesi.map(n=>n.tarih+':'+(n.pozitif?' (+)'+n.pozitif:'')+' '+(n.negatif?' (-)'+n.negatif:'')).join('\n') : 'Bu donemde sozel ifade girilmemis') +
     '\n\nKURALLAR:\n' +
-    '1. Kaygi>=7+Soru=0 = Amigdala Blokaji/Akademik Felc (asla dinlenme yazma)\n' +
-    '2. Yuksek kaygi+yuksek enerji = Kirilgan Hiper-Aktivasyon (asla olumlu yazma)\n' +
-    '3. Gunluk soru cozumu ile deneme sonuclarini karistirma, ikisini ayri yorumla\n' +
-    '4. Deneme yorumunda ders doluluk oranini degerlendir\n' +
-    '5. Kriz gunlerini tarih tarih adlandir\n' +
-    '6. Maskelenmis kriz: ortalama iyi ama 3+ kriz gunu varsa uyar\n' +
-    '7. Tum teshisleri TURKCE yaz, ingilizce klinik terim kullanma\n' +
-    '8. Her bolum 2-3 cumle, sade\n\n' +
-    'SADECE su JSON formatini don:\n' +
-    '{"ana_tani":"En kritik 1 cumle","uyari_seviyesi":"yesil|sari|turuncu|kirmizi",' +
-    '"kriz_gunleri":["tarih: sebep"],' +
-    '"fizyolojik_yorum":"uyku/enerji/odak",' +
-    '"duygusal_yorum":"kaygi+mood+brans kacisi",' +
-    '"soru_cozumu_yorum":"gunluk antrenman kalitesi ve hafiza riski",' +
-    '"deneme_yorum":"deneme sonuclari klinik yorum - ders doluluk dahil - bos birak veri yoksa",' +
-    '"brans_riski":"en kritik brans ve gerekce",' +
-    '"ogr_sesi_yorum":"ogrencinin kendi ifadelerinin klinik yorumu",' +
-    '"koc_stratejisi":"1- 2- 3- seklinde acil eylem",' +
-    '"hafiza_borcu":"kriz altinda calisilanlar icin tekrar onerileri"}';
+    '1. Kaygi>=7+Soru=0 = Akademik Felc\n' +
+    '2. Tum teshisleri TURKCE yaz\n' +
+    '3. Her bolum MAX 2 cumle\n' +
+    '4. Kriz gunlerini tarih tarih adlandir\n' +
+    '5. deneme_yorum: veri yoksa bos string don\n\n' +
+    'KRITIK: Sadece asagidaki JSON formatini don, baska hicbir sey yazma, markdown kullanma:\n' +
+    '{"ana_tani":"1 cumle","uyari_seviyesi":"yesil|sari|turuncu|kirmizi","kriz_gunleri":[],"fizyolojik_yorum":"2 cumle","duygusal_yorum":"2 cumle","soru_cozumu_yorum":"2 cumle","deneme_yorum":"","brans_riski":"2 cumle","ogr_sesi_yorum":"2 cumle","koc_stratejisi":"1- 2- 3-","hafiza_borcu":"2 cumle"}';
 
   try {
     const controller = new AbortController();
@@ -134,7 +122,7 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
       method: 'POST',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] })
     });
     clearTimeout(timeoutId);
     const data = await res.json();
