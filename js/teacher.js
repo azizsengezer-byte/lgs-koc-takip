@@ -1611,7 +1611,7 @@ async function psychReportPage() {
           <!-- Rapor butonları -->
           <div style="display:flex;gap:8px">
             <button id="psychRaporBtn_daily_${sName.replace(/\s/g,'_')}"
-              onclick="setPsychRaporBtn('${sName.replace(/\s/g,'_')}','daily');window._psychPeriod='daily';exportPsychPDF('${sName}')"
+              onclick="setPsychRaporBtn('${sName.replace(/\s/g,'_')}','daily');window._psychPeriod='daily';exportPsychPDF('${sName}',false)"
               style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
               📋 Günlük
             </button>

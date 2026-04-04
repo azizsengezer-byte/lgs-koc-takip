@@ -1,4 +1,4 @@
-async function exportPsychPDF(sName) {
+async function exportPsychPDF(sName, aiAcik) {
   showToast('⏳','PDF hazırlanıyor...');
   // _pdfDateOverride'ı hemen yakala (async await'ten önce, silinmeden)
   const _ovLocal = window._pdfDateOverride ? {...window._pdfDateOverride} : null;
@@ -391,7 +391,7 @@ async function exportPsychPDF(sName) {
 
     // ── AI ANALİZİ (haftalık/aylık, API key varsa) ───────────
     let aiAnaliz = null;
-    if (period !== 'daily' && window._psychAIAcik && localStorage.getItem('lgs_api_enabled') === 'true' && localStorage.getItem('lgs_anthropic_key')) {
+    if (period !== 'daily' && aiAcik && localStorage.getItem('lgs_api_enabled') === 'true' && localStorage.getItem('lgs_anthropic_key')) {
       try {
         const sozelNotlar = gunler
           .filter(d => d.pozitif || d.negatif)

@@ -259,7 +259,7 @@ async function dpConfirm() {
 
   if (isPsych) {
     window._psychPeriod = _dpMode;
-    await exportPsychPDF(realName);
+    await exportPsychPDF(realName, window._psychAIAcik === true);
   } else {
     const btn = document.querySelector(`#raporAlPanel_${key} .dp-btn-pdf`);
     preparePdfLink(realName, btn || null).finally(() => { window._pdfDateOverride = null; });
