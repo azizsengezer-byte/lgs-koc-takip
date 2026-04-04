@@ -300,9 +300,8 @@ function _aiToggleKey(sNameKey) {
 }
 
 function aiToggleDurumu(sNameKey) {
-  // API kapalıysa zaten false
-  if (localStorage.getItem('lgs_api_enabled') !== 'true') return false;
-  if (!localStorage.getItem('lgs_anthropic_key')) return false;
+  // Toggle durumu key'den bağımsız saklanır
+  // Key kontrolü sadece PDF alırken yapılır
   return localStorage.getItem(_aiToggleKey(sNameKey)) === 'true';
 }
 
