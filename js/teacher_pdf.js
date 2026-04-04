@@ -270,6 +270,121 @@ function closeDatePicker() {
   document.getElementById('datePickerModal').classList.remove('open');
 }
 
+// ── AI KOTA SİSTEMİ ────────────────────────────────────────
+const AI_AYLIK_KOTA = 20;
+
+function _aiKotaKey() {
+  const uid = (window.currentUserData || {}).uid || 'local';
+  const ay  = new Date().toISOString().slice(0, 7); // "2026-04"
+  return 'ai_kota_' + uid + '_' + ay;
+}
+
+function aiKotaKullanim() {
+  try { return parseInt(localStorage.getItem(_aiKotaKey()) || '0'); } catch(e) { return 0; }
+}
+
+function aiKotaArttir() {
+  try {
+    const yeni = aiKotaKullanim() + 1;
+    localStorage.setItem(_aiKotaKey(), yeni);
+    return yeni;
+  } catch(e) { return 0; }
+}
+
+function aiKotaDolu() {
+  return aiKotaKullanim() >= AI_AYLIK_KOTA;
+}
+
+function _aiToggleKey(sNameKey) {
+  return 'ai_toggle_psych_' + sNameKey;
+}
+
+function aiToggleDurumu(sNameKey) {
+  // API kapalıysa zaten false
+  if (localStorage.getItem('lgs_api_enabled') !== 'true') return false;
+  if (!localStorage.getItem('lgs_anthropic_key')) return false;
+  return localStorage.getItem(_aiToggleKey(sNameKey)) === 'true';
+}
+
+function aiToggleGuncelle(sNameKey) {
+  const mevcutAcik = aiToggleDurumu(sNameKey);
+  const yeniDurum  = !mevcutAcik;
+  localStorage.setItem(_aiToggleKey(sNameKey), yeniDurum ? 'true' : 'false');
+  _aiToggleUI(sNameKey, yeniDurum);
+}
+
+function _aiToggleUI(sNameKey, acik) {
+  const toggle  = document.getElementById('aiToggle_' + sNameKey);
+  const bilgi   = document.getElementById('aiKotaBilgi_' + sNameKey);
+  const kapsul  = document.getElementById('aiToggleKapsul_' + sNameKey);
+  if (!toggle) return;
+
+  const kullanim = aiKotaKullanim();
+  const kalan    = Math.max(0, AI_AYLIK_KOTA - kullanim);
+  const doluluk  = Math.round((kullanim / AI_AYLIK_KOTA) * 100);
+
+  // Toggle görünümü
+  toggle.style.background   = acik ? '#6c63ff' : 'var(--surface2)';
+  toggle.style.borderColor  = acik ? '#6c63ff' : 'var(--border)';
+  toggle.querySelector('.ai-toggle-top').style.transform = acik ? 'translateX(18px)' : 'translateX(0)';
+  toggle.querySelector('.ai-toggle-top').style.background = acik ? '#fff' : 'var(--text2)';
+
+  // Kapsül arka planı
+  if (kapsul) {
+    kapsul.style.background     = acik ? 'rgba(108,99,255,0.06)' : 'var(--surface2)';
+    kapsul.style.borderColor    = acik ? 'rgba(108,99,255,0.25)' : 'var(--border)';
+  }
+
+  // Kota bilgisi
+  if (bilgi) {
+    if (!acik) {
+      bilgi.style.display = 'none';
+      return;
+    }
+    bilgi.style.display = 'block';
+
+    const apiYok = localStorage.getItem('lgs_api_enabled') !== 'true' || !localStorage.getItem('lgs_anthropic_key');
+
+    if (apiYok) {
+      bilgi.innerHTML = \`<div style="font-size:11px;color:#ff6584;margin-top:8px;padding:8px 10px;background:rgba(255,101,132,0.08);border-radius:8px;border:1px solid rgba(255,101,132,0.2)">
+        ⚠️ Profil sayfasından API anahtarı eklemen gerekiyor.
+      </div>\`;
+      return;
+    }
+
+    if (aiKotaDolu()) {
+      bilgi.innerHTML = \`<div style="font-size:11px;color:#ff6584;margin-top:8px;padding:8px 10px;background:rgba(255,101,132,0.08);border-radius:8px;border:1px solid rgba(255,101,132,0.2)">
+        🚫 Bu ay için <strong>${AI_AYLIK_KOTA} rapor</strong> kotanı doldurdun. Sıfırlanma: önümüzdeki ay başı.
+      </div>\`;
+      return;
+    }
+
+    const renkBar = doluluk >= 80 ? '#ff6584' : doluluk >= 50 ? '#f9ca24' : '#6c63ff';
+    bilgi.innerHTML = \`
+      <div style="margin-top:8px;padding:10px 12px;background:rgba(108,99,255,0.06);border-radius:10px;border:1px solid rgba(108,99,255,0.15)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:11px;font-weight:700;color:var(--text)">Aylık AI Kotası</span>
+          <span style="font-size:11px;font-weight:700;color:\${renkBar}">\${kullanim} / \${AI_AYLIK_KOTA}</span>
+        </div>
+        <div style="height:5px;background:var(--surface);border-radius:3px;overflow:hidden;margin-bottom:6px">
+          <div style="height:100%;width:\${doluluk}%;background:\${renkBar};border-radius:3px;transition:width 0.4s ease"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text2)">
+          \${kalan} rapor kaldı · Haftalık ve aylık raporlarda kullanılır · Sıfırlanma: ay başı
+        </div>
+      </div>
+    \`;
+  }
+}
+
+// Profil sayfasından API key kaydedilince toggle'ları güncelle
+function aiToggleHepsiniGuncelle() {
+  document.querySelectorAll('[id^="aiToggle_"]').forEach(el => {
+    const key = el.id.replace('aiToggle_', '');
+    _aiToggleUI(key, aiToggleDurumu(key));
+  });
+}
+
 function setPsychRaporBtn(key, mode) {
   ['daily','weekly','monthly'].forEach(m => {
     const btn = document.getElementById('psychRaporBtn_'+m+'_'+key);
@@ -286,6 +401,34 @@ function setPsychRaporBtn(key, mode) {
   });
 }
 
+// Haftalık/Aylık butonuna basılınca: AI kota kontrolü yap, sonra date picker aç
+function _psychAIKontrolVeAc(sName, sNameKey, mode) {
+  const aiAcik = aiToggleDurumu(sNameKey);
+
+  if (aiAcik) {
+    // API key kontrolü
+    if (localStorage.getItem('lgs_api_enabled') !== 'true' || !localStorage.getItem('lgs_anthropic_key')) {
+      showToast('⚠️', 'AI aktif ama API anahtarı yok — profil sayfasından ekle');
+      openDatePicker('psych_' + sNameKey, mode);
+      return;
+    }
+    // Kota kontrolü
+    if (aiKotaDolu()) {
+      showToast('🚫', 'Bu ay ' + AI_AYLIK_KOTA + ' AI raporu kotanı doldurdun');
+      openDatePicker('psych_' + sNameKey, mode);
+      return;
+    }
+    // Kota artır ve PDF'i AI ile başlat
+    aiKotaArttir();
+    _aiToggleUI(sNameKey, true); // kota göstergesini güncelle
+    window._psychAIAcik = true;
+  } else {
+    window._psychAIAcik = false;
+  }
+
+  openDatePicker('psych_' + sNameKey, mode);
+}
+
 function toggleRaporAl(key) {
   const panel = document.getElementById('raporAlPanel_'+key);
   const arrow = document.getElementById('raporAlArrow_'+key);
@@ -293,6 +436,11 @@ function toggleRaporAl(key) {
   const open = panel.style.display === 'none';
   panel.style.display = open ? 'block' : 'none';
   if (arrow) arrow.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+  // Psych paneli açılınca AI toggle'ı initialize et
+  if (open && key.startsWith('psych_')) {
+    const sNameKey = key.replace('psych_', '');
+    setTimeout(() => _aiToggleUI(sNameKey, aiToggleDurumu(sNameKey)), 50);
+  }
 }
 
 function setPdfMode(sName, mode) {

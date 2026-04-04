@@ -1588,6 +1588,27 @@ async function psychReportPage() {
           <span id="raporAlArrow_psych_${sName.replace(/\s/g,'_')}" style="transition:.2s;font-size:0.8rem">▼</span>
         </button>
         <div id="raporAlPanel_psych_${sName.replace(/\s/g,'_')}" style="display:none;margin-top:6px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
+
+          <!-- AI Toggle — sadece haftalık/aylık için -->
+          <div id="aiToggleKapsul_${sName.replace(/\s/g,'_')}"
+            style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;transition:all 0.2s">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:15px">🤖</span>
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--text)">AI Analizi</div>
+                <div style="font-size:10px;color:var(--text2);margin-top:1px">Haftalık ve aylık raporlara eklenir</div>
+              </div>
+            </div>
+            <div id="aiToggle_${sName.replace(/\s/g,'_')}"
+              onclick="aiToggleGuncelle('${sName.replace(/\s/g,'_')}')"
+              style="width:38px;height:22px;border-radius:11px;border:1.5px solid var(--border);background:var(--surface2);cursor:pointer;position:relative;transition:all 0.2s;flex-shrink:0">
+              <div class="ai-toggle-top"
+                style="position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--text2);transition:all 0.2s"></div>
+            </div>
+          </div>
+          <div id="aiKotaBilgi_${sName.replace(/\s/g,'_')}" style="display:none;margin-bottom:10px"></div>
+
+          <!-- Rapor butonları -->
           <div style="display:flex;gap:8px">
             <button id="psychRaporBtn_daily_${sName.replace(/\s/g,'_')}"
               onclick="setPsychRaporBtn('${sName.replace(/\s/g,'_')}','daily');window._psychPeriod='daily';exportPsychPDF('${sName}')"
@@ -1595,12 +1616,12 @@ async function psychReportPage() {
               📋 Günlük
             </button>
             <button id="psychRaporBtn_weekly_${sName.replace(/\s/g,'_')}"
-              onclick="setPsychRaporBtn('${sName.replace(/\s/g,'_')}','weekly');openDatePicker('psych_${sName.replace(/\s/g,'_')}','weekly')"
+              onclick="setPsychRaporBtn('${sName.replace(/\s/g,'_')}','weekly');_psychAIKontrolVeAc('${sName}','${sName.replace(/\s/g,'_')}','weekly')"
               style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
               📅 Haftalık
             </button>
             <button id="psychRaporBtn_monthly_${sName.replace(/\s/g,'_')}"
-              onclick="setPsychRaporBtn('${sName.replace(/\s/g,'_')}','monthly');openDatePicker('psych_${sName.replace(/\s/g,'_')}','monthly')"
+              onclick="setPsychRaporBtn('${sName.replace(/\s/g,'_')}','monthly');_psychAIKontrolVeAc('${sName}','${sName.replace(/\s/g,'_')}','monthly')"
               style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
               📆 Aylık
             </button>

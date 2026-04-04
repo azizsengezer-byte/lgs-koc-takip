@@ -391,7 +391,7 @@ async function exportPsychPDF(sName) {
 
     // ── AI ANALİZİ (haftalık/aylık, API key varsa) ───────────
     let aiAnaliz = null;
-    if (period !== 'daily' && localStorage.getItem('lgs_api_enabled') === 'true' && localStorage.getItem('lgs_anthropic_key')) {
+    if (period !== 'daily' && window._psychAIAcik && localStorage.getItem('lgs_api_enabled') === 'true' && localStorage.getItem('lgs_anthropic_key')) {
       try {
         const sozelNotlar = gunler
           .filter(d => d.pozitif || d.negatif)
