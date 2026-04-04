@@ -591,12 +591,12 @@ function maceraPage() {
           <div style="font-size:11px;color:var(--text2);margin-top:3px">Yarın tekrar gel — kolonin seni bekliyor</div>
         </div>
       ` : `
-        <div style="margin:10px 12px;padding:13px;background:linear-gradient(135deg,rgba(24,95,165,0.08),rgba(55,138,221,0.08));border:1px solid rgba(55,138,221,0.2);border-radius:12px;cursor:pointer" onclick="showPage('daily-entry')">
+        <div style="margin:10px 12px;padding:13px;background:linear-gradient(135deg,rgba(24,95,165,0.08),rgba(55,138,221,0.08));border:1px solid rgba(55,138,221,0.2);border-radius:12px;cursor:pointer" onclick="showPage('wellness')">
           <div style="display:flex;align-items:center;gap:10px">
             <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#185FA5,#378ADD);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px">✏️</div>
             <div style="flex:1">
               <div style="font-size:13px;font-weight:700;color:var(--text)">Bugün nasıl hissediyorsun?</div>
-              <div style="font-size:11px;color:var(--text2);margin-top:2px">Giriş yap → <span style="color:#378ADD;font-weight:700">+${COLONY_XP_RULES.wellnessEntry} XP</span> kazan</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px">Nasıl hissediyorum? → <span style="color:#378ADD;font-weight:700">+${COLONY_XP_RULES.wellnessEntry} XP</span> kazan</div>
             </div>
             <span style="color:var(--accent);font-size:1.1rem">→</span>
           </div>

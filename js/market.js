@@ -25,7 +25,7 @@ const MARKET_URUNLER = {
   tema_karanlik:{ kategori:'tema', ad:'Karanlık Madde',   fiyat:650, ikon:'🌑', aciklama:'Koloni sahnesini derin uzay temasına çevir',  tip:'tema', deger:'karanlik' },
 
   // ── Koloni İsimlendirme ────────────────────────────────
-  koloni_isim:  { kategori:'koloni', ad:'Koloni İsmi Değiştir', fiyat:200, ikon:'✏️', aciklama:'Kolonine özel bir isim ver', tip:'isim', deger:'', tuket:true },
+  koloni_isim:  { kategori:'koloni', ad:'Koloni İsmi Değiştir', fiyat:200, ikon:'✏️', aciklama:'Kolonine özel bir isim ver', tip:'isim', deger:'' },
 
   // ── Efektler (soru girişinde animasyon) ────────────────
   efekt_konfeti: { kategori:'efekt', ad:'Konfeti',        fiyat:400, ikon:'🎊', aciklama:'Soru girişinde konfeti patlar',      tip:'efekt', deger:'konfeti' },
@@ -465,6 +465,16 @@ function _marketIcerik() {
     const aktifMi = (u.tip === 'etiket' && window.currentUserData?.etiket === u.deger)
       || (u.tip === 'tema' && colData.tema === u.deger)
       || (u.tip === 'efekt' && aktif.efekt === u.deger);
+    // isim tipi boost gibi davranmaz — özel render
+    if (u.tip === 'isim') {
+      const isimBtn = `<button onclick="marketSatinAl('${id}')" style="width:100%;padding:9px;background:var(--accent-btn);border:none;border-radius:10px;color:white;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">${u.fiyat} 💰 İsim Değiştir</button>`;
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;text-align:center">
+        <div style="font-size:2rem;margin-bottom:6px">${u.ikon}</div>
+        <div style="font-size:0.82rem;font-weight:700;margin-bottom:2px">${u.ad}</div>
+        <div style="font-size:0.68rem;color:var(--text2);margin-bottom:10px;flex:1">${u.aciklama}</div>
+        ${isimBtn}
+      </div>`;
+    }
     const boostAktif = u.tuket && aktif[id] && new Date(aktif[id]) > new Date();
     const yetersiz = altin < u.fiyat && !sahipMi;
 
