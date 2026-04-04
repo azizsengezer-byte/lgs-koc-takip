@@ -25,7 +25,7 @@ const MARKET_URUNLER = {
   tema_karanlik:{ kategori:'tema', ad:'Karanlık Madde',   fiyat:650, ikon:'🌑', aciklama:'Koloni sahnesini derin uzay temasına çevir',  tip:'tema', deger:'karanlik' },
 
   // ── Koloni İsimlendirme ────────────────────────────────
-  koloni_isim:  { kategori:'koloni', ad:'Koloni İsmi Değiştir', fiyat:200, ikon:'✏️', aciklama:'Kolonine özel bir isim ver', tip:'isim', deger:'' },
+  koloni_isim:  { kategori:'koloni', ad:'Koloni İsmi Değiştir', fiyat:200, ikon:'✏️', aciklama:'Kolonine özel bir isim ver', tip:'isim', deger:'', tuket:true },
 
   // ── Efektler (soru girişinde animasyon) ────────────────
   efekt_konfeti: { kategori:'efekt', ad:'Konfeti',        fiyat:400, ikon:'🎊', aciklama:'Soru girişinde konfeti patlar',      tip:'efekt', deger:'konfeti' },
@@ -104,7 +104,7 @@ async function marketSatinAl(urunId) {
 
   // Zaten sahip mi?
   const sahip = window.currentUserData?.sahipUrunler || [];
-  if (sahip.includes(urunId) && !urun.tuket) { showToast('ℹ️', 'Bu ürün zaten sende var'); return; }
+  if (sahip.includes(urunId) && !urun.tuket && urun.tip !== 'isim') { showToast('ℹ️', 'Bu ürün zaten sende var'); return; }
 
   const yeniAltin = altin - urun.fiyat;
   window.currentUserData.altin = yeniAltin;
@@ -129,9 +129,6 @@ async function marketSatinAl(urunId) {
     // Özel işlemler
     if (urun.tip === 'etiket') _mEtiketUygula(urun.deger);
     if (urun.tip === 'isim') {
-      // Altın düş, isim modalını aç — ama sahipUrunler'e ekleme (tekrar kullanılabilir)
-      window.currentUserData.altin = altin - urun.fiyat;
-      try { await db.collection('users').doc(uid).update({ altin: window.currentUserData.altin }); } catch(e) {}
       _mKoloniIsimVer();
       _marketYenile();
       return;
