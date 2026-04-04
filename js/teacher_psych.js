@@ -2756,7 +2756,7 @@ async function exportPsychPDF(sName, aiAcik) {
         doc.roundedRect(15, Y, 4, aiBaslikH, 1, 1, 'F');
         doc.setFont(PF, 'bold'); doc.setFontSize(8.5);
         doc.setTextColor(70, 30, 160);
-        doc.text(tx('🤖 CLAUDE AI KLİNİK YORUMU'), 22, Y + 7);
+        doc.text(tx('🤖 Yapay Zeka Destekli Analiz'), 22, Y + 7);
         const uvLabel = { yesil: 'Düşük Risk', sari: 'Dikkat', turuncu: 'Yüksek Risk', kirmizi: 'Kritik' }[aiAnaliz.uyari_seviyesi] || '';
         if (uvLabel) {
           doc.setFillColor(uvRenk[0], uvRenk[1], uvRenk[2]);
@@ -2765,7 +2765,7 @@ async function exportPsychPDF(sName, aiAcik) {
           doc.text(tx(uvLabel), 174, Y + 9.5, { align: 'center' });
         }
         doc.setFont(PF, 'normal'); doc.setFontSize(6.5); doc.setTextColor(100, 80, 160);
-        doc.text(tx('Sözel veriler ve istatistikler birlikte yorumlandı — model: Claude Haiku'), 22, Y + 13);
+        doc.text(tx('Sözel veriler ve istatistikler birlikte yorumlandı — yapay zeka destekli analiz'), 22, Y + 13);
         Y += aiBaslikH + 5;
 
         // Her alan
