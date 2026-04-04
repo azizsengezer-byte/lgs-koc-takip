@@ -375,10 +375,10 @@ async function exportPsychPDF(sName, aiAcik) {
 
     function bolumBaslik(renk, baslik, altMetin) {
       const altSat = doc.splitTextToSize(altMetin, 170);
-      const needed = altSat.length*5 + 14 + 100; // Başlık + içerik için geniş tampon
+      const needed = altSat.length*5 + 14 + 30; // Başlık + alt metin için yeterli tampon
       Y = pdfCheck(doc, Y, needed);
       // Sayfa sonuna yakınsa zorla yeni sayfa
-      if (Y > 200) { Y = pdfNewPage(doc); }
+      if (Y > 240) { Y = pdfNewPage(doc); }
       _bolumYeniSayfa = true;
       Y += 3;
       doc.setFont(PF,'bold'); doc.setFontSize(8.5);
@@ -847,16 +847,16 @@ async function exportPsychPDF(sName, aiAcik) {
       // HAFTALIK veya AYLIK RAPOR
       // ═══════════════════════════════════════════════════════════
       } else { // end daily -> start weekly/monthly
-        Y = pdfCheck(doc, Y, 20);
+        // KORELASYON başlığı + ilk bölüm başlığını birlikte taşı — araya boşluk girmesin
+        if (Y > 180) { Y = pdfNewPage(doc); }
         Y = pdfSecHeader(doc, 'PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ', Y, 220, 50, 100);
-
-        // AI kutusu kaldırıldı
-                doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(100,90,140);
+        doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(100,90,140);
         doc.text(tx(period==='weekly'
           ? 'Haftalık neden-sonuç zinciri — her başlık bu haftanın verisiyle çalışır'
           : 'Aylık trend / varyans / kriz kümesi — tekil gün ana analize taşınmaz'), 16, Y); Y+=7;
 
         // ── A. BİLİŞSEL KAPASİTE VE FİZYOLOJİK BASKI ───────────
+        // bolumBaslik'in tamponunu küçült ki başlıktan hemen sonra içerik gelsin
         bolumBaslik([120,60,0],'A.  Bilişsel Kapasite ve Fizyolojik Baskı Analizi',
           period==='weekly'
             ? 'Uyku, enerji ve odak verilerinin yönetici fonksiyonlar üzerindeki bu haftaki etkisi (neden-sonuç)'
