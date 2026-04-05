@@ -55,7 +55,7 @@ const MARKET_KATEGORILER = [
   { id:'koloni', ad:'🚀 Koloni'        },
 ];
 
-const MARKET_ALTIN = { MOOD: 20, WELLNESS_TAM: 50, WELLNESS_ALAN: 20, SORU_10: 5, SERI_7: 100 };
+const MARKET_ALTIN = { MOOD: 20, WELLNESS_TAM: 50, WELLNESS_ALAN: 30, SORU_10: 5, SERI_7: 100 };
 // MOOD: duygu girişi, WELLNESS_TAM: tüm alanlar dolunca bonus, WELLNESS_ALAN: her alan başına
 
 const _ETIKET_STILLER = {
@@ -115,8 +115,8 @@ async function marketSatinAl(urunId) {
     const update = { altin: yeniAltin };
     if (!urun.tuket) update.sahipUrunler = firebase.firestore.FieldValue.arrayUnion(urunId);
 
-    // Tüketilir boost → bitiş zamanı kaydet
-    if (urun.tuket) {
+    // Tüketilir boost → bitiş zamanı kaydet (XP paketleri hariç — anında uygulanır)
+    if (urun.tuket && urun.tip !== 'xp') {
       const bitis = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       if (!window.currentUserData.aktif) window.currentUserData.aktif = {};
       window.currentUserData.aktif[urunId] = bitis;
@@ -134,6 +134,16 @@ async function marketSatinAl(urunId) {
       return;
     }
     if (urun.tip === 'tema') _mKoloniTemaUygula(urun.deger);
+    // XP paketi → hemen koloniye uygula
+    if (urun.tip === 'xp') {
+      const colData = loadColonyData();
+      const eskiSeviye = colData.level || 1;
+      colData.xp = (colData.xp || 0) + urun.deger;
+      colData.level = getColonyLevel(colData.xp);
+      saveColonyData(colData);
+      const seviyeAtladi = colData.level > eskiSeviye;
+      setTimeout(() => showToast('⭐', '+' + urun.deger + ' XP kolonine eklendi!' + (seviyeAtladi ? ' 🎉 Seviye atladın!' : '')), 600);
+    }
 
     _marketYenile();
   } catch (e) {
@@ -472,7 +482,7 @@ function _marketIcerik() {
         ${isimBtn}
       </div>`;
     }
-    const boostAktif = u.tuket && aktif[id] && new Date(aktif[id]) > new Date();
+    const boostAktif = u.tuket && u.tip !== 'xp' && aktif[id] && new Date(aktif[id]) > new Date();
     const yetersiz = altin < u.fiyat && !sahipMi;
 
     let butonHTML = '';
