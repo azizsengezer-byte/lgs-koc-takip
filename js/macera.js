@@ -3,7 +3,9 @@
 
 // ── CANVAS KOLONİ SAHNESİ ────────────────────────────────
 
-const _CT = {
+// Her tema için gece + gündüz paleti
+// gece: mevcut renkler | gunduz: açık, güneşli
+const _CT_GECE = {
   default: {sky:['#000810','#071428','#122040','#1a2e52'],t1:'#16283a',t2:'#0e1e2e',t3:'#091522',t4:'#06101a',rk1:'#1e3448',rk2:'#142436',rk3:'#0e1c2c',fog:'rgba(20,50,110,0.28)',glo:'rgba(60,140,255,0.2)',star:'#ffffff',aur:null},
   mars:    {sky:['#080100','#1e0500','#3d0d04','#5e1a08'],t1:'#3d1a0a',t2:'#2e1006',t3:'#1e0a04',t4:'#140602',rk1:'#4a2010',rk2:'#381508',rk3:'#281006',fog:'rgba(90,25,8,0.32)',glo:'rgba(240,80,20,0.18)',star:'#ffb090',aur:'rgba(255,60,15,0.12)'},
   buz:     {sky:['#010c18','#052038','#0c3c58','#165878'],t1:'#1a3e58',t2:'#102e44',t3:'#0a2030',t4:'#061420',rk1:'#244e68',rk2:'#1a3a50',rk3:'#102838',fog:'rgba(15,75,130,0.32)',glo:'rgba(60,200,255,0.18)',star:'#b8e4ff',aur:'rgba(50,185,255,0.14)'},
@@ -12,6 +14,46 @@ const _CT = {
   orman:   {sky:['#020a02','#082008','#104018','#186028'],t1:'#102a10',t2:'#0a1e0a',t3:'#061406',t4:'#040e04',rk1:'#183818',rk2:'#102810',rk3:'#0a1c0a',fog:'rgba(10,60,15,0.32)',glo:'rgba(60,200,80,0.18)',star:'#c8ffcc',aur:'rgba(60,220,80,0.13)'},
   karanlik:{sky:['#000005','#050510','#0a0a1a','#101020'],t1:'#0e0e20',t2:'#0a0a18',t3:'#060610',t4:'#020208',rk1:'#181828',rk2:'#101018',rk3:'#0a0a14',fog:'rgba(8,8,30,0.4)',glo:'rgba(80,80,200,0.15)',star:'#aaaaff',aur:null},
 };
+
+const _CT_GUNDUZ = {
+  default: {sky:['#4a90d9','#6ab0f0','#90c8f8','#b8deff'],t1:'#8ab8d8',t2:'#7aaccc',t3:'#6a9ab8',t4:'#5a88a4',rk1:'#9abccc',rk2:'#8aaabb',rk3:'#7a98aa',fog:'rgba(100,160,220,0.18)',glo:'rgba(255,220,100,0.35)',star:'rgba(255,255,255,0)',aur:null,sun:true},
+  mars:    {sky:['#c84820','#e06030','#f08040','#e89060'],t1:'#8a3018',t2:'#702510','t3':'#581a08',t4:'#401005',rk1:'#a03820',rk2:'#882e18',rk3:'#702410',fog:'rgba(200,80,20,0.2)',glo:'rgba(255,180,60,0.4)',star:'rgba(255,255,255,0)',aur:null,sun:true},
+  buz:     {sky:['#a0d0f0','#b8e0f8','#d0eeff','#e8f8ff'],t1:'#a0c8e0',t2:'#90b8d0',t3:'#80a8c0',t4:'#7098b0',rk1:'#b0d0e8',rk2:'#a0c0d8',rk3:'#90b0c8',fog:'rgba(160,210,255,0.2)',glo:'rgba(200,240,255,0.4)',star:'rgba(255,255,255,0)',aur:null,sun:true},
+  nebula:  {sky:['#2a0858','#400a80','#5810a0','#7020c0'],t1:'#300a60',t2:'#280850',t3:'#200640',t4:'#180430',rk1:'#3a0870',rk2:'#300660',rk3:'#280550',fog:'rgba(80,10,150,0.25)',glo:'rgba(180,80,255,0.35)',star:'#e0b0ff',aur:'rgba(150,30,255,0.2)',sun:false},
+  altin:   {sky:['#f0a020','#f8c040','#ffe860','#fff080'],t1:'#b07818',t2:'#a06810',t3:'#905808',t4:'#804800',rk1:'#c08820',rk2:'#b07818',rk3:'#a06810',fog:'rgba(220,150,10,0.2)',glo:'rgba(255,220,50,0.5)',star:'rgba(255,255,255,0)',aur:null,sun:true},
+  orman:   {sky:['#2a7a18','#40a028','#58c038','#70d850'],t1:'#285a18',t2:'#1e4810',t3:'#163808',t4:'#0e2804',rk1:'#307820',rk2:'#286018',rk3:'#204810',fog:'rgba(40,100,20,0.2)',glo:'rgba(120,220,60,0.35)',star:'rgba(255,255,255,0)',aur:null,sun:true},
+  karanlik:{sky:['#000005','#050510','#0a0a1a','#101020'],t1:'#0e0e20',t2:'#0a0a18',t3:'#060610',t4:'#020208',rk1:'#181828',rk2:'#101018',rk3:'#0a0a14',fog:'rgba(8,8,30,0.4)',glo:'rgba(80,80,200,0.15)',star:'#aaaaff',aur:null,sun:false},
+};
+
+const _CT_ALACAKARANLIK = {
+  default: {sky:['#1a1030','#3a2850','#7a4828','#c07840'],t1:'#3a2820',t2:'#2a1e18',t3:'#1e1410',t4:'#14100a',rk1:'#4a3028',rk2:'#3a2820',rk3:'#2a1e18',fog:'rgba(120,60,20,0.3)',glo:'rgba(255,140,40,0.4)',star:'#fffbe0',aur:null,sun:false,sunset:true},
+  mars:    {sky:['#300808','#582010','#904020','#c07040'],t1:'#4a1808',t2:'#381005',t3:'#280a02',t4:'#180500',rk1:'#5a2010',rk2:'#481808',rk3:'#381005',fog:'rgba(150,50,10,0.3)',glo:'rgba(255,100,20,0.4)',star:'#ffb090',aur:null,sun:false,sunset:true},
+  buz:     {sky:['#082848','#184878','#3878a8','#78a8d0'],t1:'#184060',t2:'#103050',t3:'#0a2040',t4:'#061430',rk1:'#205878',rk2:'#184868',rk3:'#103858',fog:'rgba(30,80,140,0.25)',glo:'rgba(120,180,255,0.35)',star:'#c0e0ff',aur:null,sun:false,sunset:true},
+  nebula:  {sky:['#0a0220','#180440','#300868','#501090'],t1:'#18044a',t2:'#100338',t3:'#0a0228',t4:'#060118',rk1:'#200558',rk2:'#180448',rk3:'#100338',fog:'rgba(60,8,120,0.3)',glo:'rgba(160,50,255,0.3)',star:'#d0a0ff',aur:null,sun:false,sunset:true},
+  altin:   {sky:['#1e1000','#402000','#804010','#c07020'],t1:'#3a1e08',t2:'#2a1505',t3:'#1c0e02',t4:'#100800',rk1:'#4a2810',rk2:'#3a2008',rk3:'#2a1805',fog:'rgba(120,70,10,0.3)',glo:'rgba(255,160,20,0.45)',star:'#ffe870',aur:null,sun:false,sunset:true},
+  orman:   {sky:['#0a1e08','#183010','#304818','#507028'],t1:'#183010',t2:'#102008',t3:'#0a1404',t4:'#060c02',rk1:'#204018',rk2:'#183010',rk3:'#102008',fog:'rgba(20,60,10,0.25)',glo:'rgba(180,220,60,0.3)',star:'#d0ffd0',aur:null,sun:false,sunset:true},
+  karanlik:{sky:['#000005','#050510','#0a0a1a','#101020'],t1:'#0e0e20',t2:'#0a0a18',t3:'#060610',t4:'#020208',rk1:'#181828',rk2:'#101018',rk3:'#0a0a14',fog:'rgba(8,8,30,0.4)',glo:'rgba(80,80,200,0.15)',star:'#aaaaff',aur:null,sun:false},
+};
+
+// Saate göre tema seç
+function _getTimeOfDay() {
+  const h = new Date().getHours();
+  const m = new Date().getMinutes();
+  const time = h + m / 60;
+  if (time >= 6 && time < 19)   return 'gunduz';
+  if (time >= 19 && time < 21)  return 'alacakaranlik';
+  if (time >= 5 && time < 6)    return 'alacakaranlik';
+  return 'gece';
+}
+
+// Tema anahtarını al, saate göre doğru paleti döndür
+const _CT = new Proxy({}, {
+  get(_, key) {
+    const tod = _getTimeOfDay();
+    const src = tod === 'gunduz' ? _CT_GUNDUZ : tod === 'alacakaranlik' ? _CT_ALACAKARANLIK : _CT_GECE;
+    return src[key] || _CT_GECE[key] || _CT_GECE.default;
+  }
+});
 
 function _makeTerrainLine(n, seed, amp, freq, baseY) {
   const pts = [], step = 800 / (n - 1);
@@ -300,22 +342,58 @@ function _cvDraw(cv, c, T, level) {
     c.fillStyle=ag; c.fillRect(0,0,CW,_HOR+15); c.restore();
   }
 
-  _STARS_DATA.forEach(s=>{
-    const fl=.45+.55*Math.sin(tick*.022*s.spd+s.ph);
-    c.save(); c.globalAlpha=s.a*fl; c.fillStyle=T.star;
-    c.beginPath(); c.arc(s.x,s.y,s.r,0,Math.PI*2); c.fill();
-    if(s.r>1.2){ c.globalAlpha=s.a*fl*.28; c.beginPath(); c.arc(s.x,s.y,s.r*2.8,0,Math.PI*2); c.fill(); }
-    c.restore();
-  });
+  const tod = _getTimeOfDay();
 
-  for(let i=_cvMeteors.length-1;i>=0;i--){
-    const m=_cvMeteors[i];
-    c.save(); c.globalAlpha=m.a;
-    const mg=c.createLinearGradient(m.x-m.len,m.y-m.len*.45,m.x,m.y);
-    mg.addColorStop(0,'transparent'); mg.addColorStop(1,'rgba(255,255,255,0.88)');
-    c.strokeStyle=mg; c.lineWidth=1.5; c.beginPath(); c.moveTo(m.x-m.len,m.y-m.len*.45); c.lineTo(m.x,m.y); c.stroke(); c.restore();
-    m.x+=m.vx; m.y+=m.vy; m.a-=.014;
-    if(m.a<=0) _cvMeteors.splice(i,1);
+  // Yıldızlar — gündüz görünmez, alacakaranlıkta soluk
+  if (tod !== 'gunduz') {
+    const starAlpha = tod === 'alacakaranlik' ? 0.35 : 1;
+    _STARS_DATA.forEach(s=>{
+      const fl=.45+.55*Math.sin(tick*.022*s.spd+s.ph);
+      c.save(); c.globalAlpha=s.a*fl*starAlpha; c.fillStyle=T.star;
+      c.beginPath(); c.arc(s.x,s.y,s.r,0,Math.PI*2); c.fill();
+      if(s.r>1.2){ c.globalAlpha=s.a*fl*.28*starAlpha; c.beginPath(); c.arc(s.x,s.y,s.r*2.8,0,Math.PI*2); c.fill(); }
+      c.restore();
+    });
+  }
+
+  // Güneş — gündüz ve alacakaranlıkta
+  if (T.sun !== false && (tod === 'gunduz' || tod === 'alacakaranlik')) {
+    const h = new Date().getHours() + new Date().getMinutes()/60;
+    // Sabah 6'da solda doğar, öğlen 12'de tepede, akşam 19'da sağda batar
+    const sunProgress = Math.max(0, Math.min(1, (h - 6) / 13));
+    const sunX = CW * (0.1 + sunProgress * 0.8);
+    const sunY = _HOR * (0.7 - Math.sin(sunProgress * Math.PI) * 0.55);
+    const sunColor = tod === 'alacakaranlik' ? '#ff8c30' : '#ffe060';
+    const sunGlowColor = tod === 'alacakaranlik' ? 'rgba(255,120,40,' : 'rgba(255,220,80,';
+
+    // Güneş halo
+    c.save();
+    const sg = c.createRadialGradient(sunX, sunY, 0, sunX, sunY, 60);
+    sg.addColorStop(0, sunGlowColor+'0.35)');
+    sg.addColorStop(0.4, sunGlowColor+'0.15)');
+    sg.addColorStop(1, sunGlowColor+'0)');
+    c.fillStyle = sg; c.fillRect(sunX-60, sunY-60, 120, 120);
+
+    // Güneş diski
+    c.globalAlpha = tod === 'alacakaranlik' ? 0.85 : 0.95;
+    c.fillStyle = sunColor;
+    c.beginPath(); c.arc(sunX, sunY, tod === 'alacakaranlik' ? 18 : 14, 0, Math.PI*2); c.fill();
+    c.restore();
+  }
+
+  // Meteor — sadece gece
+  if (tod === 'gece') {
+    for(let i=_cvMeteors.length-1;i>=0;i--){
+      const m=_cvMeteors[i];
+      c.save(); c.globalAlpha=m.a;
+      const mg=c.createLinearGradient(m.x-m.len,m.y-m.len*.45,m.x,m.y);
+      mg.addColorStop(0,'transparent'); mg.addColorStop(1,'rgba(255,255,255,0.88)');
+      c.strokeStyle=mg; c.lineWidth=1.5; c.beginPath(); c.moveTo(m.x-m.len,m.y-m.len*.45); c.lineTo(m.x,m.y); c.stroke(); c.restore();
+      m.x+=m.vx; m.y+=m.vy; m.a-=.014;
+      if(m.a<=0) _cvMeteors.splice(i,1);
+    }
+  } else {
+    _cvMeteors.length = 0; // gündüz meteor yok
   }
 
   c.fillStyle=T.t4; c.fillRect(0,_HOR,CW,CH-_HOR);
