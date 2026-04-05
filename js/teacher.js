@@ -921,6 +921,8 @@ async function _odulGonder(name, uid) {
         text: kart.emoji + ' ' + teacherName + ' sana "' + kart.baslik + '" ödülü gönderdi!',
         type: 'odul',
         kartId: kart.id,
+        actionUrl: '/?p=profile&odul=1',
+        meta: { actionUrl: '/?p=profile&odul=1' },
         read: false,
         time: new Date().toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' }),
         createdAt: firebase.firestore.FieldValue.serverTimestamp()

@@ -155,6 +155,45 @@ function _initSwipeNav() {
 }
 
 // Uygulama başladığında swipe'ı aktifle
+
+// ── SERVICE WORKER postMessage DİNLEYİCİ ──────────────────────
+// Uygulama açıkken telefon bildirimine tıklanınca SW bu mesajı gönderir
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', function(event) {
+    const msg = event.data;
+    if (!msg || msg.type !== 'NOTIF_NAVIGATE') return;
+    const data = msg.data || {};
+    const type = data.notifType || '';
+    const actionUrl = msg.actionUrl || '';
+
+    // URL parametrelerini parse et
+    try {
+      const url = new URL(actionUrl, window.location.origin);
+      const p = url.searchParams.get('p');
+      const s = url.searchParams.get('s');
+      const highlight = url.searchParams.get('highlight');
+
+      if (highlight) window._pendingHighlightBadge = decodeURIComponent(highlight);
+      if (data.notifType === 'odul') window._pendingOdulAc = true;
+      if (s) selectedStudentName = decodeURIComponent(s);
+      if (p) showPage(p);
+    } catch(e) {
+      console.log('SW navigate parse error:', e);
+    }
+  });
+}
+
+// ── URL PARAMETRELERİNDEN HIGHLIGHT OKUMA ────────────────────
+// Uygulama kapalıyken bildirime tıklanıp açılınca URL'den yönlendirme
+function _applyUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const highlight = params.get('highlight');
+  const odul = params.get('odul');
+  if (highlight) window._pendingHighlightBadge = decodeURIComponent(highlight);
+  if (odul === '1') window._pendingOdulAc = true;
+}
+_applyUrlParams();
+
 document.addEventListener('DOMContentLoaded', () => setTimeout(_initSwipeNav, 500));
 
 let studyEntries = [];

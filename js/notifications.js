@@ -1,10 +1,71 @@
 // notifications.js — Bildirim Sayfası ve Listener
+
+// Bildirim tipine göre in-app yönlendirme
+function _notifNavigate(n) {
+  // Öğrenci bildirimleri
+  if (currentRole === 'student') {
+    if (n.type === 'badge') {
+      const badgeName = n.meta?.badgeName || _parseBadgeNameFromText(n.text);
+      window._pendingHighlightBadge = badgeName;
+      showPage('badges');
+      return;
+    }
+    if (n.type === 'odul') {
+      window._pendingOdulAc = true;
+      showPage('profile');
+      return;
+    }
+    if (n.type === 'task')           { showPage('my-tasks');    return; }
+    if (n.type === 'wellness_sleep') { showPage('wellness');    return; }
+    if (n.type === 'reminder')       { showPage('daily-entry'); return; }
+    if (n.type === 'motivation')     { showPage('daily-entry'); return; }
+    if (n.type === 'weekly_summary') { showPage('my-analysis'); return; }
+    if (n.type === 'message')        { showPage('messages');    return; }
+    if (n.type === 'hediye')         { showPage('messages');    return; }
+  }
+
+  // Öğretmen bildirimleri
+  if (currentRole === 'teacher') {
+    if (n.type === 'exam' || n.type === 'wellness_alert' ||
+        n.type?.startsWith('basari') || n.type?.startsWith('enerji') ||
+        n.type?.startsWith('dusuk') || n.type?.startsWith('yuksek') ||
+        n.type?.startsWith('3gun') || n.type?.startsWith('baskı') ||
+        n.type?.startsWith('konsantrasyon') || n.type?.startsWith('kacak') ||
+        n.type?.startsWith('sinav') || n.type?.startsWith('hata') ||
+        n.type?.startsWith('erken') || n.type?.startsWith('kaygi') ||
+        n.type?.startsWith('gorev_tamamla') || n.type?.startsWith('streak') ) {
+      // fromUid ile öğrenciyi bul
+      const studentName = n.meta?.studentName || _findStudentNameByUid(n.fromUid);
+      if (studentName) {
+        selectedStudentName = studentName;
+        showPage('student-detail');
+      } else {
+        showPage('students');
+      }
+      return;
+    }
+    if (n.type === 'task')    { showPage('tasks-teacher'); return; }
+    if (n.type === 'message') { showPage('messages');      return; }
+    if (n.type === 'gorusme') { showPage('students');      return; }
+  }
+}
+
+function _parseBadgeNameFromText(text) {
+  const m = text.match(/kazandın: "([^"]+)"/);
+  return m ? m[1] : '';
+}
+
+function _findStudentNameByUid(uid) {
+  if (!uid) return '';
+  const s = students.find(s => s.uid === uid);
+  return s ? s.name : '';
+}
+
 function notificationsPage() {
   const notifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
   const taskNotifs = notifs.filter(n => n.type !== 'message');
   const myUid = (window.currentUserData||{}).uid||'';
 
-  // Önce render et, sonra okundu işaretle (görsel ayrım için)
   const html = `
     <div class="page-title">🔔 Bildirimler</div>
     <div class="page-sub">Görev ve sistem bildirimleri</div>
@@ -14,17 +75,12 @@ function notificationsPage() {
             <div style="font-size:2.5rem;margin-bottom:12px">🔔</div>
             <div>Henüz bildirim yok</div>
            </div>`
-        : taskNotifs.map(n=>{
-          // Bildirim tipine göre hedef sayfa
-          const hedef = n.type==='task' ? (currentRole==='student'?'my-tasks':'tasks-teacher')
-                      : n.type==='message' ? 'messages'
-                      : n.type==='hediye' ? 'messages'
-                      : n.type==='gorusme' ? (currentRole==='student'?'wellness':'students')
-                      : null;
+        : taskNotifs.map((n, i) => {
+          const hedef = n.type !== 'none';
           return `
-          <div class="notif-item ${n.read ? '' : 'unread'}" 
-            onclick="${hedef?`showPage('${hedef}')`:''}" 
-            style="${hedef?'cursor:pointer':''};display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)22">
+          <div class="notif-item ${n.read ? '' : 'unread'}"
+            onclick="_notifTiklandi(${i})"
+            style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)22">
             <div class="notif-dot ${n.read ? 'read' : ''}"></div>
             <div style="flex:1">
               <div class="notif-text">${n.text}</div>
@@ -32,7 +88,7 @@ function notificationsPage() {
             </div>
             <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
               ${!n.read ? '<span style="font-size:0.65rem;font-weight:800;color:var(--accent);background:var(--accent)22;padding:2px 7px;border-radius:99px">YENİ</span>' : ''}
-              ${hedef ? '<span style="color:var(--text2);font-size:0.9rem">›</span>' : ''}
+              <span style="color:var(--text2);font-size:0.9rem">›</span>
             </div>
           </div>`;
         }).join('')}
@@ -40,6 +96,20 @@ function notificationsPage() {
     <div style="text-align:center;margin-top:12px;font-size:0.8rem;color:var(--text2)">
       💬 Mesaj bildirimleri için <button onclick="showPage('messages')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-weight:700">Mesajlar</button> bölümüne git
     </div>`;
+
+  // Tıklama handler — okundu + yönlendirme
+  window._notifTiklandi = function(idx) {
+    const notifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
+    const taskNotifs = notifs.filter(n => n.type !== 'message');
+    const n = taskNotifs[idx];
+    if (!n) return;
+    // Okundu işaretle
+    n.read = true;
+    if (n.id) db.collection('notifications').doc(n.id).update({read:true}).catch(()=>{});
+    updateNotifBadge();
+    // Yönlendir
+    _notifNavigate(n);
+  };
 
   // 800ms sonra okundu işaretle (kullanıcı görüntülemiş olsun)
   setTimeout(() => {

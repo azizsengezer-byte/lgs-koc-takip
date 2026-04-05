@@ -178,7 +178,25 @@ function renderStudentPage(id, el) {
     messagesPage('student').then(html => { el.innerHTML = html; });
   }
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
-  else if(id==='profile') { profilePage().then(html => { el.innerHTML = html; setTimeout(initApiSettings, 50); setTimeout(okulArkadaslariniYukle, 100); }); }
+  else if(id==='profile') {
+    profilePage().then(html => {
+      el.innerHTML = html;
+      setTimeout(initApiSettings, 50);
+      setTimeout(okulArkadaslariniYukle, 100);
+      setTimeout(odulleriniYukle, 200);
+      // Bildirimden ödül ile yönlenme
+      if (window._pendingOdulAc) {
+        window._pendingOdulAc = false;
+        setTimeout(() => {
+          const body = document.getElementById('odullerim-body');
+          if (body && body.style.display === 'none') toggleOdullerim();
+          const kart = document.getElementById('odullerim-kart');
+          if (kart) kart.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 500);
+      }
+    });
+  }
+  else if(id==='badges' || id==='rozet') { showBadgesPage(); }
   setTimeout(()=>drawCharts(), 50);
 }
 

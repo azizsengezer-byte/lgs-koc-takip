@@ -239,12 +239,15 @@ async function sendWellnessNotification(studentUid, text, type) {
       .where('dateKey','==',todayKey)
       .get();
     if (!existing.empty) return;
+    const studentName = (window.currentUserData||{}).name || '';
     await db.collection('notifications').add({
       toUid: teacherId,
       fromUid: studentUid,
       text,
       type,
       dateKey: todayKey,
+      actionUrl: `/?p=student-detail&s=${encodeURIComponent(studentName)}`,
+      meta: { studentName, actionUrl: `/?p=student-detail&s=${encodeURIComponent(studentName)}` },
       read: false,
       time: new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()

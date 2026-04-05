@@ -3,7 +3,7 @@
 // ============================================================
 
 // Merkezi bildirim gönderme fonksiyonu
-async function sendNotif(toUid, text, type, fromUid) {
+async function sendNotif(toUid, text, type, fromUid, meta) {
   if (!toUid || !db) return;
   try {
     await db.collection('notifications').add({
@@ -11,6 +11,8 @@ async function sendNotif(toUid, text, type, fromUid) {
       fromUid: fromUid || (window.currentUserData||{}).uid || '',
       text,
       type,
+      actionUrl: meta?.actionUrl || '',
+      meta: meta || {},
       read: false,
       time: new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -28,7 +30,9 @@ async function gorevBildirimiGonder(studentUid, studentName, taskTitle) {
   await sendNotif(
     studentUid,
     `📋 Koçun yeni görev atadı: "${taskTitle}"`,
-    'task'
+    'task',
+    null,
+    { actionUrl: '/?p=my-tasks' }
   );
 }
 
@@ -41,7 +45,8 @@ async function rozetBildirimiGonder(badge) {
     myUid,
     `🏆 Yeni rozet kazandın: "${badge.name}"! ${badge.desc}`,
     'badge',
-    myUid
+    myUid,
+    { actionUrl: `/?p=badges&highlight=${encodeURIComponent(badge.name)}`, badgeName: badge.name }
   );
 }
 
@@ -52,7 +57,9 @@ async function denemeBildirimiGonder(teacherId, studentName, examTitle, puan) {
   await sendNotif(
     teacherId,
     `🎯 ${studentName} deneme girdi: "${examTitle}"${puan ? ' — ' + puan + ' puan' : ''}`,
-    'exam'
+    'exam',
+    (window.currentUserData||{}).uid,
+    { actionUrl: `/?p=student-detail&s=${encodeURIComponent(studentName)}`, studentName }
   );
 }
 
@@ -66,7 +73,9 @@ async function kaygiBildirimiGonder(kaygiSkor) {
   await sendNotif(
     teacherId,
     `⚠️ ${myData.name || 'Öğrenci'} bugün kaygı skoru ${kaygiSkor}/10 girdi. Takip önerilir.`,
-    'wellness_alert'
+    'wellness_alert',
+    myData.uid,
+    { actionUrl: `/?p=student-detail&s=${encodeURIComponent(myData.name||'')}`, studentName: myData.name||'' }
   );
 }
 
@@ -84,7 +93,8 @@ async function uykuBildirimiGonder(uykuSaat) {
     myUid,
     `💙 Az uyku beyin kapasiteni %40 düşürüyor. Bugün hafif çalış ve erken uyu.`,
     'wellness_sleep',
-    myUid
+    myUid,
+    { actionUrl: '/?p=wellness' }
   );
 }
 
@@ -111,7 +121,8 @@ async function calismaHatirlatmakontrol() {
     myUid,
     `📚 Bugün henüz çalışma girişin yok. 10 dakikan varsa bile kayıt edebilirsin!`,
     'reminder',
-    myUid
+    myUid,
+    { actionUrl: '/?p=daily-entry' }
   );
 }
 
@@ -137,7 +148,8 @@ async function ikiGunKontrol() {
     myUid,
     `⏰ 2 gündür çalışma girişin yok. Devam etmek ister misin?`,
     'reminder',
-    myUid
+    myUid,
+    { actionUrl: '/?p=daily-entry' }
   );
 }
 
@@ -164,7 +176,8 @@ async function haftaSonuBildirimiKontrol() {
       myUid,
       `🌟 Günaydın ${isim}! Cumartesi sabahı 30 dakika çalışmak haftalık ortalamanı ciddi yükseltir.`,
       'motivation',
-      myUid
+      myUid,
+      { actionUrl: '/?p=daily-entry' }
     );
   } else {
     // Pazar: haftalık özet
@@ -182,7 +195,8 @@ async function haftaSonuBildirimiKontrol() {
       myUid,
       `📊 Bu hafta ${toplamQ} soru çözdün, %${isabet} isabet oranıyla. Harika gidiyorsun!`,
       'weekly_summary',
-      myUid
+      myUid,
+      { actionUrl: '/?p=my-analysis' }
     );
   }
 }

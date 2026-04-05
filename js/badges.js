@@ -962,6 +962,28 @@ async function badgesPageHTML(uid) {
 }
 
 // Rozet sayfasını göster (showPage sistemiyle entegre)
+// Rozet parlama efekti — bildirimden yönlenince çağrılır
+function highlightBadge(badgeName) {
+  if (!badgeName) return;
+  const cards = document.querySelectorAll('[id^="rozet-kart-"]');
+  let target = null;
+  cards.forEach(card => { if (card.dataset.ad === badgeName) target = card; });
+  if (!target) return;
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  target.style.transition = 'box-shadow 0.3s, transform 0.3s';
+  target.style.boxShadow = '0 0 0 3px #f9ca24, 0 0 24px 8px #f9ca2488';
+  target.style.transform = 'scale(1.08)';
+  setTimeout(() => {
+    target.style.boxShadow = '0 0 0 2px #f9ca24aa';
+    target.style.transform = 'scale(1.04)';
+  }, 600);
+  setTimeout(() => {
+    target.style.boxShadow = '';
+    target.style.transform = '';
+    target.style.transition = '';
+  }, 2200);
+}
+
 async function showBadgesPage() {
   const uid=auth.currentUser?.uid; if(!uid) return;
   const el=document.getElementById('mainContent');
@@ -969,6 +991,12 @@ async function showBadgesPage() {
   el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)">🏆 Rozetler yükleniyor...</div>';
   el.innerHTML=await badgesPageHTML(uid);
   applyProfileFrame(uid,getActiveFrame(uid));
+  // Bildirimden yönlenme varsa rozeti vurgula
+  if (window._pendingHighlightBadge) {
+    const name = window._pendingHighlightBadge;
+    window._pendingHighlightBadge = null;
+    setTimeout(() => highlightBadge(name), 350);
+  }
 }
 
 // ============================================================
