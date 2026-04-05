@@ -36,13 +36,27 @@ async function odulleriniYukle() {
     const kartlar = [];
     snap.forEach(d => kartlar.push(d.data()));
 
-    el.innerHTML = kartlar.map(k => `
+    // Aynı başlıktaki ödülleri grupla, adet say
+    const gruplar = {};
+    kartlar.forEach(k => {
+      if (!gruplar[k.baslik]) {
+        gruplar[k.baslik] = { ...k, adet: 1 };
+      } else {
+        gruplar[k.baslik].adet++;
+        if (k.not) gruplar[k.baslik].not = k.not;
+      }
+    });
+
+    el.innerHTML = Object.values(gruplar).map(k => `
       <div style="display:flex;align-items:center;gap:12px;padding:12px;background:${k.renk}11;border:1px solid ${k.renk}33;border-radius:12px;margin-bottom:8px">
-        <div style="width:44px;height:44px;border-radius:10px;background:${k.renk}22;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">${k.emoji}</div>
+        <div style="position:relative;flex-shrink:0">
+          <div style="width:44px;height:44px;border-radius:10px;background:${k.renk}22;display:flex;align-items:center;justify-content:center;font-size:1.6rem">${k.emoji}</div>
+          ${k.adet > 1 ? `<div style="position:absolute;top:-6px;right:-8px;background:${k.renk};color:#fff;font-size:0.65rem;font-weight:900;border-radius:20px;padding:1px 6px;min-width:18px;text-align:center">x${k.adet}</div>` : ''}
+        </div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:800;font-size:0.88rem;color:${k.renk}">${k.baslik}</div>
           ${k.not ? `<div style="font-size:0.75rem;color:var(--text2);margin-top:2px;font-style:italic">"${k.not}"</div>` : ''}
-          <div style="font-size:0.7rem;color:var(--text2);margin-top:3px">${k.gonderenAd} · ${k.tarih}</div>
+          <div style="font-size:0.7rem;color:var(--text2);margin-top:3px">🎁 ${k.tarih}</div>
         </div>
       </div>
     `).join('');
@@ -588,9 +602,15 @@ async function profilePage() {
       </button>
     </div>
     <div class="card" style="margin-top:16px" id="odullerim-kart">
-      <div class="card-title" style="margin-bottom:12px">🏅 Aldığım Ödüller</div>
-      <div id="odullerim-liste">
-        <img src="" onerror="odulleriniYukle()" style="display:none">
+      <div class="card-title" style="margin-bottom:0;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none"
+        onclick="toggleOdullerim()">
+        <span>🏅 Aldığım Ödüller</span>
+        <span id="odullerim-chevron" style="font-size:0.85rem;color:var(--text2);transition:transform 0.25s">▼</span>
+      </div>
+      <div id="odullerim-body" style="display:none;margin-top:12px">
+        <div id="odullerim-liste">
+          <img src="" onerror="odulleriniYukle()" style="display:none">
+        </div>
       </div>
     </div>
     <div class="card" style="margin-top:16px" id="okul-arkadaslar-kart">
