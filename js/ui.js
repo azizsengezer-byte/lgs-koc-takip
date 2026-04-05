@@ -218,7 +218,7 @@ function renderTeacherPage(id, el) {
     messagesPage('teacher').then(html => { el.innerHTML = html; });
   }
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
-  else if(id==='profile') { profilePage().then(html => { el.innerHTML = html; if(currentRole==='student') { setTimeout(okulArkadaslariniYukle, 100); setTimeout(odulleriniYukle, 150); } }); setTimeout(initApiSettings, 50); }
+  else if(id==='profile') { profilePage().then(html => { el.innerHTML = html; setTimeout(initApiSettings, 50); if(currentRole==='student') { setTimeout(okulArkadaslariniYukle, 200); setTimeout(function(){ var el2=document.getElementById('odullerim-liste'); if(el2) odulleriniYukle(); }, 300); } }); }
   setTimeout(()=>drawCharts(), 50);
 }
 
