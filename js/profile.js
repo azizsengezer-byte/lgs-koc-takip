@@ -18,10 +18,9 @@ function _etiketHTML(etiket) {
 // ── ÖDÜLLER ──────────────────────────────────────────────────
 async function odulleriniYukle() {
   const el = document.getElementById('odullerim-liste');
-  if (!el) { console.log('ODUL: el yok'); return; }
+  if (!el) return;
   const uid = window.currentUserData?.uid || auth.currentUser?.uid;
-  console.log('ODUL: uid=', uid, 'role=', currentRole);
-  if (!uid) { el.innerHTML = 'UID yok'; return; }
+  if (!uid) return;
 
   try {
     const snap = await db.collection('oduller')
@@ -49,7 +48,7 @@ async function odulleriniYukle() {
     `).join('');
   } catch(e) {
     console.error('Ödül yükleme hatası:', e.message, e);
-    el.innerHTML = '<div style="color:#ff6584;font-size:0.82rem">Hata: ' + e.message + '</div>';
+    el.innerHTML = '<div style="color:var(--text2);font-size:0.82rem">Yüklenemedi.</div>';
   }
 }
 
