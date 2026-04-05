@@ -305,6 +305,10 @@ async function showUserProfile(uid, fallbackName, fallbackColor) {
   const name = data.name || fallbackName || 'Kullanıcı';
   const color = fallbackColor || '#6c63ff';
 
+  // Etiket ve çerçeve — students dizisinden veya Firestore'dan
+  const sObj2 = students.find(x => x.uid === uid);
+  const etiket = data.etiket || sObj2?.etiket || '';
+
   // Fotoğraf
   vpPhoto.style.cssText = 'width:80px;height:80px;border-radius:50%;margin:8px auto 20px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;position:relative;overflow:visible';
   if (data.photo) {
@@ -316,6 +320,26 @@ async function showUserProfile(uid, fallbackName, fallbackColor) {
   }
 
   vpName.textContent = name;
+  // Etiket göster
+  const vpEtiket = document.getElementById('vpEtiket');
+  if (vpEtiket) {
+    if (etiket) {
+      const etiketStyle = {
+        '🔥 Çalışkan':  'background:linear-gradient(135deg,#ff4444,#cc1111);color:white',
+        '⚡ Hızlı':     'background:linear-gradient(135deg,#00d2ff,#0099cc);color:white',
+        '👑 Efsane':    'background:linear-gradient(135deg,#f9ca24,#e6a800);color:#1a1200',
+        '💎 Elit':      'background:linear-gradient(135deg,#a855f7,#7c22cc);color:white',
+        '🦸 Kahraman':  'background:linear-gradient(135deg,#ff6b9d,#cc2266);color:white',
+        '🦉 Bilge':     'background:linear-gradient(135deg,#45b7d1,#1a7a99);color:white',
+        '🌋 Ateş Kalbi':'background:linear-gradient(135deg,#ff8c00,#cc4400);color:white',
+      }[etiket] || 'background:rgba(108,99,255,.3);color:white';
+      vpEtiket.innerHTML = '<span style="' + etiketStyle + ';font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px">' + etiket + '</span>';
+      vpEtiket.style.display = 'block';
+    } else {
+      vpEtiket.innerHTML = '';
+      vpEtiket.style.display = 'none';
+    }
+  }
   vpRole.textContent = data.role==='teacher' ? '👨‍🏫 Koç Öğretmen' : '🎒 Öğrenci';
 
   const details = [];
@@ -732,6 +756,7 @@ function openStudentAnalysis(name) {
   const sObj = students.find(s=>s.name===name) || {};
   const initials = name[0];
   const color = sObj.color || '#6c63ff';
+  const sUid = sObj.uid || '';
 
   // Basit seçim modalı
   const existing = document.getElementById('_studentChoiceModal');
@@ -767,7 +792,7 @@ function openStudentAnalysis(name) {
             <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Duygu durumu, enerji, kaygı ve uyku takibi</div>
           </div>
         </button>
-        <button onclick="document.getElementById('_studentChoiceModal').remove();odul_gonderModal('${name}','${sObj.uid||''}')"
+        <button onclick="document.getElementById('_studentChoiceModal').remove();odul_gonderModal('${name}','${sUid}')"
           style="padding:16px;border-radius:14px;background:linear-gradient(135deg,rgba(249,202,36,0.1),rgba(255,140,0,0.1));border:1.5px solid rgba(249,202,36,0.4);color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
           <span style="font-size:1.6rem">🏅</span>
           <div>
@@ -784,12 +809,18 @@ function openStudentAnalysis(name) {
 // ── ÖDÜL SİSTEMİ ─────────────────────────────────────────
 
 const ODUL_KARTLARI = [
-  { id:'superCalısma',    emoji:'⚡', baslik:'Süper Çalışma',      renk:'#6c63ff', aciklama:'Bu haftaki çalışma temposu mükemmeldi!' },
-  { id:'harikaGelisim',  emoji:'🚀', baslik:'Harika Gelişim',      renk:'#1D9E75', aciklama:'Gelişimin gerçekten göz dolduruyor.' },
-  { id:'azimOdulu',      emoji:'💪', baslik:'Azim Ödülü',          renk:'#e67e22', aciklama:'Vazgeçmeden devam ettin, bravo!' },
-  { id:'denemeSampiyon', emoji:'🎯', baslik:'Deneme Şampiyonu',    renk:'#e74c3c', aciklama:'Deneme performansın çok başarılıydı!' },
-  { id:'haftaYildizi',   emoji:'⭐', baslik:'Haftanın Yıldızı',    renk:'#f9ca24', aciklama:'Bu hafta koloninin parlayan yıldızıydın!' },
-  { id:'ozelTebrik',     emoji:'🎉', baslik:'Özel Tebrik',         renk:'#9b59b6', aciklama:'Seni tebrik etmek istedim!' },
+  { id:'superCalisma',   emoji:'⚡', baslik:'Süper Çalışma',         renk:'#6c63ff', aciklama:'Bu haftaki çalışma temponu çok beğendim.' },
+  { id:'harikaGelisim',  emoji:'📈', baslik:'Harika Gelişim',         renk:'#1D9E75', aciklama:'Geçen haftaya göre gelişimin çok net görünüyor.' },
+  { id:'azimOdulu',      emoji:'💪', baslik:'Azim Ödülü',             renk:'#e67e22', aciklama:'Zor dönemde bile çalışmaya devam ettin.' },
+  { id:'denemeSampiyon', emoji:'🎯', baslik:'Deneme Başarısı',        renk:'#e74c3c', aciklama:'Deneme performansın gerçekten etkileyiciydi.' },
+  { id:'haftaYildizi',   emoji:'⭐', baslik:'Haftanın En İyisi',      renk:'#f9ca24', aciklama:'Bu hafta öne çıkan öğrencimsin.' },
+  { id:'ozelTebrik',     emoji:'🎉', baslik:'Özel Tebrik',            renk:'#9b59b6', aciklama:'Seni özellikle tebrik etmek istedim.' },
+  { id:'odakliCalisma',  emoji:'🔍', baslik:'Odaklı Çalışma',         renk:'#2980b9', aciklama:'Dikkatini doğru yere yönlendirdin.' },
+  { id:'kararlilik',     emoji:'🏹', baslik:'Kararlılık',             renk:'#8e44ad', aciklama:'Hedefine odaklanmayı bırakmadın.' },
+  { id:'sorucozumu',     emoji:'✏️', baslik:'Soru Çözüm Şampiyonu',  renk:'#16a085', aciklama:'Bu haftaki soru sayın gerçekten etkileyici.' },
+  { id:'turkce',         emoji:'📚', baslik:'Türkçe Başarısı',        renk:'#c0392b', aciklama:'Türkçe performansın bu hafta çok iyiydi.' },
+  { id:'matematik',      emoji:'📐', baslik:'Matematik Başarısı',     renk:'#2471a3', aciklama:'Matematik çalışman meyve verdi.' },
+  { id:'fen',            emoji:'🔬', baslik:'Fen Başarısı',           renk:'#1e8449', aciklama:'Fen sorularındaki gelişimin göze çarpıyor.' },
 ];
 
 function odul_gonderModal(name, uid) {
