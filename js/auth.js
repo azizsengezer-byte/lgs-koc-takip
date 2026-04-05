@@ -71,8 +71,23 @@ async function doRegister() {
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
     await db.collection('users').doc(cred.user.uid).set({ name, email, role, branch, school, classroom, photo:'', createdAt: new Date() });
-    closeModal('registerModal');
-    showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
+    // E-posta doğrulama gönder (sadece öğretmenler için — öğrenciler username ile giriş yapar)
+    if (role === 'teacher') {
+      try {
+        await cred.user.sendEmailVerification({
+          url: window.location.origin + window.location.pathname
+        });
+        closeModal('registerModal');
+        document.getElementById('dogrulamaEmail').textContent = email;
+        openModal('dogrulamaModal');
+      } catch(e) {
+        closeModal('registerModal');
+        showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
+      }
+    } else {
+      closeModal('registerModal');
+      showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
+    }
   } catch(e) {
     const msgs = {
       'auth/email-already-in-use': 'Bu e-posta zaten kayıtlı.',
@@ -81,6 +96,18 @@ async function doRegister() {
     };
     errEl.textContent = msgs[e.code] || 'Kayıt başarısız: ' + e.message;
     errEl.style.display = 'block';
+  }
+}
+
+async function dogrulamaYeniden() {
+  try {
+    const user = auth.currentUser;
+    if (user) {
+      await user.sendEmailVerification({ url: window.location.origin + window.location.pathname });
+      showToast('✅', 'Doğrulama e-postası tekrar gönderildi!');
+    }
+  } catch(e) {
+    showToast('⚠️', 'Lütfen biraz bekleyip tekrar deneyin.');
   }
 }
 
