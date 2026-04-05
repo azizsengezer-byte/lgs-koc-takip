@@ -93,7 +93,10 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
     'OGRENCI: ' + studentName + '\n' +
     'DONEM: ' + (period==='daily'?'Gunluk':period==='weekly'?'Haftalik':'Aylik') + '\n\n' +
     'WELLNESS (son ' + wellnessData.length + ' gun):\n' +
-    wellnessData.slice(0,14).map(d=>d.tarih+' Kaygi:'+d.kaygi+' Enerji:'+d.enerji+' Uyku:'+(d.uyku||0)+'sa Mood:'+(d.mood||'-')+' Soru:'+(d.soru||0)+(d.pozitif?' (+)'+d.pozitif.substring(0,40):'')+(d.negatif?' (-)'+d.negatif.substring(0,40):'')).join('\n') +
+    wellnessData.slice(0,14).map(d=>{
+      const moodTr = {'excited':'Heyecanlı','good':'İyi','focused':'Odaklı','ok':'İdare Eder','tired':'Yorgun','anxious':'Kaygılı','sad':'Mutsuz'}[d.mood]||d.mood||'-';
+      return d.tarih+' Duygu:'+moodTr+' Enerji:'+d.enerji+' Kaygi:'+d.kaygi+' Uyku:'+(d.uyku||0)+'sa Soru:'+(d.soru||0)+(d.pozitif?' (+)'+d.pozitif.substring(0,40):'')+(d.negatif?' (-)'+d.negatif.substring(0,40):'');
+    }).join('\n') +
     '\n\nKRIZ GUNLERI (kaygi>=8 veya uyku<6 veya akademik felc):\n' +
     (krizGunler.length>0 ? krizGunler.map(d=>d.tarih+' Kaygi:'+(d.kaygi||0)+' Uyku:'+(d.uyku||'-')+'sa Soru:'+(d.soru||0)+(!d.akademikVar&&d.kaygi>=7?' [AKADEMIK FELC]':'')).join('\n') : 'Kriz gunu yok') +
     '\n\nGUNLUK SORU COZUMU (antrenman - deneme degil):\n' +
