@@ -166,59 +166,85 @@
 
 <!-- REGISTER MODAL -->
 <div class="modal-overlay" id="registerModal">
-  <div class="modal">
-    <div class="modal-title">👤 Yeni Hesap Oluştur</div>
-    <div class="form-group">
-      <label class="form-label">Ad Soyad</label>
-      <input class="form-input" type="text" id="regName" placeholder="Adınız Soyadınız">
+  <div class="modal" style="padding:0;overflow:hidden">
+    <!-- Başlık -->
+    <div style="background:linear-gradient(135deg,#6c63ff 0%,#5558e3 100%);padding:24px 24px 20px;position:relative">
+      <button onclick="closeModal('registerModal')" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,.2);border:none;border-radius:50%;width:30px;height:30px;color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
+      <div style="width:48px;height:48px;background:rgba(255,255,255,.15);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:12px">🚀</div>
+      <div style="font-size:1.15rem;font-weight:900;color:#fff;margin-bottom:3px">Hesap Oluştur</div>
+      <div style="font-size:0.78rem;color:rgba(255,255,255,.75)">LGSKoç'a hoş geldin</div>
     </div>
-    <div class="form-group">
-      <label class="form-label">E-posta</label>
-      <input class="form-input" type="email" id="regEmail" placeholder="ornek@gmail.com">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Şifre</label>
-      <input class="form-input" type="password" id="regPass" placeholder="En az 6 karakter">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Rol</label>
-      <button type="button" onclick="openRolPicker()"
-        style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
-        <span id="regRoleLabel">🎒 Öğrenci</span>
-        <span style="color:var(--text2)">▼</span>
+    <!-- Form -->
+    <div style="padding:20px 24px 24px">
+      <!-- Rol Seçimi -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px;letter-spacing:0.04em">ROL SEÇ</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button type="button" id="rolBtn_student" onclick="secRolKart('student')"
+            style="padding:12px 8px;border-radius:12px;border:2px solid var(--accent);background:var(--accent)12;cursor:pointer;text-align:center;transition:all .2s">
+            <div style="font-size:1.3rem;margin-bottom:3px">🎒</div>
+            <div style="font-size:0.78rem;font-weight:800;color:var(--accent)">Öğrenci</div>
+          </button>
+          <button type="button" id="rolBtn_teacher" onclick="secRolKart('teacher')"
+            style="padding:12px 8px;border-radius:12px;border:2px solid var(--border);background:var(--surface2);cursor:pointer;text-align:center;transition:all .2s">
+            <div style="font-size:1.3rem;margin-bottom:3px">👨‍🏫</div>
+            <div style="font-size:0.78rem;font-weight:800;color:var(--text2)">Öğretmen</div>
+          </button>
+        </div>
+        <input type="hidden" id="regRole" value="student">
+        <input type="hidden" id="regRoleLabel" value="🎒 Öğrenci">
+      </div>
+      <!-- Ortak Alanlar -->
+      <div style="display:grid;gap:10px;margin-bottom:10px">
+        <div>
+          <label class="form-label">Ad Soyad</label>
+          <input class="form-input" type="text" id="regName" placeholder="Adınız Soyadınız">
+        </div>
+        <div>
+          <label class="form-label">E-posta</label>
+          <input class="form-input" type="email" id="regEmail" placeholder="ornek@gmail.com">
+        </div>
+        <div>
+          <label class="form-label">Şifre</label>
+          <input class="form-input" type="password" id="regPass" placeholder="En az 6 karakter">
+        </div>
+      </div>
+      <!-- Öğretmen Alanları -->
+      <div id="teacherFields" style="display:none;border-top:1px solid var(--border);padding-top:12px;margin-bottom:10px">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:10px;letter-spacing:0.04em">ÖĞRETMEN BİLGİLERİ</div>
+        <div style="display:grid;gap:10px">
+          <div>
+            <label class="form-label">Branş</label>
+            <button type="button" onclick="openBransPicker()"
+              style="width:100%;padding:11px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;color:var(--text);text-align:left;cursor:pointer;font-size:0.88rem;display:flex;align-items:center;justify-content:space-between;font-family:'Nunito',sans-serif">
+              <span id="regBranchLabel">— Branş seçin —</span>
+              <span style="color:var(--text2);font-size:0.75rem">▼</span>
+            </button>
+            <input type="hidden" id="regBranch" value="">
+          </div>
+          <div>
+            <label class="form-label">Okul Adı</label>
+            <input class="form-input" type="text" id="regSchool" placeholder="örn. Hasankeyf Ortaokulu">
+          </div>
+        </div>
+      </div>
+      <!-- Öğrenci Alanları -->
+      <div id="studentFields" style="display:block;border-top:1px solid var(--border);padding-top:12px;margin-bottom:10px">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:10px;letter-spacing:0.04em">ÖĞRENCİ BİLGİLERİ</div>
+        <div>
+          <label class="form-label">Sınıf Kademesi</label>
+          <button type="button" id="regClassBtn" onclick="openKademePickerFor('regClass','regClassLabel')"
+            style="width:100%;padding:11px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;color:var(--text);text-align:left;cursor:pointer;font-size:0.88rem;display:flex;align-items:center;justify-content:space-between;font-family:'Nunito',sans-serif">
+            <span id="regClassLabel">8. Sınıf</span>
+            <span style="color:var(--text2);font-size:0.75rem">▼</span>
+          </button>
+          <input type="hidden" id="regClass" value="8">
+        </div>
+      </div>
+      <div id="regError" style="color:#ff6584;font-size:0.78rem;margin-bottom:10px;display:none;background:#ff658412;border-radius:8px;padding:8px 10px;border:1px solid #ff658430"></div>
+      <button class="btn btn-primary" onclick="doRegister()" style="width:100%;padding:14px;font-size:0.95rem;border-radius:14px">
+        Kayıt Ol →
       </button>
-      <input type="hidden" id="regRole" value="student">
-    </div>
-    <div id="teacherFields" style="display:none">
-      <div class="form-group">
-        <label class="form-label">Branş</label>
-        <button type="button" onclick="openBransPicker()"
-          style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
-          <span id="regBranchLabel">— Branş seçin —</span>
-          <span style="color:var(--text2)">▼</span>
-        </button>
-        <input type="hidden" id="regBranch" value="">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Okul Adı</label>
-        <input class="form-input" type="text" id="regSchool" placeholder="örn. Hasankeyf Ortaokulu">
-      </div>
-    </div>
-    <div id="studentFields" style="display:block">
-      <div class="form-group">
-        <label class="form-label">Sınıf Kademesi</label>
-        <button type="button" id="regClassBtn" onclick="openKademePickerFor('regClass','regClassLabel')"
-          style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
-          <span id="regClassLabel">8. Sınıf</span>
-          <span style="color:var(--text2)">▼</span>
-        </button>
-        <input type="hidden" id="regClass" value="8">
-      </div>
-    </div>
-    <div id="regError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('registerModal')">İptal</button>
-      <button class="btn btn-primary" onclick="doRegister()">Kayıt Ol ✓</button>
     </div>
   </div>
 </div>
@@ -481,40 +507,60 @@
 
 <!-- ADD STUDENT MODAL -->
 <div class="modal-overlay" id="addStudentModal">
-  <div class="modal">
-    <div class="modal-title">👤 Yeni Öğrenci Ekle</div>
-    <div class="form-group">
-      <label class="form-label">Ad Soyad</label>
-      <input class="form-input" type="text" id="newStudentName" placeholder="Öğrencinin adı soyadı">
+  <div class="modal" style="padding:0;overflow:hidden">
+    <!-- Başlık -->
+    <div style="background:linear-gradient(135deg,#43e97b 0%,#38c96e 100%);padding:22px 24px 18px;position:relative">
+      <button onclick="closeModal('addStudentModal')" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,.25);border:none;border-radius:50%;width:30px;height:30px;color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
+      <div style="width:46px;height:46px;background:rgba(255,255,255,.2);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:10px">🎒</div>
+      <div style="font-size:1.1rem;font-weight:900;color:#fff;margin-bottom:2px">Öğrenci Ekle</div>
+      <div style="font-size:0.75rem;color:rgba(255,255,255,.8)">Hesap oluştur ve paylaş</div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Kullanıcı Adı</label>
-      <div style="position:relative">
-        <input class="form-input" type="text" id="newStudentUsername"
-          placeholder="örn: ahmetyilmaz (boşluksuz, küçük harf)"
-          oninput="kullaniciAdiKontrol(this.value)"
-          style="padding-right:36px">
-        <span id="usernameStatus" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:1rem"></span>
+    <!-- Form -->
+    <div style="padding:20px 24px 24px">
+      <div style="display:grid;gap:12px;margin-bottom:12px">
+        <!-- Ad Soyad -->
+        <div>
+          <label class="form-label">Ad Soyad</label>
+          <input class="form-input" type="text" id="newStudentName" placeholder="Öğrencinin adı soyadı">
+        </div>
+        <!-- Kullanıcı Adı -->
+        <div>
+          <label class="form-label">Kullanıcı Adı</label>
+          <div style="position:relative">
+            <input class="form-input" type="text" id="newStudentUsername"
+              placeholder="örn: ahmetyilmaz"
+              oninput="kullaniciAdiKontrol(this.value)"
+              autocapitalize="none" autocorrect="off"
+              style="padding-right:38px">
+            <span id="usernameStatus" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:1rem;line-height:1"></span>
+          </div>
+          <div id="usernameMsg" style="font-size:0.72rem;margin-top:4px;padding:4px 8px;border-radius:6px;display:none"></div>
+          <div style="font-size:0.7rem;color:var(--text2);margin-top:3px">Sadece harf, rakam ve nokta — boşluksuz</div>
+        </div>
+        <!-- Şifre -->
+        <div>
+          <label class="form-label">Şifre</label>
+          <div style="display:flex;gap:8px">
+            <input class="form-input" type="text" id="newStudentPass" placeholder="En az 6 karakter" style="flex:1;font-family:monospace;letter-spacing:0.05em">
+            <button type="button" onclick="sifreUret()"
+              style="padding:0 14px;background:var(--accent)18;border:1.5px solid var(--accent)44;border-radius:12px;color:var(--accent);font-size:0.8rem;cursor:pointer;white-space:nowrap;font-weight:800;font-family:'Nunito',sans-serif">
+              🎲 Üret
+            </button>
+          </div>
+        </div>
+        <!-- Okul -->
+        <div>
+          <label class="form-label">Okul</label>
+          <select class="form-select" id="newStudentSchool">
+            <option value="">— Okul seçin —</option>
+          </select>
+        </div>
       </div>
-      <div id="usernameMsg" style="font-size:0.75rem;margin-top:3px;display:none"></div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Şifre</label>
-      <div style="display:flex;gap:8px">
-        <input class="form-input" type="text" id="newStudentPass" placeholder="En az 6 karakter" style="flex:1">
-        <button type="button" onclick="sifreUret()" style="padding:0 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:0.8rem;cursor:pointer;white-space:nowrap;font-weight:600">🎲 Üret</button>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Okul</label>
-      <select class="form-select" id="newStudentSchool">
-        <option value="">— Okul seçin —</option>
-      </select>
-    </div>
-    <div id="addStudentError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('addStudentModal')">İptal</button>
-      <button class="btn btn-primary" id="addStudentBtn" onclick="saveNewStudent()">Ekle ✓</button>
+      <div id="addStudentError" style="display:none;color:#ff6584;font-size:0.78rem;margin-bottom:12px;background:#ff658412;border-radius:8px;padding:8px 10px;border:1px solid #ff658430"></div>
+      <button class="btn btn-primary" id="addStudentBtn" onclick="saveNewStudent()"
+        style="width:100%;padding:14px;font-size:0.95rem;border-radius:14px;background:linear-gradient(135deg,#43e97b,#38c96e);border:none">
+        Hesabı Oluştur →
+      </button>
     </div>
   </div>
 </div>
