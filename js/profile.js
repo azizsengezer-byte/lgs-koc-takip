@@ -245,6 +245,7 @@ async function _apBilgiYukle(uid) {
 async function _apRozetYukle(uid) {
   const el = document.getElementById('apRozetIcerik');
   if (!el) return;
+  el.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;padding:8px 0">Yükleniyor...</div>';
   try {
     if (typeof getBadges !== 'function' || typeof BADGES === 'undefined') {
       el.innerHTML = '<span style="color:var(--text2);font-size:0.82rem">Rozet sistemi yüklenemedi.</span>';
@@ -542,7 +543,7 @@ async function profilePage() {
     </div>
 
     ${!isTeacher ? `
-    <div class="card" style="margin-top:0">
+    <div class="card" style="margin-top:16px">
       <button class="btn btn-primary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px"
         onclick="showBadgesPage()">
         🏆 <span>Rozetlerim</span>
