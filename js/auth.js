@@ -53,37 +53,83 @@ async function doLogin() {
   }
 }
 
+// Şifre göster/gizle
+function sifreGoster(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  const gizli = inp.type === 'password';
+  inp.type = gizli ? 'text' : 'password';
+  // Göz ikonunu güncelle
+  const svg = btn.querySelector('svg');
+  if (svg) {
+    svg.innerHTML = gizli
+      ? '<path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.2"/><line x1="2" y1="2" x2="14" y2="14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>'
+      : '<path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/>';
+  }
+}
+
+// Şifre uyum mesajı
+function sifreMesajGoster() {
+  const p1 = document.getElementById('regPass')?.value || '';
+  const p2 = document.getElementById('regPass2')?.value || '';
+  const msg = document.getElementById('sifreUyumMsg');
+  if (!msg || !p2) { if(msg) msg.style.display='none'; return; }
+  if (p1 === p2) {
+    msg.textContent = '✓ Şifreler uyuşuyor';
+    msg.style.color = '#2d9e5a';
+    msg.style.display = 'block';
+  } else {
+    msg.textContent = '✗ Şifreler uyuşmuyor';
+    msg.style.color = '#cc3355';
+    msg.style.display = 'block';
+  }
+}
+
 async function doRegister() {
-  const name = document.getElementById('regName').value.trim();
+  const name  = document.getElementById('regName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
-  const pass = document.getElementById('regPass').value;
-  const role = document.getElementById('regRole').value;
+  const pass  = document.getElementById('regPass').value;
+  const pass2 = document.getElementById('regPass2')?.value || '';
+  const role  = document.getElementById('regRole').value;
   const errEl = document.getElementById('regError');
   errEl.style.display = 'none';
+
   if (!name || !email || !pass) { errEl.textContent = 'Tüm alanları doldurunuz.'; errEl.style.display='block'; return; }
   if (!role) { errEl.textContent = 'Lütfen öğretmen veya öğrenci rolünü seçiniz.'; errEl.style.display='block'; return; }
   if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
-  const branch = role==='teacher' ? (document.getElementById('regBranch').value || '') : '';
-  const school = role==='teacher' ? (document.getElementById('regSchool').value.trim() || '') : '';
+  if (pass !== pass2) { errEl.textContent = 'Şifreler uyuşmuyor. Lütfen kontrol edin.'; errEl.style.display='block'; return; }
+
+  const branch   = role==='teacher' ? (document.getElementById('regBranch').value || '') : '';
+  const school   = role==='teacher' ? (document.getElementById('regSchool').value.trim() || '') : '';
   const classRaw = role==='student' ? (document.getElementById('regClass').value || '8') : '';
   const classroom = classRaw ? classRaw + '. Sınıf' : '';
   if (role==='teacher' && !school) { errEl.textContent = 'Okul adı giriniz.'; errEl.style.display='block'; return; }
+
+  const btn = document.querySelector('#registerModal .btn-primary') ||
+              document.querySelector('#registerModal button[onclick="doRegister()"]');
+  if (btn) { btn.textContent = 'Kaydediliyor...'; btn.disabled = true; }
+
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
-    await db.collection('users').doc(cred.user.uid).set({ name, email, role, branch, school, classroom, photo:'', createdAt: new Date() });
-    // E-posta doğrulama gönder (sadece öğretmenler için — öğrenciler username ile giriş yapar)
+    await db.collection('users').doc(cred.user.uid).set({
+      name, email, role, branch, school, classroom, photo:'', createdAt: new Date()
+    });
+
+    // Sadece öğretmenler için e-posta doğrulama
     if (role === 'teacher') {
       try {
         await cred.user.sendEmailVerification({
           url: window.location.origin + window.location.pathname
         });
-        closeModal('registerModal');
-        document.getElementById('dogrulamaEmail').textContent = email;
-        openModal('dogrulamaModal');
-      } catch(e) {
-        closeModal('registerModal');
-        showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
-      }
+      } catch(e) { console.log('Doğrulama maili hatası:', e.message); }
+
+      // Kullanıcıyı çıkart — onAuthStateChanged login ekranını gösterir
+      // Doğrulama modalı login ekranının üstünde açılır
+      await auth.signOut();
+      closeModal('registerModal');
+      document.getElementById('dogrulamaEmail').textContent = email;
+      // Kısa gecikme ile modalı aç (login ekranı yüklensin)
+      setTimeout(() => openModal('dogrulamaModal'), 300);
     } else {
       closeModal('registerModal');
       showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
@@ -92,10 +138,12 @@ async function doRegister() {
     const msgs = {
       'auth/email-already-in-use': 'Bu e-posta zaten kayıtlı.',
       'auth/invalid-email': 'Geçersiz e-posta adresi.',
-      'auth/weak-password': 'Şifre çok zayıf.',
+      'auth/weak-password': 'Şifre çok zayıf, en az 6 karakter olmalı.',
     };
     errEl.textContent = msgs[e.code] || 'Kayıt başarısız: ' + e.message;
     errEl.style.display = 'block';
+  } finally {
+    if (btn) { btn.textContent = 'Kayıt Ol →'; btn.disabled = false; }
   }
 }
 
