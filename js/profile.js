@@ -590,7 +590,7 @@ async function profilePage() {
     <div class="card" style="margin-top:16px" id="odullerim-kart">
       <div class="card-title" style="margin-bottom:12px">🏅 Aldığım Ödüller</div>
       <div id="odullerim-liste">
-        <div style="color:var(--text2);font-size:0.85rem">Yükleniyor...</div>
+        <img src="" onerror="odulleriniYukle()" style="display:none">
       </div>
     </div>
     <div class="card" style="margin-top:16px" id="okul-arkadaslar-kart">
