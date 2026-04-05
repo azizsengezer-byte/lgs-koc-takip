@@ -212,7 +212,22 @@
         </div>
         <div>
           <label class="form-label">Şifre</label>
-          <input class="form-input" type="password" id="regPass" placeholder="En az 6 karakter">
+          <div style="position:relative">
+            <input class="form-input" type="password" id="regPass" placeholder="En az 6 karakter" style="padding-right:42px">
+            <button type="button" onclick="sifreGoster('regPass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;color:#aaa">
+              <svg id="regPassEye" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Şifre Tekrar</label>
+          <div style="position:relative">
+            <input class="form-input" type="password" id="regPass2" placeholder="Şifreyi tekrar girin" style="padding-right:42px" oninput="sifreMesajGoster()">
+            <button type="button" onclick="sifreGoster('regPass2',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;color:#aaa">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+            </button>
+          </div>
+          <div id="sifreUyumMsg" style="font-size:0.72rem;margin-top:3px;display:none"></div>
         </div>
       </div>
       <!-- Öğretmen Alanları -->
@@ -712,7 +727,7 @@
 
 
 <script src="js/config.js?v=2"></script>
-<script src="js/auth.js?v=3"></script>
+<script src="js/auth.js?v=4"></script>
 <script src="js/ui.js?v=2"></script>
 <script src="js/picker.js"></script>
 <script src="js/wellness_helpers.js"></script>
