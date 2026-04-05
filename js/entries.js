@@ -323,91 +323,178 @@ async function deleteStudent(i) {
   }
 }
 
+// ── KULLANICI ADI KONTROL (debounced) ────────────────────────
+let _uaKontrolTimer = null;
+function kullaniciAdiKontrol(val) {
+  const statusEl = document.getElementById('usernameStatus');
+  const msgEl = document.getElementById('usernameMsg');
+  const btn = document.getElementById('addStudentBtn');
+  clearTimeout(_uaKontrolTimer);
+
+  // Temizle — sadece harf, rakam, nokta, alt çizgi
+  const temiz = val.toLowerCase().replace(/[^a-z0-9._]/g, '');
+  if (document.getElementById('newStudentUsername').value !== temiz) {
+    document.getElementById('newStudentUsername').value = temiz;
+  }
+
+  if (!temiz || temiz.length < 3) {
+    statusEl.textContent = '';
+    msgEl.style.display = 'none';
+    if (btn) btn.disabled = false;
+    return;
+  }
+
+  statusEl.textContent = '⏳';
+  if (btn) btn.disabled = true;
+
+  _uaKontrolTimer = setTimeout(async () => {
+    try {
+      const snap = await db.collection('users')
+        .where('username', '==', temiz).limit(1).get();
+      if (!snap.empty) {
+        statusEl.textContent = '❌';
+        msgEl.textContent = 'Bu kullanıcı adı zaten alınmış.';
+        msgEl.style.color = '#ff6584';
+        msgEl.style.display = 'block';
+        if (btn) btn.disabled = true;
+      } else {
+        statusEl.textContent = '✅';
+        msgEl.textContent = 'Kullanıcı adı uygun!';
+        msgEl.style.color = '#43e97b';
+        msgEl.style.display = 'block';
+        if (btn) btn.disabled = false;
+      }
+    } catch(e) {
+      statusEl.textContent = '';
+      msgEl.style.display = 'none';
+      if (btn) btn.disabled = false;
+    }
+  }, 500);
+}
+
+// Otomatik şifre üret
+function sifreUret() {
+  const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+  let sifre = '';
+  for (let i = 0; i < 8; i++) sifre += chars[Math.floor(Math.random() * chars.length)];
+  document.getElementById('newStudentPass').value = sifre;
+}
+
+// Metin kopyala
+function metniKopyala(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => showToast('📋', 'Kopyalandı!'));
+}
+
+// Tümünü kopyala
+function tumunuKopyala() {
+  const uname = document.getElementById('payUname')?.textContent || '';
+  const pass = document.getElementById('payPass')?.textContent || '';
+  const link = document.getElementById('payLink')?.textContent || '';
+  const metin = `LGSKoç Giriş Bilgileri
+Kullanıcı adı: ${uname}
+Şifre: ${pass}
+Giriş linki: ${link}`;
+  navigator.clipboard.writeText(metin).then(() => showToast('📋', 'Tüm bilgiler kopyalandı!'));
+}
+
+// WhatsApp paylaşım
+function whatsappPaylasim() {
+  const uname = document.getElementById('payUname')?.textContent || '';
+  const pass = document.getElementById('payPass')?.textContent || '';
+  const link = document.getElementById('payLink')?.textContent || '';
+  const metin = encodeURIComponent(`Merhaba! LGSKoç giriş bilgilerin:
+👤 Kullanıcı adı: ${uname}
+🔑 Şifre: ${pass}
+📱 Giriş için tıkla: ${link}`);
+  window.open('https://wa.me/?text=' + metin, '_blank');
+}
+
 async function saveNewStudent() {
   const name = document.getElementById('newStudentName').value.trim();
-  const email = document.getElementById('newStudentEmail').value.trim();
+  const username = document.getElementById('newStudentUsername').value.trim();
   const pass = document.getElementById('newStudentPass').value;
   const errEl = document.getElementById('addStudentError');
   errEl.style.display = 'none';
   const school = document.getElementById('newStudentSchool')?.value || '';
-  if (!name || !email || !pass) { errEl.textContent = 'Tüm alanları doldurunuz.'; errEl.style.display='block'; return; }
+
+  if (!name || !username || !pass) { errEl.textContent = 'Tüm alanları doldurunuz.'; errEl.style.display='block'; return; }
+  if (username.length < 3) { errEl.textContent = 'Kullanıcı adı en az 3 karakter olmalı.'; errEl.style.display='block'; return; }
   if (!school) { errEl.textContent = 'Lütfen bir okul seçin.'; errEl.style.display='block'; return; }
   if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
   if (students.length >= 30) { errEl.textContent = 'En fazla 30 öğrenci eklenebilir.'; errEl.style.display='block'; return; }
 
-  const errBtn = document.querySelector('#addStudentModal .btn-primary');
+  const errBtn = document.getElementById('addStudentBtn');
   if (errBtn) { errBtn.textContent = 'Ekleniyor...'; errBtn.disabled = true; }
 
   try {
     const teacherUser = auth.currentUser;
     const teacherData = window.currentUserData || {};
 
-    // Silinmiş hesap kontrolü
-    const deletedSnap = await db.collection('deletedStudents').where('email','==',email).get();
-    if (!deletedSnap.empty) {
-      errEl.textContent = 'Bu e-posta daha önce silinmiş bir öğrenciye ait. Farklı bir e-posta kullanın.';
+    // Kullanıcı adı çakışma kontrolü (son kez)
+    const uaSnap = await db.collection('users').where('username','==',username).limit(1).get();
+    if (!uaSnap.empty) {
+      errEl.textContent = '❌ Bu kullanıcı adı zaten alınmış. Farklı bir kullanıcı adı deneyin.';
       errEl.style.display = 'block';
       if (errBtn) { errBtn.textContent = 'Ekle ✓'; errBtn.disabled = false; }
       return;
     }
-    // Bu sayede öğretmenin oturumu kapanmıyor
+
+    // Arka planda e-posta üret (öğrenci görmez)
+    const email = username + '@lgskoc.app';
+
+    // secondaryApp ile öğretmen oturumu kapanmıyor
     let secondaryApp;
-    try {
-      secondaryApp = firebase.app('secondary');
-    } catch(e) {
-      secondaryApp = firebase.initializeApp(firebase.app().options, 'secondary');
-    }
+    try { secondaryApp = firebase.app('secondary'); }
+    catch(e) { secondaryApp = firebase.initializeApp(firebase.app().options, 'secondary'); }
     const secondaryAuth = secondaryApp.auth();
 
-    // Öğrenci Firebase Auth hesabı oluştur
     const cred = await secondaryAuth.createUserWithEmailAndPassword(email, pass);
     const studentUid = cred.user.uid;
 
-    // Öğrenci Firestore profilini secondaryAuth aktifken yaz (öğrencinin kendi auth'u)
     const colors = ['#6c63ff','#ff6584','#43e97b','#f9ca24','#00b4d8','#ff9f43'];
     const color = colors[students.length % colors.length];
     const profileData = {
-      name, email, role: 'student',
+      name, username, email, role: 'student',
       teacherId: teacherUser.uid,
       teacherName: teacherData.name || '',
       teacherPhoto: teacherData.photo || '',
-      school: (document.getElementById('newStudentSchool')?.value) || teacherData.school || '',
+      school: school || teacherData.school || '',
       photo: '', color, avg: 0,
       createdAt: new Date()
     };
 
-    // secondaryApp'in Firestore instance'ını al (öğrencinin auth'u aktif)
     let written = false;
     try {
       const secDb = firebase.app('secondary').firestore();
       await secDb.collection('users').doc(studentUid).set(profileData);
       written = true;
-    } catch(e1) {
-      console.log('Secondary Firestore hatasi:', e1.message);
-    }
+    } catch(e1) { console.log('Secondary Firestore hatasi:', e1.message); }
 
-    // İkinci oturumu kapat
     await secondaryAuth.signOut();
+    if (!written) await db.collection('users').doc(studentUid).set(profileData);
 
-    // Secondary başarısız olduysa öğretmen auth'u ile dene
-    if (!written) {
-      await db.collection('users').doc(studentUid).set(profileData);
-    }
+    students.push({ name, username, uid: studentUid, avg: 0, lastActive: 'Yeni', color, tasks: 0 });
 
-    // Öğretmenin listesine ekle
-    students.push({ name, uid: studentUid, avg: 0, trend: 'up', lastActive: 'Yeni', color, tasks: 0 });
-
+    // Modalı kapat ve formu temizle
     closeModal('addStudentModal');
     document.getElementById('newStudentName').value = '';
-    document.getElementById('newStudentEmail').value = '';
+    document.getElementById('newStudentUsername').value = '';
     document.getElementById('newStudentPass').value = '';
-    showToast('✅', `${name} eklendi! Giriş: ${email} / ${pass}`);
-    showPage('students');
+    document.getElementById('usernameStatus').textContent = '';
+    document.getElementById('usernameMsg').style.display = 'none';
+
+    // Paylaşım kartını göster
+    const loginLink = window.location.origin + window.location.pathname + '?u=' + username;
+    document.getElementById('payUname').textContent = username;
+    document.getElementById('payPass').textContent = pass;
+    document.getElementById('payLink').textContent = loginLink;
+    openModal('paylasimModal');
 
   } catch(e) {
     const msgs = {
-      'auth/email-already-in-use': 'Bu e-posta başka bir hesapta kullanılıyor. Farklı bir e-posta deneyin.',
-      'auth/invalid-email': 'Geçersiz e-posta adresi.',
+      'auth/email-already-in-use': '❌ Bu kullanıcı adı sistemde kayıtlı. Farklı bir kullanıcı adı deneyin.',
       'auth/weak-password': 'Şifre çok zayıf, en az 6 karakter olmalı.',
     };
     errEl.textContent = msgs[e.code] || 'Hata: ' + e.message;

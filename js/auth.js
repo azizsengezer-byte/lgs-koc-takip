@@ -14,24 +14,39 @@ function showRegister() {
 }
 
 async function doLogin() {
-  const email = document.getElementById('loginUser').value.trim();
+  let giris = document.getElementById('loginUser').value.trim();
   const pass = document.getElementById('loginPass').value;
   const errEl = document.getElementById('loginError');
   const btn = document.getElementById('loginBtn');
   errEl.style.display = 'none';
-  if (!email || !pass) { errEl.textContent = 'E-posta ve şifre giriniz.'; errEl.style.display='block'; return; }
+  if (!giris || !pass) { errEl.textContent = 'Kullanıcı adı/e-posta ve şifre giriniz.'; errEl.style.display='block'; return; }
   btn.textContent = 'Giriş yapılıyor...'; btn.disabled = true;
   try {
-    // Giriş yap — rol kontrolü yok, Firestore'daki gerçek role göre çalışır
+    let email = giris;
+
+    // @ yoksa kullanıcı adı — Firestore'dan e-postayı bul
+    if (!giris.includes('@')) {
+      const username = giris.toLowerCase();
+      const snap = await db.collection('users')
+        .where('username', '==', username).limit(1).get();
+      if (snap.empty) {
+        btn.textContent = 'Giriş Yap →'; btn.disabled = false;
+        errEl.textContent = 'Bu kullanıcı adıyla kayıtlı hesap bulunamadı.';
+        errEl.style.display = 'block';
+        return;
+      }
+      email = snap.docs[0].data().email;
+    }
+
     await auth.signInWithEmailAndPassword(email, pass);
     // onAuthStateChanged devralır
   } catch(e) {
     btn.textContent = 'Giriş Yap →'; btn.disabled = false;
     const msgs = {
-      'auth/user-not-found': 'Bu e-posta ile kayıtlı hesap bulunamadı.',
+      'auth/user-not-found': 'Hesap bulunamadı.',
       'auth/wrong-password': 'Şifre yanlış, tekrar deneyin.',
-      'auth/invalid-email': 'Geçersiz e-posta adresi.',
-      'auth/invalid-credential': 'E-posta veya şifre hatalı.',
+      'auth/invalid-email': 'Geçersiz giriş bilgisi.',
+      'auth/invalid-credential': 'Kullanıcı adı/e-posta veya şifre hatalı.',
     };
     errEl.textContent = msgs[e.code] || 'Giriş başarısız: ' + e.message;
     errEl.style.display = 'block';
