@@ -73,7 +73,7 @@ function startCountdown() {
           <div style="font-size:0.62rem;color:var(--text2);margin-top:4px">SANİYE</div>
         </div>
       </div>
-      <div style="font-size:0.75rem;color:var(--text2);margin-top:10px">14 Haziran 2026 • Saat 09:30</div>`;
+      <div style="font-size:0.75rem;color:var(--text2);margin-top:10px">13 Haziran 2026 • Saat 09:30</div>`;
   }
   update();
   _countdownTimer = setInterval(update, 1000);
