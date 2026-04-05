@@ -117,6 +117,30 @@ function openRolPicker() {
   modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
 }
 
+function secRolKart(v) {
+  document.getElementById('regRole').value = v;
+  document.getElementById('regRoleLabel').value = v === 'teacher' ? '👨‍🏫 Öğretmen' : '🎒 Öğrenci';
+  // Buton stillerini güncelle
+  const sBtn = document.getElementById('rolBtn_student');
+  const tBtn = document.getElementById('rolBtn_teacher');
+  if (v === 'student') {
+    sBtn.style.border = '2px solid var(--accent)';
+    sBtn.style.background = 'var(--accent)12';
+    sBtn.querySelector('div:last-child').style.color = 'var(--accent)';
+    tBtn.style.border = '2px solid var(--border)';
+    tBtn.style.background = 'var(--surface2)';
+    tBtn.querySelector('div:last-child').style.color = 'var(--text2)';
+  } else {
+    tBtn.style.border = '2px solid var(--accent)';
+    tBtn.style.background = 'var(--accent)12';
+    tBtn.querySelector('div:last-child').style.color = 'var(--accent)';
+    sBtn.style.border = '2px solid var(--border)';
+    sBtn.style.background = 'var(--surface2)';
+    sBtn.querySelector('div:last-child').style.color = 'var(--text2)';
+  }
+  toggleRegFields();
+}
+
 function secRol(v, l, modalEl) {
   document.getElementById('regRole').value = v;
   document.getElementById('regRoleLabel').textContent = l;
