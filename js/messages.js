@@ -177,6 +177,27 @@ async function chatPartnerProfil(uid, name, color, photo, isSchoolMate) {
 //  ANA SAYFA — Partner Listesi + Sohbet Penceresi
 // ═══════════════════════════════════════════════════════════
 
+// Son mesaja göre sırala — en son mesajlaşılan en üstte
+function _sortByLastMsg(partners, myUid) {
+  return [...partners].sort((a, b) => {
+    const la = (chatMessages[convId(myUid, a.uid)] || []).slice(-1)[0]?.createdAt?.seconds || 0;
+    const lb = (chatMessages[convId(myUid, b.uid)] || []).slice(-1)[0]?.createdAt?.seconds || 0;
+    return lb - la;
+  });
+}
+
+// Öğretmen mesaj arama
+function _msgAra() {
+  const q = (document.getElementById('msgArama')?.value || '').toLowerCase().trim();
+  const liste = document.getElementById('msgListe');
+  if (!liste) return;
+  const items = liste.querySelectorAll('.chat-list-item');
+  items.forEach(item => {
+    const isim = item.querySelector('[style*="font-weight:700"]')?.textContent?.toLowerCase() || '';
+    item.style.display = (!q || isim.includes(q)) ? '' : 'none';
+  });
+}
+
 async function messagesPage(role) {
   const isTeacher = role === 'teacher';
   const my = _myData();
@@ -387,9 +408,13 @@ async function messagesPage(role) {
     <div class="chat-layout">
       <div class="${listCls}" style="border:none;border-radius:0">
         ${isTeacher
-          ? partners.map(renderItem).join('')
+          ? `<div style="padding:8px 12px 6px">
+              <input id="msgArama" type="text" placeholder="Öğrenci ara..." oninput="_msgAra()"
+                style="width:100%;padding:7px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);font-size:0.85rem;box-sizing:border-box;font-family:'Nunito',sans-serif">
+             </div>
+             <div id="msgListe">${_sortByLastMsg(partners, myUid).map(renderItem).join('')}</div>`
           : `${kocPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:8px 16px 4px;letter-spacing:0.06em">👨‍🏫 KOÇUM</div>' + kocPartners.map(renderItem).join('') : ''}
-             ${arkPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:8px 16px 4px;letter-spacing:0.06em">🏫 OKUL ARKADAŞLARI</div>' + arkPartners.map(renderItem).join('') : ''}`
+             ${arkPartners.length > 0 ? '<div style="font-size:0.7rem;font-weight:700;color:var(--text2);padding:8px 16px 4px;letter-spacing:0.06em">🏫 OKUL ARKADAŞLARI</div>' + _sortByLastMsg(arkPartners, myUid).map(renderItem).join('') : ''}`
         }
       </div>
       <div class="${winCls}">
