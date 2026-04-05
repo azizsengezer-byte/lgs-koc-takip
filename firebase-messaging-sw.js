@@ -14,35 +14,47 @@ const messaging = firebase.messaging();
 
 // Uygulama arka plandayken bildirimleri göster
 messaging.onBackgroundMessage(function(payload) {
-  const { title, body, icon, data } = payload.notification || payload.data || {};
-  
-  self.registration.showNotification(title || 'LGSKoç', {
-    body: body || '',
-    icon: icon || '/icon-192.png',
+  const notifData = payload.notification || {};
+  const extraData = payload.data || {};
+  const actionUrl = extraData.actionUrl || notifData.click_action || '/';
+
+  self.registration.showNotification(notifData.title || 'LGSKoç', {
+    body: notifData.body || '',
+    icon: '/icon-192.png',
     badge: '/icon-192.png',
-    tag: data?.tag || 'lgs-koc',
-    data: data || {},
+    tag: extraData.tag || 'lgs-koc',
+    data: { ...extraData, actionUrl },
     vibrate: [200, 100, 200],
     requireInteraction: false,
-    actions: data?.actionUrl ? [
-      { action: 'open', title: '📱 Uygulamayı Aç' }
-    ] : []
   });
 });
 
-// Bildirime tıklanınca uygulamayı aç
+// Bildirime tıklanınca
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
-  const url = event.notification.data?.actionUrl || '/';
+
+  const data = event.notification.data || {};
+  const actionUrl = data.actionUrl || '/';
+
+  // Tam URL oluştur (relative ise base URL ekle)
+  const baseUrl = 'https://azizsengezer-byte.github.io/lgs-koc-takip/';
+  let targetUrl = actionUrl.startsWith('http') ? actionUrl : baseUrl + actionUrl.replace(/^\//, '');
+
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(function(clientList) {
-        for (const client of clientList) {
-          if (client.url.includes('sengezer-byte.github.io') && 'focus' in client) {
-            return client.focus();
-          }
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      // Uygulama zaten açıksa: odakla ve postMessage ile yönlendir
+      for (const client of clientList) {
+        if (client.url.includes('lgs-koc-takip') && 'focus' in client) {
+          client.postMessage({
+            type: 'NOTIF_NAVIGATE',
+            actionUrl,
+            data
+          });
+          return client.focus();
         }
-        if (clients.openWindow) return clients.openWindow(url);
-      })
+      }
+      // Uygulama kapalıysa: URL ile aç — URL parametreleri yönlendirmeyi sağlar
+      if (clients.openWindow) return clients.openWindow(targetUrl);
+    })
   );
 });
