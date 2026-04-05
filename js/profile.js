@@ -47,7 +47,8 @@ async function odulleriniYukle() {
       </div>
     `).join('');
   } catch(e) {
-    el.innerHTML = '<div style="color:var(--text2);font-size:0.82rem">Yüklenemedi.</div>';
+    console.error('Ödül yükleme hatası:', e.message, e);
+    el.innerHTML = '<div style="color:#ff6584;font-size:0.82rem">Hata: ' + e.message + '</div>';
   }
 }
 
