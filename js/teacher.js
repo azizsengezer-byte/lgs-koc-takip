@@ -615,6 +615,7 @@ async function saveEditTask(idx) {
     subject: document.getElementById('taskSubject').value,
     desc: document.getElementById('taskDesc').value.trim(),
     due: document.getElementById('taskDue').value,
+    dueRaw: document.getElementById('taskDue').value,
   };
   if (!updates.title) { showToast('⚠️','Başlık boş olamaz!'); return; }
   Object.assign(t, updates);

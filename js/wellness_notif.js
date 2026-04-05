@@ -350,24 +350,44 @@ function studentKazanimlar() {
 }
 
 function studentTasks() {
-  return `
-    <div class="page-title">📋 Ödevlerim</div>
-    <div class="page-sub">Koç tarafından atanan görevler</div>
-    ${tasks.map((t,i)=>`
-      <div class="assignment-card">
-        <div class="assignment-icon" style="background:rgba(108,99,255,.15);color:var(--accent);font-size:1.3rem">📝</div>
-        <div style="flex:1">
-          <div class="assignment-title">${t.title}</div>
-          <div class="assignment-desc">${t.desc} • ${t.subject}</div>
-          <div class="assignment-footer">
-            <span class="badge ${t.done?'badge-green':'badge-yellow'}">${t.done?'✓ Tamamlandı':'⏳ Bekliyor'}</span>
-            <span style="font-size:0.78rem;color:var(--text2)">📅 Son: ${t.due}</span>
-          </div>
-        </div>
-        ${!t.done?`<button class="btn btn-success" style="padding:8px 14px;font-size:0.8rem" onclick="completeTask(${i})">Tamamla ✓</button>`:''}
-      </div>
-    `).join('')}
-  `;
+  const bugun = getTodayKey();
+  const gorunenGorevler = tasks.filter(t => {
+    if (t.done) return true;
+    if (!t.dueRaw) return true;
+    return t.dueRaw >= bugun;
+  });
+
+  if (gorunenGorevler.length === 0) {
+    return '<div class="page-title">📋 Ödevlerim</div>' +
+      '<div class="page-sub">Koç tarafından atanan görevler</div>' +
+      '<div style="text-align:center;padding:40px 20px;color:var(--text2)">' +
+        '<div style="font-size:2rem;margin-bottom:8px">✅</div>' +
+        '<div style="font-size:14px;font-weight:700">Bekleyen ödev yok</div>' +
+        '<div style="font-size:12px;margin-top:4px">Koçun yeni görev atadığında burada görünür</div>' +
+      '</div>';
+  }
+
+  return '<div class="page-title">📋 Ödevlerim</div>' +
+    '<div class="page-sub">Koç tarafından atanan görevler</div>' +
+    gorunenGorevler.map(function(t) {
+      var idx = tasks.indexOf(t);
+      var sureBugün = t.dueRaw && t.dueRaw === bugun;
+      var tarihRenk = sureBugün ? '#f9ca24' : 'var(--text2)';
+      var cardStyle = (t.dueRaw && t.dueRaw === bugun && !t.done) ? 'border-left:3px solid #f9ca24;' : '';
+      var tamamlaBtn = !t.done ? '<button class="btn btn-success" style="padding:8px 14px;font-size:0.8rem" onclick="completeTask(' + idx + ')">Tamamla ✓</button>' : '';
+      return '<div class="assignment-card" style="' + cardStyle + '">' +
+        '<div class="assignment-icon" style="background:rgba(108,99,255,.15);color:var(--accent);font-size:1.3rem">📝</div>' +
+        '<div style="flex:1">' +
+          '<div class="assignment-title">' + t.title + '</div>' +
+          '<div class="assignment-desc">' + (t.desc||'') + ' • ' + (t.subject||'') + '</div>' +
+          '<div class="assignment-footer">' +
+            '<span class="badge ' + (t.done ? 'badge-green' : 'badge-yellow') + '">' + (t.done ? '✓ Tamamlandı' : '⏳ Bekliyor') + '</span>' +
+            '<span style="font-size:0.78rem;color:' + tarihRenk + '">📅 Son: ' + (t.due||'—') + '</span>' +
+          '</div>' +
+        '</div>' +
+        tamamlaBtn +
+      '</div>';
+    }).join('');
 }
 
 /* =================== MESSAGING =================== */

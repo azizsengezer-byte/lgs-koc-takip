@@ -492,7 +492,7 @@ async function saveTask() {
   const taskData = {
     title, subject: sub, unit, type,
     typeLabel: typeLabels[type]||'Görev',
-    desc: fullDesc, due,
+    desc: fullDesc, due, dueRaw: dueRaw || '',
     studentName: student,
     studentUid: studentUid,
     teacherId: user ? user.uid : '',
