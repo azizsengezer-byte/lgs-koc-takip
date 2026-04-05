@@ -767,10 +767,141 @@ function openStudentAnalysis(name) {
             <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Duygu durumu, enerji, kaygı ve uyku takibi</div>
           </div>
         </button>
+        <button onclick="document.getElementById('_studentChoiceModal').remove();odul_gonderModal('${name}','${sObj.uid||''}')"
+          style="padding:16px;border-radius:14px;background:linear-gradient(135deg,rgba(249,202,36,0.1),rgba(255,140,0,0.1));border:1.5px solid rgba(249,202,36,0.4);color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
+          <span style="font-size:1.6rem">🏅</span>
+          <div>
+            <div style="font-weight:800;font-size:0.95rem">Ödül Gönder</div>
+            <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Tebrik kartı veya madalya gönder</div>
+          </div>
+        </button>
       </div>
     </div>`;
   document.body.appendChild(modal);
   modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+}
+
+// ── ÖDÜL SİSTEMİ ─────────────────────────────────────────
+
+const ODUL_KARTLARI = [
+  { id:'superCalısma',    emoji:'⚡', baslik:'Süper Çalışma',      renk:'#6c63ff', aciklama:'Bu haftaki çalışma temposu mükemmeldi!' },
+  { id:'harikaGelisim',  emoji:'🚀', baslik:'Harika Gelişim',      renk:'#1D9E75', aciklama:'Gelişimin gerçekten göz dolduruyor.' },
+  { id:'azimOdulu',      emoji:'💪', baslik:'Azim Ödülü',          renk:'#e67e22', aciklama:'Vazgeçmeden devam ettin, bravo!' },
+  { id:'denemeSampiyon', emoji:'🎯', baslik:'Deneme Şampiyonu',    renk:'#e74c3c', aciklama:'Deneme performansın çok başarılıydı!' },
+  { id:'haftaYildizi',   emoji:'⭐', baslik:'Haftanın Yıldızı',    renk:'#f9ca24', aciklama:'Bu hafta koloninin parlayan yıldızıydın!' },
+  { id:'ozelTebrik',     emoji:'🎉', baslik:'Özel Tebrik',         renk:'#9b59b6', aciklama:'Seni tebrik etmek istedim!' },
+];
+
+function odul_gonderModal(name, uid) {
+  const existing = document.getElementById('_odulModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = '_odulModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px;padding:22px 18px;width:100%;max-width:380px;max-height:90vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div>
+          <div style="font-weight:800;font-size:1rem">🏅 Ödül Gönder</div>
+          <div style="font-size:0.72rem;color:var(--text2);margin-top:2px">${name}</div>
+        </div>
+        <button onclick="document.getElementById('_odulModal').remove()" style="background:none;border:none;color:var(--text2);font-size:1.3rem;cursor:pointer">✕</button>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+        ${ODUL_KARTLARI.map(k => `
+          <div onclick="_odulSec(this,'${k.id}')"
+            style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--border);cursor:pointer;transition:all 0.15s"
+            data-id="${k.id}">
+            <div style="width:40px;height:40px;border-radius:10px;background:${k.renk}22;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0">${k.emoji}</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:0.88rem;color:${k.renk}">${k.baslik}</div>
+              <div style="font-size:0.72rem;color:var(--text2);margin-top:1px">${k.aciklama}</div>
+            </div>
+            <div class="odul-check" style="width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0"></div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="margin-bottom:12px">
+        <div style="font-size:0.78rem;font-weight:700;color:var(--text2);margin-bottom:6px">Kişisel not (isteğe bağlı)</div>
+        <textarea id="odulNotInput" maxlength="120" placeholder="Bir şeyler ekle..." rows="2"
+          style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--text);font-size:0.85rem;font-family:'Nunito',sans-serif;resize:none;box-sizing:border-box"></textarea>
+      </div>
+
+      <button onclick="_odulGonder('${name}','${uid}')"
+        style="width:100%;padding:12px;background:linear-gradient(135deg,#f9ca24,#f0932b);border:none;border-radius:12px;color:#222;font-weight:800;font-size:0.95rem;cursor:pointer;font-family:'Nunito',sans-serif">
+        🎉 Ödülü Gönder
+      </button>
+    </div>`;
+
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+}
+
+let _seciliOdul = null;
+
+function _odulSec(el, id) {
+  _seciliOdul = id;
+  document.querySelectorAll('#_odulModal [data-id]').forEach(item => {
+    const check = item.querySelector('.odul-check');
+    const isSelected = item.dataset.id === id;
+    item.style.borderColor = isSelected ? '#f9ca24' : 'var(--border)';
+    item.style.background = isSelected ? 'rgba(249,202,36,0.06)' : 'transparent';
+    check.style.background = isSelected ? '#f9ca24' : 'transparent';
+    check.style.borderColor = isSelected ? '#f9ca24' : 'var(--border)';
+    check.innerHTML = isSelected ? '<svg viewBox="0 0 20 20" width="12" height="12" style="margin:3px"><polyline points="4,10 8,14 16,6" stroke="#222" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>' : '';
+  });
+}
+
+async function _odulGonder(name, uid) {
+  if (!_seciliOdul) { showToast('⚠️', 'Bir ödül seç'); return; }
+  const kart = ODUL_KARTLARI.find(k => k.id === _seciliOdul);
+  if (!kart) return;
+
+  const not = document.getElementById('odulNotInput')?.value?.trim() || '';
+  const teacherName = document.getElementById('menuName')?.textContent || 'Koçun';
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const odulData = {
+    kartId: kart.id,
+    emoji: kart.emoji,
+    baslik: kart.baslik,
+    renk: kart.renk,
+    not: not,
+    gonderenAd: teacherName,
+    gonderenUid: user.uid,
+    tarih: new Date().toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' }),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  try {
+    // Firestore'a kaydet
+    await db.collection('oduller').add({ ...odulData, ogrenciUid: uid, ogrenciAd: name });
+
+    // Bildirim gönder
+    if (uid) {
+      await db.collection('notifications').add({
+        toUid: uid,
+        fromUid: user.uid,
+        text: kart.emoji + ' ' + teacherName + ' sana "' + kart.baslik + '" ödülü gönderdi!',
+        type: 'odul',
+        kartId: kart.id,
+        read: false,
+        time: new Date().toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' }),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    document.getElementById('_odulModal')?.remove();
+    showToast(kart.emoji, name + "'e ödül gönderildi!");
+    _seciliOdul = null;
+  } catch(e) {
+    showToast('❌', 'Gönderilemedi: ' + e.message);
+  }
 }
 
 function studentDetailAnalysis() {

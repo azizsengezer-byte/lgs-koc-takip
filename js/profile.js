@@ -15,6 +15,42 @@ function _etiketHTML(etiket) {
 }
 
 
+// ── ÖDÜLLER ──────────────────────────────────────────────────
+async function odulleriniYukle() {
+  const el = document.getElementById('odullerim-liste');
+  if (!el) return;
+  const uid = window.currentUserData?.uid || auth.currentUser?.uid;
+  if (!uid) return;
+
+  try {
+    const snap = await db.collection('oduller')
+      .where('ogrenciUid', '==', uid)
+      .orderBy('createdAt', 'desc')
+      .limit(20).get();
+
+    if (snap.empty) {
+      el.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;text-align:center;padding:12px 0">Henüz ödül kazanılmadı.<br><span style="font-size:0.75rem">Koçun sana ödül gönderdiğinde burada görünür.</span></div>';
+      return;
+    }
+
+    const kartlar = [];
+    snap.forEach(d => kartlar.push(d.data()));
+
+    el.innerHTML = kartlar.map(k => `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:${k.renk}11;border:1px solid ${k.renk}33;border-radius:12px;margin-bottom:8px">
+        <div style="width:44px;height:44px;border-radius:10px;background:${k.renk}22;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0">${k.emoji}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:0.88rem;color:${k.renk}">${k.baslik}</div>
+          ${k.not ? `<div style="font-size:0.75rem;color:var(--text2);margin-top:2px;font-style:italic">"${k.not}"</div>` : ''}
+          <div style="font-size:0.7rem;color:var(--text2);margin-top:3px">${k.gonderenAd} · ${k.tarih}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--text2);font-size:0.82rem">Yüklenemedi.</div>';
+  }
+}
+
 // ── OKUL ARKADAŞLARI ─────────────────────────────────────────
 async function okulArkadaslariniYukle() {
   const myData = window.currentUserData || {};
@@ -549,6 +585,12 @@ async function profilePage() {
         🏆 <span>Rozetlerim</span>
         <span id="badgeCountBadge" style="background:#f9ca24;color:#222;border-radius:20px;padding:2px 10px;font-size:0.78rem;font-weight:800"></span>
       </button>
+    </div>
+    <div class="card" style="margin-top:16px" id="odullerim-kart">
+      <div class="card-title" style="margin-bottom:12px">🏅 Aldığım Ödüller</div>
+      <div id="odullerim-liste">
+        <div style="color:var(--text2);font-size:0.85rem">Yükleniyor...</div>
+      </div>
     </div>
     <div class="card" style="margin-top:16px" id="okul-arkadaslar-kart">
       <div class="card-title">🏫 Okul Arkadaşlarım</div>
