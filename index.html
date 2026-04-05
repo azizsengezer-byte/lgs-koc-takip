@@ -52,7 +52,7 @@
       <button class="role-btn active" onclick="selectRole('teacher')" id="roleTeacher">👨‍🏫 Öğretmen</button>
       <button class="role-btn" onclick="selectRole('student')" id="roleStudent">🎒 Öğrenci</button>
     </div>
-    <input class="login-input" type="email" placeholder="E-posta adresi" id="loginUser">
+    <input class="login-input" type="text" placeholder="E-posta veya kullanıcı adı" id="loginUser" autocapitalize="none" autocorrect="off">
     <input class="login-input" type="password" placeholder="Şifre" id="loginPass">
     <div id="loginError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none;text-align:left;padding:0 4px"></div>
     <button class="login-btn" onclick="doLogin()" id="loginBtn" aria-label="Giriş Yap">Giriş Yap →</button>
@@ -488,12 +488,22 @@
       <input class="form-input" type="text" id="newStudentName" placeholder="Öğrencinin adı soyadı">
     </div>
     <div class="form-group">
-      <label class="form-label">E-posta</label>
-      <input class="form-input" type="email" id="newStudentEmail" placeholder="ogrenci@gmail.com">
+      <label class="form-label">Kullanıcı Adı</label>
+      <div style="position:relative">
+        <input class="form-input" type="text" id="newStudentUsername"
+          placeholder="örn: ahmetyilmaz (boşluksuz, küçük harf)"
+          oninput="kullaniciAdiKontrol(this.value)"
+          style="padding-right:36px">
+        <span id="usernameStatus" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:1rem"></span>
+      </div>
+      <div id="usernameMsg" style="font-size:0.75rem;margin-top:3px;display:none"></div>
     </div>
     <div class="form-group">
       <label class="form-label">Şifre</label>
-      <input class="form-input" type="text" id="newStudentPass" placeholder="En az 6 karakter">
+      <div style="display:flex;gap:8px">
+        <input class="form-input" type="text" id="newStudentPass" placeholder="En az 6 karakter" style="flex:1">
+        <button type="button" onclick="sifreUret()" style="padding:0 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:0.8rem;cursor:pointer;white-space:nowrap;font-weight:600">🎲 Üret</button>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Okul</label>
@@ -504,8 +514,43 @@
     <div id="addStudentError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none"></div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('addStudentModal')">İptal</button>
-      <button class="btn btn-primary" onclick="saveNewStudent()">Ekle ✓</button>
+      <button class="btn btn-primary" id="addStudentBtn" onclick="saveNewStudent()">Ekle ✓</button>
     </div>
+  </div>
+</div>
+
+<!-- Paylaşım Kartı Modalı -->
+<div class="modal-overlay" id="paylasimModal">
+  <div class="modal">
+    <div class="modal-title">🎉 Öğrenci Eklendi!</div>
+    <div style="background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="font-size:0.75rem;color:var(--text2);margin-bottom:8px;font-weight:700">GİRİŞ BİLGİLERİ</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div>
+          <div style="font-size:0.7rem;color:var(--text2)">Kullanıcı adı</div>
+          <div style="font-weight:800;font-size:0.95rem" id="payUname"></div>
+        </div>
+        <button onclick="metniKopyala('payUname')" style="background:var(--accent)18;border:1px solid var(--accent)33;border-radius:8px;padding:5px 10px;color:var(--accent);font-size:0.72rem;font-weight:700;cursor:pointer">Kopyala</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:0.7rem;color:var(--text2)">Şifre</div>
+          <div style="font-weight:800;font-size:0.95rem" id="payPass"></div>
+        </div>
+        <button onclick="metniKopyala('payPass')" style="background:var(--accent)18;border:1px solid var(--accent)33;border-radius:8px;padding:5px 10px;color:var(--accent);font-size:0.72rem;font-weight:700;cursor:pointer">Kopyala</button>
+      </div>
+    </div>
+    <div style="background:var(--accent)0d;border:1px dashed var(--accent)44;border-radius:10px;padding:10px 12px;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+      <div style="font-size:0.72rem;color:var(--accent);flex:1;word-break:break-all" id="payLink"></div>
+      <button onclick="metniKopyala('payLink')" style="background:var(--accent)18;border:1px solid var(--accent)33;border-radius:8px;padding:5px 8px;color:var(--accent);font-size:0.72rem;font-weight:700;cursor:pointer;flex-shrink:0">Link</button>
+    </div>
+    <button onclick="whatsappPaylasim()" style="width:100%;padding:13px;background:#25d366;border:none;border-radius:12px;color:#fff;font-size:0.88rem;font-weight:800;cursor:pointer;margin-bottom:8px">
+      📱 WhatsApp ile Paylaş
+    </button>
+    <button onclick="tumunuKopyala()" style="width:100%;padding:11px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:0.85rem;font-weight:700;cursor:pointer;margin-bottom:8px">
+      📋 Tümünü Kopyala
+    </button>
+    <button class="btn btn-outline" style="width:100%" onclick="closeModal('paylasimModal');showPage('students')">Tamam</button>
   </div>
 </div>
 
@@ -567,7 +612,7 @@
 
 
 <script src="js/config.js?v=2"></script>
-<script src="js/auth.js"></script>
+<script src="js/auth.js?v=2"></script>
 <script src="js/ui.js?v=2"></script>
 <script src="js/picker.js"></script>
 <script src="js/wellness_helpers.js"></script>
@@ -588,10 +633,20 @@
 <script src="js/profile.js?v=2"></script>
 <script src="js/photo_crop.js"></script>
 <script src="js/ai_analysis.js"></script>
-<script src="js/notifications.js?v=2"></script>
-<script src="js/entries.js"></script>
+<script src="js/notifications.js?v=3"></script>
+<script src="js/entries.js?v=2"></script>
 <script>
 
+</script>
+<script>
+// Linke ?u=kullaniciadi ile gelinirse giriş alanına otomatik doldur
+(function(){
+  const u = new URLSearchParams(window.location.search).get('u');
+  if (u) {
+    const el = document.getElementById('loginUser');
+    if (el) { el.value = u; setTimeout(()=>{ document.getElementById('loginPass')?.focus(); }, 100); }
+  }
+})();
 </script>
 </body>
 </html>
