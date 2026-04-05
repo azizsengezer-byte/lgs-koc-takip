@@ -16,6 +16,16 @@ function _etiketHTML(etiket) {
 
 
 // ── ÖDÜLLER ──────────────────────────────────────────────────
+function toggleOdullerim() {
+  const body = document.getElementById('odullerim-body');
+  const chev = document.getElementById('odullerim-chevron');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chev) chev.style.transform = open ? '' : 'rotate(180deg)';
+  if (!open) odulleriniYukle();
+}
+
 async function odulleriniYukle() {
   const el = document.getElementById('odullerim-liste');
   if (!el) return;
