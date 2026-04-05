@@ -18,9 +18,10 @@ function _etiketHTML(etiket) {
 // ── ÖDÜLLER ──────────────────────────────────────────────────
 async function odulleriniYukle() {
   const el = document.getElementById('odullerim-liste');
-  if (!el) return;
+  if (!el) { console.log('ODUL: el yok'); return; }
   const uid = window.currentUserData?.uid || auth.currentUser?.uid;
-  if (!uid) return;
+  console.log('ODUL: uid=', uid, 'role=', currentRole);
+  if (!uid) { el.innerHTML = 'UID yok'; return; }
 
   try {
     const snap = await db.collection('oduller')
