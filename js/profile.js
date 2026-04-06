@@ -380,6 +380,32 @@ async function teacherOkulEkle() {
   } catch(e) { showToast('❌', 'Kaydedilemedi: ' + e.message); }
 }
 
+function teacherOkulSilOnayla(idx, okulAdi) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div onclick="event.stopPropagation()" style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px 20px;max-width:300px;width:100%;text-align:center">
+      <div style="font-size:2rem;margin-bottom:8px">🏫</div>
+      <div style="font-weight:800;font-size:1rem;margin-bottom:8px">Okulu Kaldır</div>
+      <div style="font-size:0.83rem;color:var(--text2);margin-bottom:20px;line-height:1.5">
+        <strong>${okulAdi}</strong> okulunu listeden kaldırmak istediğine emin misin?<br>
+        <span style="font-size:0.75rem">Bu okula atanmış öğrenciler etkilenmez.</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="this.closest('[style*=fixed]').remove()"
+          style="flex:1;padding:11px;border-radius:11px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:0.88rem;font-weight:600;cursor:pointer;font-family:inherit">
+          İptal
+        </button>
+        <button onclick="this.closest('[style*=fixed]').remove();teacherOkulSil(${idx})"
+          style="flex:1;padding:11px;border-radius:11px;border:none;background:#ff6584;color:#fff;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:inherit">
+          Kaldır
+        </button>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
 async function teacherOkulSil(idx) {
   const uid = auth.currentUser?.uid;
   if (!uid) return;
@@ -558,21 +584,30 @@ async function profilePage() {
     </div>
     ${isTeacher ? `
     <div class="card" style="margin-top:16px">
-      <div class="card-title">🏫 Çalıştığım Okullar</div>
-      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:12px">Öğrenci eklerken bu okullardan seçim yapılır</div>
-      <div id="teacherSchoolList" style="margin-bottom:12px">
-        ${(data.schools||[]).length === 0
-          ? '<div style="color:var(--text2);font-size:0.82rem;padding:8px 0">Henüz okul eklenmedi</div>'
-          : (data.schools||[]).map((s,i) => `
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:8px;margin-bottom:6px">
-              <span style="font-size:0.88rem">🏫 ${s}</span>
-              <button onclick="teacherOkulSil(${i})" style="background:none;border:none;color:#ff6584;cursor:pointer;font-size:0.8rem;padding:2px 6px">✕ Kaldır</button>
-            </div>`).join('')
-        }
+      <div onclick="var p=document.getElementById('okullarPanel');var open=p.style.display!=='none';p.style.display=open?'none':'block';this.querySelector('.okul-arrow').style.transform=open?'':'rotate(180deg)'"
+        style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;padding:2px 0">
+        <div>
+          <div class="card-title" style="margin-bottom:0">🏫 Çalıştığım Okullar</div>
+          <div style="font-size:0.72rem;color:var(--text2);margin-top:2px">${(data.schools||[]).length} okul kayıtlı</div>
+        </div>
+        <span class="okul-arrow" style="color:var(--text2);transition:transform 0.2s;font-size:0.8rem">▼</span>
       </div>
-      <div style="display:flex;gap:8px">
-        <input class="form-input" type="text" id="newSchoolInput" placeholder="Okul adı girin..." style="flex:1">
-        <button class="btn btn-primary" onclick="teacherOkulEkle()" style="white-space:nowrap">+ Ekle</button>
+      <div id="okullarPanel" style="display:none;margin-top:14px">
+        <div style="font-size:0.78rem;color:var(--text2);margin-bottom:12px">Öğrenci eklerken bu okullardan seçim yapılır.</div>
+        <div id="teacherSchoolList" style="margin-bottom:12px">
+          ${(data.schools||[]).length === 0
+            ? '<div style="color:var(--text2);font-size:0.82rem;padding:8px 0">Henüz okul eklenmedi.</div>'
+            : (data.schools||[]).map((s,i) => `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:8px;margin-bottom:6px">
+                <span style="font-size:0.88rem">🏫 ${s}</span>
+                <button onclick="teacherOkulSilOnayla(${i},'${s.replace(/'/g,"\\'")}')" style="background:none;border:none;color:#ff6584;cursor:pointer;font-size:0.8rem;padding:2px 6px">✕ Kaldır</button>
+              </div>`).join('')
+          }
+        </div>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" type="text" id="newSchoolInput" placeholder="Okul adı girin..." style="flex:1">
+          <button class="btn btn-primary" onclick="teacherOkulEkle()" style="white-space:nowrap">+ Ekle</button>
+        </div>
       </div>
     </div>
     ` : ''}
@@ -646,11 +681,6 @@ async function profilePage() {
     <div class="card" style="margin-top:16px" id="okul-arkadaslar-kart">
       <div class="card-title">🏫 Okul Arkadaşlarım</div>
       <div id="okul-arkadaslar-liste" style="color:var(--text2);font-size:0.85rem">Yükleniyor...</div>
-    </div>
-    <div class="card" style="margin-top:16px">
-      <button onclick="showPage('yardim')" class="btn btn-outline" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;font-size:0.88rem">
-        ❓ <span>Yardım &amp; Destek</span>
-      </button>
     </div>
     ` : ''}
   `;

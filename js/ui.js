@@ -218,6 +218,7 @@ function renderTeacherPage(id, el) {
     messagesPage('teacher').then(html => { el.innerHTML = html; });
   }
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
+  else if(id==='yardim') { el.innerHTML = yardimPage(); }
   else if(id==='profile') { profilePage().then(html => { el.innerHTML = html; setTimeout(initApiSettings, 50); if(currentRole==='student') { setTimeout(okulArkadaslariniYukle, 200); setTimeout(odulleriniYukle, 500); } }); }
   setTimeout(()=>drawCharts(), 50);
 }
