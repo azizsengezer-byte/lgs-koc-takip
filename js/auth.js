@@ -56,30 +56,38 @@ async function doLogin() {
 
     const cred = await auth.signInWithEmailAndPassword(email, pass);
 
-    // Öğretmen ise Firebase e-posta doğrulamasını kontrol et
+    // Öğretmen için doğrulama kontrolü:
+    // Sadece pendingRegistrations'da olan (yeni sisteme göre kayıt olmuş)
+    // kullanıcılara uygulanır. Mevcut/eski kullanıcılar doğrudan geçer.
     if (!email.endsWith('@lgskoc.app') && !cred.user.emailVerified) {
-      // Doğrulanmamış öğretmen — çıkış yap, doğrulama ekranını göster
-      await auth.signOut();
-      btn.textContent = 'Giriş Yap →'; btn.disabled = false;
+      // users koleksiyonunda var mı kontrol et
+      const usersDoc = await db.collection('users').doc(cred.user.uid).get();
 
-      // Doğrulama maili yeniden gönder
-      try {
-        const tempCred = await auth.signInWithEmailAndPassword(email, pass);
-        await tempCred.user.sendEmailVerification({
-          url: window.location.origin + window.location.pathname
-        });
+      if (!usersDoc.exists) {
+        // Yeni kullanıcı, henüz doğrulamamış — engelle
         await auth.signOut();
-      } catch(e2) {}
+        btn.textContent = 'Giriş Yap →'; btn.disabled = false;
 
-      const el = document.getElementById('dogrulamaEkrani');
-      if (el) {
-        el.style.display = 'flex';
-        const emailEl = document.getElementById('dogrulamaEmailGoster');
-        if (emailEl) emailEl.textContent = email;
-        window._dogrulamaEmail = email;
-        window._dogrulamaPass  = pass;
+        // Doğrulama maili yeniden gönder
+        try {
+          const tempCred = await auth.signInWithEmailAndPassword(email, pass);
+          await tempCred.user.sendEmailVerification({
+            url: window.location.origin + window.location.pathname
+          });
+          await auth.signOut();
+        } catch(e2) {}
+
+        const el = document.getElementById('dogrulamaEkrani');
+        if (el) {
+          el.style.display = 'flex';
+          const emailEl = document.getElementById('dogrulamaEmailGoster');
+          if (emailEl) emailEl.textContent = email;
+          window._dogrulamaEmail = email;
+          window._dogrulamaPass  = pass;
+        }
+        return;
       }
-      return;
+      // users'da varsa eski kullanıcı — doğrulamaya takılmadan geç
     }
 
     // onAuthStateChanged devralır

@@ -247,15 +247,8 @@ auth.onAuthStateChanged(async (user) => {
         }
       }
 
-      // Öğretmen doğrulanmamışsa engelle
-      const roleCheck = doc.data()?.role;
-      if (roleCheck === 'teacher' && !user.emailVerified) {
-        await auth.signOut();
-        document.getElementById('app').style.display = 'none';
-        document.getElementById('loginScreen').style.display = 'flex';
-        return;
-      }
-
+      // users koleksiyonunda olan kullanıcılar (eski veya yeni doğrulanmış)
+      // doğrulama kontrolüne takılmaz — pendingRegistrations mekanizması yeni kullanıcıları zaten filtreliyor
       const data = doc.data();
       currentRole = data.role || 'student';
       window.currentUserData = { ...data, uid: user.uid };
