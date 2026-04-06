@@ -5,11 +5,27 @@ function selectRole(r) {
 }
 
 function showRegister() {
-  // Kayıt formunu sıfırla - varsayılan seçim yok
-  document.getElementById('regRole').value = '';
-  document.getElementById('regRoleLabel').textContent = '— Rol seçin —';
-  document.getElementById('teacherFields').style.display = 'none';
-  document.getElementById('studentFields').style.display = 'none';
+  // Formu tamamen sıfırla
+  ['regName','regEmail','regPass','regPass2','regSchool'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('regRole').value = 'student';
+  document.getElementById('regBranch').value = '';
+  document.getElementById('regBranchLabel').textContent = '— Branş seçin —';
+  document.getElementById('regClass').value = '8';
+  document.getElementById('regClassLabel').textContent = '8. Sınıf';
+  const errEl = document.getElementById('regError');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  const msg = document.getElementById('sifreUyumMsg');
+  if (msg) msg.style.display = 'none';
+  // Şifre alanlarını gizli yap
+  ['regPass','regPass2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.type = 'password';
+  });
+  // Rol butonlarını sıfırla — öğrenci varsayılan
+  secRolKart('student');
   openModal('registerModal');
 }
 
@@ -110,6 +126,7 @@ async function doRegister() {
   if (btn) { btn.textContent = 'Kaydediliyor...'; btn.disabled = true; }
 
   try {
+    window._regPassTemp = pass; // "tekrar gönder" için geçici sakla
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
     await db.collection('users').doc(cred.user.uid).set({
       name, email, role, branch, school, classroom, photo:'', createdAt: new Date()
@@ -117,19 +134,21 @@ async function doRegister() {
 
     // Sadece öğretmenler için e-posta doğrulama
     if (role === 'teacher') {
+      // 1. Önce modalı aç — position:fixed olduğu için signOut'tan etkilenmez
+      closeModal('registerModal');
+      document.getElementById('dogrulamaEmail').textContent = email;
+      const dogModal = document.getElementById('dogrulamaModal');
+      if (dogModal) dogModal.style.display = 'flex';
+
+      // 2. Sonra mail gönder
       try {
         await cred.user.sendEmailVerification({
           url: window.location.origin + window.location.pathname
         });
       } catch(e) { console.log('Doğrulama maili hatası:', e.message); }
 
-      // Kullanıcıyı çıkart — onAuthStateChanged login ekranını gösterir
-      // Doğrulama modalı login ekranının üstünde açılır
+      // 3. En son çıkış yap — login ekranı açılır ama modal üstte kalır
       await auth.signOut();
-      closeModal('registerModal');
-      document.getElementById('dogrulamaEmail').textContent = email;
-      // Kısa gecikme ile modalı aç (login ekranı yüklensin)
-      setTimeout(() => openModal('dogrulamaModal'), 300);
     } else {
       closeModal('registerModal');
       showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
@@ -147,15 +166,27 @@ async function doRegister() {
   }
 }
 
+function dogrulamaKapat() {
+  const el = document.getElementById('dogrulamaModal');
+  if (el) el.style.display = 'none';
+}
+
 async function dogrulamaYeniden() {
+  // Kullanıcı sign-out edildiği için e-posta saklıyoruz ve tekrar gönderiyoruz
+  const email = document.getElementById('dogrulamaEmail')?.textContent || '';
+  const pass = window._regPassTemp || '';
+  if (!email || !pass) {
+    showToast('⚠️', 'Lütfen tekrar kayıt olun.');
+    dogrulamaKapat();
+    return;
+  }
   try {
-    const user = auth.currentUser;
-    if (user) {
-      await user.sendEmailVerification({ url: window.location.origin + window.location.pathname });
-      showToast('✅', 'Doğrulama e-postası tekrar gönderildi!');
-    }
+    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    await cred.user.sendEmailVerification({ url: window.location.origin + window.location.pathname });
+    await auth.signOut();
+    showToast('✅', 'Doğrulama e-postası tekrar gönderildi!');
   } catch(e) {
-    showToast('⚠️', 'Lütfen biraz bekleyip tekrar deneyin.');
+    showToast('⚠️', 'Gönderilemedi: ' + e.message);
   }
 }
 
