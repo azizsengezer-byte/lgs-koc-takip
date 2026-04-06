@@ -53,8 +53,51 @@ function openEntryForDay(dk) {
   openEntryFor(null);
 }
 
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  // Tam ekran modallar display:flex ile açılır
+  if (el.style.position === 'fixed' && !el.classList.contains('modal-overlay')) {
+    el.style.display = 'flex';
+  } else {
+    el.classList.add('open');
+  }
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.style.position === 'fixed' && !el.classList.contains('modal-overlay')) {
+    el.style.display = 'none';
+  } else {
+    el.classList.remove('open');
+  }
+  // Kayıt modalı kapanınca formu temizle
+  if (id === 'registerModal') {
+    setTimeout(() => {
+      ['regName','regEmail','regPass','regPass2','regSchool'].forEach(i => {
+        const el2 = document.getElementById(i); if (el2) el2.value = '';
+      });
+      ['regPass','regPass2'].forEach(i => { const el2 = document.getElementById(i); if(el2) el2.type = 'password'; });
+      const errEl = document.getElementById('regError');
+      if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+      const msg = document.getElementById('sifreUyumMsg');
+      if (msg) msg.style.display = 'none';
+      if (typeof secRolKart === 'function') secRolKart('student');
+    }, 250);
+  }
+  // Öğrenci ekleme formu temizle
+  if (id === 'addStudentModal') {
+    setTimeout(() => {
+      ['newStudentName','newStudentUsername','newStudentPass'].forEach(i => {
+        const el2 = document.getElementById(i); if (el2) el2.value = '';
+      });
+      const s = document.getElementById('usernameStatus'); if(s) s.textContent = '';
+      const m = document.getElementById('usernameMsg'); if(m) m.style.display = 'none';
+      const e = document.getElementById('addStudentError'); if(e) e.style.display = 'none';
+      const b = document.getElementById('addStudentBtn'); if(b) b.disabled = false;
+    }, 250);
+  }
+}
 
 function toggleEntryFields() {
   const type = document.getElementById('entryType').value;

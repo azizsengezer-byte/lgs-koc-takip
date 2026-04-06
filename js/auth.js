@@ -1,3 +1,124 @@
+// ── EmailJS OTP Konfigürasyonu ─────────────────────────────────
+// emailjs.com'da ücretsiz hesap aç, aşağıdaki değerleri doldur:
+const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
+const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
+// EmailJS template değişkenleri: {{to_email}}, {{otp_code}}, {{user_name}}
+
+let _otpCode = '';
+let _otpEmail = '';
+let _otpPendingUid = '';
+let _otpPendingData = null;
+let _otpTimerInterval = null;
+
+function _otpGenerate() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function _otpSend(email, code, name) {
+  if (typeof emailjs === 'undefined') return false;
+  try {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: email, otp_code: code, user_name: name || 'Kullanıcı'
+    });
+    return true;
+  } catch(e) { console.log('EmailJS hata:', e); return false; }
+}
+
+async function _otpStore(uid, code) {
+  const expires = new Date(Date.now() + 10 * 60 * 1000);
+  await db.collection('otpVerifications').doc(uid).set({
+    code, expires, used: false, createdAt: new Date()
+  });
+}
+
+function _otpTimerStart() {
+  let sn = 120;
+  const el = document.getElementById('otpTimer');
+  const rb = document.getElementById('otpResendBtn');
+  clearInterval(_otpTimerInterval);
+  _otpTimerInterval = setInterval(() => {
+    sn--;
+    if (el) {
+      const m = Math.floor(sn/60).toString().padStart(2,'0');
+      const s = (sn%60).toString().padStart(2,'0');
+      el.textContent = m+':'+s;
+    }
+    if (sn <= 0) {
+      clearInterval(_otpTimerInterval);
+      if (el) el.textContent = '00:00';
+      if (rb) { rb.disabled=false; rb.style.color='#6c63ff'; rb.style.borderColor='#6c63ff44'; rb.style.cursor='pointer'; }
+    }
+  }, 1000);
+}
+
+function otpInput(el, idx) {
+  el.value = el.value.replace(/[^0-9]/g,'');
+  const boxes = document.querySelectorAll('.otp-box');
+  if (el.value && idx < 5) boxes[idx+1].focus();
+}
+
+function otpKey(e, el, idx) {
+  const boxes = document.querySelectorAll('.otp-box');
+  if (e.key === 'Backspace' && !el.value && idx > 0) { boxes[idx-1].focus(); boxes[idx-1].value=''; }
+}
+
+function otpGeriDon() {
+  document.getElementById('otpModal').style.display = 'none';
+  clearInterval(_otpTimerInterval);
+}
+
+async function otpDogrula() {
+  const boxes = document.querySelectorAll('.otp-box');
+  const girilen = Array.from(boxes).map(b=>b.value).join('');
+  const errEl = document.getElementById('otpError');
+  errEl.style.display = 'none';
+  if (girilen.length < 6) { errEl.textContent = 'Lütfen 6 haneli kodu eksiksiz gir.'; errEl.style.display='block'; return; }
+  if (girilen !== _otpCode) {
+    errEl.textContent = 'Kod yanlış. Tekrar dene.';
+    errEl.style.display = 'block';
+    boxes.forEach(b => { b.style.borderColor='#ff6584'; b.value=''; });
+    setTimeout(()=>{ boxes.forEach(b=>b.style.borderColor='#e0e2eb'); boxes[0].focus(); }, 1200);
+    return;
+  }
+  try {
+    await db.collection('otpVerifications').doc(_otpPendingUid).update({ used:true, verifiedAt:new Date() });
+    await db.collection('users').doc(_otpPendingUid).update({ emailVerified:true });
+  } catch(e) {}
+  clearInterval(_otpTimerInterval);
+  document.getElementById('otpModal').style.display = 'none';
+  showToast('🎉', 'Hesabın doğrulandı! Şimdi giriş yapabilirsin.');
+}
+
+async function otpTekrarGonder() {
+  const rb = document.getElementById('otpResendBtn');
+  if (rb) { rb.disabled=true; rb.style.color='#ccc'; rb.style.cursor='not-allowed'; }
+  _otpCode = _otpGenerate();
+  try {
+    await _otpStore(_otpPendingUid, _otpCode);
+    const sent = await _otpSend(_otpEmail, _otpCode, (_otpPendingData||{}).name||'');
+    if (!sent) showToast('🔑', 'Geliştirme modu — OTP: '+_otpCode, 8000);
+    _otpTimerStart();
+    document.querySelectorAll('.otp-box').forEach(b=>b.value='');
+    document.getElementById('otpError').style.display='none';
+    showToast('✅', 'Yeni kod gönderildi!');
+  } catch(e) { showToast('⚠️', 'Gönderilemedi.'); }
+}
+
+function _otpEkraniAc(email) {
+  const el = document.getElementById('otpModal');
+  if (!el) return;
+  el.style.display = 'flex';
+  document.getElementById('otpEmail').textContent = email;
+  document.querySelectorAll('.otp-box').forEach(b=>b.value='');
+  document.getElementById('otpError').style.display='none';
+  const rb = document.getElementById('otpResendBtn');
+  if (rb) { rb.disabled=true; rb.style.color='#ccc'; rb.style.borderColor='#e0e2eb'; rb.style.cursor='not-allowed'; }
+  _otpTimerStart();
+  setTimeout(()=>document.querySelector('.otp-box')?.focus(), 300);
+}
+
 function selectRole(r) {
   currentRole = r;
   document.getElementById('roleTeacher').classList.toggle('active', r==='teacher');
@@ -132,23 +253,20 @@ async function doRegister() {
       name, email, role, branch, school, classroom, photo:'', createdAt: new Date()
     });
 
-    // Sadece öğretmenler için e-posta doğrulama
+    // Sadece öğretmenler için OTP doğrulama
     if (role === 'teacher') {
-      // 1. Önce modalı aç — position:fixed olduğu için signOut'tan etkilenmez
-      closeModal('registerModal');
-      document.getElementById('dogrulamaEmail').textContent = email;
-      const dogModal = document.getElementById('dogrulamaModal');
-      if (dogModal) dogModal.style.display = 'flex';
-
-      // 2. Sonra mail gönder
+      _otpCode = _otpGenerate();
+      _otpEmail = email;
+      _otpPendingUid = cred.user.uid;
+      _otpPendingData = { name };
       try {
-        await cred.user.sendEmailVerification({
-          url: window.location.origin + window.location.pathname
-        });
-      } catch(e) { console.log('Doğrulama maili hatası:', e.message); }
-
-      // 3. En son çıkış yap — login ekranı açılır ama modal üstte kalır
+        await _otpStore(cred.user.uid, _otpCode);
+        const sent = await _otpSend(email, _otpCode, name);
+        if (!sent) showToast('🔑', 'EmailJS kurulmadı — geliştirme kodu: '+_otpCode, 8000);
+      } catch(e) { console.log('OTP hata:', e); }
       await auth.signOut();
+      closeModal('registerModal');
+      setTimeout(()=>_otpEkraniAc(email), 350);
     } else {
       closeModal('registerModal');
       showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
