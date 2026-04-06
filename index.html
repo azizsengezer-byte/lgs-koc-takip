@@ -57,7 +57,13 @@
     <input class="login-input" type="password" placeholder="Şifre" id="loginPass">
     <div id="loginError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none;text-align:left;padding:0 4px"></div>
     <button class="login-btn" onclick="doLogin()" id="loginBtn" aria-label="Giriş Yap">Giriş Yap →</button>
-    <div style="margin-top:16px;text-align:center">
+    <div style="margin-top:14px;text-align:center">
+      <button onclick="showSifremiUnuttum()"
+        style="background:none;border:none;color:var(--text2);font-size:0.78rem;cursor:pointer;font-family:'Nunito',sans-serif;text-decoration:underline;text-underline-offset:2px;opacity:0.75">
+        Şifremi unuttum
+      </button>
+    </div>
+    <div style="margin-top:10px;text-align:center">
       <span style="font-size:0.82rem;color:var(--text2)">Hesabın yok mu? </span>
       <button onclick="showRegister()" style="background:none;border:none;color:var(--accent);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">Kayıt Ol</button>
     </div>
