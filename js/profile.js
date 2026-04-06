@@ -523,6 +523,18 @@ async function profilePage() {
   return `
     <div class="page-title">👤 Profilim</div>
     <div class="page-sub">Hesap bilgileri ve ayarlar</div>
+    ${isTeacher ? `
+    <div onclick="showPage('satin-al')" style="display:flex;align-items:center;justify-content:space-between;
+      padding:14px 16px;background:linear-gradient(135deg,#6c63ff,#4cc9f0);
+      border-radius:16px;margin-bottom:16px;cursor:pointer;gap:12px">
+      <div>
+        <div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.8);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px">Abonelik</div>
+        <div style="font-size:0.95rem;font-weight:800;color:#fff">Planını Yükselt 🚀</div>
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.75);margin-top:2px">Daha fazla öğrenci, daha fazla özellik</div>
+      </div>
+      <span style="color:rgba(255,255,255,0.9);font-size:1.4rem;flex-shrink:0">›</span>
+    </div>
+    ` : ''}
     <div class="card" style="text-align:center;padding:32px 20px">
       ${photoHTML}
       <div style="font-size:1.2rem;font-weight:800;margin-bottom:4px">${name}</div>
