@@ -164,14 +164,21 @@ function renderStudentPage(id, el) {
   else if(id==='kazanimlar') el.innerHTML = studentKazanimlar();
   else if(id==='my-tasks') el.innerHTML = studentTasks();
   else if(id==='wellness') {
+    if (window.RC_WELLNESS_AKTIF === false) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">Bu özellik şu an kullanılamıyor.</div>'; return; }
     loadWellnessFromFirestore().then(()=>{
       el.innerHTML = wellnessPage();
       // Render sonrası doğrulama — bugünün tarihi ile uyumsuz veri varsa temizle
       _wellnessDateGuard();
     });
   }
-  else if(id==='macera') { el.innerHTML = maceraPage(); _colonyPostRender(); }
-  else if(id==='market') { el.innerHTML = marketPage(); }
+  else if(id==='macera') {
+    if (window.RC_MACERA_AKTIF === false) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">Bu özellik şu an kullanılamıyor.</div>'; return; }
+    el.innerHTML = maceraPage(); _colonyPostRender();
+  }
+  else if(id==='market') {
+    if (window.RC_MARKET_AKTIF === false) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">Bu özellik şu an kullanılamıyor.</div>'; return; }
+    el.innerHTML = marketPage();
+  }
   else if(id==='lgs-dagilim') el.innerHTML = lgsDagilimPage();
   else if(id==='all-denemeler') el.innerHTML = allDenemelerPage();
   else if(id==='messages') {

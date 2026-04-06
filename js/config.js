@@ -77,13 +77,14 @@ function renderMobileNav() {
     {id:'tasks-teacher',icon:'📋',label:'Görevler'},
     {id:'messages',icon:'💬',label:'Mesaj'},
   ];
-  const studentNav = [
-    {id:'dashboard',icon:'🏠',label:'Ana Sayfa'},
-    {id:'daily-entry',icon:'✏️',label:'Giriş Yap'},
-    {id:'macera',icon:'🚀',label:'Koloni'},
-    {id:'my-tasks',icon:'📋',label:'Ödevler'},
-    {id:'market',icon:'🛒',label:'Market'},
+  const studentNavAll = [
+    {id:'dashboard',  icon:'🏠', label:'Ana Sayfa'},
+    {id:'daily-entry',icon:'✏️', label:'Giriş Yap'},
+    ...(window.RC_MACERA_AKTIF !== false ? [{id:'macera', icon:'🚀', label:'Koloni'}] : []),
+    {id:'my-tasks',   icon:'📋', label:'Ödevler'},
+    ...(window.RC_MARKET_AKTIF !== false ? [{id:'market', icon:'🛒', label:'Market'}] : []),
   ];
+  const studentNav = studentNavAll;
   const items = currentRole==='teacher' ? teacherNav : studentNav;
   const unreadMsg = (currentRole==='teacher' ? teacherNotifs : studentNotifs).filter(n=>!n.read&&n.type==='message').length;
   const pendingTaskCount = currentRole==='student' ? tasks.filter(t=>!t.done).length : 0;
@@ -224,26 +225,93 @@ remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 saat cache
 
 // Varsayılan değerler — Remote Config'e erişilemezse bunlar kullanılır
 remoteConfig.defaultConfig = {
-  lgs_tarihi:    '2026-06-13T09:30:00+03:00',
-  lgs_sinav_adi: '2026 LGS',
+  // Sınav
+  lgs_tarihi:          '2026-06-13T09:30:00+03:00',
+  lgs_sinav_adi:       '2026 LGS',
+  lgs_turkce_soru:     '40',
+  lgs_mat_soru:        '40',
+  lgs_fen_soru:        '20',
+  lgs_inkilap_soru:    '10',
+  lgs_ing_soru:        '10',
+  lgs_din_soru:        '10',
+  // Özellik flag'leri (true/false string)
+  macera_aktif:        'true',
+  market_aktif:        'true',
+  ai_rapor_aktif:      'true',
+  wellness_aktif:      'true',
+  // Oyun değerleri
+  gunluk_soru_hedefi:  '200',
+  seri_bonus_gun:      '7',
+  max_ogrenci_sayisi:  '30',
+  // Duyuru
+  duyuru_aktif:        'false',
+  duyuru_metni:        '',
+  duyuru_tipi:         'info',
 };
 
-// Global — ui.js'deki startCountdown buradan okur
-window.LGS_TARIHI    = remoteConfig.defaultConfig.lgs_tarihi;
-window.LGS_SINAV_ADI = remoteConfig.defaultConfig.lgs_sinav_adi;
+// Remote Config değerlerine kolay erişim
+function RC(key) {
+  return remoteConfig.getValue(key).asString() || remoteConfig.defaultConfig[key] || '';
+}
+function RCBool(key) {
+  const v = RC(key);
+  return v === 'true' || v === '1';
+}
+function RCNum(key) {
+  return parseInt(RC(key)) || parseInt(remoteConfig.defaultConfig[key]) || 0;
+}
+
+// Global değişkenler — tüm dosyalar buradan okur
+window.LGS_TARIHI          = remoteConfig.defaultConfig.lgs_tarihi;
+window.LGS_SINAV_ADI       = remoteConfig.defaultConfig.lgs_sinav_adi;
+window.RC_MACERA_AKTIF     = true;
+window.RC_MARKET_AKTIF     = true;
+window.RC_AI_RAPOR_AKTIF   = true;
+window.RC_WELLNESS_AKTIF   = true;
+window.RC_GUNLUK_HEDEF     = 200;
+window.RC_SERI_BONUS_GUN   = 7;
+window.RC_MAX_OGRENCI      = 30;
+window.RC_DUYURU_AKTIF     = false;
+window.RC_DUYURU_METNI     = '';
+window.RC_DUYURU_TIPI      = 'info';
 
 // Uygulama açılışında Remote Config'i çek
 async function remoteConfigYukle() {
   try {
     await remoteConfig.fetchAndActivate();
-    window.LGS_TARIHI    = remoteConfig.getString('lgs_tarihi')    || window.LGS_TARIHI;
-    window.LGS_SINAV_ADI = remoteConfig.getString('lgs_sinav_adi') || window.LGS_SINAV_ADI;
-    console.log('Remote Config yüklendi. LGS:', window.LGS_TARIHI);
+    window.LGS_TARIHI        = RC('lgs_tarihi')         || window.LGS_TARIHI;
+    window.LGS_SINAV_ADI     = RC('lgs_sinav_adi')      || window.LGS_SINAV_ADI;
+    window.RC_MACERA_AKTIF   = RCBool('macera_aktif');
+    window.RC_MARKET_AKTIF   = RCBool('market_aktif');
+    window.RC_AI_RAPOR_AKTIF = RCBool('ai_rapor_aktif');
+    window.RC_WELLNESS_AKTIF = RCBool('wellness_aktif');
+    window.RC_GUNLUK_HEDEF   = RCNum('gunluk_soru_hedefi');
+    window.RC_SERI_BONUS_GUN = RCNum('seri_bonus_gun');
+    window.RC_MAX_OGRENCI    = RCNum('max_ogrenci_sayisi');
+    window.RC_DUYURU_AKTIF   = RCBool('duyuru_aktif');
+    window.RC_DUYURU_METNI   = RC('duyuru_metni');
+    window.RC_DUYURU_TIPI    = RC('duyuru_tipi');
+    console.log('Remote Config yüklendi.');
   } catch(e) {
     console.log('Remote Config alınamadı, varsayılan kullanılıyor:', e.message);
   }
 }
-remoteConfigYukle();
+remoteConfigYukle().then(() => {
+  // Duyuru varsa göster
+  if (window.RC_DUYURU_AKTIF && window.RC_DUYURU_METNI) {
+    const renkler = {
+      info:    { bg:'#6c63ff18', border:'#6c63ff44', text:'#4340cc', icon:'ℹ️' },
+      warning: { bg:'#f9ca2418', border:'#f9ca2444', text:'#a16207', icon:'⚠️' },
+      success: { bg:'#43e97b18', border:'#43e97b44', text:'#2d9e5a', icon:'✅' },
+    };
+    const r = renkler[window.RC_DUYURU_TIPI] || renkler.info;
+    const div = document.createElement('div');
+    div.id = 'rc-duyuru';
+    div.style.cssText = `position:fixed;top:0;left:0;right:0;z-index:9000;background:${r.bg};border-bottom:1px solid ${r.border};padding:10px 16px;display:flex;align-items:center;gap:10px`;
+    div.innerHTML = `<span style="font-size:1rem">${r.icon}</span><span style="flex:1;font-size:0.82rem;color:${r.text};font-weight:600">${window.RC_DUYURU_METNI}</span><button onclick="document.getElementById('rc-duyuru').remove()" style="background:none;border:none;color:${r.text};cursor:pointer;font-size:1.1rem;padding:2px 6px">✕</button>`;
+    document.body.appendChild(div);
+  }
+});
 
 // Auth state listener
 auth.onAuthStateChanged(async (user) => {

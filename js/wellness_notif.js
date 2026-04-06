@@ -2,7 +2,7 @@ function checkAllWellnessNotifications(studentUid, data, todayKey) {
   const days   = data.days || {};
   const today  = days[todayKey] || {};
   const name   = (window.currentUserData||{}).name?.split(' ')[0] || 'Sen';
-  const GOAL   = 200;
+  const GOAL   = window.RC_GUNLUK_HEDEF || 200;
 
   const kaygi  = parseFloat(today.kaygi) || 0;
   const enerji = parseFloat(today.enerji) || 0;

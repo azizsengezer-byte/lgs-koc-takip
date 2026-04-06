@@ -466,7 +466,8 @@ async function saveNewStudent() {
   if (username.length < 3) { errEl.textContent = 'Kullanıcı adı en az 3 karakter olmalı.'; errEl.style.display='block'; return; }
   if (!school) { errEl.textContent = 'Lütfen bir okul seçin.'; errEl.style.display='block'; return; }
   if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
-  if (students.length >= 30) { errEl.textContent = 'En fazla 30 öğrenci eklenebilir.'; errEl.style.display='block'; return; }
+  const maxOgr = window.RC_MAX_OGRENCI || 30;
+  if (students.length >= maxOgr) { errEl.textContent = `En fazla ${maxOgr} öğrenci eklenebilir.`; errEl.style.display='block'; return; }
 
   const errBtn = document.getElementById('addStudentBtn');
   if (errBtn) { errBtn.textContent = 'Ekleniyor...'; errBtn.disabled = true; }
