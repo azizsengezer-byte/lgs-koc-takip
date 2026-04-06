@@ -125,6 +125,8 @@ async function doRegister() {
     // Profil verisini hazırla
     const profileData = {
       name, email, role, branch, school, classroom,
+      // schools array — profil sayfası buradan okur
+      schools: (role === 'teacher' && school) ? [school] : [],
       photo: '', createdAt: new Date()
     };
 
