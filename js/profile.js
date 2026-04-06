@@ -534,20 +534,6 @@ async function profilePage() {
         <button class="btn btn-primary" onclick="teacherOkulEkle()" style="white-space:nowrap">+ Ekle</button>
       </div>
     </div>
-    <div class="card" style="margin-top:16px;border:1.5px solid #6c63ff22">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:36px;height:36px;border-radius:10px;background:#6c63ff18;display:flex;align-items:center;justify-content:center">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="#6c63ff" stroke-width="1.4"/><path d="M6 9h6M9 6v6" stroke="#6c63ff" stroke-width="1.4" stroke-linecap="round"/></svg>
-          </div>
-          <div>
-            <div class="card-title" style="margin-bottom:0">Claude AI Rapor Analizi</div>
-            <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Psikolojik raporlarda yapay zeka yorumlaması</div>
-          </div>
-        </div>
-        <span style="font-size:0.72rem;padding:3px 10px;border-radius:20px;font-weight:700;background:#6c63ff22;color:#6c63ff">AKTİF</span>
-      </div>
-    </div>
     ` : ''}
     <div class="card" style="margin-top:16px">
       <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.sifre-arrow').style.transform=this.nextElementSibling.style.display==='block'?'rotate(180deg)':'rotate(0deg)'"
