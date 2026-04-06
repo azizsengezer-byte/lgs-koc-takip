@@ -204,6 +204,7 @@ function renderStudentPage(id, el) {
     });
   }
   else if(id==='badges' || id==='rozet') { showBadgesPage(); }
+  else if(id==='yardim') { el.innerHTML = yardimPage(); }
   setTimeout(()=>drawCharts(), 50);
 }
 
@@ -998,3 +999,121 @@ function exportStudentPDF() {
   pdfDownload(doc, fname2);
 }
 
+
+// ── YARDIM & DESTEK SAYFASI ───────────────────────────────────
+function yardimPage() {
+  const sss = [
+    {
+      s: 'Şifremi unuttum, ne yapmalıyım?',
+      c: 'Giriş ekranındaki <strong>"Şifremi unuttum"</strong> bağlantısına tıkla. E-postana sıfırlama maili gönderilecek. Henüz e-posta eklemediysen önce <strong>Profil → E-posta Adresi</strong> bölümünden ekle.'
+    },
+    {
+      s: 'Kullanıcı adımı nasıl değiştirebilirim?',
+      c: 'Kullanıcı adın koçun tarafından oluşturulmuştur ve değiştirilemez. Adını değiştirmek için <strong>Profil → Bilgilerimi Düzenle</strong> bölümünü kullan.'
+    },
+    {
+      s: 'Günlük çalışmamı nereye gireceğim?',
+      c: 'Alt menüdeki <strong>"Günlük Giriş"</strong> sekmesinden çalıştığın ders, konu ve doğru/yanlış sayılarını girebilirsin. Giriş yaptıktan sonra istatistiklerin Analizim sayfasında görünür.'
+    },
+    {
+      s: 'Rozet nasıl kazanırım?',
+      c: 'Düzenli çalışma girişi yap, günlük hedeflerini tamamla ve wellness takibini düzenli doldur. Rozetler koşullar sağlandığında otomatik kazanılır. Tüm rozetleri <strong>Profil → Rozetlerim</strong> bölümünden görebilirsin.'
+    },
+    {
+      s: 'Koçuma nasıl mesaj gönderebilirim?',
+      c: 'Alt menüdeki <strong>"Mesajlar"</strong> sekmesinden koçunla doğrudan mesajlaşabilirsin. Okul arkadaşlarınla da buradan iletişime geçebilirsin.'
+    },
+    {
+      s: 'Deneme sınavı sonuçlarımı nereye gireceğim?',
+      c: '<strong>"Günlük Giriş"</strong> sayfasında tür olarak <strong>"Deneme Sınavı"</strong> seçerek her ders için doğru/yanlış/boş sayılarını girebilirsin.'
+    },
+    {
+      s: 'Uygulama verilerimi başka cihazda görebilir miyim?',
+      c: 'Evet! Tüm veriler bulutta güvenli şekilde saklanır. Aynı hesapla farklı telefon veya bilgisayardan giriş yaparak erişebilirsin.'
+    },
+    {
+      s: 'Bildirimler çalışmıyor, ne yapmalıyım?',
+      c: 'Telefon ayarlarından uygulama bildirimine izin verildiğini kontrol et. Tarayıcı kullanıyorsan site izinlerinde bildirimlere izin ver. Hâlâ sorun yaşıyorsan tarayıcıyı yeniden başlat.'
+    },
+  ];
+
+  return `
+    <div class="page-title">❓ Yardım &amp; Destek</div>
+    <div class="page-sub">Sık sorulan sorular ve iletişim</div>
+
+    <!-- Hızlı eylemler -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;margin-bottom:4px">
+      <button onclick="showPage('profile')"
+        style="padding:14px 10px;background:var(--surface);border:1px solid var(--border);border-radius:14px;cursor:pointer;font-family:inherit;text-align:center">
+        <div style="font-size:1.4rem;margin-bottom:4px">👤</div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--text)">Profilim</div>
+        <div style="font-size:0.68rem;color:var(--text2)">E-posta & şifre</div>
+      </button>
+      <button onclick="showPage('messages')"
+        style="padding:14px 10px;background:var(--surface);border:1px solid var(--border);border-radius:14px;cursor:pointer;font-family:inherit;text-align:center">
+        <div style="font-size:1.4rem;margin-bottom:4px">💬</div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--text)">Mesajlar</div>
+        <div style="font-size:0.68rem;color:var(--text2)">Koçuna yaz</div>
+      </button>
+    </div>
+
+    <!-- SSS -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">📋 Sık Sorulan Sorular</div>
+      ${sss.map((item, i) => `
+        <div style="border-bottom:1px solid var(--border)">
+          <div onclick="(function(i){var c=document.getElementById('sssP'+i);var a=document.getElementById('sssA'+i);var open=c.style.maxHeight!=='0px'&&c.style.maxHeight!=='';c.style.maxHeight=open?'0px':'200px';c.style.opacity=open?'0':'1';a.style.transform=open?'':'rotate(180deg)'})(${i})"
+            style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;cursor:pointer;user-select:none;gap:8px">
+            <span style="font-size:0.86rem;font-weight:700;flex:1;line-height:1.4">${item.s}</span>
+            <span id="sssA${i}" style="color:var(--text2);font-size:0.75rem;flex-shrink:0;transition:transform 0.25s">▼</span>
+          </div>
+          <div id="sssP${i}" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease,opacity 0.25s;opacity:0">
+            <div style="font-size:0.8rem;color:var(--text2);padding-bottom:13px;line-height:1.65">${item.c}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <!-- İletişim -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">📬 Bize Ulaş</div>
+      <div style="font-size:0.8rem;color:var(--text2);margin-bottom:14px;line-height:1.6">
+        Sorun yaşıyorsan veya öneride bulunmak istiyorsan bize ulaşabilirsin.
+      </div>
+      <a href="mailto:destek@lgskoc.app"
+        style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface2);border-radius:12px;text-decoration:none;margin-bottom:10px;border:1px solid var(--border)">
+        <div style="width:40px;height:40px;border-radius:11px;background:var(--accent)18;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0">📧</div>
+        <div>
+          <div style="font-size:0.88rem;font-weight:700;color:var(--text)">E-posta ile Yaz</div>
+          <div style="font-size:0.75rem;color:var(--accent);margin-top:1px">destek@lgskoc.app</div>
+        </div>
+        <span style="margin-left:auto;color:var(--text2);font-size:0.8rem">›</span>
+      </a>
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);cursor:pointer" onclick="showPage('messages')">
+        <div style="width:40px;height:40px;border-radius:11px;background:var(--accent)18;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0">👨‍🏫</div>
+        <div>
+          <div style="font-size:0.88rem;font-weight:700;color:var(--text)">Koçuna Yaz</div>
+          <div style="font-size:0.75rem;color:var(--text2);margin-top:1px">Mesajlar sekmesinden ulaş</div>
+        </div>
+        <span style="margin-left:auto;color:var(--text2);font-size:0.8rem">›</span>
+      </div>
+    </div>
+
+    <!-- Uygulama bilgisi -->
+    <div class="card" style="margin-top:16px;text-align:center;padding:20px">
+      <div style="font-size:0.75rem;color:var(--text2);line-height:2">
+        <span style="font-weight:800;color:var(--accent);font-size:0.88rem">LGSKoç</span> — Öğrenci Takip Sistemi<br>
+        LGS hazırlık sürecinde koçluk &amp; takip için tasarlandı.
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap">
+        <button onclick="showPage('profile')"
+          style="padding:9px 16px;border-radius:10px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit">
+          ← Profile Dön
+        </button>
+        <button onclick="showPage('dashboard')"
+          style="padding:9px 16px;border-radius:10px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit">
+          🏠 Ana Sayfa
+        </button>
+      </div>
+    </div>
+  `;
+}

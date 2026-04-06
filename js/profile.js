@@ -448,6 +448,112 @@ function denemeSoruKontrol(ders) {
   }
 }
 
+// ── ÖĞRENCI E-POSTA EKLEME / DOĞRULAMA ──────────────────────
+async function ogrenciEmailEkle() {
+  const email = (document.getElementById('ogrenciEmailInput')?.value || '').trim();
+  const msgEl = document.getElementById('ogrenciEmailMsg');
+  const btn   = document.getElementById('ogrenciEmailBtn');
+  if (!msgEl || !btn) return;
+
+  msgEl.style.display = 'none';
+
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    msgEl.textContent = '❌ Geçerli bir e-posta adresi girin.';
+    msgEl.style.cssText = 'display:block;background:#ff658415;color:#cc3355;font-size:0.78rem;margin-top:10px;line-height:1.5;padding:8px 10px;border-radius:8px';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Gönderiliyor...';
+
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Oturum bulunamadı.');
+
+    // Firestore'a bekleyen e-postayı kaydet
+    await db.collection('users').doc(user.uid).update({
+      recoveryEmail: email,
+      recoveryEmailVerified: false
+    });
+    window.currentUserData = {
+      ...(window.currentUserData || {}),
+      recoveryEmail: email,
+      recoveryEmailVerified: false
+    };
+
+    // Firebase Auth üzerinden doğrulama maili gönder
+    await user.verifyBeforeUpdateEmail(email);
+
+    msgEl.innerHTML = '✅ Doğrulama maili <strong>' + email + '</strong> adresine gönderildi.<br>Maildeki bağlantıya tıkladıktan sonra "Durumu Kontrol Et" butonuna bas.';
+    msgEl.style.cssText = 'display:block;background:#43e97b15;color:#1a7a45;font-size:0.78rem;margin-top:10px;line-height:1.5;padding:8px 10px;border-radius:8px';
+    btn.disabled = false;
+    btn.textContent = 'Yeniden Gönder';
+
+    // Kontrol butonunu göster
+    const kontrol = document.getElementById('ogrenciEmailKontrolBtn');
+    if (kontrol) kontrol.style.display = 'flex';
+
+  } catch(e) {
+    const msgs = {
+      'auth/email-already-in-use':  'Bu e-posta zaten başka bir hesapta kullanılıyor.',
+      'auth/requires-recent-login': 'Güvenlik için tekrar giriş yapıp dene.',
+      'auth/invalid-email':         'Geçersiz e-posta adresi.',
+      'auth/operation-not-allowed': 'Bu işlem şu an aktif değil.',
+    };
+    msgEl.textContent = '❌ ' + (msgs[e.code] || e.message);
+    msgEl.style.cssText = 'display:block;background:#ff658415;color:#cc3355;font-size:0.78rem;margin-top:10px;line-height:1.5;padding:8px 10px;border-radius:8px';
+    btn.disabled = false;
+    btn.textContent = 'Ekle';
+  }
+}
+
+async function ogrenciEmailDurumKontrol() {
+  const btn   = document.getElementById('ogrenciEmailKontrolBtn');
+  const msgEl = document.getElementById('ogrenciEmailMsg');
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Kontrol ediliyor...'; }
+
+  try {
+    await auth.currentUser.reload();
+    const user = auth.currentUser;
+    const currentEmail = user?.email || '';
+    const isFake = currentEmail.endsWith('@lgskoc.app');
+
+    if (!isFake && currentEmail) {
+      // E-posta Auth'ta güncellendi → doğrulandı
+      await db.collection('users').doc(user.uid).update({
+        recoveryEmail: currentEmail,
+        recoveryEmailVerified: true,
+        email: currentEmail
+      });
+      window.currentUserData = {
+        ...(window.currentUserData || {}),
+        recoveryEmail: currentEmail,
+        recoveryEmailVerified: true,
+        email: currentEmail
+      };
+
+      if (msgEl) {
+        msgEl.innerHTML = '🎉 E-posta başarıyla doğrulandı ve hesabına bağlandı!';
+        msgEl.style.cssText = 'display:block;background:#43e97b15;color:#1a7a45;font-size:0.78rem;margin-top:10px;line-height:1.5;padding:8px 10px;border-radius:8px';
+      }
+      // Kartı yenile (2sn sonra profili yenile)
+      setTimeout(() => showPage('profile'), 1800);
+    } else {
+      if (msgEl) {
+        msgEl.innerHTML = '⏳ Henüz doğrulanmamış. Mailine gelen bağlantıya tıkladıktan sonra tekrar kontrol et.';
+        msgEl.style.cssText = 'display:block;background:#f9ca2412;color:#a07800;font-size:0.78rem;margin-top:10px;line-height:1.5;padding:8px 10px;border-radius:8px';
+      }
+      if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Durumu Kontrol Et'; }
+    }
+  } catch(e) {
+    if (msgEl) {
+      msgEl.textContent = '❌ Kontrol edilemedi: ' + e.message;
+      msgEl.style.cssText = 'display:block;background:#ff658415;color:#cc3355;font-size:0.78rem;margin-top:10px;line-height:1.5;padding:8px 10px;border-radius:8px';
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Durumu Kontrol Et'; }
+  }
+}
+
 async function profilePage() {
   const user = auth.currentUser;
   const name = document.getElementById('menuName')?.textContent;
@@ -535,6 +641,58 @@ async function profilePage() {
       </div>
     </div>
     ` : ''}
+    ${!isTeacher ? `
+    <div class="card" style="margin-top:16px" id="emailKarti">
+      <div onclick="var p=document.getElementById('emailKartiPanel');var open=p.style.display!=='none';p.style.display=open?'none':'block';this.querySelector('.email-arrow').style.transform=open?'':'rotate(180deg)'"
+        style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;user-select:none">
+        <span class="card-title" style="margin-bottom:0">📧 E-posta Adresi</span>
+        <span class="email-arrow" style="color:var(--text2);transition:transform 0.2s;font-size:0.8rem">▼</span>
+      </div>
+      <div id="emailKartiPanel" style="display:none;margin-top:14px">
+        <div style="font-size:0.78rem;color:var(--text2);margin-bottom:12px;line-height:1.6">
+          Şifreni unutursan sıfırlayabilmek için gerçek bir e-posta adresi ekle.
+        </div>
+        ${(()=>{
+          const rEmail = data.recoveryEmail || '';
+          const verified = data.recoveryEmailVerified === true;
+          const fakeEmail = (data.email || '').endsWith('@lgskoc.app');
+          if (!fakeEmail && data.email) {
+            return `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#43e97b12;border:1px solid #43e97b33;border-radius:10px">
+              <span style="font-size:1.1rem">✅</span>
+              <div>
+                <div style="font-size:0.82rem;font-weight:700;color:#1a7a45">${data.email}</div>
+                <div style="font-size:0.72rem;color:#1a7a45;opacity:0.8">Doğrulandı — şifre sıfırlama aktif</div>
+              </div>
+            </div>`;
+          }
+          if (rEmail && !verified) {
+            return `<div style="padding:10px 12px;background:#f9ca2412;border:1px solid #f9ca2433;border-radius:10px;margin-bottom:12px">
+              <div style="font-size:0.8rem;font-weight:700;color:#a07800;margin-bottom:2px">⏳ Doğrulama bekleniyor</div>
+              <div style="font-size:0.73rem;color:#a07800;line-height:1.5">${rEmail} adresine mail gönderildi. Maildeki bağlantıya tıkladıktan sonra kontrol et.</div>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <input id="ogrenciEmailInput" type="email" class="form-input" placeholder="E-posta adresi" value="${rEmail}" style="flex:1;font-size:0.85rem">
+              <button id="ogrenciEmailBtn" onclick="ogrenciEmailEkle()" class="btn btn-outline" style="white-space:nowrap;font-size:0.8rem;padding:0 12px">Yeniden Gönder</button>
+            </div>
+            <button onclick="ogrenciEmailDurumKontrol()" id="ogrenciEmailKontrolBtn"
+              style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--accent);background:var(--accent)10;color:var(--accent);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">
+              🔄 Durumu Kontrol Et
+            </button>
+            <div id="ogrenciEmailMsg" style="font-size:0.78rem;margin-top:10px;display:none;line-height:1.5;padding:8px 10px;border-radius:8px"></div>`;
+          }
+          return `<div style="display:flex;gap:8px;margin-bottom:10px">
+              <input id="ogrenciEmailInput" type="email" class="form-input" placeholder="E-posta adresin" style="flex:1;font-size:0.85rem">
+              <button id="ogrenciEmailBtn" onclick="ogrenciEmailEkle()" class="btn btn-primary" style="white-space:nowrap;font-size:0.82rem;padding:0 14px">Ekle</button>
+            </div>
+            <button onclick="ogrenciEmailDurumKontrol()" id="ogrenciEmailKontrolBtn"
+              style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--accent);background:var(--accent)10;color:var(--accent);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit;display:none;align-items:center;justify-content:center;gap:6px">
+              🔄 Durumu Kontrol Et
+            </button>
+            <div id="ogrenciEmailMsg" style="font-size:0.78rem;margin-top:10px;display:none;line-height:1.5;padding:8px 10px;border-radius:8px"></div>`;
+        })()}
+      </div>
+    </div>
+    ` : ''}
     <div class="card" style="margin-top:16px">
       <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.sifre-arrow').style.transform=this.nextElementSibling.style.display==='block'?'rotate(180deg)':'rotate(0deg)'"
         style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;user-select:none">
@@ -584,6 +742,11 @@ async function profilePage() {
     <div class="card" style="margin-top:16px" id="okul-arkadaslar-kart">
       <div class="card-title">🏫 Okul Arkadaşlarım</div>
       <div id="okul-arkadaslar-liste" style="color:var(--text2);font-size:0.85rem">Yükleniyor...</div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <button onclick="showPage('yardim')" class="btn btn-outline" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;font-size:0.88rem">
+        ❓ <span>Yardım &amp; Destek</span>
+      </button>
     </div>
     ` : ''}
   `;
