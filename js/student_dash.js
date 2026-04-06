@@ -1095,14 +1095,14 @@ function yardimPage() {
         </div>
         <span style="margin-left:auto;color:var(--text2);font-size:0.8rem">›</span>
       </a>
-      <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);cursor:pointer" onclick="showPage('messages')">
+      ${isTeacher ? '' : `<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);cursor:pointer" onclick="showPage('messages')">
         <div style="width:40px;height:40px;border-radius:11px;background:var(--accent)18;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0">👨‍🏫</div>
         <div>
           <div style="font-size:0.88rem;font-weight:700;color:var(--text)">Koçuna Yaz</div>
           <div style="font-size:0.75rem;color:var(--text2);margin-top:1px">Mesajlar sekmesinden ulaş</div>
         </div>
         <span style="margin-left:auto;color:var(--text2);font-size:0.8rem">›</span>
-      </div>
+      </div>`}
     </div>
 
     <!-- Uygulama bilgisi -->
