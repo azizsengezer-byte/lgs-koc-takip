@@ -269,37 +269,46 @@
 </div>
 <!-- OTP DOĞRULAMA EKRANI (tam ekran) -->
 <!-- E-POSTA DOĞRULAMA BEKLİYOR (tam ekran) -->
-<div id="dogrulamaEkrani" style="display:none;position:fixed;inset:0;z-index:700;background:#f5f6fa;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center">
-  <div style="width:72px;height:72px;border-radius:22px;background:#6c63ff14;border:0.5px solid #6c63ff22;display:flex;align-items:center;justify-content:center;margin-bottom:24px">
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <rect x="4" y="8" width="28" height="20" rx="3.5" stroke="#6c63ff" stroke-width="1.8"/>
-      <path d="M4 13l14 10 14-10" stroke="#6c63ff" stroke-width="1.8" stroke-linecap="round"/>
+<div id="dogrulamaEkrani" style="display:none;position:fixed;inset:0;z-index:700;background:#f5f6fa;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;overflow-y:auto">
+  <div style="width:64px;height:64px;border-radius:20px;background:#6c63ff14;border:0.5px solid #6c63ff22;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <rect x="3" y="7" width="26" height="18" rx="3" stroke="#6c63ff" stroke-width="1.8"/>
+      <path d="M3 12l13 9 13-9" stroke="#6c63ff" stroke-width="1.8" stroke-linecap="round"/>
     </svg>
   </div>
-  <div style="font-size:22px;font-weight:900;color:#1a1a2e;margin-bottom:8px">E-postanı Doğrula</div>
-  <div style="font-size:13px;color:#888;line-height:1.7;margin-bottom:6px">Doğrulama bağlantısı şu adrese gönderildi:</div>
-  <div style="font-size:14px;font-weight:700;color:#6c63ff;margin-bottom:24px" id="dogrulamaEmailGoster"></div>
+  <div style="font-size:20px;font-weight:900;color:#1a1a2e;margin-bottom:6px">E-postanı Doğrula</div>
+  <div style="font-size:13px;color:#888;line-height:1.6;margin-bottom:4px">Doğrulama bağlantısı gönderildi:</div>
+  <div style="font-size:13px;font-weight:700;color:#6c63ff;margin-bottom:16px" id="dogrulamaEmailGoster"></div>
   <!-- Adımlar -->
-  <div style="width:100%;max-width:360px;background:#fff;border-radius:16px;border:0.5px solid #e8eaf0;padding:18px 20px;margin-bottom:24px;text-align:left">
-    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
-      <div style="width:24px;height:24px;border-radius:50%;background:#6c63ff;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</div>
-      <div style="font-size:13px;color:#444;line-height:1.5">Gelen kutunu aç — spam klasörünü de kontrol et</div>
+  <div style="width:100%;max-width:360px;background:#fff;border-radius:14px;border:0.5px solid #e8eaf0;padding:14px 16px;margin-bottom:16px;text-align:left">
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+      <div style="width:22px;height:22px;border-radius:50%;background:#6c63ff;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</div>
+      <div style="font-size:12px;color:#444;line-height:1.5">Gelen kutunu aç — <strong>spam klasörünü</strong> de kontrol et</div>
     </div>
-    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">
-      <div style="width:24px;height:24px;border-radius:50%;background:#6c63ff;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</div>
-      <div style="font-size:13px;color:#444;line-height:1.5">LGSKoç'tan gelen e-postadaki <strong>bağlantıya tıkla</strong></div>
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+      <div style="width:22px;height:22px;border-radius:50%;background:#6c63ff;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</div>
+      <div style="font-size:12px;color:#444;line-height:1.5">LGSKoç e-postasındaki <strong>bağlantıya tıkla</strong></div>
     </div>
-    <div style="display:flex;align-items:flex-start;gap:12px">
-      <div style="width:24px;height:24px;border-radius:50%;background:#6c63ff;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</div>
-      <div style="font-size:13px;color:#444;line-height:1.5">Geri gel ve e-posta + şifrenle <strong>giriş yap</strong></div>
+    <div style="display:flex;align-items:flex-start;gap:10px">
+      <div style="width:22px;height:22px;border-radius:50%;background:#6c63ff;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</div>
+      <div style="font-size:12px;color:#444;line-height:1.5">Geri gel, e-posta + şifrenle <strong>giriş yap</strong></div>
     </div>
   </div>
-  <div style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:10px">
-    <button onclick="dogrulamaTekrarGonder()" style="width:100%;padding:14px;background:#1a1a2e;border:none;border-radius:14px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
-      Tekrar Gönder
+  <!-- Tekrar gönder — şifre gerektirir -->
+  <div style="width:100%;max-width:360px;background:#fff;border-radius:14px;border:0.5px solid #e8eaf0;padding:14px 16px;margin-bottom:12px;text-align:left">
+    <div style="font-size:11px;font-weight:700;color:#aaa;letter-spacing:0.05em;margin-bottom:10px">YENİ BAĞLANTI İÇİN ŞİFRENİ GİR</div>
+    <div style="position:relative;margin-bottom:10px">
+      <input class="form-input" type="password" id="dogrulamaPass" placeholder="Şifren" style="padding-right:40px">
+      <button type="button" onclick="sifreGoster('dogrulamaPass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;color:#aaa">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+    </div>
+    <div id="dogrulamaHata" style="display:none;font-size:11px;color:#cc3355;margin-bottom:8px;background:#ff658410;border-radius:6px;padding:6px 10px"></div>
+    <button onclick="dogrulamaTekrarGonder()" style="width:100%;padding:12px;background:#1a1a2e;border:none;border-radius:12px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">
+      Yeni Bağlantı Gönder
     </button>
-    <div style="font-size:11px;color:#bbb;margin-top:4px">Doğrulamadan giriş yapılamaz</div>
   </div>
+  <div style="font-size:11px;color:#bbb">Doğrulamadan giriş yapılamaz</div>
 </div>
 
 <!-- CLASS SETUP MODAL (öğrenci ilk girişte) -->
@@ -708,8 +717,8 @@
 <nav class="mobile-nav" id="mobileNav"></nav>
 
 
-<script src="js/config.js?v=4"></script>
-<script src="js/auth.js?v=10"></script>
+<script src="js/config.js?v=5"></script>
+<script src="js/auth.js?v=11"></script>
 <script src="js/ui.js?v=2"></script>
 <script src="js/picker.js"></script>
 <script src="js/wellness_helpers.js"></script>
