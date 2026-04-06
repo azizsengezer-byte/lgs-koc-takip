@@ -218,14 +218,44 @@ const db = firebase.firestore();
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     try {
-      const doc = await db.collection('users').doc(user.uid).get();
+      let doc = await db.collection('users').doc(user.uid).get();
+
       if (!doc.exists) {
-        // Hesap Firestore'dan silinmiş - Auth'tan da çıkış yap
+        // users'da yok — pendingRegistrations'a bak
+        const pending = await db.collection('pendingRegistrations').doc(user.uid).get();
+
+        if (pending.exists && user.emailVerified) {
+          // Doğrulandı! Veriyi users'a taşı
+          await db.collection('users').doc(user.uid).set(pending.data());
+          await db.collection('pendingRegistrations').doc(user.uid).delete();
+          // Doğrulama ekranını kapat
+          const el = document.getElementById('dogrulamaEkrani');
+          if (el) el.style.display = 'none';
+          doc = await db.collection('users').doc(user.uid).get();
+        } else if (pending.exists && !user.emailVerified) {
+          // E-posta henüz doğrulanmamış — bekle, giriş yapma
+          await auth.signOut();
+          document.getElementById('app').style.display = 'none';
+          document.getElementById('loginScreen').style.display = 'flex';
+          return;
+        } else {
+          // Hiçbir yerde kayıt yok — çıkış yap
+          await auth.signOut();
+          document.getElementById('app').style.display = 'none';
+          document.getElementById('loginScreen').style.display = 'flex';
+          return;
+        }
+      }
+
+      // Öğretmen doğrulanmamışsa engelle
+      const roleCheck = doc.data()?.role;
+      if (roleCheck === 'teacher' && !user.emailVerified) {
         await auth.signOut();
         document.getElementById('app').style.display = 'none';
         document.getElementById('loginScreen').style.display = 'flex';
         return;
       }
+
       const data = doc.data();
       currentRole = data.role || 'student';
       window.currentUserData = { ...data, uid: user.uid };

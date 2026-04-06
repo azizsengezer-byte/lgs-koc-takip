@@ -1,124 +1,3 @@
-// ── EmailJS OTP Konfigürasyonu ─────────────────────────────────
-// emailjs.com'da ücretsiz hesap aç, aşağıdaki değerleri doldur:
-const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
-const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
-const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
-// EmailJS template değişkenleri: {{to_email}}, {{otp_code}}, {{user_name}}
-
-let _otpCode = '';
-let _otpEmail = '';
-let _otpPendingUid = '';
-let _otpPendingData = null;
-let _otpTimerInterval = null;
-
-function _otpGenerate() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-async function _otpSend(email, code, name) {
-  if (typeof emailjs === 'undefined') return false;
-  try {
-    emailjs.init(EMAILJS_PUBLIC_KEY);
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email: email, otp_code: code, user_name: name || 'Kullanıcı'
-    });
-    return true;
-  } catch(e) { console.log('EmailJS hata:', e); return false; }
-}
-
-async function _otpStore(uid, code) {
-  const expires = new Date(Date.now() + 10 * 60 * 1000);
-  await db.collection('otpVerifications').doc(uid).set({
-    code, expires, used: false, createdAt: new Date()
-  });
-}
-
-function _otpTimerStart() {
-  let sn = 120;
-  const el = document.getElementById('otpTimer');
-  const rb = document.getElementById('otpResendBtn');
-  clearInterval(_otpTimerInterval);
-  _otpTimerInterval = setInterval(() => {
-    sn--;
-    if (el) {
-      const m = Math.floor(sn/60).toString().padStart(2,'0');
-      const s = (sn%60).toString().padStart(2,'0');
-      el.textContent = m+':'+s;
-    }
-    if (sn <= 0) {
-      clearInterval(_otpTimerInterval);
-      if (el) el.textContent = '00:00';
-      if (rb) { rb.disabled=false; rb.style.color='#6c63ff'; rb.style.borderColor='#6c63ff44'; rb.style.cursor='pointer'; }
-    }
-  }, 1000);
-}
-
-function otpInput(el, idx) {
-  el.value = el.value.replace(/[^0-9]/g,'');
-  const boxes = document.querySelectorAll('.otp-box');
-  if (el.value && idx < 5) boxes[idx+1].focus();
-}
-
-function otpKey(e, el, idx) {
-  const boxes = document.querySelectorAll('.otp-box');
-  if (e.key === 'Backspace' && !el.value && idx > 0) { boxes[idx-1].focus(); boxes[idx-1].value=''; }
-}
-
-function otpGeriDon() {
-  document.getElementById('otpModal').style.display = 'none';
-  clearInterval(_otpTimerInterval);
-}
-
-async function otpDogrula() {
-  const boxes = document.querySelectorAll('.otp-box');
-  const girilen = Array.from(boxes).map(b=>b.value).join('');
-  const errEl = document.getElementById('otpError');
-  errEl.style.display = 'none';
-  if (girilen.length < 6) { errEl.textContent = 'Lütfen 6 haneli kodu eksiksiz gir.'; errEl.style.display='block'; return; }
-  if (girilen !== _otpCode) {
-    errEl.textContent = 'Kod yanlış. Tekrar dene.';
-    errEl.style.display = 'block';
-    boxes.forEach(b => { b.style.borderColor='#ff6584'; b.value=''; });
-    setTimeout(()=>{ boxes.forEach(b=>b.style.borderColor='#e0e2eb'); boxes[0].focus(); }, 1200);
-    return;
-  }
-  try {
-    await db.collection('otpVerifications').doc(_otpPendingUid).update({ used:true, verifiedAt:new Date() });
-    await db.collection('users').doc(_otpPendingUid).update({ emailVerified:true });
-  } catch(e) {}
-  clearInterval(_otpTimerInterval);
-  document.getElementById('otpModal').style.display = 'none';
-  showToast('🎉', 'Hesabın doğrulandı! Şimdi giriş yapabilirsin.');
-}
-
-async function otpTekrarGonder() {
-  const rb = document.getElementById('otpResendBtn');
-  if (rb) { rb.disabled=true; rb.style.color='#ccc'; rb.style.cursor='not-allowed'; }
-  _otpCode = _otpGenerate();
-  try {
-    await _otpStore(_otpPendingUid, _otpCode);
-    const sent = await _otpSend(_otpEmail, _otpCode, (_otpPendingData||{}).name||'');
-    if (!sent) showToast('🔑', 'Geliştirme modu — OTP: '+_otpCode, 8000);
-    _otpTimerStart();
-    document.querySelectorAll('.otp-box').forEach(b=>b.value='');
-    document.getElementById('otpError').style.display='none';
-    showToast('✅', 'Yeni kod gönderildi!');
-  } catch(e) { showToast('⚠️', 'Gönderilemedi.'); }
-}
-
-function _otpEkraniAc(email) {
-  const el = document.getElementById('otpModal');
-  if (!el) return;
-  el.style.display = 'flex';
-  document.getElementById('otpEmail').textContent = email;
-  document.querySelectorAll('.otp-box').forEach(b=>b.value='');
-  document.getElementById('otpError').style.display='none';
-  const rb = document.getElementById('otpResendBtn');
-  if (rb) { rb.disabled=true; rb.style.color='#ccc'; rb.style.borderColor='#e0e2eb'; rb.style.cursor='not-allowed'; }
-  _otpTimerStart();
-  setTimeout(()=>document.querySelector('.otp-box')?.focus(), 300);
-}
-
 function selectRole(r) {
   currentRole = r;
   document.getElementById('roleTeacher').classList.toggle('active', r==='teacher');
@@ -175,7 +54,34 @@ async function doLogin() {
       email = snap.docs[0].data().email;
     }
 
-    await auth.signInWithEmailAndPassword(email, pass);
+    const cred = await auth.signInWithEmailAndPassword(email, pass);
+
+    // Öğretmen ise Firebase e-posta doğrulamasını kontrol et
+    if (!email.endsWith('@lgskoc.app') && !cred.user.emailVerified) {
+      // Doğrulanmamış öğretmen — çıkış yap, doğrulama ekranını göster
+      await auth.signOut();
+      btn.textContent = 'Giriş Yap →'; btn.disabled = false;
+
+      // Doğrulama maili yeniden gönder
+      try {
+        const tempCred = await auth.signInWithEmailAndPassword(email, pass);
+        await tempCred.user.sendEmailVerification({
+          url: window.location.origin + window.location.pathname
+        });
+        await auth.signOut();
+      } catch(e2) {}
+
+      const el = document.getElementById('dogrulamaEkrani');
+      if (el) {
+        el.style.display = 'flex';
+        const emailEl = document.getElementById('dogrulamaEmailGoster');
+        if (emailEl) emailEl.textContent = email;
+        window._dogrulamaEmail = email;
+        window._dogrulamaPass  = pass;
+      }
+      return;
+    }
+
     // onAuthStateChanged devralır
   } catch(e) {
     btn.textContent = 'Giriş Yap →'; btn.disabled = false;
@@ -242,32 +148,47 @@ async function doRegister() {
   const classroom = classRaw ? classRaw + '. Sınıf' : '';
   if (role==='teacher' && !school) { errEl.textContent = 'Okul adı giriniz.'; errEl.style.display='block'; return; }
 
-  const btn = document.querySelector('#registerModal .btn-primary') ||
-              document.querySelector('#registerModal button[onclick="doRegister()"]');
+  const btn = document.getElementById('regBtn');
   if (btn) { btn.textContent = 'Kaydediliyor...'; btn.disabled = true; }
 
   try {
-    window._regPassTemp = pass; // "tekrar gönder" için geçici sakla
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
-    await db.collection('users').doc(cred.user.uid).set({
-      name, email, role, branch, school, classroom, photo:'', createdAt: new Date()
-    });
+    const uid = cred.user.uid;
 
-    // Sadece öğretmenler için OTP doğrulama
+    // Profil verisini hazırla
+    const profileData = {
+      name, email, role, branch, school, classroom,
+      photo: '', createdAt: new Date()
+    };
+
     if (role === 'teacher') {
-      _otpCode = _otpGenerate();
-      _otpEmail = email;
-      _otpPendingUid = cred.user.uid;
-      _otpPendingData = { name };
-      try {
-        await _otpStore(cred.user.uid, _otpCode);
-        const sent = await _otpSend(email, _otpCode, name);
-        if (!sent) showToast('🔑', 'EmailJS kurulmadı — geliştirme kodu: '+_otpCode, 8000);
-      } catch(e) { console.log('OTP hata:', e); }
+      // Öğretmenler: önce pendingRegistrations'a yaz, users'a değil
+      await db.collection('pendingRegistrations').doc(uid).set(profileData);
+
+      // Doğrulama maili gönder
+      await cred.user.sendEmailVerification({
+        url: window.location.origin + window.location.pathname
+      });
+
+      // Hemen çıkış yap — doğrulanmadan uygulama açılmasın
       await auth.signOut();
       closeModal('registerModal');
-      setTimeout(()=>_otpEkraniAc(email), 350);
+
+      // Doğrulama ekranını göster
+      setTimeout(() => {
+        const el = document.getElementById('dogrulamaEkrani');
+        if (el) {
+          el.style.display = 'flex';
+          const emailEl = document.getElementById('dogrulamaEmailGoster');
+          if (emailEl) emailEl.textContent = email;
+          window._dogrulamaEmail = email;
+          window._dogrulamaPass  = pass;
+        }
+      }, 300);
+
     } else {
+      // Öğrenciler (username ile giriş): direkt users'a yaz
+      await db.collection('users').doc(uid).set(profileData);
       closeModal('registerModal');
       showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
     }
@@ -284,10 +205,23 @@ async function doRegister() {
   }
 }
 
-function dogrulamaKapat() {
-  const el = document.getElementById('dogrulamaModal');
-  if (el) el.style.display = 'none';
+// Tekrar doğrulama maili gönder
+async function dogrulamaTekrarGonder() {
+  const email = window._dogrulamaEmail;
+  const pass  = window._dogrulamaPass;
+  if (!email || !pass) { showToast('⚠️', 'Lütfen tekrar kayıt olun.'); return; }
+  try {
+    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    await cred.user.sendEmailVerification({
+      url: window.location.origin + window.location.pathname
+    });
+    await auth.signOut();
+    showToast('✅', 'Doğrulama maili tekrar gönderildi! Spam klasörünü de kontrol et.');
+  } catch(e) {
+    showToast('⚠️', 'Gönderilemedi: ' + (e.message || 'Hata'));
+  }
 }
+
 
 async function dogrulamaYeniden() {
   // Kullanıcı sign-out edildiği için e-posta saklıyoruz ve tekrar gönderiyoruz
