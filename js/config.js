@@ -214,6 +214,37 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// ── REMOTE CONFIG ──────────────────────────────────────────────
+// LGS tarihi ve diğer dinamik değerleri Firebase'den çeker.
+// Firebase Console → Remote Config → Parametre ekle:
+//   lgs_tarihi    → "2026-06-13T09:30:00+03:00"
+//   lgs_sinav_adi → "2026 LGS"
+const remoteConfig = firebase.remoteConfig();
+remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 saat cache
+
+// Varsayılan değerler — Remote Config'e erişilemezse bunlar kullanılır
+remoteConfig.defaultConfig = {
+  lgs_tarihi:    '2026-06-13T09:30:00+03:00',
+  lgs_sinav_adi: '2026 LGS',
+};
+
+// Global — ui.js'deki startCountdown buradan okur
+window.LGS_TARIHI    = remoteConfig.defaultConfig.lgs_tarihi;
+window.LGS_SINAV_ADI = remoteConfig.defaultConfig.lgs_sinav_adi;
+
+// Uygulama açılışında Remote Config'i çek
+async function remoteConfigYukle() {
+  try {
+    await remoteConfig.fetchAndActivate();
+    window.LGS_TARIHI    = remoteConfig.getString('lgs_tarihi')    || window.LGS_TARIHI;
+    window.LGS_SINAV_ADI = remoteConfig.getString('lgs_sinav_adi') || window.LGS_SINAV_ADI;
+    console.log('Remote Config yüklendi. LGS:', window.LGS_TARIHI);
+  } catch(e) {
+    console.log('Remote Config alınamadı, varsayılan kullanılıyor:', e.message);
+  }
+}
+remoteConfigYukle();
+
 // Auth state listener
 auth.onAuthStateChanged(async (user) => {
   if (user) {

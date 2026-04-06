@@ -36,7 +36,7 @@ function startCountdown() {
   function update() {
     const card = document.getElementById('lgsCountdownCard');
     if (!card) { clearInterval(_countdownTimer); _countdownTimer = null; return; }
-    const lgs = new Date('2026-06-13T09:30:00+03:00');
+    const lgs = new Date(window.LGS_TARIHI || '2026-06-13T09:30:00+03:00');
     const now = new Date();
     const diff = lgs - now;
     if (diff <= 0) {
@@ -73,7 +73,7 @@ function startCountdown() {
           <div style="font-size:0.62rem;color:var(--text2);margin-top:4px">SANİYE</div>
         </div>
       </div>
-      <div style="font-size:0.75rem;color:var(--text2);margin-top:10px">13 Haziran 2026 • Saat 09:30</div>`;
+      <div style="font-size:0.75rem;color:var(--text2);margin-top:10px">${window.LGS_SINAV_ADI||'LGS'} • ${new Date(window.LGS_TARIHI||'2026-06-13T09:30:00+03:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'})} • Saat 09:30</div>`;
   }
   update();
   _countdownTimer = setInterval(update, 1000);
