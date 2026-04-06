@@ -228,8 +228,8 @@ remoteConfig.defaultConfig = {
   // Sınav
   lgs_tarihi:          '2026-06-13T09:30:00+03:00',
   lgs_sinav_adi:       '2026 LGS',
-  lgs_turkce_soru:     '40',
-  lgs_mat_soru:        '40',
+  lgs_turkce_soru:     '20',
+  lgs_mat_soru:        '20',
   lgs_fen_soru:        '20',
   lgs_inkilap_soru:    '10',
   lgs_ing_soru:        '10',
