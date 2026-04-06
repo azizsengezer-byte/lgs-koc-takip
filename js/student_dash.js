@@ -1043,17 +1043,7 @@ function yardimPage() {
   ];
 
   const sss = isTeacher ? sssKoc : sssOgrenci;
-      c: 'Alt menüdeki <strong>"Günlük Giriş"</strong> sekmesinden çalıştığın ders, konu ve doğru/yanlış sayılarını girebilirsin. Giriş yaptıktan sonra istatistiklerin Analizim sayfasında görünür.'
-    },
-    {
-      s: 'Rozet nasıl kazanırım?',
-      c: 'Düzenli çalışma girişi yap, günlük hedeflerini tamamla ve wellness takibini düzenli doldur. Rozetler koşullar sağlandığında otomatik kazanılır. Tüm rozetleri <strong>Profil → Rozetlerim</strong> bölümünden görebilirsin.'
-    },
-    {
-      s: 'Koçuma nasıl mesaj gönderebilirim?',
-      c: 'Alt menüdeki <strong>"Mesajlar"</strong> sekmesinden koçunla doğrudan mesajlaşabilirsin. Okul arkadaşlarınla da buradan iletişime geçebilirsin.'
-    },
-    {
+
   return `
     <div class="page-title">❓ Yardım &amp; Destek</div>
     <div class="page-sub">Sık sorulan sorular ve iletişim</div>
