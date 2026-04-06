@@ -51,7 +51,7 @@
   .header-name { font-weight:700; font-size:0.9rem; color:var(--text); }
   .header-role { font-size:0.73rem; color:var(--text2); }
 
-  .profile-menu { position:absolute; top:60px; right:14px; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:6px; min-width:170px; box-shadow:var(--shadow-md); z-index:9999; display:none; flex-direction:column; gap:2px; }
+  .profile-menu { position:absolute; top:60px; right:14px; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:6px; min-width:195px; box-shadow:var(--shadow-md); z-index:9999; display:none; flex-direction:column; gap:2px; }
   .profile-menu.open { display:flex; }
   .profile-menu-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; cursor:pointer; font-size:0.87rem; font-weight:700; color:var(--text); transition:background .15s; border:none; background:transparent; width:100%; font-family:'Nunito',sans-serif; }
   .profile-menu-item:hover { background:var(--bg); }
