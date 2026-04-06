@@ -226,27 +226,27 @@ remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 saat cache
 // Varsayılan değerler — Remote Config'e erişilemezse bunlar kullanılır
 remoteConfig.defaultConfig = {
   // Sınav
-  lgs_tarihi:          '2026-06-13T09:30:00+03:00',
-  lgs_sinav_adi:       '2026 LGS',
-  lgs_turkce_soru:     '20',
-  lgs_mat_soru:        '20',
-  lgs_fen_soru:        '20',
-  lgs_inkilap_soru:    '10',
-  lgs_ing_soru:        '10',
-  lgs_din_soru:        '10',
+  lgsTarihi:          '2026-06-13T09:30:00+03:00',
+  lgsSinavAdi:       '2026 LGS',
+  lgsTurkceSoru:     '20',
+  lgsMatSoru:        '20',
+  lgsFenSoru:        '20',
+  lgsInkilapSoru:    '10',
+  lgsIngSoru:        '10',
+  lgsDinSoru:        '10',
   // Özellik flag'leri (true/false string)
-  macera_aktif:        'true',
-  market_aktif:        'true',
-  ai_rapor_aktif:      'true',
-  wellness_aktif:      'true',
+  maceraAktif:        'true',
+  marketAktif:        'true',
+  aiRaporAktif:      'true',
+  wellnessAktif:      'true',
   // Oyun değerleri
-  gunluk_soru_hedefi:  '200',
-  seri_bonus_gun:      '7',
-  max_ogrenci_sayisi:  '30',
+  gunlukSoruHedefi:  '200',
+  seriBonusGun:      '7',
+  maxOgrenciSayisi:  '30',
   // Duyuru
-  duyuru_aktif:        'false',
-  duyuru_metni:        '',
-  duyuru_tipi:         'info',
+  duyuruAktif:        'false',
+  duyuruMetni:        '',
+  duyuruTipi:         'info',
 };
 
 // Remote Config değerlerine kolay erişim
@@ -279,18 +279,18 @@ window.RC_DUYURU_TIPI      = 'info';
 async function remoteConfigYukle() {
   try {
     await remoteConfig.fetchAndActivate();
-    window.LGS_TARIHI        = RC('lgs_tarihi')         || window.LGS_TARIHI;
-    window.LGS_SINAV_ADI     = RC('lgs_sinav_adi')      || window.LGS_SINAV_ADI;
-    window.RC_MACERA_AKTIF   = RCBool('macera_aktif');
-    window.RC_MARKET_AKTIF   = RCBool('market_aktif');
-    window.RC_AI_RAPOR_AKTIF = RCBool('ai_rapor_aktif');
-    window.RC_WELLNESS_AKTIF = RCBool('wellness_aktif');
-    window.RC_GUNLUK_HEDEF   = RCNum('gunluk_soru_hedefi');
-    window.RC_SERI_BONUS_GUN = RCNum('seri_bonus_gun');
-    window.RC_MAX_OGRENCI    = RCNum('max_ogrenci_sayisi');
-    window.RC_DUYURU_AKTIF   = RCBool('duyuru_aktif');
-    window.RC_DUYURU_METNI   = RC('duyuru_metni');
-    window.RC_DUYURU_TIPI    = RC('duyuru_tipi');
+    window.LGS_TARIHI        = RC('lgsTarihi')         || window.LGS_TARIHI;
+    window.LGS_SINAV_ADI     = RC('lgsSinavAdi')      || window.LGS_SINAV_ADI;
+    window.RC_MACERA_AKTIF   = RCBool('maceraAktif');
+    window.RC_MARKET_AKTIF   = RCBool('marketAktif');
+    window.RC_AI_RAPOR_AKTIF = RCBool('aiRaporAktif');
+    window.RC_WELLNESS_AKTIF = RCBool('wellnessAktif');
+    window.RC_GUNLUK_HEDEF   = RCNum('gunlukSoruHedefi');
+    window.RC_SERI_BONUS_GUN = RCNum('seriBonusGun');
+    window.RC_MAX_OGRENCI    = RCNum('maxOgrenciSayisi');
+    window.RC_DUYURU_AKTIF   = RCBool('duyuruAktif');
+    window.RC_DUYURU_METNI   = RC('duyuruMetni');
+    window.RC_DUYURU_TIPI    = RC('duyuruTipi');
     console.log('Remote Config yüklendi.');
   } catch(e) {
     console.log('Remote Config alınamadı, varsayılan kullanılıyor:', e.message);
