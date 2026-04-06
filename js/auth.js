@@ -54,52 +54,11 @@ async function doLogin() {
       email = snap.docs[0].data().email;
     }
 
-    const cred = await auth.signInWithEmailAndPassword(email, pass);
-
-    // Öğretmen için doğrulama kontrolü:
-    // Sadece pendingRegistrations'da olan (yeni sisteme göre kayıt olmuş)
-    // kullanıcılara uygulanır. Mevcut/eski kullanıcılar doğrudan geçer.
-    if (!email.endsWith('@lgskoc.app') && !cred.user.emailVerified) {
-      // users koleksiyonunda var mı kontrol et
-      const usersDoc = await db.collection('users').doc(cred.user.uid).get();
-
-      if (!usersDoc.exists) {
-        // Yeni kullanıcı, henüz doğrulamamış — engelle
-        await auth.signOut();
-        btn.textContent = 'Giriş Yap →'; btn.disabled = false;
-
-        // Doğrulama maili yeniden gönder
-        try {
-          const tempCred = await auth.signInWithEmailAndPassword(email, pass);
-          await tempCred.user.sendEmailVerification({
-            url: window.location.origin + window.location.pathname
-          });
-          await auth.signOut();
-        } catch(e2) {}
-
-        const el = document.getElementById('dogrulamaEkrani');
-        if (el) {
-          el.style.display = 'flex';
-          const emailEl = document.getElementById('dogrulamaEmailGoster');
-          if (emailEl) emailEl.textContent = email;
-          window._dogrulamaEmail = email;
-          window._dogrulamaPass  = pass;
-        }
-        return;
-      }
-      // users'da varsa eski kullanıcı — doğrulamaya takılmadan geç
-    }
-
-    // onAuthStateChanged devralır
+    await auth.signInWithEmailAndPassword(email, pass);
+    // onAuthStateChanged devralır — doğrulama kontrolü orada yapılır
   } catch(e) {
     btn.textContent = 'Giriş Yap →'; btn.disabled = false;
-    const msgs = {
-      'auth/user-not-found': 'Hesap bulunamadı.',
-      'auth/wrong-password': 'Şifre yanlış, tekrar deneyin.',
-      'auth/invalid-email': 'Geçersiz giriş bilgisi.',
-      'auth/invalid-credential': 'Kullanıcı adı/e-posta veya şifre hatalı.',
-    };
-    errEl.textContent = msgs[e.code] || 'Giriş başarısız: ' + e.message;
+    errEl.textContent = _trHata(e.code);
     errEl.style.display = 'block';
   }
 }
@@ -201,32 +160,62 @@ async function doRegister() {
       showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
     }
   } catch(e) {
-    const msgs = {
-      'auth/email-already-in-use': 'Bu e-posta zaten kayıtlı.',
-      'auth/invalid-email': 'Geçersiz e-posta adresi.',
-      'auth/weak-password': 'Şifre çok zayıf, en az 6 karakter olmalı.',
-    };
-    errEl.textContent = msgs[e.code] || 'Kayıt başarısız: ' + e.message;
+    errEl.textContent = _trHata(e.code);
     errEl.style.display = 'block';
   } finally {
     if (btn) { btn.textContent = 'Kayıt Ol →'; btn.disabled = false; }
   }
 }
 
-// Tekrar doğrulama maili gönder
+// Firebase hata kodlarını Türkçeye çevir
+function _trHata(code) {
+  const m = {
+    'auth/user-not-found':        'Bu e-posta ile kayıtlı hesap bulunamadı.',
+    'auth/wrong-password':        'Şifre yanlış, tekrar deneyin.',
+    'auth/invalid-credential':    'E-posta veya şifre hatalı.',
+    'auth/invalid-email':         'Geçersiz e-posta adresi.',
+    'auth/email-already-in-use':  'Bu e-posta zaten kayıtlı.',
+    'auth/weak-password':         'Şifre çok zayıf, en az 6 karakter olmalı.',
+    'auth/too-many-requests':     'Çok fazla deneme yapıldı. Lütfen birkaç dakika bekleyin.',
+    'auth/network-request-failed':'İnternet bağlantısını kontrol edin.',
+    'auth/user-disabled':         'Bu hesap devre dışı bırakılmış.',
+    'auth/requires-recent-login': 'Bu işlem için tekrar giriş yapmanız gerekiyor.',
+    'auth/expired-action-code':   'Doğrulama bağlantısının süresi dolmuş. Yeni bağlantı isteyin.',
+    'auth/invalid-action-code':   'Doğrulama bağlantısı geçersiz veya daha önce kullanılmış.',
+  };
+  return m[code] || 'Bir hata oluştu. Lütfen tekrar deneyin.';
+}
+
+// Tekrar doğrulama maili gönder — şifreyi inputtan alır
 async function dogrulamaTekrarGonder() {
-  const email = window._dogrulamaEmail;
-  const pass  = window._dogrulamaPass;
-  if (!email || !pass) { showToast('⚠️', 'Lütfen tekrar kayıt olun.'); return; }
+  const email  = window._dogrulamaEmail || document.getElementById('dogrulamaEmailGoster')?.textContent || '';
+  const pass   = document.getElementById('dogrulamaPass')?.value || window._dogrulamaPass || '';
+  const hataEl = document.getElementById('dogrulamaHata');
+
+  if (hataEl) hataEl.style.display = 'none';
+
+  if (!email) {
+    if (hataEl) { hataEl.textContent = 'E-posta adresi bulunamadı.'; hataEl.style.display = 'block'; }
+    return;
+  }
+  if (!pass) {
+    if (hataEl) { hataEl.textContent = 'Lütfen şifrenizi girin.'; hataEl.style.display = 'block'; }
+    return;
+  }
+
   try {
     const cred = await auth.signInWithEmailAndPassword(email, pass);
     await cred.user.sendEmailVerification({
       url: window.location.origin + window.location.pathname
     });
     await auth.signOut();
-    showToast('✅', 'Doğrulama maili tekrar gönderildi! Spam klasörünü de kontrol et.');
+    // Şifre alanını temizle
+    const passEl = document.getElementById('dogrulamaPass');
+    if (passEl) passEl.value = '';
+    showToast('✅', 'Yeni doğrulama bağlantısı gönderildi! Spam klasörünü de kontrol et.');
   } catch(e) {
-    showToast('⚠️', 'Gönderilemedi: ' + (e.message || 'Hata'));
+    const mesaj = _trHata(e.code);
+    if (hataEl) { hataEl.textContent = mesaj; hataEl.style.display = 'block'; }
   }
 }
 

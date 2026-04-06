@@ -233,10 +233,21 @@ auth.onAuthStateChanged(async (user) => {
           if (el) el.style.display = 'none';
           doc = await db.collection('users').doc(user.uid).get();
         } else if (pending.exists && !user.emailVerified) {
-          // E-posta henüz doğrulanmamış — bekle, giriş yapma
+          // E-posta henüz doğrulanmamış — doğrulama ekranını göster
+          const userEmail = user.email || '';
           await auth.signOut();
           document.getElementById('app').style.display = 'none';
           document.getElementById('loginScreen').style.display = 'flex';
+          // Doğrulama ekranını göster
+          setTimeout(() => {
+            const el = document.getElementById('dogrulamaEkrani');
+            if (el) {
+              el.style.display = 'flex';
+              const emailEl = document.getElementById('dogrulamaEmailGoster');
+              if (emailEl) emailEl.textContent = userEmail;
+              window._dogrulamaEmail = userEmail;
+            }
+          }, 200);
           return;
         } else {
           // Hiçbir yerde kayıt yok — çıkış yap
