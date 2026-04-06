@@ -387,6 +387,9 @@
           <button class="profile-menu-item" id="okulArkadasBtn" onclick="closeProfileMenu();showPage('profile');setTimeout(()=>document.getElementById('okul-arkadaslar-kart')?.scrollIntoView({behavior:'smooth'}),300)" style="display:none;align-items:center;gap:10px;white-space:nowrap">
             <span class="menu-icon">🏫</span> Okul Arkadaşlarım
           </button>
+          <button class="profile-menu-item" onclick="closeProfileMenu();showPage('yardim')">
+            <span class="menu-icon">❓</span> Yardım &amp; Destek
+          </button>
           <div class="profile-menu-divider"></div>
           <button class="profile-menu-item danger" onclick="closeProfileMenu();doLogout()">
             <span class="menu-icon">🚪</span> Çıkış Yap
