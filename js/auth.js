@@ -58,7 +58,13 @@ async function doLogin() {
     // onAuthStateChanged devralır — doğrulama kontrolü orada yapılır
   } catch(e) {
     btn.textContent = 'Giriş Yap →'; btn.disabled = false;
-    errEl.textContent = _trHata(e.code);
+    const msgs = {
+      'auth/user-not-found': 'Hesap bulunamadı.',
+      'auth/wrong-password': 'Şifre yanlış, tekrar deneyin.',
+      'auth/invalid-email': 'Geçersiz giriş bilgisi.',
+      'auth/invalid-credential': 'Kullanıcı adı/e-posta veya şifre hatalı.',
+    };
+    errEl.textContent = msgs[e.code] || 'Giriş başarısız: ' + e.message;
     errEl.style.display = 'block';
   }
 }
@@ -125,8 +131,6 @@ async function doRegister() {
     // Profil verisini hazırla
     const profileData = {
       name, email, role, branch, school, classroom,
-      // schools array — profil sayfası buradan okur
-      schools: (role === 'teacher' && school) ? [school] : [],
       photo: '', createdAt: new Date()
     };
 
@@ -162,62 +166,32 @@ async function doRegister() {
       showToast('🎉', `Hoş geldin ${name}! Hesabın oluşturuldu.`);
     }
   } catch(e) {
-    errEl.textContent = _trHata(e.code);
+    const msgs = {
+      'auth/email-already-in-use': 'Bu e-posta zaten kayıtlı.',
+      'auth/invalid-email': 'Geçersiz e-posta adresi.',
+      'auth/weak-password': 'Şifre çok zayıf, en az 6 karakter olmalı.',
+    };
+    errEl.textContent = msgs[e.code] || 'Kayıt başarısız: ' + e.message;
     errEl.style.display = 'block';
   } finally {
     if (btn) { btn.textContent = 'Kayıt Ol →'; btn.disabled = false; }
   }
 }
 
-// Firebase hata kodlarını Türkçeye çevir
-function _trHata(code) {
-  const m = {
-    'auth/user-not-found':        'Bu e-posta ile kayıtlı hesap bulunamadı.',
-    'auth/wrong-password':        'Şifre yanlış, tekrar deneyin.',
-    'auth/invalid-credential':    'E-posta veya şifre hatalı.',
-    'auth/invalid-email':         'Geçersiz e-posta adresi.',
-    'auth/email-already-in-use':  'Bu e-posta zaten kayıtlı.',
-    'auth/weak-password':         'Şifre çok zayıf, en az 6 karakter olmalı.',
-    'auth/too-many-requests':     'Çok fazla deneme yapıldı. Lütfen birkaç dakika bekleyin.',
-    'auth/network-request-failed':'İnternet bağlantısını kontrol edin.',
-    'auth/user-disabled':         'Bu hesap devre dışı bırakılmış.',
-    'auth/requires-recent-login': 'Bu işlem için tekrar giriş yapmanız gerekiyor.',
-    'auth/expired-action-code':   'Doğrulama bağlantısının süresi dolmuş. Yeni bağlantı isteyin.',
-    'auth/invalid-action-code':   'Doğrulama bağlantısı geçersiz veya daha önce kullanılmış.',
-  };
-  return m[code] || 'Bir hata oluştu. Lütfen tekrar deneyin.';
-}
-
-// Tekrar doğrulama maili gönder — şifreyi inputtan alır
+// Tekrar doğrulama maili gönder
 async function dogrulamaTekrarGonder() {
-  const email  = window._dogrulamaEmail || document.getElementById('dogrulamaEmailGoster')?.textContent || '';
-  const pass   = document.getElementById('dogrulamaPass')?.value || window._dogrulamaPass || '';
-  const hataEl = document.getElementById('dogrulamaHata');
-
-  if (hataEl) hataEl.style.display = 'none';
-
-  if (!email) {
-    if (hataEl) { hataEl.textContent = 'E-posta adresi bulunamadı.'; hataEl.style.display = 'block'; }
-    return;
-  }
-  if (!pass) {
-    if (hataEl) { hataEl.textContent = 'Lütfen şifrenizi girin.'; hataEl.style.display = 'block'; }
-    return;
-  }
-
+  const email = window._dogrulamaEmail;
+  const pass  = window._dogrulamaPass;
+  if (!email || !pass) { showToast('⚠️', 'Lütfen tekrar kayıt olun.'); return; }
   try {
     const cred = await auth.signInWithEmailAndPassword(email, pass);
     await cred.user.sendEmailVerification({
       url: window.location.origin + window.location.pathname
     });
     await auth.signOut();
-    // Şifre alanını temizle
-    const passEl = document.getElementById('dogrulamaPass');
-    if (passEl) passEl.value = '';
-    showToast('✅', 'Yeni doğrulama bağlantısı gönderildi! Spam klasörünü de kontrol et.');
+    showToast('✅', 'Doğrulama maili tekrar gönderildi! Spam klasörünü de kontrol et.');
   } catch(e) {
-    const mesaj = _trHata(e.code);
-    if (hataEl) { hataEl.textContent = mesaj; hataEl.style.display = 'block'; }
+    showToast('⚠️', 'Gönderilemedi: ' + (e.message || 'Hata'));
   }
 }
 
@@ -354,3 +328,77 @@ async function saveClassSetup() {
   }
 }
 
+
+// ── ŞİFREMİ UNUTTUM ──────────────────────────────────────────
+function showSifremiUnuttum() {
+  const existing = document.getElementById('sifremiUnuttumModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'sifremiUnuttumModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--surface,#fff);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:28px 20px 36px;box-shadow:0 -4px 32px rgba(0,0,0,0.12)">
+      <div style="width:36px;height:4px;background:#e0e2eb;border-radius:4px;margin:0 auto 22px"></div>
+      <div style="font-size:2rem;text-align:center;margin-bottom:6px">🔑</div>
+      <div style="font-size:1.08rem;font-weight:800;text-align:center;color:#1a1a2e;margin-bottom:8px">Şifremi Unuttum</div>
+      <div style="font-size:0.8rem;color:#888;text-align:center;margin-bottom:20px;line-height:1.6">
+        Kayıtlı e-posta adresini gir, sıfırlama bağlantısı gönderelim.<br>
+        <span style="font-size:0.75rem;color:#6c63ff">Öğrenciysen önce Profil → E-posta Adresi bölümünden e-posta eklemelisin.</span>
+      </div>
+      <input id="sifirlaEmail" type="email" placeholder="E-posta adresin"
+        style="width:100%;box-sizing:border-box;padding:13px 14px;border:1.5px solid #e0e2eb;border-radius:12px;font-size:0.92rem;font-family:'Nunito',sans-serif;background:#f5f6fa;color:#1a1a2e;outline:none;margin-bottom:10px"
+        onkeydown="if(event.key==='Enter') doSifremiUnuttum()">
+      <div id="sifirlaMsg" style="font-size:0.8rem;margin-bottom:10px;padding:9px 12px;border-radius:9px;display:none;line-height:1.5"></div>
+      <button onclick="doSifremiUnuttum()" id="sifirlaBtn"
+        style="width:100%;padding:14px;background:#6c63ff;border:none;border-radius:13px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;margin-bottom:10px">
+        Sıfırlama Maili Gönder
+      </button>
+      <button onclick="document.getElementById('sifremiUnuttumModal').remove()"
+        style="width:100%;padding:12px;background:transparent;border:1.5px solid #e0e2eb;border-radius:13px;color:#888;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Nunito',sans-serif">
+        İptal
+      </button>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+  setTimeout(() => document.getElementById('sifirlaEmail')?.focus(), 250);
+}
+
+async function doSifremiUnuttum() {
+  const emailVal = (document.getElementById('sifirlaEmail')?.value || '').trim();
+  const msgEl    = document.getElementById('sifirlaMsg');
+  const btn      = document.getElementById('sifirlaBtn');
+  if (!msgEl || !btn) return;
+
+  msgEl.style.display = 'none';
+
+  if (!emailVal) {
+    msgEl.textContent = 'Lütfen e-posta adresini gir.';
+    msgEl.style.cssText = 'display:block;background:#ff658415;color:#cc3355;font-size:0.8rem;padding:9px 12px;border-radius:9px;margin-bottom:10px';
+    return;
+  }
+
+  btn.textContent = 'Gönderiliyor...';
+  btn.disabled = true;
+
+  try {
+    await auth.sendPasswordResetEmail(emailVal, {
+      url: window.location.origin + window.location.pathname
+    });
+    msgEl.innerHTML = '✅ Sıfırlama maili gönderildi!<br><span style="font-size:0.75rem;opacity:0.85">Spam/Önemsiz klasörünü de kontrol etmeyi unutma.</span>';
+    msgEl.style.cssText = 'display:block;background:#43e97b18;color:#1a7a45;font-size:0.8rem;padding:9px 12px;border-radius:9px;margin-bottom:10px;line-height:1.5';
+    btn.textContent = 'Tekrar Gönder';
+    btn.disabled = false;
+  } catch(e) {
+    const msgs = {
+      'auth/user-not-found':    'Bu e-posta adresiyle kayıtlı hesap bulunamadı.',
+      'auth/invalid-email':     'Geçersiz e-posta adresi.',
+      'auth/too-many-requests': 'Çok fazla deneme yapıldı. Lütfen bir süre bekle.',
+      'auth/invalid-credential':'Bu e-posta ile kayıtlı hesap bulunamadı.',
+    };
+    msgEl.textContent = msgs[e.code] || ('Gönderilemedi: ' + e.message);
+    msgEl.style.cssText = 'display:block;background:#ff658415;color:#cc3355;font-size:0.8rem;padding:9px 12px;border-radius:9px;margin-bottom:10px';
+    btn.textContent = 'Tekrar Dene';
+    btn.disabled = false;
+  }
+}
