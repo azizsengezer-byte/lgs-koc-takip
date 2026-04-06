@@ -1,85 +1,98 @@
-// ai_analysis.js — Claude API Yönetimi
-// ========== CLAUDE API YÖNETİMİ ==========
+// ai_analysis.js — Claude AI Entegrasyonu
+// =============================================
+// KATMAN MİMARİSİ:
+//
+// Şu an:   callAI() → Anthropic API (direkt)
+// İleride: callAI() → Firebase Functions (proxy)
+//          sadece AI_ENDPOINT değişecek, başka hiçbir şey
+//
+// Supabase'e geçilirse:
+//          AI_ENDPOINT = 'https://xyz.supabase.co/functions/v1/ai-analiz'
+// =============================================
 
-function toggleApiKeyVis() {
-  const inp = document.getElementById('apiKeyInput');
-  if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
-}
+const ANTHROPIC_KEY = 'BURAYA_KEY_GIR'; // sk-ant-...
 
-function initApiSettings() {
-  const key  = localStorage.getItem('lgs_anthropic_key') || '';
-  const enabled = localStorage.getItem('lgs_api_enabled') === 'true';
-  const inp  = document.getElementById('apiKeyInput');
-  const cb   = document.getElementById('apiEnabled');
-  const badge= document.getElementById('apiStatusBadge');
-  if (inp)  inp.value = key;
-  if (cb)   cb.checked = enabled;
-  if (badge) {
-    badge.textContent = enabled ? 'AKTİF' : 'KAPALI';
-    badge.style.background = enabled ? '#6c63ff22' : '#ff658422';
-    badge.style.color = enabled ? '#6c63ff' : '#ff6584';
-  }
-}
+// ── AŞAMA AYARI ──────────────────────────────────────────────
+// 'direct'   → Anthropic'e direkt istek (şu an)
+// 'firebase' → Firebase Functions proxy (React Native'de)
+// 'supabase' → Supabase Edge Function (isteğe bağlı)
+const AI_MODE = 'direct';
 
-function saveApiSettings() {
-  const rawKey = document.getElementById('apiKeyInput')?.value || '';
-  const key = rawKey.replace(/[\s\u200B\u200C\u200D\uFEFF]/g, '');
-  const enabled = document.getElementById('apiEnabled')?.checked || false;
-  if (key) localStorage.setItem('lgs_anthropic_key', key);
-  localStorage.setItem('lgs_api_enabled', enabled ? 'true' : 'false');
-  const badge = document.getElementById('apiStatusBadge');
-  if (badge) {
-    badge.textContent = enabled ? 'AKTİF' : 'KAPALI';
-    badge.style.background = enabled ? '#6c63ff22' : '#ff658422';
-    badge.style.color = enabled ? '#6c63ff' : '#ff6584';
-  }
-  showToast('✓', 'API ayarları kaydedildi');
-}
+// İleride sadece bu URL'yi değiştireceksin:
+const AI_ENDPOINT = {
+  firebase: 'https://us-central1-lgs-koc-takip.cloudfunctions.net/aiAnaliz',
+  supabase: 'https://PROJE.supabase.co/functions/v1/ai-analiz',
+};
 
-async function testApiKey() {
-  const rawKey = document.getElementById('apiKeyInput')?.value || localStorage.getItem('lgs_anthropic_key') || '';
-  const key = rawKey.replace(/[\s\u200B\u200C\u200D\uFEFF]/g, '');
-  const resultEl = document.getElementById('apiTestResult');
-  resultEl.style.display = 'block';
-  if (!key) { resultEl.style.color='#ff6584'; resultEl.textContent='Önce API anahtarı gir.'; return; }
-  if (!key.startsWith('sk-ant')) { resultEl.style.color='#ff6584'; resultEl.textContent='Hata: Anahtar "sk-ant" ile başlamalı. Kopyalamayı kontrol et.'; return; }
-  resultEl.style.color='var(--text2)'; resultEl.textContent='⏳ Test ediliyor... (anahtar: ...'+key.slice(-6)+')';
-  try {
+// ── SOYUTLAMA KATMANI ─────────────────────────────────────────
+// Tüm AI istekleri buradan geçer. Geçiş yaparken
+// sadece bu fonksiyonun içini değiştirirsin.
+async function callAI(prompt, signal) {
+  if (AI_MODE === 'direct') {
+    // Şu an: direkt Anthropic
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 20, messages: [{ role: 'user', content: 'Hi' }] })
+      signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }]
+      })
     });
     const data = await res.json();
-    if (data.content?.[0]?.text) {
-      localStorage.setItem('lgs_anthropic_key', key);
-      resultEl.style.color = '#20c864';
-      resultEl.textContent = '✓ Bağlantı başarılı! API hazır ve kaydedildi.';
-    } else {
-      resultEl.style.color = '#ff6584';
-      resultEl.textContent = '✗ Hata: ' + (data.error?.message || JSON.stringify(data));
-    }
-  } catch(e) {
-    resultEl.style.color = '#ff6584';
-    resultEl.textContent = '✗ Bağlantı hatası: ' + e.message;
+    if (!res.ok) throw new Error(data?.error?.message || 'API hata');
+    return data.content?.[0]?.text || '';
+
+  } else if (AI_MODE === 'firebase') {
+    // İleride: Firebase Functions proxy
+    // Key client'a hiç gelmiyor, sunucuda saklı
+    const uid = auth.currentUser?.uid;
+    const token = uid ? await auth.currentUser.getIdToken() : '';
+    const res = await fetch(AI_ENDPOINT.firebase, {
+      method: 'POST',
+      signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || 'Sunucu hata');
+    return data.text || '';
+
+  } else if (AI_MODE === 'supabase') {
+    // İleride: Supabase Edge Function
+    const res = await fetch(AI_ENDPOINT.supabase, {
+      method: 'POST',
+      signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || 'Sunucu hata');
+    return data.text || '';
   }
+
+  throw new Error('Geçersiz AI_MODE');
 }
 
-function clearApiKey() {
-  localStorage.removeItem('lgs_anthropic_key');
-  localStorage.setItem('lgs_api_enabled', 'false');
-  const inp = document.getElementById('apiKeyInput');
-  if (inp) inp.value = '';
-  const badge = document.getElementById('apiStatusBadge');
-  if (badge) { badge.textContent='KAPALI'; badge.style.background='#ff658422'; badge.style.color='#ff6584'; }
-  const cb = document.getElementById('apiEnabled');
-  if (cb) cb.checked = false;
-  showToast('🗑', 'API anahtarı silindi');
-}
+// Eski localStorage yapısıyla uyumluluk
+function initApiSettings() {}
+function saveApiSettings() {}
+function testApiKey() {}
+function clearApiKey() {}
+function toggleApiKeyVis() {}
 
 async function generateAIAnalysis(studentName, period, wellnessData, academicData, denemeler, notlar) {
-  const key = localStorage.getItem('lgs_anthropic_key');
-  if (!key || localStorage.getItem('lgs_api_enabled') !== 'true') return null;
+  const key = ANTHROPIC_KEY;
+  if (!key || key === 'BURAYA_KEY_GIR') return null; // Key girilmemişse çalışma
 
   // notlar parametresi artık wellnessData içinde geliyor (pozitif/negatif alanları)
   const krizGunler = wellnessData.filter(d => (d.kaygi>=8) || (d.uyku>0&&d.uyku<6) || (d.soru===0&&d.kaygi>=7));
@@ -120,21 +133,10 @@ async function generateAIAnalysis(studentName, period, wellnessData, academicDat
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 saniye timeout
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      signal: controller.signal,
-      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] })
-    });
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    const text = await callAI(prompt, controller.signal);
     clearTimeout(timeoutId);
-    const data = await res.json();
-    if (!res.ok) {
-      console.error('AI API hata:', res.status, data?.error?.message);
-      return null;
-    }
-    const text = data.content?.[0]?.text || '';
-    if (!text) { console.error('AI boş yanıt döndü:', JSON.stringify(data)); return null; }
+    if (!text) { console.error('AI boş yanıt döndü'); return null; }
     const clean = text.replace(/```json|```/g, '').trim();
     console.log('AI yanıtı (ilk 200):', clean.substring(0, 200));
     let parsed;

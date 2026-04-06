@@ -534,49 +534,21 @@ async function profilePage() {
         <button class="btn btn-primary" onclick="teacherOkulEkle()" style="white-space:nowrap">+ Ekle</button>
       </div>
     </div>
-    <div class="card" style="margin-top:16px;border:1.5px solid #6c63ff33">
-      <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.api-arrow\').style.transform=this.nextElementSibling.style.display===\'block\'?\'rotate(180deg)\':\'rotate(0deg)\'"
-        style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;user-select:none">
+    <div class="card" style="margin-top:16px;border:1.5px solid #6c63ff22">
+      <div style="display:flex;align-items:center;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:1.3rem">🤖</span>
+          <div style="width:36px;height:36px;border-radius:10px;background:#6c63ff18;display:flex;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="#6c63ff" stroke-width="1.4"/><path d="M6 9h6M9 6v6" stroke="#6c63ff" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </div>
           <div>
             <div class="card-title" style="margin-bottom:0">Claude AI Rapor Analizi</div>
             <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Psikolojik raporlarda yapay zeka yorumlaması</div>
           </div>
         </div>
-        <span class="api-arrow" style="color:var(--text2);transition:transform 0.2s;font-size:0.8rem">▼</span>
+        <span style="font-size:0.72rem;padding:3px 10px;border-radius:20px;font-weight:700;background:#6c63ff22;color:#6c63ff">AKTİF</span>
       </div>
-      <div style="display:none">
-        <div style="height:1px;background:var(--border);margin:14px 0"></div>
-        <div style="background:#6c63ff12;border-radius:10px;padding:12px;margin-bottom:14px;font-size:0.8rem;color:var(--text2);line-height:1.6">
-          API anahtarı girdiğinde korelasyon analizi Claude AI tarafından yazılır. Kriz günleri, öğrencinin ifadeleri ve çelişkili veriler klinik dille yorumlanır.<br>
-          <span style="color:#ff6584">⚠ Anahtarı kimseyle paylaşma. GitHub\'a push etmeden önce temizle.</span>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Anthropic API Anahtarı</label>
-          <div style="position:relative">
-            <input class="form-input" type="password" id="apiKeyInput"
-              placeholder="sk-ant-api03-..."
-              style="padding-right:48px;font-family:monospace;font-size:0.82rem">
-            <button type="button" onclick="toggleApiKeyVis()"
-              style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text2)">👁</button>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;color:var(--text)">
-            <input type="checkbox" id="apiEnabled" style="width:18px;height:18px;accent-color:#6c63ff;cursor:pointer">
-            AI analizini aktif et
-          </label>
-          <span id="apiStatusBadge" style="font-size:0.72rem;padding:2px 8px;border-radius:20px;font-weight:700;background:#ff658422;color:#ff6584">KAPALI</span>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-primary" style="flex:1" onclick="saveApiSettings()">Kaydet ✓</button>
-          <button type="button" class="btn btn-outline" style="padding:10px 14px;font-size:0.8rem" onclick="testApiKey()">Test Et</button>
-          <button type="button" onclick="clearApiKey()" style="padding:10px 14px;border-radius:10px;border:1.5px solid #ff658444;background:#ff658412;color:#ff6584;font-size:0.8rem;cursor:pointer">Sil</button>
-        </div>
-        <div id="apiTestResult" style="margin-top:10px;font-size:0.8rem;display:none"></div>
-      </div>
-    </div></div>` : ''}
+    </div>
+    ` : ''}
     <div class="card" style="margin-top:16px">
       <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.sifre-arrow').style.transform=this.nextElementSibling.style.display==='block'?'rotate(180deg)':'rotate(0deg)'"
         style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;user-select:none">
