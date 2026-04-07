@@ -79,8 +79,11 @@
   .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:13px; margin-bottom:14px; }
 
   @keyframes rotateBorder { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
-  .wellness-banner-wrap { padding:2px; border-radius:18px; background:linear-gradient(270deg,#6c63ff,#ff5c8a,#f9ca24,#45b7d1,#6c63ff); background-size:300% 300%; animation:rotateBorder 3s ease infinite; margin-bottom:12px; }
-  .wellness-banner-inner { background:var(--surface); border-radius:16px; display:flex; align-items:center; gap:14px; padding:14px 18px; cursor:pointer; color:var(--text); text-align:left; width:100%; border:none; }
+  @keyframes wellnessGlow { 0%,100%{box-shadow:0 0 6px 1px rgba(108,99,255,.35),0 0 12px 2px rgba(255,92,138,.2)} 33%{box-shadow:0 0 8px 2px rgba(249,202,36,.4),0 0 16px 3px rgba(69,183,209,.25)} 66%{box-shadow:0 0 8px 2px rgba(255,92,138,.4),0 0 16px 3px rgba(108,99,255,.25)} }
+  @keyframes journalBounce { 0%,100%{transform:translateY(0) rotate(-3deg)} 30%{transform:translateY(-4px) rotate(2deg)} 60%{transform:translateY(-2px) rotate(-1deg)} }
+  .wellness-banner-wrap { padding:3px; border-radius:18px; background:linear-gradient(270deg,#6c63ff,#ff5c8a,#f9ca24,#45b7d1,#6c63ff); background-size:300% 300%; animation:rotateBorder 2.5s ease infinite, wellnessGlow 3s ease-in-out infinite; margin-bottom:12px; }
+  .wellness-banner-inner { background:var(--surface); border-radius:15px; display:flex; align-items:center; gap:14px; padding:14px 18px; cursor:pointer; color:var(--text); text-align:left; width:100%; border:none; }
+  .wellness-journal-icon { display:inline-block; animation:journalBounce 2.8s ease-in-out infinite; transform-origin:center bottom; font-size:1.3rem; }
   @keyframes heartBeat { 0%{transform:scale(1)} 14%{transform:scale(1.25)} 28%{transform:scale(1)} 42%{transform:scale(1.18)} 70%{transform:scale(1)} 100%{transform:scale(1)} }
   .wellness-heart-beat { display:inline-block; animation:heartBeat 1.4s ease infinite; transform-origin:center; }
 
