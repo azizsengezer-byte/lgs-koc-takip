@@ -64,7 +64,7 @@
   .nav-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px; color:var(--text2); cursor:pointer; transition:all .2s; font-weight:700; font-size:0.87rem; border:none; background:transparent; width:100%; text-align:left; }
   .nav-item:hover { background:var(--bg); color:var(--text); }
   .nav-item.active { background:rgba(108,99,255,.1); color:var(--accent); }
-  .nav-icon { font-size:1rem; width:20px; text-align:center; }
+  .nav-icon { font-size:1rem; width:20px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
   .nav-section { font-size:0.67rem; color:var(--text2); padding:14px 14px 4px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
 
   .content { flex:1; padding:22px; overflow-y:auto; }
@@ -266,6 +266,7 @@
   .mobile-nav-item span:first-child { font-size:1.22rem; }
   .mobile-nav-item span:last-child { font-size:0.61rem; font-weight:800; }
   .mobile-nav-item .nav-icon-wrap { position:relative; display:inline-flex; align-items:center; justify-content:center; font-size:1.22rem; }
+  .profile-menu-item .menu-icon { width:20px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
   .nav-badge { position:absolute; top:-6px; right:-8px; background:var(--accent2); color:#fff; font-size:0.49rem; font-weight:800; min-width:15px; height:15px; border-radius:99px; display:flex; align-items:center; justify-content:center; padding:0 3px; line-height:1; border:1.5px solid var(--surface); }
 
   @media(max-width:768px) {
