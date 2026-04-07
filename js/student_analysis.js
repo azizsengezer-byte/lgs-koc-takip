@@ -419,11 +419,9 @@ function wellnessPage() {
 
   const subjects = ['Türkçe','Matematik','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce'];
 
-  // Günlük arşiv
-  const arşivGunler = Object.entries(data.days||{})
-    .filter(([k,v]) => k !== todayKey && v.not)
-    .sort(([a],[b]) => b.localeCompare(a))
-    .slice(0,5);
+  // Günlük notlar — ayrı key, Firestore'a gitmiyor
+  const gunlukNotData = (() => { try { const myUid=(window.currentUserData||{}).uid||'local'; return JSON.parse(localStorage.getItem('gunluk_not_'+myUid)||'{}'); } catch(e){ return {}; } })();
+  const todayNot = gunlukNotData[todayKey] || '';
 
   return `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
@@ -571,12 +569,16 @@ function wellnessPage() {
     <div class="card" style="margin-bottom:12px" id="gunlukNotKart">
       <div class="card-title">Bugün ne düşündüm?</div>
       <div style="font-size:0.72rem;color:var(--text2);margin-bottom:8px">Sadece sana özel — kimse okuyamaz, PIN ile korunuyor.</div>
-      ${today.not ? `
-      <div style="font-size:0.82rem;color:var(--text);line-height:1.7;background:var(--surface2);border-radius:9px;padding:10px 12px;margin-bottom:8px;white-space:pre-wrap">${today.not}</div>
-      <button onclick="_gunlukNotDuzenle()" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:9px;background:transparent;color:var(--text2);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit">✏️ Düzenle</button>
+      ${todayNot ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#43b89c12;border:1px solid #43b89c33;border-radius:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:1rem">🔒</span>
+          <span style="font-size:0.8rem;font-weight:700;color:#085041">Kaydedildi ve gizlendi</span>
+        </div>
+        <button onclick="_gunlukNotDuzenle()" style="padding:4px 10px;border-radius:8px;border:1px solid #43b89c55;background:transparent;color:#085041;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit">Düzenle</button>
+      </div>
       ` : `
-      <textarea rows="4" id="wellnessNot" placeholder="Bugün aklımdan geçenler…"
-        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box;margin-bottom:8px"></textarea>
+      <textarea rows="4" style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box;margin-bottom:8px"></textarea>
       <button onclick="_gunlukNotKaydet(this)"
         style="width:100%;padding:11px;border-radius:11px;background:var(--accent);color:#fff;border:none;font-weight:800;font-size:0.85rem;cursor:pointer;font-family:inherit">
         🔒 Kaydet &amp; Gizle
@@ -604,18 +606,28 @@ function wellnessPage() {
 }
 
 // ── GÜNLÜK NOT KAYDET / DÜZENLE ──────────────────────────────
+// Günlük notları için ayrı key — loadWellnessFromFirestore bunu asla ezmez
+function _gunlukNotKey() {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  return 'gunluk_not_' + myUid;
+}
+function _gunlukNotOku() {
+  try { return JSON.parse(localStorage.getItem(_gunlukNotKey())||'{}'); } catch(e){ return {}; }
+}
+function _gunlukNotYaz(data) {
+  try { localStorage.setItem(_gunlukNotKey(), JSON.stringify(data)); } catch(e){}
+}
+
 function _gunlukNotKaydet(btn) {
   const kart = document.getElementById('gunlukNotKart');
   const ta = kart ? kart.querySelector('textarea') : null;
   const not = ta?.value.trim();
   if (!not) { showToast('⚠️', 'Bir şeyler yaz önce'); return; }
 
-  const { myUid, storageKey, data } = _getW();
-  const todayKey = getTodayKey();
-  if (!data.days) data.days = {};
-  if (!data.days[todayKey]) data.days[todayKey] = {};
-  data.days[todayKey].not = not;
-  _syncW(myUid, storageKey, data);
+  // Sadece kendi özel key'ine yaz — wellness verisine dokunmaz
+  const data = _gunlukNotOku();
+  data[getTodayKey()] = not;
+  _gunlukNotYaz(data);
 
   if (kart) {
     kart.innerHTML = `
@@ -633,10 +645,8 @@ function _gunlukNotKaydet(btn) {
 }
 
 function _gunlukNotDuzenle() {
-  const myUid = (window.currentUserData||{}).uid || 'local';
-  let data = {};
-  try { data = JSON.parse(localStorage.getItem('wellness_'+myUid)||'{}'); } catch(e){}
-  const mevcut = data.days?.[getTodayKey()]?.not || '';
+  const data = _gunlukNotOku();
+  const mevcut = data[getTodayKey()] || '';
 
   const kart = document.getElementById('gunlukNotKart');
   if (!kart) return;
@@ -645,9 +655,9 @@ function _gunlukNotDuzenle() {
     <div style="font-size:0.72rem;color:var(--text2);margin-bottom:8px">Sadece sana özel — kimse okuyamaz, PIN ile korunuyor.</div>
     <textarea rows="4" style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box;margin-bottom:8px">${mevcut}</textarea>
     <button onclick="_gunlukNotKaydet(this)" style="width:100%;padding:11px;border-radius:11px;background:var(--accent);color:#fff;border:none;font-weight:800;font-size:0.85rem;cursor:pointer;font-family:inherit">🔒 Kaydet &amp; Gizle</button>`;
-  // Textarea'ya odaklan
   setTimeout(()=>{ kart.querySelector('textarea')?.focus(); }, 50);
 }
+
 
 
 function _gunlukPinKey() {
@@ -844,16 +854,8 @@ function _gunlukPinUnuttum() {
 
 function _gunlukPinSifirla() {
   const myUid = (window.currentUserData||{}).uid || 'local';
-  // Tüm günlük notlarını sil ama diğer wellness verilerini koru
-  const storageKey = 'wellness_' + myUid;
-  let data = {};
-  try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
-  if (data.days) {
-    Object.keys(data.days).forEach(k => {
-      if (data.days[k].not) delete data.days[k].not;
-    });
-    localStorage.setItem(storageKey, JSON.stringify(data));
-  }
+  // Sadece günlük not key'ini sil — wellness verilerine dokunma
+  localStorage.removeItem('gunluk_not_' + myUid);
   localStorage.removeItem(_gunlukPinKey());
   document.getElementById('_pinGirModal')?.remove();
   showToast('✅', 'PIN sıfırlandı. Günlük notlar temizlendi.');
@@ -862,11 +864,11 @@ function _gunlukPinSifirla() {
 function _gunlukArsivSayfasiAc() {
   const myUid = (window.currentUserData||{}).uid || 'local';
   let data = {};
-  try { data = JSON.parse(localStorage.getItem('wellness_'+myUid)||'{}'); } catch(e){}
+  try { data = JSON.parse(localStorage.getItem('gunluk_not_'+myUid)||'{}'); } catch(e){}
 
   const todayKey = getTodayKey();
-  const gunler = Object.entries(data.days||{})
-    .filter(([k,v]) => k !== todayKey && v.not)
+  const gunler = Object.entries(data)
+    .filter(([k,v]) => k !== todayKey && v)
     .sort(([a],[b]) => b.localeCompare(a));
 
   const modal = document.createElement('div');
@@ -888,7 +890,7 @@ function _gunlukArsivSayfasiAc() {
             <div style="font-size:0.75rem;font-weight:800;color:var(--text2)">${tarih}</div>
             <button onclick="_arsivGunlukSil('${k}',this)" style="padding:3px 10px;border-radius:8px;border:1px solid #ff658444;background:transparent;color:#cc3355;font-size:0.68rem;font-weight:700;cursor:pointer;font-family:inherit">Sil</button>
           </div>
-          <div style="font-size:0.85rem;color:var(--text);line-height:1.7;white-space:pre-wrap">${v.not}</div>
+          <div style="font-size:0.85rem;color:var(--text);line-height:1.7;white-space:pre-wrap">${v}</div>
         </div>`;
       }).join('');
 
@@ -944,9 +946,9 @@ function _arsivGunlukSil(key, btn) {
         <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit">İptal</button>
         <button onclick="(function(){
           const myUid=(window.currentUserData||{}).uid||'local';
-          let d={};try{d=JSON.parse(localStorage.getItem('wellness_'+myUid)||'{}')}catch(e){}
-          if(d.days&&d.days['${key}'])delete d.days['${key}'].not;
-          try{localStorage.setItem('wellness_'+myUid,JSON.stringify(d))}catch(e){}
+          let d={};try{d=JSON.parse(localStorage.getItem('gunluk_not_'+myUid)||'{}')}catch(e){}
+          delete d['${key}'];
+          try{localStorage.setItem('gunluk_not_'+myUid,JSON.stringify(d))}catch(e){}
           const card=document.querySelector('[onclick*=\\'${key}\\']')?.closest('div[style*=border-radius]');
           if(card)card.remove();
           this.closest('[style*=fixed]').remove();
