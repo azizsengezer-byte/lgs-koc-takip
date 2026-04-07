@@ -506,6 +506,7 @@ async function saveNewStudent() {
       teacherPhoto: teacherData.photo || '',
       school: school || teacherData.school || '',
       photo: '', color, avg: 0,
+      plainPass: pass,
       createdAt: new Date()
     };
 
