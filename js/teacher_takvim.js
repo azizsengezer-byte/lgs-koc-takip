@@ -590,7 +590,7 @@ async function _takGonder() {
         const nRef = db.collection('notifications').doc();
         batch.set(nRef, {
           toUid: ogrenciUid, fromUid: koachUid, fromName: koachName,
-          type: 'task', baslik: 'Yeni haftalık program!',
+          type: 'task_takvim', baslik: 'Yeni haftalık ders planın geldi!',
           body: `${haftaLabel} için ${haftaEvleri.length} etkinlik.`,
           read: false, createdAt: new Date(),
         });

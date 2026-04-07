@@ -15,6 +15,7 @@ function _notifNavigate(n) {
       showPage('profile');
       return;
     }
+    if (n.type === 'task_takvim')    { kocProfilGoster(); return; }
     if (n.type === 'task')           { showPage('my-tasks');    return; }
     if (n.type === 'wellness_sleep') { showPage('wellness');    return; }
     if (n.type === 'reminder')       { showPage('daily-entry'); return; }
