@@ -87,7 +87,7 @@ function teacherDashboard() {
   const todayEntries = studyEntries.filter(e=>e.dateKey===todayKey);
   const activeToday = new Set(todayEntries.map(e=>e.studentName)).size;
   return `
-    <div class="page-title">📊 Ana Panel</div>
+    <div class="page-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg> Ana Panel</div>
     <div class="page-sub">Merhaba ${name}! Bugün ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
 
     ${lgsCountdownWidget()}
@@ -112,7 +112,7 @@ function teacherDashboard() {
 
     <div class="grid-2">
       <div class="card">
-        <div class="card-title">👥 Öğrenci Durumları</div>
+        <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Öğrenci Durumları</div>
         ${studentCount === 0 ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.88rem">Henüz öğrenci eklenmedi</div>` :
         students.map(s=>{
           const sEntries = studyEntries.filter(e=>e.studentName===s.name);
@@ -139,7 +139,7 @@ function teacherDashboard() {
         }).join('')}
       </div>
       <div class="card">
-        <div class="card-title">⚡ Hızlı İşlemler</div>
+        <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Hızlı İşlemler</div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
           <button class="btn btn-primary" style="width:100%;padding:12px;text-align:left" onclick="showPage('students')">
             👥 Öğrenci Listesi & Analiz
@@ -162,7 +162,7 @@ function teacherDashboard() {
     </div>
 
     <div class="card">
-      <div class="card-title">📋 Son Atanan Görevler</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Son Atanan Görevler</div>
       ${tasks.length===0
         ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.85rem">Henüz görev atanmadı</div>`
         : tasks.slice(0,4).map(t=>`
@@ -185,7 +185,7 @@ function teacherStudents() {
   const weekKey = weekAgo.toISOString().split('T')[0];
 
   return `
-    <div class="page-title">👥 Öğrencilerim</div>
+    <div class="page-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Öğrencilerim</div>
     <div class="page-sub">Koçluk takibindeki öğrenciler</div>
     <div style="display:flex;gap:10px;margin-bottom:12px">
       <button class="btn btn-primary" onclick="ogrenciEkleModalAc()">+ Öğrenci Ekle</button>
@@ -248,7 +248,7 @@ function teacherStudents() {
       }).join('')}
     </div>
     <div style="margin-top:20px" class="card">
-      <div class="card-title">📋 Haftalık Öğrenci Özeti</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Haftalık Öğrenci Özeti</div>
       <div style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:0.78rem">
           <thead>
@@ -1214,7 +1214,7 @@ function studentDetailAnalysis() {
     <!-- Son 7 gün trend — tıklanabilir -->
     ${studentAnalysisPeriod!=='daily'?`
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title">📅 Son 7 Gün — Soru & Net Trendi</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Son 7 Gün — Soru & Net Trendi</div>
       <div style="display:flex;gap:4px;align-items:flex-end;height:100px;padding-bottom:20px;box-sizing:border-box">
         ${trendDays.map(t=>{
           const hQ=t.q>0?Math.max(Math.round((t.q/maxTQ)*60),6):0;
@@ -1240,7 +1240,7 @@ function studentDetailAnalysis() {
 
     <!-- Ders bazlı detay — konu accordion -->
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title">📚 Ders Bazlı Detay — ${periodLabel}</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Ders Bazlı Detay — ${periodLabel}</div>
       ${filtered.length===0
         ? `<div style="text-align:center;padding:24px;color:var(--text2)">Bu dönemde veri yok</div>`
         : subStats.map(s=>{
@@ -1280,7 +1280,7 @@ function studentDetailAnalysis() {
     <!-- Deneme sonuçları son 3 -->
     ${denList.length>0?`
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title">🎯 Son Denemeler</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Son Denemeler</div>
       ${denList.slice(0,3).map((d,di)=>{
         const subR=subjects.map(s=>{ const e=d.entries.find(e=>e.subject===s.name); if(!e) return {name:s.name,cls:s.cls,icon:s.icon,d:0,y:0,net:0,hasData:false}; return {name:s.name,cls:s.cls,icon:s.icon,d:e.correct||0,y:e.wrong||0,net:e.net||0,hasData:true}; });
         const lgsR=calcLGSScore(subR.map(s=>({...s,avgNet:s.net,count:s.net>0?1:0})));
@@ -1315,7 +1315,7 @@ function studentDetailAnalysis() {
     <!-- Psikolojik-Akademik Korelasyon -->
     ${korelasyonInsights.length>0?`
     <div class="card" style="margin-bottom:12px;border:1px solid #6c63ff44;background:linear-gradient(135deg,#6c63ff0a,#fd79a80a)">
-      <div class="card-title">🔗 Psikolojik-Akademik Korelasyon</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Psikolojik-Akademik Korelasyon</div>
       <div style="font-size:0.78rem;color:var(--text2);margin-bottom:10px">${periodLabel} psikolojik veri ile akademik performans karşılaştırması:</div>
       ${korelasyonInsights.map(ins=>`
         <div style="padding:10px 12px;background:var(--surface2);border-radius:10px;margin-bottom:8px;font-size:0.83rem;line-height:1.6;color:var(--text)">
@@ -1327,7 +1327,7 @@ function studentDetailAnalysis() {
 
     <!-- Koç Yorumu -->
     <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,var(--accent)10,var(--accent)04);border:1px solid var(--accent)33">
-      <div class="card-title">🧑‍🏫 Koç Değerlendirmesi</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Koç Değerlendirmesi</div>
       <div style="font-size:0.86rem;line-height:1.75;color:var(--text)">${comment}</div>
     </div>
   `;
@@ -1642,7 +1642,7 @@ async function psychReportPage() {
   // Hedefler (en son kaydedilen)
   const hedefHtml = (data.hedef||data.hedefOkul) ? `
     <div class="card" style="margin-bottom:14px">
-      <div class="card-title">🎯 Öğrencinin Hedefleri</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Öğrencinin Hedefleri</div>
       <div style="display:flex;gap:20px;flex-wrap:wrap">
         ${data.hedef?`<div><div style="font-size:0.72rem;color:var(--text2)">Hedef Puan</div><div style="font-weight:800;font-size:1.3rem;color:var(--accent)">${data.hedef}</div></div>`:''}
         ${data.hedefOkul?`<div><div style="font-size:0.72rem;color:var(--text2)">Hedef Okul</div><div style="font-weight:700;font-size:0.92rem">${data.hedefOkul}</div></div>`:''}
@@ -1652,7 +1652,7 @@ async function psychReportPage() {
   // Isı haritası HTML
   const heatMapHtml = `
     <div class="card" style="margin-bottom:14px">
-      <div class="card-title">🌡️ Psikolojik Isı Haritası — Son 30 Gün</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Psikolojik Isı Haritası — Son 30 Gün</div>
       <div style="display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-bottom:8px">
         ${heatMapDays.map(d=>`
           <div title="${d.dk}" style="aspect-ratio:1;border-radius:5px;background:${d.hasData?d.col+'88':'var(--surface2)'};
@@ -1729,7 +1729,7 @@ async function psychReportPage() {
       </div>
 
       <div class="card" style="margin-bottom:14px">
-        <div class="card-title">📅 Dönem Detayı</div>
+        <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Dönem Detayı</div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse">
             <thead><tr style="border-bottom:2px solid var(--border)">
@@ -1802,19 +1802,19 @@ function satinAlPage() {
   const planlar = [
     {
       id:'baslangic', isim:'Başlangıç', ogrenci:'5 öğrenciye kadar',
-      aylik:249, yillik:1990,
+      aylik:249, yillik:2490,
       renk:'#1D9E75', bgRenk:'#E1F5EE', textRenk:'#085041',
       populer:false, aiLimit:20, deneme:true,
     },
     {
       id:'standart', isim:'Standart', ogrenci:'15 öğrenciye kadar',
-      aylik:599, yillik:4790,
+      aylik:599, yillik:5990,
       renk:'#534AB7', bgRenk:'#EEEDFE', textRenk:'#3C3489',
       populer:true, aiLimit:75, deneme:false,
     },
     {
       id:'pro', isim:'Pro', ogrenci:'30 öğrenciye kadar',
-      aylik:999, yillik:7990,
+      aylik:999, yillik:9990,
       renk:'#BA7517', bgRenk:'#FAEEDA', textRenk:'#633806',
       populer:false, aiLimit:150, deneme:false,
     },
@@ -1912,9 +1912,9 @@ function satirToggle(tip) {
   yillikBtn.innerHTML = 'Yıllık <span style="font-size:0.65rem;background:#1D9E75;color:#E1F5EE;border-radius:99px;padding:2px 7px;font-weight:800">-2 ay</span>';
 
   const planlar = [
-    { id:'baslangic', aylik:249, yillik:1990 },
-    { id:'standart',  aylik:599, yillik:4790 },
-    { id:'pro',       aylik:999, yillik:7990 },
+    { id:'baslangic', aylik:249, yillik:2490 },
+    { id:'standart',  aylik:599, yillik:5990 },
+    { id:'pro',       aylik:999, yillik:9990 },
   ];
 
   planlar.forEach(p => {

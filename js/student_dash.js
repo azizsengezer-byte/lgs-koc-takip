@@ -252,7 +252,7 @@ function studentDashboard() {
   }).join('');
 
   return `
-    <div class="page-title">🏠 Ana Sayfa</div>
+    <div class="page-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Ana Sayfa</div>
     <div class="page-sub">Merhaba ${firstName}! Bugün ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
 
     ${lgsCountdownWidget()}
@@ -288,7 +288,7 @@ function studentDashboard() {
     </div>
 
     <div class="card" style="margin-bottom:16px">
-      <div class="card-title">📅 Bu Hafta
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Bu Hafta
         <span style="float:right;font-size:0.72rem;color:var(--text2);font-weight:400">Güne tıkla → girişleri gör</span>
       </div>
       <div class="week-grid">${weekCalendar}</div>
@@ -320,7 +320,7 @@ function studentDashboard() {
     </button>
 
     <div class="card">
-      <div class="card-title">📊 Son Girişlerim</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg> Son Girişlerim</div>
       ${studyEntries.length === 0
         ? `<div style="text-align:center;padding:24px;color:var(--text2)">Henüz giriş yok. Çalışmaya başla! 💪</div>`
         : studyEntries.slice(0,5).map(e=>`
@@ -491,7 +491,7 @@ function studentDailyEntry() {
   }).join('');
 
   return `
-    <div class="page-title">✏️ Günlük Çalışma Girişi</div>
+    <div class="page-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Günlük Çalışma Girişi</div>
     <div class="page-sub">${todayStr}</div>
 
     <div class="grid-3" style="margin-bottom:20px">
@@ -510,7 +510,7 @@ function studentDailyEntry() {
     </div>
 
     <div class="card" style="margin-bottom:20px">
-      <div class="card-title">📚 Ders Seç & Çalışma Ekle</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Ders Seç & Çalışma Ekle</div>
       <div class="subject-entry-grid">
         ${subjects.map(s=>{
           const sEntries = todayEntries.filter(e=>e.subject===s.name&&e.type==='soru');
@@ -623,7 +623,7 @@ function studentAnalysis() {
   const maxTQ = Math.max(...trendData.map(t=>t.q),1);
 
   return `
-    <div class="page-title">📈 Analizlerim</div>
+    <div class="page-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> Analizlerim</div>
     <div class="page-sub">Kişisel performans takibi</div>
 
     <!-- Dönem seçici -->
@@ -659,7 +659,7 @@ function studentAnalysis() {
     <!-- Son 7 günlük trend -->
     ${analysisPeriod !== 'daily' ? `
     <div class="card" style="margin-bottom:16px">
-      <div class="card-title">📊 Son 7 Günlük Trend</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg> Son 7 Günlük Trend</div>
       <div style="display:flex;align-items:flex-end;gap:6px;height:80px;padding:0 4px">
         ${trendData.map(t=>{
           const h = Math.round((t.q/maxTQ)*70)+2;
@@ -675,7 +675,7 @@ function studentAnalysis() {
 
     <!-- Ders bazlı detay -->
     <div class="card" style="margin-bottom:16px">
-      <div class="card-title">📚 Ders Bazlı Analiz — ${periodLabel}</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Ders Bazlı Analiz — ${periodLabel}</div>
       ${filtered.length === 0
         ? `<div style="text-align:center;padding:24px;color:var(--text2)">Bu dönemde henüz veri yok. Çalışma girişi ekle! 💪</div>`
         : subjectStats.map(s=>`
@@ -695,7 +695,7 @@ function studentAnalysis() {
     <!-- Güçlü / Zayıf -->
     ${filtered.length > 0 ? `
     <div class="card" style="margin-bottom:16px">
-      <div class="card-title">⚡ Güçlü & Zayıf Derslerim</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Güçlü & Zayıf Derslerim</div>
       <div class="grid-2">
         <div>
           <div style="color:var(--accent3);font-weight:800;margin-bottom:10px">💪 En Başarılı</div>
@@ -716,7 +716,7 @@ function studentAnalysis() {
 
     <!-- Koç Yorumu -->
     <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,var(--accent)12,var(--accent)05);border:1px solid var(--accent)33">
-      <div class="card-title">🤖 Performans Yorumu</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="1" y1="9" x2="4" y2="9"/></svg> Performans Yorumu</div>
       <div style="font-size:0.88rem;line-height:1.7;color:var(--text)">${comment}</div>
     </div>
 
@@ -1066,7 +1066,7 @@ function yardimPage() {
 
     <!-- SSS -->
     <div class="card" style="margin-top:12px">
-      <div class="card-title">📋 Sık Sorulan Sorular</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Sık Sorulan Sorular</div>
       ${sss.map((item, i) => `
         <div style="border-bottom:1px solid var(--border)">
           <div onclick="(function(i){var c=document.getElementById('sssP'+i);var a=document.getElementById('sssA'+i);var open=c.style.maxHeight!=='0px'&&c.style.maxHeight!=='';c.style.maxHeight=open?'0px':'200px';c.style.opacity=open?'0':'1';a.style.transform=open?'':'rotate(180deg)'})(${i})"
@@ -1082,7 +1082,7 @@ function yardimPage() {
 
     <!-- İletişim -->
     <div class="card" style="margin-top:16px">
-      <div class="card-title">📬 Bize Ulaş</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Bize Ulaş</div>
       <div style="font-size:0.8rem;color:var(--text2);margin-bottom:14px;line-height:1.6">
         Sorun yaşıyorsan veya öneride bulunmak istiyorsan bize ulaşabilirsin.
       </div>

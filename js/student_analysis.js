@@ -315,7 +315,7 @@ function wellnessPage() {
 
     <!-- Hedefler -->
     <div class="card" style="margin-bottom:14px">
-      <div class="card-title">🎯 Hedeflerim</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Hedeflerim</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <div style="flex:1;min-width:120px">
           <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:5px">Hedef Puan</div>
@@ -336,7 +336,7 @@ function wellnessPage() {
 
     <!-- BÖLÜM 1: Duygu & Enerji -->
     <div class="card" style="margin-bottom:14px">
-      <div class="card-title">😊 Duygu Durum & Enerji</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg> Duygu Durum & Enerji</div>
       <div style="font-size:0.75rem;color:var(--text2);margin-bottom:10px;padding:5px 8px;background:var(--surface2);border-radius:8px">📅 ${new Date(todayKey+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'long',year:'numeric'})} verisi${Object.keys(today).length===0?' — bugün henüz giriş yapılmadı':''}</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">Bugün nasıl hissediyorsun?</div>
@@ -380,7 +380,7 @@ function wellnessPage() {
 
     <!-- BÖLÜM 2: Akademik Özgüven -->
     <div class="card" style="margin-bottom:14px">
-      <div class="card-title">📚 Akademik Özgüven</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Akademik Özgüven</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Bugün hangi derste en çok zorlandın?</div>
       <button type="button" onclick="openOptionPicker('zorDers','Zorlanan Ders',[{v:'',l:'— Seçiniz —'},{v:'Türkçe',l:'📖 Türkçe'},{v:'Matematik',l:'📐 Matematik'},{v:'Fen Bilimleri',l:'🔬 Fen Bilimleri'},{v:'İnkılap Tarihi',l:'🏛️ İnkılap Tarihi'},{v:'Din Kültürü',l:'☪️ Din Kültürü'},{v:'İngilizce',l:'🌍 İngilizce'}], null)"
@@ -407,7 +407,7 @@ function wellnessPage() {
 
     <!-- BÖLÜM 3: Fizyolojik İyi Oluş -->
     <div class="card" style="margin-bottom:14px">
-      <div class="card-title">🌙 Fizyolojik İyi Oluş</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Fizyolojik İyi Oluş</div>
 
       <!-- Uyku + Ekran yan yana üst satır -->
       <div style="display:flex;gap:10px;margin-bottom:12px;align-items:stretch">
@@ -463,7 +463,7 @@ function wellnessPage() {
 
     <!-- BÖLÜM 4: Kaygı & Stres -->
     <div class="card" style="margin-bottom:14px">
-      <div class="card-title">🧠 Kaygı & Stres Takibi</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Kaygı & Stres Takibi</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Kaygı Skoru (1-10)</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
