@@ -1,25 +1,48 @@
-function toggleProfileMenu() {
-  const menu = document.getElementById('profileMenu');
-  menu.classList.toggle('open');
-  // İsim/rol güncelle
+function openProfileDrawer() {
+  const drawer  = document.getElementById('profileDrawer');
+  const overlay = document.getElementById('drawerOverlay');
   const ud = window.currentUserData || {};
-  const el = document.getElementById('menuName');
-  const rl = document.getElementById('menuRole');
-  if (el) el.textContent = ud.name || '—';
-  if (rl) rl.textContent = ud.role === 'teacher' ? 'Koç Öğretmen' : 'Öğrenci';
-}
-function closeProfileMenu() {
-  const menu = document.getElementById('profileMenu');
-  if (menu) menu.classList.remove('open');
-}
-// Dışarı tıklanınca kapat
-document.addEventListener('click', function(e) {
-  const menu = document.getElementById('profileMenu');
-  const avatar = document.getElementById('headerAvatar');
-  if (menu && avatar && !menu.contains(e.target) && !avatar.contains(e.target)) {
-    menu.classList.remove('open');
+
+  // İsim & rol
+  const nameEl = document.getElementById('menuName');
+  const roleEl = document.getElementById('menuRole');
+  if (nameEl) nameEl.textContent = ud.name || '—';
+  if (roleEl) roleEl.textContent = ud.role === 'teacher' ? 'Koç Öğretmen' : '8. Sınıf Öğrencisi';
+
+  // Drawer avatar
+  const da = document.getElementById('drawerAvatar');
+  if (da) {
+    if (ud.photo) {
+      da.innerHTML = `<img src="${ud.photo}" style="width:52px;height:52px;border-radius:50%;object-fit:cover">`;
+      da.style.background = 'transparent';
+    } else {
+      da.textContent = (ud.name || '?')[0].toUpperCase();
+      da.style.background = 'linear-gradient(135deg,#6c63ff,#4cc9f0)';
+    }
   }
-});
+
+  // Plan banner — sadece öğretmene
+  const banner = document.getElementById('drawerPlanBanner');
+  if (banner) banner.style.display = ud.role === 'teacher' ? 'block' : 'none';
+
+  // Aç
+  if (overlay) { overlay.style.display = 'block'; requestAnimationFrame(() => overlay.style.background = 'rgba(0,0,0,0.45)'); }
+  if (drawer)  requestAnimationFrame(() => drawer.style.right = '0');
+}
+
+function closeProfileDrawer() {
+  const drawer  = document.getElementById('profileDrawer');
+  const overlay = document.getElementById('drawerOverlay');
+  if (drawer)  drawer.style.right = '-224px';
+  if (overlay) {
+    overlay.style.background = 'rgba(0,0,0,0)';
+    setTimeout(() => { overlay.style.display = 'none'; }, 300);
+  }
+}
+
+// Eski isimler — geriye dönük uyumluluk
+function toggleProfileMenu() { openProfileDrawer(); }
+function closeProfileMenu()   { closeProfileDrawer(); }
 
 function doLogout() {
   auth.signOut();

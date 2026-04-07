@@ -492,8 +492,7 @@ auth.onAuthStateChanged(async (user) => {
       const _oab = document.getElementById('okulArkadasBtn');
       if (_oab) _oab.style.display = currentRole==='student' ? 'flex' : 'none';
       const _sab = document.getElementById('satinAlMenuBtn');
-      if (_sab) _sab.style.display = currentRole==='teacher' ? 'flex' : 'none';
-      // Çerçeveyi uygula — önce Firestore'dan oku
+      if (_sab) _sab.style.display = currentRole==='teacher' ? 'flex' : 'none';      // Çerçeveyi uygula — önce Firestore'dan oku
       if (currentRole === 'student') {
         if (db) {
           db.collection('users').doc(user.uid).get().then(snap=>{
