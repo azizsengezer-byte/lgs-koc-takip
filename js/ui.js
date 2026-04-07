@@ -81,24 +81,38 @@ function startCountdown() {
 
 function renderSidebar() {
   const sb = document.getElementById('sidebar');
+  const _s = (p,extra='') => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" ${extra}>${p}</svg>`;
+  const ICONS = {
+    grid:    _s('<rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/>'),
+    users:   _s('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+    trend:   _s('<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>'),
+    check:   _s('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'),
+    msg:     _s('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
+    bell:    _s('<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>'),
+    home:    _s('<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'),
+    pencil:  _s('<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>'),
+    target:  _s('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>'),
+    heart:   _s('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'),
+    pie:     _s('<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>'),
+  };
   const teacherNav = [
-    { id:'dashboard', icon:'📊', label:'Ana Panel' },
-    { id:'students', icon:'👥', label:'Öğrencilerim' },
-    { id:'analysis', icon:'📈', label:'Analizler' },
-    { id:'tasks-teacher', icon:'📋', label:'Görevler' },
-    { id:'messages', icon:'💬', label:'Mesajlar' },
-    { id:'notifs', icon:'🔔', label:'Bildirimler' },
+    { id:'dashboard',     icon:ICONS.grid,   label:'Ana Panel' },
+    { id:'students',      icon:ICONS.users,  label:'Öğrencilerim' },
+    { id:'analysis',      icon:ICONS.trend,  label:'Analizler' },
+    { id:'tasks-teacher', icon:ICONS.check,  label:'Görevler' },
+    { id:'messages',      icon:ICONS.msg,    label:'Mesajlar' },
+    { id:'notifs',        icon:ICONS.bell,   label:'Bildirimler' },
   ];
   const studentNav = [
-    { id:'dashboard', icon:'🏠', label:'Ana Sayfa' },
-    { id:'daily-entry', icon:'✏️', label:'Günlük Giriş' },
-    { id:'my-analysis', icon:'📈', label:'Analizlerim' },
-    { id:'kazanimlar', icon:'🎯', label:'Kazanımlarım' },
-    { id:'my-tasks', icon:'📋', label:'Ödevlerim' },
-    { id:'wellness', icon:'💙', label:'Nasıl Hissediyorum' },
-    { id:'lgs-dagilim', icon:'📊', label:'LGS Soru Dağılımı' },
-    { id:'messages', icon:'💬', label:'Koçumla Mesaj' },
-    { id:'notifs', icon:'🔔', label:'Bildirimler' },
+    { id:'dashboard',    icon:ICONS.home,   label:'Ana Sayfa' },
+    { id:'daily-entry',  icon:ICONS.pencil, label:'Günlük Giriş' },
+    { id:'my-analysis',  icon:ICONS.trend,  label:'Analizlerim' },
+    { id:'kazanimlar',   icon:ICONS.target, label:'Kazanımlarım' },
+    { id:'my-tasks',     icon:ICONS.check,  label:'Ödevlerim' },
+    { id:'wellness',     icon:ICONS.heart,  label:'Nasıl Hissediyorum' },
+    { id:'lgs-dagilim',  icon:ICONS.pie,    label:'LGS Soru Dağılımı' },
+    { id:'messages',     icon:ICONS.msg,    label:'Koçumla Mesaj' },
+    { id:'notifs',       icon:ICONS.bell,   label:'Bildirimler' },
   ];
   const nav = currentRole==='teacher' ? teacherNav : studentNav;
   sb.innerHTML = nav.map(n => `

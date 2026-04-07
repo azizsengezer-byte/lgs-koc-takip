@@ -71,18 +71,29 @@ function getDateKey(date) {
 function renderMobileNav() {
   const nav = document.getElementById('mobileNav');
   if(!nav) return;
+  const _m = p => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+  const MI = {
+    grid:   _m('<rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/>'),
+    users:  _m('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+    check:  _m('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'),
+    msg:    _m('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
+    home:   _m('<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'),
+    pencil: _m('<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>'),
+    rocket: _m('<path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>'),
+    cart:   _m('<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>'),
+  };
   const teacherNav = [
-    {id:'dashboard',icon:'📊',label:'Panel'},
-    {id:'students',icon:'👥',label:'Öğrenciler'},
-    {id:'tasks-teacher',icon:'📋',label:'Görevler'},
-    {id:'messages',icon:'💬',label:'Mesaj'},
+    {id:'dashboard',     icon:MI.grid,  label:'Panel'},
+    {id:'students',      icon:MI.users, label:'Öğrenciler'},
+    {id:'tasks-teacher', icon:MI.check, label:'Görevler'},
+    {id:'messages',      icon:MI.msg,   label:'Mesaj'},
   ];
   const studentNavAll = [
-    {id:'dashboard',  icon:'🏠', label:'Ana Sayfa'},
-    {id:'daily-entry',icon:'✏️', label:'Giriş Yap'},
-    ...(window.RC_MACERA_AKTIF !== false ? [{id:'macera', icon:'🚀', label:'Koloni'}] : []),
-    {id:'my-tasks',   icon:'📋', label:'Ödevler'},
-    ...(window.RC_MARKET_AKTIF !== false ? [{id:'market', icon:'🛒', label:'Market'}] : []),
+    {id:'dashboard',   icon:MI.home,   label:'Ana Sayfa'},
+    {id:'daily-entry', icon:MI.pencil, label:'Giriş Yap'},
+    ...(window.RC_MACERA_AKTIF !== false ? [{id:'macera', icon:MI.rocket, label:'Koloni'}] : []),
+    {id:'my-tasks',    icon:MI.check,  label:'Ödevler'},
+    ...(window.RC_MARKET_AKTIF !== false ? [{id:'market', icon:MI.cart, label:'Market'}] : []),
   ];
   const studentNav = studentNavAll;
   const items = currentRole==='teacher' ? teacherNav : studentNav;
