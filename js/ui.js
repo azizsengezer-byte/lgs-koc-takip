@@ -123,7 +123,7 @@ function renderSidebar() {
     { id:'students',      icon:ICONS.users,  label:'Öğrencilerim' },
     { id:'analysis',      icon:ICONS.trend,  label:'Analizler' },
     { id:'tasks-teacher', icon:ICONS.check,  label:'Görevler' },
-    { id:'messages',      icon:ICONS.msg,    label:'Mesajlar' },
+    { id:'takvim',        icon:ICONS.cal,    label:'Takvim' },
     { id:'notifs',        icon:ICONS.bell,   label:'Bildirimler' },
   ];
   const studentNav = [
@@ -257,6 +257,7 @@ function renderTeacherPage(id, el) {
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
   else if(id==='yardim') { el.innerHTML = yardimPage(); }
   else if(id==='satin-al') { el.innerHTML = satinAlPage(); }
+  else if(id==='takvim') { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">📅 Yükleniyor...</div>'; takvimiPage().then(html => { el.innerHTML = html; }); }
   else if(id==='profile') { profilePage().then(html => { el.innerHTML = html; setTimeout(initApiSettings, 50); if(currentRole==='student') { setTimeout(okulArkadaslariniYukle, 200); setTimeout(odulleriniYukle, 500); } }); }
   setTimeout(()=>drawCharts(), 50);
 }
