@@ -93,12 +93,13 @@ function _takHaftalikHTML() {
     const isToday = weekOffset === 0 && i === bugunIdx;
 
     const evHtml = evs.map(ev => `
-      <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:${ev.renk}12;margin-bottom:4px">
-        <div style="width:4px;border-radius:99px;align-self:stretch;background:${ev.renk};flex-shrink:0"></div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;background:${ev.renk}10;margin-bottom:4px;border:1px solid ${ev.renk}22">
+        <div style="width:3px;border-radius:99px;align-self:stretch;background:${ev.renk};flex-shrink:0"></div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:0.82rem;font-weight:700;color:var(--text)">${ev.baslik}</div>
-          ${ev.saat ? `<div style="font-size:0.68rem;color:var(--text2)">${ev.saat}</div>` : ''}
-          ${ev.not  ? `<div style="font-size:0.7rem;color:var(--text2);font-style:italic;margin-top:1px">${ev.not}</div>` : ''}
+          <div style="font-size:0.82rem;font-weight:800;color:var(--text)">${ev.baslik}</div>
+          ${ev.ders ? `<div style="font-size:0.68rem;font-weight:700;color:${ev.renk};margin-top:1px">${ev.ders}</div>` : ''}
+          ${ev.saat ? `<div style="font-size:0.68rem;color:var(--text2);margin-top:1px">🕐 ${ev.saat}</div>` : ''}
+          ${ev.not  ? `<div style="font-size:0.68rem;color:var(--text2);font-style:italic;margin-top:1px">${ev.not}</div>` : ''}
         </div>
         <button onclick="_takEvSil('${ev.id}','${key}')" style="width:22px;height:22px;border-radius:6px;border:none;background:#ff658420;color:#ff6584;cursor:pointer;font-size:0.75rem;flex-shrink:0;display:flex;align-items:center;justify-content:center">✕</button>
       </div>`).join('');
@@ -218,12 +219,13 @@ function _takAylikHTML() {
 }
 
 function _takOgrenciChipleri() {
-  const ogrenciler = window.students || [];
-  if (!ogrenciler.length) return '<span style="font-size:0.75rem;color:var(--text2)">Öğrenci bulunamadı</span>';
-  return ogrenciler.slice(0, 8).map(o => `
+  const ogrenciler = (typeof students !== 'undefined' ? students : null) || window.students || [];
+  if (!ogrenciler.length) return '<span style="font-size:0.75rem;color:var(--text2)">Henüz öğrenci eklenmemiş</span>';
+  return ogrenciler.map(o => `
     <span onclick="_takOgrenciToggle(this,'${o.uid}')"
       data-uid="${o.uid}"
-      style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1.5px solid var(--border);border-radius:99px;padding:4px 10px;font-size:0.72rem;font-weight:700;color:var(--text2);cursor:pointer;transition:all .15s">
+      style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1.5px solid var(--border);border-radius:99px;padding:5px 12px;font-size:0.75rem;font-weight:700;color:var(--text2);cursor:pointer;transition:all .15s;margin-bottom:4px">
+      <span style="width:8px;height:8px;border-radius:50%;background:${o.color};flex-shrink:0"></span>
       ${o.name.split(' ')[0]}
     </span>`).join('');
 }
@@ -345,36 +347,16 @@ function _takEtkinlikEkle(gunIndex) {
           </select>
         </div>
         <div style="flex:1">
-          <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">SAAT</div>
-          <div style="display:flex;gap:4px;align-items:center">
-            <select id="_takSaatH" class="form-select" style="flex:1;padding:10px 6px;text-align:center">
-              <option value="">--</option>
-              ${Array.from({length:18},(_,i)=>i+6).map(h=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}</option>`).join('')}
-            </select>
-            <span style="font-weight:800;color:var(--text2)">:</span>
-            <select id="_takSaatM" class="form-select" style="flex:1;padding:10px 6px;text-align:center">
-              <option value="00">00</option>
-              <option value="15">15</option>
-              <option value="30">30</option>
-              <option value="45">45</option>
-            </select>
-          </div>
+          <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">BAŞLANGIÇ</div>
+          <input id="_takSaatBaslangic" type="time" class="form-input" style="margin:0;padding:10px 8px">
+        </div>
+        <div style="flex:1">
+          <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">BİTİŞ</div>
+          <input id="_takSaatBitis" type="time" class="form-input" style="margin:0;padding:10px 8px">
         </div>
       </div>
 
       <div style="display:flex;gap:8px;margin-bottom:12px">
-        <div style="flex:1">
-          <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">SÜRE</div>
-          <select id="_takSure" class="form-select">
-            <option value="">—</option>
-            <option value="30">30 dk</option>
-            <option value="45">45 dk</option>
-            <option value="60">1 saat</option>
-            <option value="90">1.5 saat</option>
-            <option value="120">2 saat</option>
-            <option value="180">3 saat</option>
-          </select>
-        </div>
         <div style="flex:1">
           <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">DERS</div>
           <select id="_takDers" class="form-select">
@@ -387,6 +369,7 @@ function _takEtkinlikEkle(gunIndex) {
             <option>İngilizce</option>
             <option>Genel Tekrar</option>
             <option>Deneme Sınavı</option>
+            <option>Dinlenme</option>
           </select>
         </div>
       </div>
@@ -433,12 +416,12 @@ async function _takKaydet() {
   if (!baslik) { showToast('⚠️', 'Başlık girin'); return; }
 
   const gun  = parseInt(gunEl?.value ?? 0);
-  const saatH = saatEl?.value || document.getElementById('_takSaatH')?.value || '';
-  const saatM = document.getElementById('_takSaatM')?.value || '00';
-  const saat  = saatH ? `${saatH}:${saatM}` : '';
+  const saatBaslangic = document.getElementById('_takSaatBaslangic')?.value || '';
+  const saatBitis    = document.getElementById('_takSaatBitis')?.value || '';
+  const saat  = saatBaslangic && saatBitis ? `${saatBaslangic}–${saatBitis}` : saatBaslangic || '';
   const sure  = document.getElementById('_takSure')?.value || '';
   const ders  = document.getElementById('_takDers')?.value || '';
-  const not   = notEl?.value.trim() || ders || '';
+  const not   = notEl?.value.trim() || '';
   const uid  = auth.currentUser?.uid;
   if (!uid) { showToast('❌', 'Oturum bulunamadı'); return; }
 
