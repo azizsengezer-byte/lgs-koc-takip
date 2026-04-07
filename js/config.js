@@ -492,6 +492,8 @@ auth.onAuthStateChanged(async (user) => {
       if (_bmb) _bmb.style.display = currentRole==='student' ? 'flex' : 'none';
       const _oab = document.getElementById('okulArkadasBtn');
       if (_oab) _oab.style.display = currentRole==='student' ? 'flex' : 'none';
+      const _prb = document.getElementById('programimBtn');
+      if (_prb) _prb.style.display = currentRole==='student' ? 'flex' : 'none';
       const _sab = document.getElementById('satinAlMenuBtn');
       if (_sab) _sab.style.display = currentRole==='teacher' ? 'flex' : 'none';      // Çerçeveyi uygula — önce Firestore'dan oku
       if (currentRole === 'student') {
