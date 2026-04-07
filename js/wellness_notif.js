@@ -355,7 +355,12 @@ function studentKazanimlar() {
 function studentTasks() {
   const bugun = getTodayKey();
   const gorunenGorevler = tasks.filter(t => {
-    if (t.done) return true;
+    if (t.done) return false; // tamamlananları gösterme
+    // Takvim görevi: hafta geçmişse gösterme
+    if (t.tip === 'takvim' && t.hafta) {
+      const simdi = _takHaftaKeyOgrenci();
+      return t.hafta >= simdi;
+    }
     if (!t.dueRaw) return true;
     return t.dueRaw >= bugun;
   });
@@ -374,6 +379,61 @@ function studentTasks() {
     '<div class="page-sub">Koç tarafından atanan görevler</div>' +
     gorunenGorevler.map(function(t) {
       var idx = tasks.indexOf(t);
+      var baslik = t.baslik || t.title || 'Görev';
+
+      // TAKVİM GÖREVI — özel kart
+      if (t.tip === 'takvim' && t.etkinlikler) {
+        var evler = t.etkinlikler || [];
+        var gunler = ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+        // Güne göre grupla
+        var grouped = {};
+        evler.forEach(function(ev) {
+          var g = ev.gun || '—';
+          if (!grouped[g]) grouped[g] = [];
+          grouped[g].push(ev);
+        });
+        var satirlar = Object.entries(grouped).map(function(entry) {
+          var gun = entry[0], evArr = entry[1];
+          return '<tr>' +
+            '<td style="padding:6px 8px;font-weight:700;color:var(--text);border-bottom:1px solid var(--border);white-space:nowrap">' + gun + '</td>' +
+            '<td style="padding:6px 8px;border-bottom:1px solid var(--border)">' +
+              evArr.map(function(ev) {
+                return '<div style="margin-bottom:2px">' +
+                  '<span style="font-weight:700;color:var(--text);font-size:0.82rem">' + ev.baslik + '</span>' +
+                  (ev.ders ? '<span style="color:var(--accent);font-size:0.72rem;margin-left:5px">' + ev.ders + '</span>' : '') +
+                  (ev.saat ? '<span style="color:var(--text2);font-size:0.7rem;margin-left:5px">🕐 ' + ev.saat + '</span>' : '') +
+                '</div>';
+              }).join('') +
+            '</td>' +
+          '</tr>';
+        }).join('');
+
+        return '<div class="card" style="margin-bottom:12px;cursor:pointer" onclick="_takimiToggle(\'' + t.id + '\')">' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">' +
+            '<div style="width:38px;height:38px;border-radius:10px;background:var(--accent)18;display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
+              '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
+            '</div>' +
+            '<div style="flex:1">' +
+              '<div style="font-size:0.9rem;font-weight:800;color:var(--text)">' + baslik + '</div>' +
+              '<div style="font-size:0.72rem;color:var(--text2);margin-top:2px">' + evler.length + ' etkinlik · Koçundan</div>' +
+            '</div>' +
+            '<svg id="takimiChev_' + t.id + '" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+          '</div>' +
+          '<div id="takimiDetay_' + t.id + '" style="display:none">' +
+            '<div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border)">' +
+              '<table style="width:100%;border-collapse:collapse;font-size:0.8rem">' +
+                '<thead><tr style="background:var(--accent)12">' +
+                  '<th style="padding:7px 8px;text-align:left;color:var(--accent);font-weight:800;border-bottom:1px solid var(--border)">Gün</th>' +
+                  '<th style="padding:7px 8px;text-align:left;color:var(--accent);font-weight:800;border-bottom:1px solid var(--border)">Program</th>' +
+                '</tr></thead>' +
+                '<tbody>' + satirlar + '</tbody>' +
+              '</table>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      // NORMAL GÖREV
       var sureBugün = t.dueRaw && t.dueRaw === bugun;
       var tarihRenk = sureBugün ? '#f9ca24' : 'var(--text2)';
       var cardStyle = (t.dueRaw && t.dueRaw === bugun && !t.done) ? 'border-left:3px solid #f9ca24;' : '';
@@ -381,8 +441,8 @@ function studentTasks() {
       return '<div class="assignment-card" style="' + cardStyle + '">' +
         '<div class="assignment-icon" style="background:rgba(108,99,255,.15);color:var(--accent);font-size:1.3rem">📝</div>' +
         '<div style="flex:1">' +
-          '<div class="assignment-title">' + t.title + '</div>' +
-          '<div class="assignment-desc">' + (t.desc||'') + ' • ' + (t.subject||'') + '</div>' +
+          '<div class="assignment-title">' + baslik + '</div>' +
+          '<div class="assignment-desc">' + (t.desc||t.not||'') + (t.subject ? ' • ' + t.subject : '') + '</div>' +
           '<div class="assignment-footer">' +
             '<span class="badge ' + (t.done ? 'badge-green' : 'badge-yellow') + '">' + (t.done ? '✓ Tamamlandı' : '⏳ Bekliyor') + '</span>' +
             '<span style="font-size:0.78rem;color:' + tarihRenk + '">📅 Son: ' + (t.due||'—') + '</span>' +
@@ -391,6 +451,22 @@ function studentTasks() {
         tamamlaBtn +
       '</div>';
     }).join('');
+}
+
+function _takHaftaKeyOgrenci() {
+  var d = new Date();
+  var jan4 = new Date(d.getFullYear(), 0, 4);
+  var weekNo = Math.ceil(((d - jan4) / 86400000 + jan4.getDay() + 1) / 7);
+  return d.getFullYear() + '-W' + String(weekNo).padStart(2,'0');
+}
+
+function _takimiToggle(id) {
+  var detay = document.getElementById('takimiDetay_' + id);
+  var chev  = document.getElementById('takimiChev_' + id);
+  if (!detay) return;
+  var open = detay.style.display !== 'none';
+  detay.style.display = open ? 'none' : 'block';
+  if (chev) chev.style.transform = open ? '' : 'rotate(180deg)';
 }
 
 /* =================== MESSAGING =================== */
