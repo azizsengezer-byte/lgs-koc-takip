@@ -268,10 +268,13 @@ function _takOgrSec(uid, isim, el) {
   } else {
     window._takSecilenOgrenciler.add(uid);
   }
+  // Listeyi kapat, arama kutusunu temizle
+  const liste = document.getElementById('_takOgrListe');
+  const ara = document.getElementById('_takOgrAra');
+  if (liste) liste.style.display = 'none';
+  if (ara) ara.value = '';
   // Seçilenleri güncelle
   _takSecilenlerGoster();
-  // Listeyi yenile
-  _takOgrFiltrele();
 }
 
 function _takSecilenlerGoster() {
@@ -407,11 +410,15 @@ function _takEtkinlikEkle(gunIndex) {
         </div>
         <div style="flex:1">
           <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">BAŞLANGIÇ</div>
-          <input id="_takSaatBaslangic" type="time" class="form-input" style="margin:0;padding:10px 8px">
+          <input id="_takSaatBaslangic" class="form-input" placeholder="14:00" maxlength="5"
+            oninput="this.value=this.value.replace(/[^0-9:]/g,'');if(this.value.length===2&&!this.value.includes(':'))this.value+=':'"
+            style="margin:0;text-align:center;font-size:1rem;font-weight:700;letter-spacing:.05em">
         </div>
         <div style="flex:1">
           <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">BİTİŞ</div>
-          <input id="_takSaatBitis" type="time" class="form-input" style="margin:0;padding:10px 8px">
+          <input id="_takSaatBitis" class="form-input" placeholder="15:30" maxlength="5"
+            oninput="this.value=this.value.replace(/[^0-9:]/g,'');if(this.value.length===2&&!this.value.includes(':'))this.value+=':'"
+            style="margin:0;text-align:center;font-size:1rem;font-weight:700;letter-spacing:.05em">
         </div>
       </div>
 
