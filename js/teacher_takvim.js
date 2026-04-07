@@ -558,9 +558,12 @@ async function _takGonder() {
       const icerik = `📅 ${haftaLabel} Haftalık Programın:\n\n${tablo}\n\nBaşarılar! 💪`;
 
       for (const ogrenciUid of ogrenciler) {
-        const ref = db.collection('messages').doc();
-        batch.set(ref, {
+        // Doğru konuşma ID'si — iki uid sıralı birleştirilir
+        const cId = [koachUid, ogrenciUid].sort().join('_');
+        const msgRef = db.collection('messages').doc(cId).collection('msgs').doc();
+        batch.set(msgRef, {
           fromUid: koachUid, toUid: ogrenciUid,
+          senderUid: koachUid,
           fromName: koachName, text: icerik,
           type: 'takvim', hafta, createdAt: new Date(), read: false,
         });
