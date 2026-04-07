@@ -826,7 +826,7 @@ function _gunlukArsivSayfasiAc() {
         <div style="font-size:0.78rem;margin-top:4px">Günlük not yazdıkça burada görünecek</div>
        </div>`
     : gunler.map(([k,v]) => {
-        const d = new Date(k.slice(0,4)+'-'+k.slice(4,6)+'-'+k.slice(6,8)+'T12:00:00');
+        const d = new Date(k + 'T12:00:00');
         const tarih = d.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
         const mInfo = moodOptions.find(x=>x.value===v.mood);
         const hasNot = !!v.not;
@@ -866,7 +866,7 @@ function _arsivGunlukAc(key) {
   let data = {};
   try { data = JSON.parse(localStorage.getItem('wellness_'+myUid)||'{}'); } catch(e){}
   const v = data.days?.[key] || {};
-  const d = new Date(key.slice(0,4)+'-'+key.slice(4,6)+'-'+key.slice(6,8)+'T12:00:00');
+  const d = new Date(key + 'T12:00:00');
   const tarih = d.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   const mInfo = moodOptions.find(x=>x.value===v.mood);
 
@@ -901,12 +901,12 @@ function _arsivGunlukSil(key, btn) {
         <button onclick="(function(){
           const myUid=(window.currentUserData||{}).uid||'local';
           let d={};try{d=JSON.parse(localStorage.getItem('wellness_'+myUid)||'{}')}catch(e){}
-          if(d.days&&d.days['${key}'])delete d.days['${key}'];
+          if(d.days&&d.days['${key}'])delete d.days['${key}'].not;
           try{localStorage.setItem('wellness_'+myUid,JSON.stringify(d))}catch(e){}
           const card=document.querySelector('[onclick*=\\'${key}\\']')?.closest('div[style*=border-radius]');
           if(card)card.remove();
           this.closest('[style*=fixed]').remove();
-          showToast('✅','Günlük silindi');
+          showToast('✅','Günlük notu silindi');
         })()" style="flex:1;padding:10px;border-radius:10px;border:none;background:#cc3355;color:#fff;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit">Sil</button>
       </div>
     </div>`;
