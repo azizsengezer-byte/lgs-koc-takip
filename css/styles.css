@@ -186,7 +186,16 @@
   #appConfirmModal { position:fixed; inset:0; background:rgba(26,26,46,.35); z-index:9998; display:none; align-items:flex-end; justify-content:center; padding:0 0 32px; backdrop-filter:blur(3px); }
   #appConfirmModal.open { display:flex; }
   #appConfirmBox { background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:24px 20px 20px; width:100%; max-width:440px; box-shadow:var(--shadow-md); animation:slideUp .22s ease; }
+  /* Öğrenci swipe kartları */
   @keyframes slideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .swipe-wrap { position:relative; border-radius:14px; overflow:hidden; margin-bottom:7px; }
+  .swipe-actions { position:absolute; right:0; top:0; bottom:0; display:flex; align-items:stretch; z-index:1; }
+  .swipe-action-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; width:68px; border:none; cursor:pointer; font-family:'Nunito',sans-serif; background:#2a2d3e; flex-shrink:0; }
+  .swipe-action-btn:last-child { background:#cc3355; }
+  .swipe-action-btn span { font-size:0.58rem; font-weight:700; color:rgba(255,255,255,0.85); letter-spacing:.03em; }
+  .swipe-front { position:relative; z-index:2; background:var(--surface); border-radius:14px; display:flex; align-items:center; gap:10px; padding:12px 13px; cursor:pointer; transition:transform .28s cubic-bezier(.25,.46,.45,.94); will-change:transform; user-select:none; border:1px solid var(--border); }
+  .swipe-front.swipe-open { transform:translateX(-204px); }
+
   #appConfirmTitle { font-weight:800; font-size:1rem; margin-bottom:8px; color:var(--text); }
   #appConfirmMsg { font-size:0.86rem; color:var(--text2); line-height:1.5; margin-bottom:20px; }
   .confirm-btns { display:flex; gap:10px; }
