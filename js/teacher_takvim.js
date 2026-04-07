@@ -335,7 +335,7 @@ function _takEtkinlikEkle(gunIndex) {
       <div style="font-size:1rem;font-weight:800;margin-bottom:14px">Etkinlik Ekle</div>
 
       <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px">Başlık</div>
-      <input id="_takBaslik" class="form-input" placeholder="ör. Matematik, TYT Deneme…" style="margin-bottom:10px">
+      <input id="_takBaslik" class="form-input" placeholder="ör. Matematik, LGS Deneme…" style="margin-bottom:10px">
 
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <div style="flex:1">
