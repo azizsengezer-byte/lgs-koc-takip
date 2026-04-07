@@ -605,21 +605,33 @@ function wellnessPage() {
 
 // ── GÜNLÜK NOT KAYDET / DÜZENLE ──────────────────────────────
 function _gunlukNotKaydet(btn) {
-  const ta = document.getElementById('wellnessNot');
+  const kart = document.getElementById('gunlukNotKart');
+  const ta = kart ? kart.querySelector('textarea') : document.getElementById('wellnessNot');
   const not = ta?.value.trim();
   if (!not) { showToast('⚠️', 'Bir şeyler yaz önce'); return; }
 
-  saveWellnessDay('not', not);
+  // Direkt localStorage'a yaz
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  const storageKey = 'wellness_' + myUid;
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
+  const todayKey = getTodayKey();
+  if (!data.days) data.days = {};
+  if (!data.days[todayKey]) data.days[todayKey] = {};
+  data.days[todayKey].not = not;
+  try { localStorage.setItem(storageKey, JSON.stringify(data)); } catch(e){}
 
   // Kartı "kaydedildi" görünümüne çevir
-  const kart = document.getElementById('gunlukNotKart');
   if (kart) {
     kart.innerHTML = `
       <div class="card-title">Bugün ne düşündüm?</div>
       <div style="font-size:0.72rem;color:var(--text2);margin-bottom:8px">Sadece sana özel — kimse okuyamaz, PIN ile korunuyor.</div>
-      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#43b89c12;border:1px solid #43b89c33;border-radius:10px">
-        <span style="font-size:1.1rem">🔒</span>
-        <span style="font-size:0.8rem;font-weight:700;color:#085041">Kaydedildi ve gizlendi</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#43b89c12;border:1px solid #43b89c33;border-radius:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:1rem">🔒</span>
+          <span style="font-size:0.8rem;font-weight:700;color:#085041">Kaydedildi ve gizlendi</span>
+        </div>
+        <button onclick="_gunlukNotDuzenle()" style="padding:4px 10px;border-radius:8px;border:1px solid #43b89c55;background:transparent;color:#085041;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit">Düzenle</button>
       </div>`;
   }
   showToast('✅', 'Not kaydedildi');
@@ -636,8 +648,10 @@ function _gunlukNotDuzenle() {
   kart.innerHTML = `
     <div class="card-title">Bugün ne düşündüm?</div>
     <div style="font-size:0.72rem;color:var(--text2);margin-bottom:8px">Sadece sana özel — kimse okuyamaz, PIN ile korunuyor.</div>
-    <textarea rows="4" id="wellnessNot" style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box;margin-bottom:8px">${mevcut}</textarea>
+    <textarea rows="4" style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box;margin-bottom:8px">${mevcut}</textarea>
     <button onclick="_gunlukNotKaydet(this)" style="width:100%;padding:11px;border-radius:11px;background:var(--accent);color:#fff;border:none;font-weight:800;font-size:0.85rem;cursor:pointer;font-family:inherit">🔒 Kaydet &amp; Gizle</button>`;
+  // Textarea'ya odaklan
+  setTimeout(()=>{ kart.querySelector('textarea')?.focus(); }, 50);
 }
 
 
