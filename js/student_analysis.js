@@ -606,22 +606,17 @@ function wellnessPage() {
 // ── GÜNLÜK NOT KAYDET / DÜZENLE ──────────────────────────────
 function _gunlukNotKaydet(btn) {
   const kart = document.getElementById('gunlukNotKart');
-  const ta = kart ? kart.querySelector('textarea') : document.getElementById('wellnessNot');
+  const ta = kart ? kart.querySelector('textarea') : null;
   const not = ta?.value.trim();
   if (!not) { showToast('⚠️', 'Bir şeyler yaz önce'); return; }
 
-  // Direkt localStorage'a yaz
-  const myUid = (window.currentUserData||{}).uid || 'local';
-  const storageKey = 'wellness_' + myUid;
-  let data = {};
-  try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
+  const { myUid, storageKey, data } = _getW();
   const todayKey = getTodayKey();
   if (!data.days) data.days = {};
   if (!data.days[todayKey]) data.days[todayKey] = {};
   data.days[todayKey].not = not;
-  try { localStorage.setItem(storageKey, JSON.stringify(data)); } catch(e){}
+  _syncW(myUid, storageKey, data);
 
-  // Kartı "kaydedildi" görünümüne çevir
   if (kart) {
     kart.innerHTML = `
       <div class="card-title">Bugün ne düşündüm?</div>
