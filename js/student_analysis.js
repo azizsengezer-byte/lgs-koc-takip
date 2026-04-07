@@ -269,16 +269,122 @@ function showDagilimDetail(ders) {
 // ============================================================
 // PSİKOLOJİK REHBERLİK & HEDEFLER SAYFASI
 // ============================================================
+// ============================================================
+// GÜNLÜK & WELLNESS SİSTEMİ
+// ============================================================
+
 const moodOptions = [
-  { emoji:'🔥', label:'Heyecanlı', value:'excited', color:'#f9ca24' },
-  { emoji:'😊', label:'İyiyim', value:'good', color:'#45b7d1' },
-  { emoji:'🎯', label:'Odaklı', value:'focused', color:'#6c63ff' },
-  { emoji:'😐', label:'İdare Eder', value:'ok', color:'#a29bfe' },
-  { emoji:'😔', label:'Yorgunum', value:'tired', color:'#fd79a8' },
-  { emoji:'😰', label:'Kaygılı', value:'anxious', color:'#ff6b6b' },
-  { emoji:'😢', label:'Mutsuzum', value:'sad', color:'#778ca3' },
+  { emoji:'😣', label:'Kötü',    value:'bad',     color:'#ff6584' },
+  { emoji:'😕', label:'Zor',     value:'hard',    color:'#f9a825' },
+  { emoji:'😐', label:'Normal',  value:'ok',      color:'#888' },
+  { emoji:'😊', label:'İyi',     value:'good',    color:'#43b89c' },
+  { emoji:'😄', label:'Harika',  value:'great',   color:'#6c63ff' },
 ];
 
+// ── CÜMLE HAVUZU ─────────────────────────────────────────────
+const WP = {
+  mood: {
+    bad:   ['Bugün ağır bir gün. Burada olman bile başlı başına cesaret.','Her gün güneşli olmak zorunda değil, bulutlu günler de senindir.','Kendine iyi bak bugün. Bazen en iyi yapabileceğin bu.','Zor hissediyorsun ama bu his geçici. Hep geçiyor.','En karanlık gecelerin de sabahı olur.','Bazen sadece nefes almak yeterli.','Yorgunluk güçsüzlük değil. Çok şey taşıyorsun.','Bugün olmadı, yarın yeni bir sayfa.','Hissetmek sorun değil. Hissetmemek asıl zordu.','Kendine biraz nazik ol bugün.'],
+    hard:  ['Böyle günler de geçer. Küçük adımlar bile yeterli.','Her şey mükemmel olmak zorunda değil.','Bugün biraz yorgunsun, bu normal.','İçinden geçmek zorunda olduğun günler bunlar.','Kendine karşı sabırlı ol, herkes böyle günler yaşar.','Zor hissettiriyorsa, gerçekten çalışıyorsun demek.','Bugün küçük kalmak tamam. Yarın büyük düşünürsün.','Bir şeylerin zor olması başarısız olduğun anlamına gelmiyor.','Mücadele etmek zaten önemli bir şey.','Bu da geçecek, söz.'],
+    ok:    ['Sıradan günler de birikimin bir parçası.','Bugün sakin, yarın belki daha enerjik.','Normal günler de değerli. Hepsi birikerek büyüyor.','Dalgalanmalar olmasa zaten düz bir çizgi olurdu.','Her gün harika olmak zorunda değil, tutarlı olmak yeter.','Sakin bir gün de bir kazanım.','Düzenli olmak bazen coşkudan daha değerlidir.','Normal hissetmek, iyi hissetmektir aslında.'],
+    good:  ['Bu enerjiyi iyi kullan, nadir bir şey.','İyi hissetmek de bir başarı. Sahip çık buna.','Böyle günlerde ne yaptığını hatırla.','Bu hal bulaşıcı, devam et.','Bugün kendini ödüllendirmeyi hak ediyorsun.','Bu his geçici ama iz bırakıyor. Güzel bir iz.','İyi günlerin tadını çıkar.','Bu enerjiyi nasıl koruyabileceğini düşün.','Güzel bir gün seni bekliyor gibi görünüyor.','Bu hissin nereden geldiğini fark etmeye çalış.'],
+    great: ['Bu enerjiyi besle, büyüt.','Harika günler harika anların birikim sonucudur.','Tam gaz! Bu hal seninle kalsın.','Bugün dünya biraz daha iyi bir yer.','Bu hissi hatırla, zor günlerde işine yarayacak.','Seni bu kadar neyin mutlu ettiğini biliyor musun?','Bu enerjiyle nelere ulaşabileceğini düşün.','Harika günler öyle gelmiyor, sen getiriyorsun.','Bugün her şey mümkün hissettiriyor.','Böyle hissetmek için emek verdin.'],
+  },
+  enerji: {
+    low:  ['Enerjin düşük ama buraya yazdın. Bu da bir şey.','Düşük enerjili günlerde mola vermek zayıflık değil.','Bedenin bugün dinlenmeye ihtiyaç duyuyor olabilir.','Az enerjiyle küçük adımlar atmak da değerlidir.','Bazen pilimiz bitiyor. Bu insani.','Bugün kendine izin ver, yarın yeniden şarj olursun.','Yorgunluk bir mesajdır, dinle onu.'],
+    mid:  ['Orta enerji, kararlılıkla çok şey yapar.','Ne tam dolu ne tam boş. Dengeli bir gün.','Bu enerjiyle neler yapabileceğini dene.','Yeterli enerji var, yeter ki doğru yönlendir.','Sabit tempoda devam et.','Ortalama günler de birikime katkı sağlar.','Sürdürülebilir tempo bu olabilir.'],
+    high: ['Bu enerji nadir bir hediye, iyi kullan.','Dolu pillerin var, harika bir gün seni bekliyor.','Bu enerjini nasıl değerlendireceğine sen karar ver.','Bugün kendini durdurmak zor olacak, bırak akışı.','Böyle hissetmek için emek verdin, hak ettin.','Bu hali mümkün olduğunca uzat.','Yüksek enerji + niyet = güçlü bir gün.'],
+  },
+  odak: {
+    low:  ['Odaklanmak bugün zor, bu bazen öyle oluyor.','Dağınık zihin dinlenmeye ihtiyaç duyuyor olabilir.','Odaklanamıyorsan ortamını değiştirmeyi dene.','Dikkat dağıldığında kendini suçlama, tekrar başla.','Her dağınık günün ardından toplanmış günler geliyor.','Küçük bloklar halinde çalışmak bugün daha iyi olabilir.','5 dakika odaklanmayı dene, sonra karar ver.'],
+    mid:  ['Orta odak, doğru konuyla buluşunca yeterli olur.','Tam konsantre olmasan da devam etmek değerli.','Bugün en önemli bir şeyi tamamlamak yeterli.','Odak bir kas, her gün biraz güçleniyor.','Mükemmel odak beklemeden başlamak çok daha iyi.','Hayatın her günü keskin olmak zorunda değilsin.'],
+    high: ['Zihnin keskin bugün, iyi fırsatla bu.','Bu odak seviyesi seni çok ileri götürür.','Tam konsantrasyon harika bir hal, tadını çıkar.','Bugün akış halindeysen durma.','Bu hali besleyen neydi, fark ettiysen koru onu.','Keskin zihin + iyi niyet = güçlü gün.'],
+  },
+  kaygi: {
+    low:  ['Kaygın düşük. Zihninle barışık bir gün.','Sakin bir zihin en büyük güçtür.','Bu huzuru hissedebilmek güzel bir şey.','İçin sakin, bu geçici değil korunabilir.','Sakin kalmak bir beceri, her gün biraz daha gelişiyor.','Bu hali yakalayan az insan var, koru onu.'],
+    mid:  ['Biraz kaygı var ama bu seni durdurmaz.','Orta kaygı aslında dikkatli olmak demek bazen.','Kaygın seni uyarıyor, ama karar sen veriyorsun.','Bu his geçecek, kendin için burada olmaya devam et.','Kaygıyla yaşamak değil, ona rağmen yürümek.','Zihnini meşgul eden şeyi yazmak hafifletebilir.','Nefes al. Gerçekten sadece derin bir nefes.'],
+    high: ['Kaygın biraz yüksek. Kendine nazik davranmayı unutma.','Bu his çok güçlü hissettiriyor ama geçici.','Bugün kendine ekstra şefkat göster.','Bu hissi birine anlatmak ister misin? Koçun dinler.','Büyük resmi şu an görmen gerekmiyor. Sadece bugün.','Kaygıyla mücadele etmek yerine kabul etmek bazen daha hafif.'],
+    vhigh:['Kaygın çok yoğun hissettiriyor. Yalnız taşımak zorunda değilsin.','Bu hissi içinde tutmak ağır. Güvendiğin birine anlat.','Şu an her şey büyük görünüyor, ama bu his gerçeği değiştirmiyor.','Yardım istemek cesaret gerektirir, ve sen cesursun.','Bugün tek yapman gereken nefes almak olabilir. Yeterli.'],
+  },
+  ders: {
+    'Matematik':       ['Matematik sabır ister, acele etme.','Bir problemi çözemesen de çözmeye çalıştın. Bu önemli.','Matematikte zorlanmak zeka eksikliği değil, alıştırma eksikliği.','Her yanlış çözüm seni doğruya biraz daha yaklaştırıyor.','Bugün zorlandığın konu yarın daha tanıdık gelecek.','Matematik direniyor ama sen ısrar ediyorsun.'],
+    'Türkçe':          ['Türkçe bazen soyut hissettiriyor, bu normal.','Anlamadığın bir metin seni küçük düşürmez.','Dil becerileri zaman içinde gelişir, bu bir süreç.','Bugün zor bir parça vardı ama devam ettin.','Türkçeye zaman ayırmak hiç boşa gitmez.','Okumak her şeyin temelidir, sabret.'],
+    'Fen Bilimleri':   ['Fen bilimlerinde kavramlar birbirine bağlıdır, birine hakim olunca diğerleri gelir.','Bugün kafa karıştırıcıydı ama yarın daha net görünecek.','Merak etmek zaten fen bilimidir. Sen merak ediyorsun.','Her kavram bir puzzle parçası, yavaş yavaş oturur.','Zorlandığın konu üzerinde biraz daha durmaya değer.'],
+    'İnkılap Tarihi':  ['Tarih ezber değil, hikaye okumak gibi düşün.','Olaylar arasındaki bağı görmek zaman alır.','Bugün zorlandıysan bir kez daha okumak fark yaratır.','Her seferinde biraz daha netleşiyor.','Tarihi anlamak için bağlamına bakmak gerekiyor, sabret.'],
+    'Din Kültürü':     ['Bugün zorlu bir konuyla karşılaştın, bu geçecek.','Kavramları kendi kelimenle ifade etmek anlamayı kolaylaştırır.','Zorlandığın yeri not al, tekrar dönersin.','Her ders kendi içinde bir dünya, zamanla açılıyor.'],
+    'İngilizce':       ['Dil öğrenmek zaman ister, acele etme.','Bugün anlamadıkların yarın daha tanıdık gelebilir.','İngilizce bir maraton, sprint değil.','Kelime dağarcığı her gün biraz büyüyor, fark etmesen de.','Hata yapmak dilin bir parçası, korkma.','Bugün zorlandın ama devam ettin.'],
+  },
+  uyku: {
+    low:  ['Bugün yorgun olabilirsin, kendine nazik ol.','Az uyku zor bir gün getirebilir. Mola almaktan çekinme.','Bu gece erken yatmayı düşün.','Yorgun zihin de çalışır, ama kendine ağır beklenti koyma.','Bugün az enerjiyle devam ediyorsun, bu da cesaret.'],
+    mid:  ['Fena değil ama biraz daha iyi olabilir.','Yeterli olmasa da tamamen yoksun değilsin.','Bu gece biraz daha erken yatabilirsen iyi olur.','Uyku kalitesi kadar düzen de önemlidir.'],
+    good: ['Güzel bir uyku, iyi başlangıç.','İyi uyumuşsun, beynin dinç.','Bu uyku düzenini koru, çok değerli.','Dinlenmiş bir zihin en büyük avantajdır.','Bu ritmi sürdürmeye çalış.'],
+  },
+  gurur: ['Küçük zaferler büyük şeylerin habercisidir.','Bunu hatırla. Zor günlerde işine yarayacak.','Kendini takdir etmek güçtür, ama öğrenebilirsin.','Bugün küçük bir şey yaptın ama bu küçük değil.','Bu his seni beslesin.','Her gün böyle bir an bulmaya çalış.','Gurur duymayı hak ediyorsun.','Bu anı kaydetmen önemli.'],
+  streak: {
+    s2:  ['İyi başlangıç! Devam et.','Başlamak bazen en zor kısımdır, onu geçtin.','2–3 gün peşpeşe küçük ama değerli.'],
+    s5:  ['Alışkanlık oluşuyor. Bırakma.','Haftanın büyük kısmında buradasın, harika.','Düzenlilik en güçlü alışkanlıktır.','Bu seri seni besliyor.'],
+    s7:  ['Bir hafta üstü! Bu artık bir alışkanlık.','Devam etmek artık daha kolay, hissettiriyor mu?','Çoğu insan buraya kadar gelemez. Sen geldin.','Bu disiplin seni farklı kılıyor.'],
+    s14: ['İki haftadan fazla! Bu bir karakter meselesi artık.','Bunun farkında mısın? Gerçekten farkında mısın?','Bu alışkanlık seni geliştiriyor, fark etsen de etmesen de.','Uzun seriler nadirdir. Sen nadirsindir.','Bu kadar devam etmek kolay değil. Ama sen ettin.'],
+  },
+};
+
+// Rastgele ama aynı gün tekrar yok
+function wpPick(arr, seedKey) {
+  if (!arr || !arr.length) return '';
+  const today = getTodayKey ? getTodayKey() : new Date().toISOString().slice(0,10);
+  const cacheKey = '_wp_' + seedKey + '_' + today;
+  const cached = sessionStorage.getItem(cacheKey);
+  if (cached && arr.includes(cached)) return cached;
+  // Dünkü seçimi kaydet, bugün farklı seç
+  const yesterday = '_wp_' + seedKey + '_prev';
+  const prev = localStorage.getItem(yesterday);
+  let pool = prev ? arr.filter(s => s !== prev) : arr;
+  if (!pool.length) pool = arr;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  sessionStorage.setItem(cacheKey, pick);
+  localStorage.setItem(yesterday, pick);
+  return pick;
+}
+
+function wpMood(moodValue)   { return wpPick(WP.mood[moodValue]   || WP.mood.ok, 'mood_' + moodValue); }
+function wpEnerji(val)       { return wpPick(val<=3?WP.enerji.low:val<=6?WP.enerji.mid:WP.enerji.high, 'enerji_' + (val<=3?'l':val<=6?'m':'h')); }
+function wpOdak(val)         { return wpPick(val<=3?WP.odak.low:val<=6?WP.odak.mid:WP.odak.high, 'odak_' + (val<=3?'l':val<=6?'m':'h')); }
+function wpKaygi(val)        { return wpPick(val<=3?WP.kaygi.low:val<=6?WP.kaygi.mid:val<=8?WP.kaygi.high:WP.kaygi.vhigh, 'kaygi_' + val); }
+function wpDers(ders)        { return wpPick(WP.ders[ders] || [], 'ders_' + ders); }
+function wpUyku(val)         { return wpPick(val<5?WP.uyku.low:val<7?WP.uyku.mid:WP.uyku.good, 'uyku_' + (val<5?'l':val<7?'m':'h')); }
+function wpGurur()           { return wpPick(WP.gurur, 'gurur'); }
+function wpStreak(n)         { return wpPick(n>=14?WP.streak.s14:n>=7?WP.streak.s7:n>=5?WP.streak.s5:WP.streak.s2, 'streak_' + (n>=14?14:n>=7?7:n>=5?5:2)); }
+
+// Telkin kutusu HTML
+function telkinHtml(text, type='neutral') {
+  if (!text) return '';
+  const styles = {
+    good:    'background:#43b89c0e;color:#085041;border:1px solid #43b89c2a',
+    warn:    'background:#f9a8250e;color:#a07800;border:1px solid #f9a8252a',
+    alert:   'background:#ff65840e;color:#cc3355;border:1px solid #ff65842a',
+    neutral: 'background:var(--accent)0e;color:var(--accent);border:1px solid var(--accent)2a',
+  };
+  return `<div style="font-size:0.73rem;line-height:1.55;padding:7px 10px;border-radius:9px;margin-top:6px;${styles[type]||styles.neutral}">${text}</div>`;
+}
+
+// Streak hesapla
+function hesaplaStreak() {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  const data = (() => { try { return JSON.parse(localStorage.getItem('wellness_'+myUid)||'{}'); } catch(e){ return {}; } })();
+  if (!data.days) return 0;
+  let streak = 0;
+  const d = new Date();
+  while (streak < 365) {
+    const key = d.toISOString().slice(0,10).replace(/-/g,'');
+    if (data.days[key] && Object.keys(data.days[key]).length > 0) {
+      streak++;
+      d.setDate(d.getDate()-1);
+    } else break;
+  }
+  return streak;
+}
+
+// ── WELLNESS SAYFASI ─────────────────────────────────────────
 function wellnessPage() {
   const myUid = (window.currentUserData||{}).uid || 'local';
   const storageKey = 'wellness_' + myUid;
@@ -286,242 +392,210 @@ function wellnessPage() {
   try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
 
   const todayKey = getTodayKey();
-
-  // Gün değişince: dünün günlük verileri silindi, bugün boş başlar
-  // Kalıcı veriler (hedef, hedefOkul) korunur, sadece days[bugün] yok ise boş
   const today = data.days?.[todayKey] || {};
-
-  // Global cache güncelle
   window._wellnessCache = data;
 
-  // Son 7 gün mood geçmişi
-  const last7 = Array.from({length:7},(_,i)=>{
-    const d = new Date(); d.setDate(d.getDate()-i);
-    const dk = getDateKey(d);
-    const dayData = data.days?.[dk] || {};
-    const mInfo = moodOptions.find(x=>x.value===dayData.mood);
-    return { dk, label: d.toLocaleDateString('tr-TR',{weekday:'short'}), emoji: mInfo?.emoji||'·', color: mInfo?.color||'var(--border)', mood: dayData.mood };
-  }).reverse();
+  const streak = hesaplaStreak();
+  const streakHtml = streak >= 2
+    ? `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.2);border-radius:99px;padding:3px 11px;font-size:0.7rem;font-weight:800;color:#fff;margin-top:10px">🔥 ${streak} günlük seri${streak>=14?' 🏅':streak>=7?' ⭐':''}</span>`
+    : '';
+
+  const now = new Date();
+  const hour = now.getHours();
+  const selamlama = hour < 12 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar';
+  const userName = (window.currentUserData?.name || '').split(' ')[0] || '';
+
+  // Son 7 gün mood şeridi
+  const last7 = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); const dk=d.toISOString().slice(0,10).replace(/-/g,''); const dayData=data.days?.[dk]||{}; const mInfo=moodOptions.find(x=>x.value===dayData.mood); return {label:d.toLocaleDateString('tr-TR',{weekday:'short'}), emoji:mInfo?.emoji||'·', color:mInfo?.color||'var(--border)', filled:!!dayData.mood}; }).reverse();
+
+  const moodTelkin = today.mood ? telkinHtml(wpMood(today.mood), ['good','great'].includes(today.mood)?'good':['bad','hard'].includes(today.mood)?'warn':'neutral') : '';
+  const enerjiTelkin = today.enerji ? telkinHtml(wpEnerji(parseInt(today.enerji)), parseInt(today.enerji)>=7?'good':parseInt(today.enerji)<=3?'warn':'neutral') : '';
+  const odakTelkin = today.odak ? telkinHtml(wpOdak(parseInt(today.odak)), parseInt(today.odak)>=7?'good':parseInt(today.odak)<=3?'warn':'neutral') : '';
+  const kaygiTelkin = today.kaygi ? telkinHtml(wpKaygi(parseInt(today.kaygi)), parseInt(today.kaygi)>=9?'alert':parseInt(today.kaygi)>=7?'warn':parseInt(today.kaygi)<=3?'good':'neutral') : '';
+  const dersTelkin = today.zorDers ? telkinHtml(wpDers(today.zorDers), 'neutral') : '';
+  const uykuTelkin = today.uyku ? telkinHtml(wpUyku(parseFloat(today.uyku)), parseFloat(today.uyku)>=7?'good':parseFloat(today.uyku)<5?'warn':'neutral') : '';
+  const gururTelkin = today.gurur ? telkinHtml(wpGurur(), 'good') : '';
+  const streakTelkin = streak>=2 ? telkinHtml(wpStreak(streak), 'good') : '';
 
   const subjects = ['Türkçe','Matematik','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce'];
-  const randomMot = motivasyonSozleri[Math.floor(Math.random()*motivasyonSozleri.length)];
+
+  // Günlük arşiv
+  const arşivGunler = Object.entries(data.days||{})
+    .filter(([k,v]) => k !== todayKey && v.not)
+    .sort(([a],[b]) => b.localeCompare(a))
+    .slice(0,5);
 
   return `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-      <button onclick="showPage('dashboard')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
-      <div class="page-title" style="margin:0">💙 Nasıl Hissediyorum</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <button onclick="showPage('dashboard')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem;padding:0">←</button>
+      <div class="page-title" style="margin:0">📖 Günlüğüm</div>
     </div>
-    <div class="page-sub">Günlük psikolojik takip ve hedeflerim</div>
+    <div class="page-sub">Bugünü kaydet — sadece senin için</div>
 
-    <!-- Hedefler -->
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Hedeflerim</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <div style="flex:1;min-width:120px">
-          <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:5px">Hedef Puan</div>
-          <input type="number" id="wellnessHedefPuan" placeholder="örn: 480" min="100" max="500"
-            value="${data.hedef||''}"
-            onchange="saveWellnessField('hedef',this.value)"
-            style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.95rem;font-weight:700;outline:none;box-sizing:border-box">
-        </div>
-        <div style="flex:2;min-width:160px">
-          <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:5px">Hedef Okul</div>
-          <input type="text" id="wellnessHedefOkul" placeholder="örn: Çankaya Anadolu Lisesi"
-            value="${data.hedefOkul||''}"
-            onchange="saveWellnessField('hedefOkul',this.value)"
-            style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box">
-        </div>
-      </div>
+    <!-- Kişisel başlık -->
+    <div style="background:linear-gradient(135deg,#6c63ff,#4cc9f0);border-radius:18px;padding:16px;margin:12px 0">
+      <div style="font-size:0.68rem;color:rgba(255,255,255,0.8);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">${now.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
+      <div style="font-size:1.05rem;font-weight:800;color:#fff">${selamlama}${userName?' '+userName:''} 👋</div>
+      <div style="font-size:0.73rem;color:rgba(255,255,255,0.75);margin-top:2px">Bugünü birkaç satırla kaydet — sadece senin için.</div>
+      ${streakHtml}
+    </div>
+
+    <!-- Son 7 gün şeridi -->
+    <div style="display:flex;gap:4px;margin-bottom:14px">
+      ${last7.map(d=>`
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="width:32px;height:32px;border-radius:50%;background:${d.color}25;border:2px solid ${d.filled?d.color:'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:0.9rem">${d.emoji}</div>
+          <div style="font-size:0.56rem;color:var(--text2)">${d.label}</div>
+        </div>`).join('')}
     </div>
 
     <!-- BÖLÜM 1: Duygu & Enerji -->
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg> Duygu Durum & Enerji</div>
-      <div style="font-size:0.75rem;color:var(--text2);margin-bottom:10px;padding:5px 8px;background:var(--surface2);border-radius:8px">📅 ${new Date(todayKey+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'long',year:'numeric'})} verisi${Object.keys(today).length===0?' — bugün henüz giriş yapılmadı':''}</div>
-
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">Bugün nasıl hissediyorsun?</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
-        ${moodOptions.map(m => `
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">Nasıl hissediyorsun?</div>
+      <div style="display:flex;gap:5px;margin-bottom:8px">
+        ${moodOptions.map(m=>`
           <button onclick="saveWellnessDay('mood','${m.value}',this)"
-            style="flex:1;min-width:50px;padding:8px 4px;border-radius:10px;
-                   border:2px solid ${today.mood===m.value ? m.color : 'var(--border)'};
-                   background:${today.mood===m.value ? m.color+'22' : 'transparent'};
-                   cursor:pointer;transition:.15s;display:flex;flex-direction:column;align-items:center;gap:3px">
-            <span style="font-size:1.4rem">${m.emoji}</span>
-            <span style="font-size:0.58rem;font-weight:700;color:${today.mood===m.value ? m.color : 'var(--text2)'}">${m.label}</span>
+            style="flex:1;padding:8px 3px;border-radius:11px;border:2px solid ${today.mood===m.value?m.color:'var(--border)'};background:${today.mood===m.value?m.color+'22':'transparent'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s">
+            <span style="font-size:1.35rem">${m.emoji}</span>
+            <span style="font-size:0.55rem;font-weight:700;color:${today.mood===m.value?m.color:'var(--text2)'}">${m.label}</span>
           </button>`).join('')}
       </div>
+      <div id="moodTelkin">${moodTelkin}</div>
 
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Enerji Seviyesi (1-10)</div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-        <input type="range" min="1" max="10" value="${today.enerji||1}"
-          id="wellnessEnerji" oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('enerji',this.value)"
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:12px 0 6px">Enerji seviyesi (1–10)</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <input type="range" min="1" max="10" value="${today.enerji||5}" id="wellnessEnerji"
+          oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('enerji',this.value);document.getElementById('enerjiTelkin').innerHTML=telkinHtml(wpEnerji(parseInt(this.value)),parseInt(this.value)>=7?'good':parseInt(this.value)<=3?'warn':'neutral')"
           style="flex:1;accent-color:var(--accent)">
-        <span style="font-weight:900;font-size:1.1rem;color:var(--accent);min-width:24px;text-align:center">${today.enerji||5}</span>
+        <span style="font-weight:900;font-size:1.1rem;color:var(--accent);min-width:22px;text-align:center">${today.enerji||5}</span>
       </div>
+      <div id="enerjiTelkin">${enerjiTelkin}</div>
 
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Günün Kelimesi</div>
-      <input type="text" id="wellnessKelime" placeholder="Bugünü tek kelimeyle özetle... (örn: 'kararlı', 'dağınık')"
-        value="${today.kelime||''}"
-        onchange="saveWellnessDay('kelime',this.value)"
-        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box;margin-bottom:10px">
-
-      <!-- Son 7 gün -->
-      <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:6px">Son 7 Gün</div>
-      <div style="display:flex;gap:4px">
-        ${last7.map(d=>`
-          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
-            <div style="width:30px;height:30px;border-radius:50%;background:${d.color}33;border:2px solid ${d.color};
-                        display:flex;align-items:center;justify-content:center;font-size:0.9rem">${d.emoji}</div>
-            <div style="font-size:0.56rem;color:var(--text2)">${d.label}</div>
-          </div>`).join('')}
-      </div>
-    </div>
-
-    <!-- BÖLÜM 2: Akademik Özgüven -->
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Akademik Özgüven</div>
-
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Bugün hangi derste en çok zorlandın?</div>
-      <button type="button" onclick="openOptionPicker('zorDers','Zorlanan Ders',[{v:'',l:'— Seçiniz —'},{v:'Türkçe',l:'📖 Türkçe'},{v:'Matematik',l:'📐 Matematik'},{v:'Fen Bilimleri',l:'🔬 Fen Bilimleri'},{v:'İnkılap Tarihi',l:'🏛️ İnkılap Tarihi'},{v:'Din Kültürü',l:'☪️ Din Kültürü'},{v:'İngilizce',l:'🌍 İngilizce'}], null)"
-        id="zorDersBtn" style="width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.88rem;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
-        <span id="zorDersLabel">${today.zorDers ? subjects.find(s=>s===today.zorDers)||today.zorDers : '— Ders seç —'}</span>
-        <span style="color:var(--text2)">▼</span>
-      </button>
-      <input type="hidden" id="zorDers" value="${today.zorDers||''}">
-
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Odaklanma Puanı (1-10)</div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <input type="range" min="1" max="10" value="${today.odak||1}"
-          id="wellnessOdak" oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('odak',this.value)"
-          style="flex:1;accent-color:#45b7d1">
-        <span style="font-weight:900;font-size:1.1rem;color:#45b7d1;min-width:24px;text-align:center">${today.odak||5}</span>
-      </div>
-
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">💪 Bugün seni gururlandıran küçük bir an?</div>
-      <input type="text" id="wellnessGurur" placeholder="örn: Matematik problemini tek başıma çözdüm"
-        value="${today.gurur||''}"
-        onchange="saveWellnessDay('gurur',this.value)"
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:10px 0 5px">Bugünü tek kelimeyle?</div>
+      <input type="text" id="wellnessKelime" placeholder="kararlı, dağınık, umutlu…"
+        value="${today.kelime||''}" onchange="saveWellnessDay('kelime',this.value)"
         style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box">
     </div>
 
-    <!-- BÖLÜM 3: Fizyolojik İyi Oluş -->
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Fizyolojik İyi Oluş</div>
+    <!-- BÖLÜM 2: Akademik -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">Bugün çalışmak nasıldı?</div>
 
-      <!-- Uyku + Ekran yan yana üst satır -->
-      <div style="display:flex;gap:10px;margin-bottom:12px;align-items:stretch">
-        <div style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 10px">
-          <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:7px">🛌 Uyku (saat)</div>
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:7px">En çok zorlandığın ders?</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px">
+        ${subjects.map(s=>`
+          <button onclick="saveWellnessDay('zorDers','${s}',this);document.getElementById('dersTelkin').innerHTML=telkinHtml(wpDers('${s}'),'neutral')"
+            style="padding:6px 10px;border-radius:9px;font-size:0.73rem;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid ${today.zorDers===s?'var(--accent)':'var(--border)'};background:${today.zorDers===s?'var(--accent)0d':'transparent'};color:${today.zorDers===s?'var(--accent)':'var(--text2)'}">
+            ${s}
+          </button>`).join('')}
+      </div>
+      <div id="dersTelkin">${dersTelkin}</div>
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:12px 0 6px">Odak seviyesi (1–10)</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <input type="range" min="1" max="10" value="${today.odak||5}" id="wellnessOdak"
+          oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('odak',this.value);document.getElementById('odakTelkin').innerHTML=telkinHtml(wpOdak(parseInt(this.value)),parseInt(this.value)>=7?'good':parseInt(this.value)<=3?'warn':'neutral')"
+          style="flex:1;accent-color:#45b7d1">
+        <span style="font-weight:900;font-size:1.1rem;color:#45b7d1;min-width:22px;text-align:center">${today.odak||5}</span>
+      </div>
+      <div id="odakTelkin">${odakTelkin}</div>
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:10px 0 5px">Seni gururlandıran küçük bir an? 💪</div>
+      <input type="text" id="wellnessGurur" placeholder="Küçük de olsa bir şey…"
+        value="${today.gurur||''}" onchange="saveWellnessDay('gurur',this.value);if(this.value)document.getElementById('gururTelkin').innerHTML=telkinHtml(wpGurur(),'good')"
+        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box">
+      <div id="gururTelkin">${gururTelkin}</div>
+    </div>
+
+    <!-- BÖLÜM 3: İç dünya -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">İç dünyan nasıl?</div>
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Kaygı seviyesi (1–10)</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <input type="range" min="1" max="10" value="${today.kaygi||3}" id="wellnessKaygi"
+          oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('kaygi',this.value);document.getElementById('kaygiTelkin').innerHTML=telkinHtml(wpKaygi(parseInt(this.value)),parseInt(this.value)>=9?'alert':parseInt(this.value)>=7?'warn':parseInt(this.value)<=3?'good':'neutral')"
+          style="flex:1;accent-color:#ff6b6b">
+        <span style="font-weight:900;font-size:1.1rem;color:#ff6b6b;min-width:22px;text-align:center">${today.kaygi||3}</span>
+      </div>
+      <div id="kaygiTelkin">${kaygiTelkin}</div>
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:10px 0 5px">Bugün iyi giden bir şey?</div>
+      <input type="text" id="wellnessPozitif" placeholder="Her şeye rağmen…"
+        value="${today.pozitif||''}" onchange="saveWellnessDay('pozitif',this.value)"
+        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box;margin-bottom:10px">
+
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:5px">Aklını karıştıran bir düşünce?</div>
+      <input type="text" id="wellnessNegatif" placeholder="İstersen yaz, sadece sana özel…"
+        value="${today.negatif||''}" onchange="saveWellnessDay('negatif',this.value)"
+        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box">
+    </div>
+
+    <!-- BÖLÜM 4: Beden -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">Bedenin nasıl?</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div style="flex:1">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">🛌 Uyku (saat)</div>
           <input type="number" min="2" max="12" step="0.5" id="wellnessUyku" placeholder="0"
             value="${today.uyku||''}"
-            oninput="saveWellnessDay('uyku',this.value)"
-            style="width:100%;padding:7px 9px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
+            oninput="saveWellnessDay('uyku',this.value);if(this.value)document.getElementById('uykuTelkin').innerHTML=telkinHtml(wpUyku(parseFloat(this.value)),parseFloat(this.value)>=7?'good':parseFloat(this.value)<5?'warn':'neutral')"
+            style="width:100%;padding:8px 10px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
         </div>
-        <!-- Ekran Süresi grubu -->
-        <div style="flex:2;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 10px">
-          <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:7px">📱 Ekran Süresi (saat)</div>
-          <div style="display:flex;gap:8px">
-            <div style="flex:1">
-              <div style="font-size:0.65rem;color:var(--text2);margin-bottom:4px">💻 Online ders</div>
-              <input type="number" min="0" max="12" step="0.5" id="wellnessEkranOnline" placeholder="0"
-                value="${today.ekranOnline||''}"
-                oninput="saveWellnessDay('ekranOnline',this.value)"
-                style="width:100%;padding:7px 9px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
-            </div>
-            <div style="flex:1">
-              <div style="font-size:0.65rem;color:var(--text2);margin-bottom:4px">📵 Sosyal medya</div>
-              <input type="number" min="0" max="12" step="0.5" id="wellnessEkranSosyal" placeholder="0"
-                value="${today.ekranSosyal||''}"
-                oninput="saveWellnessDay('ekranSosyal',this.value)"
-                style="width:100%;padding:7px 9px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
-            </div>
-          </div>
+        <div style="flex:1">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">📱 Sosyal medya (saat)</div>
+          <input type="number" min="0" max="12" step="0.5" id="wellnessEkranSosyal" placeholder="0"
+            value="${today.ekranSosyal||''}" oninput="saveWellnessDay('ekranSosyal',this.value)"
+            style="width:100%;padding:8px 10px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
         </div>
       </div>
+      <div id="uykuTelkin">${uykuTelkin}</div>
 
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">Sabah dinç uyandın mı?</div>
-      <div style="display:flex;gap:8px;margin-bottom:12px">
-        ${[{v:'evet',l:'😄 Evet, dinçtim'},{v:'orta',l:'😐 Orta'},{v:'hayir',l:'😴 Hayır, yorgundum'}].map(o=>`
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:10px 0 7px">Sabah dinç uyandın mı?</div>
+      <div style="display:flex;gap:6px">
+        ${[{v:'evet',l:'😄 Evet'},{v:'orta',l:'😐 Orta'},{v:'hayir',l:'😴 Hayır'}].map(o=>`
           <button onclick="saveWellnessDay('uykuKalite','${o.v}',this)"
-            style="flex:1;padding:8px 6px;border-radius:9px;font-size:0.75rem;font-weight:700;cursor:pointer;
-                   border:2px solid ${today.uykuKalite===o.v?'var(--accent)':'var(--border)'};
-                   background:${today.uykuKalite===o.v?'var(--accent)22':'transparent'};
-                   color:${today.uykuKalite===o.v?'var(--accent)':'var(--text2)'}">${o.l}</button>`).join('')}
-      </div>
-
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:8px">💧 Yeterli su içtin mi?</div>
-      <div style="display:flex;gap:8px">
-        ${[{v:'evet',l:'✅ Evet'},{v:'orta',l:'🤔 Biraz'},{v:'hayir',l:'❌ Hayır'}].map(o=>`
-          <button onclick="saveWellnessDay('su','${o.v}',this)"
-            style="flex:1;padding:8px 6px;border-radius:9px;font-size:0.78rem;font-weight:700;cursor:pointer;
-                   border:2px solid ${today.su===o.v?'#45b7d1':'var(--border)'};
-                   background:${today.su===o.v?'#45b7d122':'transparent'};
-                   color:${today.su===o.v?'#45b7d1':'var(--text2)'}">${o.l}</button>`).join('')}
+            style="flex:1;padding:8px 6px;border-radius:9px;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:inherit;border:2px solid ${today.uykuKalite===o.v?'var(--accent)':'var(--border)'};background:${today.uykuKalite===o.v?'var(--accent)22':'transparent'};color:${today.uykuKalite===o.v?'var(--accent)':'var(--text2)'}">
+            ${o.l}
+          </button>`).join('')}
       </div>
     </div>
 
-    <!-- BÖLÜM 4: Kaygı & Stres -->
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Kaygı & Stres Takibi</div>
-
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Kaygı Skoru (1-10)</div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <input type="range" min="1" max="10" value="${today.kaygi||1}"
-          id="wellnessKaygi" oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('kaygi',this.value)"
-          style="flex:1;accent-color:#ff6b6b">
-        <span style="font-weight:900;font-size:1.1rem;color:#ff6b6b;min-width:24px;text-align:center">${today.kaygi||3}</span>
-      </div>
-
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">😟 Aklına gelen en olumsuz düşünce?</div>
-      <input type="text" id="wellnessNegatif" placeholder="örn: Asla başaramayacağım, çok geç kaldım..."
-        value="${today.negatif||''}"
-        onchange="saveWellnessDay('negatif',this.value)"
-        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box;margin-bottom:12px">
-
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">🌟 Her şeye rağmen bugün iyi giden bir şey?</div>
-      <input type="text" id="wellnessPozitif" placeholder="örn: Bugün 50 soru çözdüm, küçük ama güzel..."
-        value="${today.pozitif||''}"
-        onchange="saveWellnessDay('pozitif',this.value)"
-        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box;margin-bottom:12px">
-
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">📝 Günlük not (sadece sana özel)</div>
-      <textarea rows="3" id="wellnessNot" placeholder="Bugün ne düşündüm, ne hissettim..."
+    <!-- BÖLÜM 5: Günlük not -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">Bugün ne düşündüm?</div>
+      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:8px">Sadece sana özel — kimse okuyamaz.</div>
+      <textarea rows="4" id="wellnessNot" placeholder="Bugün aklımdan geçenler…"
         onchange="saveWellnessDay('not',this.value)"
-        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);
-               color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box">${today.not||''}</textarea>
+        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box">${today.not||''}</textarea>
     </div>
 
-    <!-- Kaydet butonu -->
+    ${streakTelkin ? `<div style="margin-bottom:12px">${streakTelkin}</div>` : ''}
+
+    <!-- Kaydet -->
     <button onclick="saveWellnessAll(this)"
       style="width:100%;padding:14px;border-radius:14px;background:var(--accent);color:#fff;border:none;font-weight:800;font-size:0.95rem;cursor:pointer;margin-bottom:14px">
-      ✅ Bugünü Kaydet
+      ✓ Günlüğü Kaydet
     </button>
 
-    <!-- Motivasyon -->
-    <div style="background:linear-gradient(135deg,#fd79a822,#f9ca2422);border:1px solid #fd79a844;border-radius:16px;padding:16px;margin-bottom:24px">
-      <div style="font-size:0.78rem;font-weight:700;color:var(--text2);margin-bottom:8px;letter-spacing:.05em">💫 GÜNÜN SÖZÜ</div>
-      <div id="motivasyonText" style="font-size:0.92rem;font-weight:600;color:var(--text);line-height:1.6;font-style:italic">"${randomMot.text}"</div>
-      <button onclick="newMotivation()" style="margin-top:10px;background:none;border:none;color:var(--accent);font-size:0.78rem;cursor:pointer;font-weight:700">🔄 Yeni söz</button>
-    </div>`;
+    <!-- Geçmiş günlükler -->
+    ${arşivGunler.length ? `
+    <div class="card" style="margin-bottom:24px">
+      <div class="card-title">Geçmiş Günlükler</div>
+      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:10px">Daha önce yazdıkların — sadece sen görebilirsin.</div>
+      ${arşivGunler.map(([k,v])=>{
+        const d = new Date(k.slice(0,4)+'-'+k.slice(4,6)+'-'+k.slice(6,8));
+        const tarih = d.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
+        const mInfo = moodOptions.find(x=>x.value===v.mood);
+        return `
+        <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            ${mInfo?`<span style="font-size:1rem">${mInfo.emoji}</span>`:''}
+            <span style="font-size:0.75rem;font-weight:700;color:var(--text2)">${tarih}</span>
+          </div>
+          <div style="font-size:0.82rem;color:var(--text);line-height:1.5">${v.not}</div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+  `;
 }
-
-const motivasyonSozleri = [
-  { emoji:'🌟', text:'Her büyük başarı, küçük adımların birikmesiyle gelir. Bugün de bir adım attın.' },
-  { emoji:'🎯', text:'Hedeflerin sana uzak görünebilir, ama her gün biraz daha yaklaşıyorsun.' },
-  { emoji:'💡', text:'Zorluk, gelişimin işaretidir. Eğer kolaysa büyümüyorsun demektir.' },
-  { emoji:'🔥', text:'Motivasyon seni başlatır, alışkanlık seni götürür. Bugün alışkanlık kazan.' },
-  { emoji:'🌈', text:'Dün geçti, yarın henüz gelmedi. Bugün elimden gelenin en iyisini yapıyorum.' },
-  { emoji:'🏆', text:'Sınav günü sahaya çıktığında, bugün yaptığın çalışma konuşacak.' },
-  { emoji:'💎', text:'Elmas, basınç altında şekillenir. Sen de şekilleniyorsun.' },
-  { emoji:'🚀', text:'Küçük ilerlemeler, büyük değişimlere yol açar. Devam et!' },
-  { emoji:'⭐', text:'Başkalarıyla değil, dünkü kendinle yarış. Daha iyi biri oluyorsun.' },
-  { emoji:'🌱', text:'Bugün ektiğin tohumlar, gelecekte meyve verecek. Ekmeye devam!' },
-];
-
-function newMotivation() {
-  const s = motivasyonSozleri[Math.floor(Math.random()*motivasyonSozleri.length)];
-  const el = document.getElementById('motivasyonText');
-  if(el) el.textContent = '"' + s.text + '"';
-}
-

@@ -258,17 +258,43 @@ function studentDashboard() {
 
     ${lgsCountdownWidget()}
 
-    <!-- Nasıl Hissediyorum — her zaman animasyonlu banner -->
-    <div class="wellness-banner-wrap">
-      <button class="wellness-banner-inner" onclick="showPage('wellness')">
-        <span class="wellness-heart-beat" style="font-size:1.8rem">💙</span>
-        <div style="flex:1">
-          <div style="font-weight:800;font-size:0.95rem">Nasıl Hissediyorum?</div>
-          <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Bugünkü duygu, enerji ve hedeflerini kaydet</div>
+    <!-- Günlük Kartı — hızlı mood + streak -->
+    ${(()=>{
+      const myUid = (window.currentUserData||{}).uid || 'local';
+      let wdata = {};
+      try { wdata = JSON.parse(localStorage.getItem('wellness_'+myUid)||'{}'); } catch(e){}
+      const todayKey = getTodayKey();
+      const today = wdata.days?.[todayKey] || {};
+      const hasMood = !!today.mood;
+
+      // Streak hesapla
+      let streak = 0;
+      const d2 = new Date();
+      while(streak<365){ const k=d2.toISOString().slice(0,10).replace(/-/g,''); if(wdata.days?.[k]&&Object.keys(wdata.days[k]).length>0){streak++;d2.setDate(d2.getDate()-1);}else break; }
+
+      const streakBadge = streak>=2 ? `<span style="font-size:0.68rem;background:#ff6b0012;border:1px solid #ff6b0030;color:#cc4400;border-radius:99px;padding:2px 9px;font-weight:800;white-space:nowrap">🔥 ${streak} gün</span>` : '';
+
+      const moods = [{e:'😣',v:'bad'},{e:'😕',v:'hard'},{e:'😐',v:'ok'},{e:'😊',v:'good'},{e:'😄',v:'great'}];
+      const moodBtns = moods.map(m=>`
+        <button onclick="_dashMoodSec('${m.v}',this)"
+          style="flex:1;padding:7px 2px;border-radius:10px;border:2px solid ${today.mood===m.v?'#6c63ff':'var(--border)'};background:${today.mood===m.v?'#6c63ff18':'transparent'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:.15s">
+          <span style="font-size:1.3rem">${m.e}</span>
+        </button>`).join('');
+
+      const doneRow = hasMood ? `<div style="font-size:0.68rem;color:#43b89c;font-weight:700;margin-top:6px;text-align:center">✓ Kaydedildi — <button onclick="showPage('wellness')" style="background:none;border:none;color:var(--accent);font-size:0.68rem;font-weight:700;cursor:pointer;font-family:inherit">Günlüğü aç →</button></div>` : `<button onclick="showPage('wellness')" style="width:100%;margin-top:8px;padding:7px;border:1.5px solid var(--accent)44;border-radius:9px;background:transparent;color:var(--accent);font-size:0.73rem;font-weight:700;cursor:pointer;font-family:inherit">📖 Günlüğü Aç →</button>`;
+
+      return `<div style="background:var(--surface);border-radius:16px;border:2px solid ${hasMood?'#43b89c33':'var(--accent)22'};padding:13px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div>
+            <div style="font-size:0.88rem;font-weight:800;color:var(--text)">📖 Günlüğüm</div>
+            <div style="font-size:0.7rem;color:var(--text2);margin-top:1px">Bugünü hızlıca kaydet</div>
+          </div>
+          ${streakBadge}
         </div>
-        <span style="color:var(--accent);font-size:1rem">›</span>
-      </button>
-    </div>
+        <div style="display:flex;gap:5px">${moodBtns}</div>
+        ${doneRow}
+      </div>`;
+    })()}
 
     <div class="grid-3">
       <div class="stat-card">
@@ -1349,6 +1375,39 @@ function _prgToggleDone(row, evId, idx) {
   chk.style.borderColor = done ? 'transparent' : 'rgba(255,255,255,0.5)';
 }
 
-function _programPostRender() {
-  // İleride gerekirse post-render işlemleri buraya
+function _dashMoodSec(moodValue, btn) {
+  // localStorage'a kaydet
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  const storageKey = 'wellness_' + myUid;
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
+  const todayKey = getTodayKey();
+  if (!data.days) data.days = {};
+  if (!data.days[todayKey]) data.days[todayKey] = {};
+  data.days[todayKey].mood = moodValue;
+  try { localStorage.setItem(storageKey, JSON.stringify(data)); } catch(e){}
+
+  // UI güncelle
+  btn.closest('div[style*="gap:5px"]').querySelectorAll('button').forEach(b => {
+    b.style.border = '2px solid var(--border)';
+    b.style.background = 'transparent';
+  });
+  btn.style.border = '2px solid #6c63ff';
+  btn.style.background = '#6c63ff18';
+
+  // Alt satırı güncelle
+  const wrap = btn.closest('div[style*="border-radius:16px"]');
+  const doneRow = wrap.querySelector('div[style*="68rem;color:#43b89c"], button[onclick*="wellness"]')?.parentElement || wrap.lastElementChild;
+  const newDone = document.createElement('div');
+  newDone.style.cssText = 'font-size:0.68rem;color:#43b89c;font-weight:700;margin-top:6px;text-align:center';
+  newDone.innerHTML = `✓ Kaydedildi — <button onclick="showPage('wellness')" style="background:none;border:none;color:var(--accent);font-size:0.68rem;font-weight:700;cursor:pointer;font-family:inherit">Günlüğü aç →</button>`;
+  // eski replace
+  const old = wrap.querySelector('div[style*="color:#43b89c"], button[onclick*="showPage(\'wellness\')"]');
+  if (old && old.parentElement === wrap) old.replaceWith(newDone);
+  else wrap.appendChild(newDone);
+
+  // Border güncelle
+  wrap.style.borderColor = '#43b89c33';
 }
+
+
