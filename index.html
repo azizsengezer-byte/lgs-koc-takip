@@ -370,35 +370,67 @@
         </svg>
         <span id="notifBadge" style="position:absolute;top:2px;right:2px;background:var(--accent2);color:#fff;font-size:0.55rem;font-weight:800;min-width:14px;height:14px;border-radius:99px;padding:0 3px;display:none;align-items:center;justify-content:center;line-height:14px;">0</span>
       </div>
-      <!-- Avatar + dropdown -->
-      <div style="position:relative;">
-        <div class="avatar" id="headerAvatar" onclick="toggleProfileMenu()">A</div>
-        <div class="profile-menu" id="profileMenu">
-          <div style="padding:10px 12px 8px;border-bottom:1px solid var(--border);margin-bottom:4px;">
-            <div style="font-weight:800;font-size:0.88rem;" id="menuName">—</div>
-            <div style="font-size:0.72rem;color:var(--text2);margin-top:1px;" id="menuRole">—</div>
-          </div>
-          <button class="profile-menu-item" onclick="closeProfileMenu();showPage('profile')">
-            <span class="menu-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> Profilim
-          </button>
-          <button class="profile-menu-item" id="satinAlMenuBtn" style="white-space:nowrap;display:none" onclick="closeProfileMenu();showPage('satin-al')">
-            <span class="menu-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> Abonelik Planları
-          </button>
-          <button class="profile-menu-item" id="badgeMenuBtn" onclick="closeProfileMenu();showBadgesPage()" style="display:none">
-            <span class="menu-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></span> Rozetlerim
-          </button>
-          <button class="profile-menu-item" id="okulArkadasBtn" onclick="closeProfileMenu();showPage('profile');setTimeout(()=>document.getElementById('okul-arkadaslar-kart')?.scrollIntoView({behavior:'smooth'}),300)" style="display:none;align-items:center;gap:10px;white-space:nowrap">
-            <span class="menu-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Okul Arkadaşlarım
-          </button>
-          <button class="profile-menu-item" style="white-space:nowrap" onclick="closeProfileMenu();showPage('yardim')">
-            <span class="menu-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span> Yardım &amp; Destek
-          </button>
-          <div class="profile-menu-divider"></div>
-          <button class="profile-menu-item danger" onclick="closeProfileMenu();doLogout()">
-            <span class="menu-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span> Çıkış Yap
-          </button>
-        </div>
+      <!-- Avatar -->
+      <div class="avatar" id="headerAvatar" onclick="openProfileDrawer()">A</div>
+    </div>
+  </div>
+
+  <!-- DRAWER OVERLAY -->
+  <div id="drawerOverlay" onclick="closeProfileDrawer()"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0);z-index:800;transition:background 0.3s"></div>
+
+  <!-- PROFILE DRAWER -->
+  <div id="profileDrawer" style="position:fixed;top:0;right:-224px;width:220px;height:100%;background:var(--surface);z-index:900;transition:right 0.3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;box-shadow:-4px 0 24px rgba(0,0,0,0.12)">
+
+    <!-- Kapat -->
+    <button onclick="closeProfileDrawer()" style="position:absolute;top:14px;right:12px;width:28px;height:28px;border-radius:8px;border:none;background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+
+    <!-- Profil başlık -->
+    <div style="padding:26px 16px 14px;border-bottom:1px solid var(--border)">
+      <div id="drawerAvatar" style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6c63ff,#4cc9f0);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;font-weight:800;margin-bottom:10px">A</div>
+      <div style="font-size:0.95rem;font-weight:800;color:var(--text)" id="menuName">—</div>
+      <div style="font-size:0.72rem;color:var(--accent);font-weight:700;margin-top:2px" id="menuRole">—</div>
+    </div>
+
+    <!-- Plan banner (sadece öğretmen) -->
+    <div id="drawerPlanBanner" style="display:none;margin:10px 10px 0;background:linear-gradient(135deg,#6c63ff,#4cc9f0);border-radius:12px;padding:10px 12px;cursor:pointer" onclick="closeProfileDrawer();showPage('satin-al')">
+      <div style="font-size:0.6rem;color:rgba(255,255,255,0.8);font-weight:700;letter-spacing:.08em;text-transform:uppercase">Abonelik</div>
+      <div style="font-size:0.82rem;font-weight:800;color:#fff;margin-top:2px;display:flex;align-items:center;justify-content:space-between">
+        Planını Yükselt
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
+    </div>
+
+    <!-- Menü -->
+    <div style="flex:1;overflow-y:auto;padding:6px 0;margin-top:6px">
+      <button class="drawer-menu-item" onclick="closeProfileDrawer();showPage('profile')">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Profilim</span>
+      </button>
+      <button class="drawer-menu-item" id="badgeMenuBtn" style="display:none" onclick="closeProfileDrawer();showBadgesPage()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+        <span>Rozetlerim</span>
+      </button>
+      <button class="drawer-menu-item" id="okulArkadasBtn" style="display:none" onclick="closeProfileDrawer();showPage('profile');setTimeout(()=>document.getElementById('okul-arkadaslar-kart')?.scrollIntoView({behavior:'smooth'}),300)">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Okul Arkadaşlarım</span>
+      </button>
+      <button class="drawer-menu-item" id="satinAlMenuBtn" style="display:none" onclick="closeProfileDrawer();showPage('satin-al')">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span>Abonelik Planları</span>
+      </button>
+      <div style="height:1px;background:var(--border);margin:4px 0"></div>
+      <button class="drawer-menu-item" onclick="closeProfileDrawer();showPage('yardim')">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Yardım &amp; Destek</span>
+      </button>
+      <div style="height:1px;background:var(--border);margin:4px 0"></div>
+      <button class="drawer-menu-item danger" onclick="closeProfileDrawer();doLogout()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Çıkış Yap</span>
+      </button>
     </div>
   </div>
 
