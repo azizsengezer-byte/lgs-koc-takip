@@ -575,7 +575,7 @@ function wellnessPage() {
           <span style="font-size:1rem">🔒</span>
           <span style="font-size:0.8rem;font-weight:700;color:#085041">Kaydedildi ve gizlendi</span>
         </div>
-        <button onclick="_gunlukNotDuzenle()" style="padding:4px 10px;border-radius:8px;border:1px solid #43b89c55;background:transparent;color:#085041;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit">Düzenle</button>
+        <button onclick="_gunlukDuzenlePin()" style="padding:4px 10px;border-radius:8px;border:1px solid #43b89c55;background:transparent;color:#085041;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit">Düzenle</button>
       </div>
       ` : `
       <textarea rows="4" style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box;margin-bottom:8px"></textarea>
@@ -638,10 +638,17 @@ function _gunlukNotKaydet(btn) {
           <span style="font-size:1rem">🔒</span>
           <span style="font-size:0.8rem;font-weight:700;color:#085041">Kaydedildi ve gizlendi</span>
         </div>
-        <button onclick="_gunlukNotDuzenle()" style="padding:4px 10px;border-radius:8px;border:1px solid #43b89c55;background:transparent;color:#085041;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit">Düzenle</button>
+        <button onclick="_gunlukDuzenlePin()" style="padding:4px 10px;border-radius:8px;border:1px solid #43b89c55;background:transparent;color:#085041;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit">Düzenle</button>
       </div>`;
   }
   showToast('✅', 'Not kaydedildi');
+}
+
+function _gunlukDuzenlePin() {
+  const pin = localStorage.getItem(_gunlukPinKey());
+  if (!pin) { _gunlukNotDuzenle(); return; }
+  window._pinBasariAksiyon = 'duzenle';
+  _gunlukPinGir();
 }
 
 function _gunlukNotDuzenle() {
@@ -766,7 +773,8 @@ function _pinTus1(n) {
   }
 }
 
-function _gunlukPinGir(onSuccess) {
+function _gunlukPinGir(hedef) {
+  window._pinHedef = hedef || 'arsiv';
   const modal = document.createElement('div');
   modal.id = '_pinGirModal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
@@ -813,7 +821,12 @@ function _pinGirTus(n) {
     const dogruPin = localStorage.getItem(_gunlukPinKey());
     if (window._pinGirilen === dogruPin) {
       document.getElementById('_pinGirModal')?.remove();
-      _gunlukArsivSayfasiAc();
+      if (window._pinBasariAksiyon === 'duzenle') {
+        window._pinBasariAksiyon = null;
+        _gunlukNotDuzenle();
+      } else {
+        _gunlukArsivSayfasiAc();
+      }
     } else {
       const hata = document.getElementById('_pinGirHata');
       if (hata) { hata.textContent = 'Yanlış PIN. Tekrar dene.'; hata.style.display = 'block'; }
@@ -873,7 +886,7 @@ function _gunlukArsivSayfasiAc() {
 
   const modal = document.createElement('div');
   modal.id = '_arsivModal';
-  modal.style.cssText = 'position:fixed;inset:0;background:var(--bg,#f5f6fa);z-index:9999;display:flex;flex-direction:column;overflow:hidden';
+  modal.style.cssText = 'position:fixed;inset:0;background:#f0ece4;z-index:9999;display:flex;flex-direction:column;overflow:hidden';
 
   const icerik = gunler.length === 0
     ? `<div style="text-align:center;padding:60px 20px;color:var(--text2)">
@@ -884,23 +897,33 @@ function _gunlukArsivSayfasiAc() {
     : gunler.map(([k,v]) => {
         const d = new Date(k + 'T12:00:00');
         const tarih = d.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+        const colors = ['#6c63ff','#43b89c','#f9a825','#ff6584','#4cc9f0','#a855f7'];
+        const renk = colors[Math.abs(k.split('').reduce((a,c)=>a+c.charCodeAt(0),0)) % colors.length];
         return `
-        <div style="background:var(--surface);border-radius:14px;border:1px solid var(--border);margin-bottom:10px;padding:14px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-            <div style="font-size:0.75rem;font-weight:800;color:var(--text2)">${tarih}</div>
-            <button onclick="_arsivGunlukSil('${k}',this)" style="padding:3px 10px;border-radius:8px;border:1px solid #ff658444;background:transparent;color:#cc3355;font-size:0.68rem;font-weight:700;cursor:pointer;font-family:inherit">Sil</button>
+        <div style="background:#faf8f2;border-radius:3px 14px 14px 3px;margin-bottom:20px;box-shadow:2px 4px 12px rgba(0,0,0,0.13);position:relative;border-left:4px solid ${renk}">
+          <!-- Ataç -->
+          <div style="position:absolute;top:-9px;right:22px;width:22px;height:30px;border:2.5px solid #aaa;border-radius:8px 8px 0 0;border-bottom:none;z-index:1;background:transparent"></div>
+          <div style="position:absolute;top:-3px;right:25px;width:10px;height:18px;border:2px solid #ccc;border-radius:5px 5px 0 0;border-bottom:none;z-index:1;background:transparent"></div>
+          <div style="padding:16px 14px 12px">
+            <div style="font-size:0.65rem;font-weight:800;color:#b0a080;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e8e0d0">${tarih}</div>
+            <div style="position:relative">
+              <div style="position:absolute;inset:0;background:repeating-linear-gradient(transparent,transparent 26px,#e0d8c8 26px,#e0d8c8 27px);pointer-events:none;z-index:0"></div>
+              <div style="position:relative;z-index:1;font-size:0.87rem;color:#3a3020;line-height:27px;white-space:pre-wrap;font-family:Georgia,'Times New Roman',serif;min-height:54px">${v}</div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:10px;padding-top:8px;border-top:1px dashed #d8ceb8">
+              <button onclick="_arsivGunlukSil('${k}',this)" style="padding:3px 12px;border-radius:99px;border:1px solid #dda0a0;background:transparent;color:#cc6666;font-size:0.65rem;font-weight:700;cursor:pointer;font-family:inherit">Sil</button>
+            </div>
           </div>
-          <div style="font-size:0.85rem;color:var(--text);line-height:1.7;white-space:pre-wrap">${v}</div>
         </div>`;
       }).join('');
 
   modal.innerHTML = `
-    <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0">
-      <button onclick="document.getElementById('_arsivModal').remove()" style="width:30px;height:30px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem">←</button>
-      <div style="font-size:0.95rem;font-weight:800;color:var(--text)">🔒 Geçmiş Günlükler</div>
-      <button onclick="_arsivPinDegistir()" style="margin-left:auto;padding:5px 11px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:0.7rem;font-weight:700;cursor:pointer;font-family:inherit">PIN Değiştir</button>
+    <div style="background:#faf8f4;border-bottom:1px solid #e0d8cc;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0">
+      <button onclick="document.getElementById('_arsivModal').remove()" style="width:30px;height:30px;border-radius:9px;border:1px solid #e0d4c0;background:#f5f0e4;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;color:#3a3020">←</button>
+      <div style="font-size:0.95rem;font-weight:800;color:#3a3020">📖 Geçmiş Günlükler</div>
+      <button onclick="_arsivPinDegistir()" style="margin-left:auto;padding:5px 11px;border-radius:8px;border:1px solid #e0d4c0;background:transparent;color:#8a7a5a;font-size:0.7rem;font-weight:700;cursor:pointer;font-family:inherit">PIN Değiştir</button>
     </div>
-    <div style="flex:1;overflow-y:auto;padding:12px">
+    <div style="flex:1;overflow-y:auto;padding:16px 14px;background:#ede9e0;background-image:repeating-linear-gradient(transparent,transparent 27px,#d4cec5 27px,#d4cec5 28px)">
       ${icerik}
     </div>
   `;

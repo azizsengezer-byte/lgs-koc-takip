@@ -332,29 +332,70 @@ function _takEtkinlikEkle(gunIndex) {
   modal.innerHTML = `
     <div onclick="event.stopPropagation()" style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 18px 32px">
       <div style="width:32px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 18px"></div>
-      <div style="font-size:1rem;font-weight:800;margin-bottom:14px">Etkinlik Ekle</div>
+      <div style="font-size:1rem;font-weight:800;margin-bottom:16px">Etkinlik Ekle</div>
 
-      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px">Başlık</div>
-      <input id="_takBaslik" class="form-input" placeholder="ör. Matematik, LGS Deneme…" style="margin-bottom:10px">
+      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">BAŞLIK</div>
+      <input id="_takBaslik" class="form-input" placeholder="ör. Matematik, LGS Denemesi, Fen..." style="margin-bottom:12px">
 
-      <div style="display:flex;gap:8px;margin-bottom:10px">
-        <div style="flex:1">
-          <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px">Gün</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="flex:1.4">
+          <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">GÜN</div>
           <select id="_takGun" class="form-select">
             ${_TAK_DAYS.map((d,i) => `<option value="${i}" ${i===(gunIndex??_takBugunIndex())?'selected':''}>${d}</option>`).join('')}
           </select>
         </div>
         <div style="flex:1">
-          <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px">Saat (opsiyonel)</div>
-          <input id="_takSaat" type="time" class="form-input" style="margin:0">
+          <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">SAAT</div>
+          <div style="display:flex;gap:4px;align-items:center">
+            <select id="_takSaatH" class="form-select" style="flex:1;padding:10px 6px;text-align:center">
+              <option value="">--</option>
+              ${Array.from({length:18},(_,i)=>i+6).map(h=>`<option value="${String(h).padStart(2,'0')}">${String(h).padStart(2,'0')}</option>`).join('')}
+            </select>
+            <span style="font-weight:800;color:var(--text2)">:</span>
+            <select id="_takSaatM" class="form-select" style="flex:1;padding:10px 6px;text-align:center">
+              <option value="00">00</option>
+              <option value="15">15</option>
+              <option value="30">30</option>
+              <option value="45">45</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:6px">Renk</div>
-      <div style="display:flex;gap:8px;margin-bottom:10px" id="_takRenkRow">${renkler}</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="flex:1">
+          <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">SÜRE</div>
+          <select id="_takSure" class="form-select">
+            <option value="">—</option>
+            <option value="30">30 dk</option>
+            <option value="45">45 dk</option>
+            <option value="60">1 saat</option>
+            <option value="90">1.5 saat</option>
+            <option value="120">2 saat</option>
+            <option value="180">3 saat</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">DERS</div>
+          <select id="_takDers" class="form-select">
+            <option value="">— Seç —</option>
+            <option>Türkçe</option>
+            <option>Matematik</option>
+            <option>Fen Bilimleri</option>
+            <option>İnkılap Tarihi</option>
+            <option>Din Kültürü</option>
+            <option>İngilizce</option>
+            <option>Genel Tekrar</option>
+            <option>Deneme Sınavı</option>
+          </select>
+        </div>
+      </div>
 
-      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px">Not (opsiyonel)</div>
-      <input id="_takNot" class="form-input" placeholder="Konu, hedef soru sayısı…" style="margin-bottom:14px">
+      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:6px;font-weight:700">RENK</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px" id="_takRenkRow">${renkler}</div>
+
+      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">NOT (opsiyonel)</div>
+      <input id="_takNot" class="form-input" placeholder="Konu, hedef soru sayısı…" style="margin-bottom:16px">
 
       <div style="display:flex;gap:8px">
         <button onclick="document.getElementById('_takModal').remove()"
@@ -383,25 +424,39 @@ function _takRenkSec(el, renk) {
 }
 
 async function _takKaydet() {
-  const baslik = document.getElementById('_takBaslik')?.value.trim();
+  const baslikEl = document.getElementById('_takBaslik');
+  const gunEl    = document.getElementById('_takGun');
+  const saatEl   = document.getElementById('_takSaat');
+  const notEl    = document.getElementById('_takNot');
+
+  const baslik = baslikEl?.value.trim();
   if (!baslik) { showToast('⚠️', 'Başlık girin'); return; }
-  const gun  = parseInt(document.getElementById('_takGun')?.value ?? 0);
-  const saat = document.getElementById('_takSaat')?.value || '';
-  const not  = document.getElementById('_takNot')?.value.trim() || '';
+
+  const gun  = parseInt(gunEl?.value ?? 0);
+  const saatH = saatEl?.value || document.getElementById('_takSaatH')?.value || '';
+  const saatM = document.getElementById('_takSaatM')?.value || '00';
+  const saat  = saatH ? `${saatH}:${saatM}` : '';
+  const sure  = document.getElementById('_takSure')?.value || '';
+  const ders  = document.getElementById('_takDers')?.value || '';
+  const not   = notEl?.value.trim() || ders || '';
   const uid  = auth.currentUser?.uid;
-  if (!uid) return;
+  if (!uid) { showToast('❌', 'Oturum bulunamadı'); return; }
 
   const hafta = _takHaftaKey(window._takState.weekOffset);
-  const ev = { koachUid: uid, baslik, gun, hafta, saat, not, renk: window._takSecilenRenk, createdAt: new Date() };
+  const ev = { koachUid: uid, baslik, gun, hafta, saat, sure, ders, not, renk: window._takSecilenRenk || _TAK_COLORS[0], createdAt: new Date() };
+
+  // Önce modalı kapat, sonra kaydet
+  document.getElementById('_takModal')?.remove();
+  showToast('⏳', 'Kaydediliyor...');
 
   try {
     const ref = await db.collection('takvimler').add(ev);
     const key = `${hafta}_${gun}`;
     if (!window._takState.etkinlikler[key]) window._takState.etkinlikler[key] = [];
     window._takState.etkinlikler[key].push({ id: ref.id, ...ev });
-    document.getElementById('_takModal')?.remove();
     showToast('✅', 'Etkinlik kaydedildi');
-    document.getElementById('mainContent').innerHTML = _takRenderPage();
+    const mc = document.getElementById('mainContent');
+    if (mc) mc.innerHTML = _takRenderPage();
   } catch(e) {
     showToast('❌', 'Kaydedilemedi: ' + e.message);
   }
