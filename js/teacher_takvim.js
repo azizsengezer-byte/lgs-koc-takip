@@ -141,10 +141,14 @@ function _takHaftalikHTML() {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         Bu haftayı öğrenciye gönder
       </div>
-      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:8px">Öğrenci seç</div>
-      <div id="takOgrenciSecim" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
-        ${_takOgrenciChipleri()}
+      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:6px">Öğrenci seç</div>
+      <div style="position:relative;margin-bottom:6px">
+        <input id="_takOgrAra" onclick="_takOgrListeAc()" oninput="_takOgrFiltrele()" placeholder="İsim ara veya listeden seç..."
+          style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.82rem;outline:none;font-family:inherit;box-sizing:border-box">
+        <div id="_takOgrListe" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;max-height:150px;overflow-y:auto;z-index:10;margin-top:3px;box-shadow:0 4px 12px rgba(0,0,0,0.12)">
+        </div>
       </div>
+      <div id="_takSecilenler" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>
       <div style="font-size:0.72rem;color:var(--text2);margin-bottom:6px">Gönderme şekli</div>
       <div style="display:flex;gap:6px;margin-bottom:12px">
         <button id="takTipMesaj" onclick="_takTipSec('mesaj')"
@@ -218,16 +222,71 @@ function _takAylikHTML() {
   `;
 }
 
-function _takOgrenciChipleri() {
+function _takOgrListeAc() {
+  const liste = document.getElementById('_takOgrListe');
+  if (!liste) return;
   const ogrenciler = (typeof students !== 'undefined' ? students : null) || window.students || [];
-  if (!ogrenciler.length) return '<span style="font-size:0.75rem;color:var(--text2)">Henüz öğrenci eklenmemiş</span>';
-  return ogrenciler.map(o => `
-    <span onclick="_takOgrenciToggle(this,'${o.uid}')"
-      data-uid="${o.uid}"
-      style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1.5px solid var(--border);border-radius:99px;padding:5px 12px;font-size:0.75rem;font-weight:700;color:var(--text2);cursor:pointer;transition:all .15s;margin-bottom:4px">
+  _takOgrListeRender(ogrenciler);
+  liste.style.display = 'block';
+  document.addEventListener('click', _takOgrDışı, { once: true });
+}
+
+function _takOgrDışı(e) {
+  if (!e.target.closest('[id^="_takOgr"]')) {
+    const l = document.getElementById('_takOgrListe');
+    if (l) l.style.display = 'none';
+  }
+}
+
+function _takOgrFiltrele() {
+  const q = document.getElementById('_takOgrAra')?.value.toLowerCase() || '';
+  const ogrenciler = ((typeof students !== 'undefined' ? students : null) || window.students || [])
+    .filter(o => o.name.toLowerCase().includes(q));
+  const liste = document.getElementById('_takOgrListe');
+  if (liste) { _takOgrListeRender(ogrenciler); liste.style.display = 'block'; }
+}
+
+function _takOgrListeRender(ogrenciler) {
+  const liste = document.getElementById('_takOgrListe');
+  if (!liste) return;
+  if (!ogrenciler.length) { liste.innerHTML = '<div style="padding:12px;font-size:0.8rem;color:var(--text2);text-align:center">Öğrenci bulunamadı</div>'; return; }
+  liste.innerHTML = ogrenciler.map(o => {
+    const secili = window._takSecilenOgrenciler?.has(o.uid);
+    return `<div onclick="_takOgrSec('${o.uid}','${o.name.replace(/'/g,"\\'")}',this)"
+      style="display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:0.82rem;color:var(--text);background:${secili?'var(--accent)0d':'transparent'}">
       <span style="width:8px;height:8px;border-radius:50%;background:${o.color};flex-shrink:0"></span>
+      <span style="flex:1">${o.name}</span>
+      ${secili ? '<span style="color:var(--accent);font-weight:700">✓</span>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function _takOgrSec(uid, isim, el) {
+  if (!window._takSecilenOgrenciler) window._takSecilenOgrenciler = new Set();
+  if (window._takSecilenOgrenciler.has(uid)) {
+    window._takSecilenOgrenciler.delete(uid);
+  } else {
+    window._takSecilenOgrenciler.add(uid);
+  }
+  // Seçilenleri güncelle
+  _takSecilenlerGoster();
+  // Listeyi yenile
+  _takOgrFiltrele();
+}
+
+function _takSecilenlerGoster() {
+  const wrap = document.getElementById('_takSecilenler');
+  if (!wrap) return;
+  const ogrenciler = (typeof students !== 'undefined' ? students : null) || window.students || [];
+  wrap.innerHTML = [...(window._takSecilenOgrenciler||[])].map(uid => {
+    const o = ogrenciler.find(x => x.uid === uid);
+    if (!o) return '';
+    return `<span style="display:inline-flex;align-items:center;gap:5px;background:var(--accent);border-radius:99px;padding:4px 10px;font-size:0.72rem;font-weight:700;color:#fff">
+      <span style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.6)"></span>
       ${o.name.split(' ')[0]}
-    </span>`).join('');
+      <span onclick="_takOgrSec('${uid}','',null)" style="cursor:pointer;opacity:0.8;margin-left:2px">✕</span>
+    </span>`;
+  }).join('');
 }
 
 // Toggle fonksiyonları
@@ -501,7 +560,7 @@ async function _takGonder() {
         // Bildirim
         const nRef = db.collection('notifications').doc();
         batch.set(nRef, {
-          toUid: ogrenciUid, fromName: koachName,
+          toUid: ogrenciUid, fromUid: koachUid, fromName: koachName,
           type: 'message', baslik: 'Haftalık programın geldi!',
           body: `${haftaLabel} haftası için program gönderildi.`,
           read: false, createdAt: new Date(),
@@ -512,7 +571,7 @@ async function _takGonder() {
       for (const ogrenciUid of ogrenciler) {
         const ref = db.collection('tasks').doc();
         batch.set(ref, {
-          koachUid, ogrenciUid, tip: 'takvim',
+          teacherId: koachUid, ogrenciUid, studentUid: ogrenciUid, tip: 'takvim',
           baslik: `${haftaLabel} Haftalık Program`,
           etkinlikler: haftaEvleri.map(ev => ({ baslik: ev.baslik, gun: ev.gunAdi, saat: ev.saat||'', not: ev.not||'', renk: ev.renk, done: false })),
           hafta, createdAt: new Date(), done: false,
@@ -520,7 +579,7 @@ async function _takGonder() {
         // Bildirim
         const nRef = db.collection('notifications').doc();
         batch.set(nRef, {
-          toUid: ogrenciUid, fromName: koachName,
+          toUid: ogrenciUid, fromUid: koachUid, fromName: koachName,
           type: 'task', baslik: 'Yeni haftalık program!',
           body: `${haftaLabel} için ${haftaEvleri.length} etkinlik.`,
           read: false, createdAt: new Date(),
