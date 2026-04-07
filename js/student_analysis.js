@@ -568,12 +568,20 @@ function wellnessPage() {
     </div>
 
     <!-- BÖLÜM 5: Günlük not -->
-    <div class="card" style="margin-bottom:12px">
+    <div class="card" style="margin-bottom:12px" id="gunlukNotKart">
       <div class="card-title">Bugün ne düşündüm?</div>
-      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:8px">Sadece sana özel — kimse okuyamaz.</div>
+      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:8px">Sadece sana özel — kimse okuyamaz, PIN ile korunuyor.</div>
+      ${today.not ? `
+      <div style="font-size:0.82rem;color:var(--text);line-height:1.7;background:var(--surface2);border-radius:9px;padding:10px 12px;margin-bottom:8px;white-space:pre-wrap">${today.not}</div>
+      <button onclick="_gunlukNotDuzenle()" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:9px;background:transparent;color:var(--text2);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit">✏️ Düzenle</button>
+      ` : `
       <textarea rows="4" id="wellnessNot" placeholder="Bugün aklımdan geçenler…"
-        onchange="saveWellnessDay('not',this.value)"
-        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box">${today.not||''}</textarea>
+        style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box;margin-bottom:8px"></textarea>
+      <button onclick="_gunlukNotKaydet(this)"
+        style="width:100%;padding:11px;border-radius:11px;background:var(--accent);color:#fff;border:none;font-weight:800;font-size:0.85rem;cursor:pointer;font-family:inherit">
+        🔒 Kaydet &amp; Gizle
+      </button>
+      `}
     </div>
 
     ${streakTelkin ? `<div style="margin-bottom:12px">${streakTelkin}</div>` : ''}
@@ -595,7 +603,44 @@ function wellnessPage() {
   `;
 }
 
-// ── GÜNLÜK ARŞİV SİSTEMİ ─────────────────────────────────────
+// ── GÜNLÜK NOT KAYDET / DÜZENLE ──────────────────────────────
+function _gunlukNotKaydet(btn) {
+  const ta = document.getElementById('wellnessNot');
+  const not = ta?.value.trim();
+  if (!not) { showToast('⚠️', 'Bir şeyler yaz önce'); return; }
+
+  saveWellnessDay('not', not);
+
+  // Kartı "kaydedildi" görünümüne çevir
+  const kart = document.getElementById('gunlukNotKart');
+  if (kart) {
+    kart.innerHTML = `
+      <div class="card-title">Bugün ne düşündüm?</div>
+      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:8px">Sadece sana özel — kimse okuyamaz, PIN ile korunuyor.</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#43b89c12;border:1px solid #43b89c33;border-radius:10px">
+        <span style="font-size:1.1rem">🔒</span>
+        <span style="font-size:0.8rem;font-weight:700;color:#085041">Kaydedildi ve gizlendi</span>
+      </div>`;
+  }
+  showToast('✅', 'Not kaydedildi');
+}
+
+function _gunlukNotDuzenle() {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem('wellness_'+myUid)||'{}'); } catch(e){}
+  const mevcut = data.days?.[getTodayKey()]?.not || '';
+
+  const kart = document.getElementById('gunlukNotKart');
+  if (!kart) return;
+  kart.innerHTML = `
+    <div class="card-title">Bugün ne düşündüm?</div>
+    <div style="font-size:0.72rem;color:var(--text2);margin-bottom:8px">Sadece sana özel — kimse okuyamaz, PIN ile korunuyor.</div>
+    <textarea rows="4" id="wellnessNot" style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box;margin-bottom:8px">${mevcut}</textarea>
+    <button onclick="_gunlukNotKaydet(this)" style="width:100%;padding:11px;border-radius:11px;background:var(--accent);color:#fff;border:none;font-weight:800;font-size:0.85rem;cursor:pointer;font-family:inherit">🔒 Kaydet &amp; Gizle</button>`;
+}
+
+
 function _gunlukPinKey() {
   const myUid = (window.currentUserData||{}).uid || 'local';
   return 'gunluk_pin_' + myUid;
@@ -812,7 +857,7 @@ function _gunlukArsivSayfasiAc() {
 
   const todayKey = getTodayKey();
   const gunler = Object.entries(data.days||{})
-    .filter(([k,v]) => k !== todayKey)
+    .filter(([k,v]) => k !== todayKey && v.not)
     .sort(([a],[b]) => b.localeCompare(a));
 
   const modal = document.createElement('div');
@@ -828,23 +873,13 @@ function _gunlukArsivSayfasiAc() {
     : gunler.map(([k,v]) => {
         const d = new Date(k + 'T12:00:00');
         const tarih = d.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-        const mInfo = moodOptions.find(x=>x.value===v.mood);
-        const hasNot = !!v.not;
         return `
-        <div style="background:var(--surface);border-radius:14px;border:1px solid var(--border);margin-bottom:10px;overflow:hidden">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px">
-            <div style="display:flex;align-items:center;gap:8px">
-              ${mInfo?`<span style="font-size:1.2rem">${mInfo.emoji}</span>`:'<span style="width:24px"></span>'}
-              <div>
-                <div style="font-size:0.82rem;font-weight:800;color:var(--text)">${tarih}</div>
-                ${v.kelime?`<div style="font-size:0.7rem;color:var(--accent);font-weight:700;margin-top:1px">"${v.kelime}"</div>`:''}
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px">
-              ${hasNot?`<button onclick="_arsivGunlukAc('${k}')" style="padding:5px 10px;border-radius:8px;border:1px solid var(--accent)44;background:var(--accent)0a;color:var(--accent);font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit">Oku</button>`:''}
-              <button onclick="_arsivGunlukSil('${k}',this)" style="padding:5px 10px;border-radius:8px;border:1px solid #ff658444;background:#ff658408;color:#cc3355;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit">Sil</button>
-            </div>
+        <div style="background:var(--surface);border-radius:14px;border:1px solid var(--border);margin-bottom:10px;padding:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:0.75rem;font-weight:800;color:var(--text2)">${tarih}</div>
+            <button onclick="_arsivGunlukSil('${k}',this)" style="padding:3px 10px;border-radius:8px;border:1px solid #ff658444;background:transparent;color:#cc3355;font-size:0.68rem;font-weight:700;cursor:pointer;font-family:inherit">Sil</button>
           </div>
+          <div style="font-size:0.85rem;color:var(--text);line-height:1.7;white-space:pre-wrap">${v.not}</div>
         </div>`;
       }).join('');
 
