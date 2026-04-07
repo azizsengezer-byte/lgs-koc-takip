@@ -226,24 +226,33 @@ function teacherStudents() {
         // Bugünkü wellness cache'den mood al
         const moodBadge = '';
         return `
-        <div class="student-row student-card-item" data-name="${s.name.toLowerCase()}" onclick="openStudentAnalysis('${s.name}')" style="cursor:pointer">
-          ${s.photo
-            ? `<img src="${s.photo}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">`
-            : `<div class="student-avatar" style="background:${s.color}20;color:${s.color};font-size:1.1rem;cursor:pointer" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')">${s.name[0]}</div>`}
-          <div class="student-info" style="flex:1">
-            <div class="student-name">${s.name}</div>
-            <div class="student-meta">Bu hafta ${activeDays} gün • ${totalQ} soru • Net ort: ${avgNet}</div>
-            <div style="font-size:0.72rem;color:var(--text2)">${pendingTasks} bekleyen görev • ${isActiveToday?'✅ Bugün aktif':'⏳ Bugün giriş yok'}</div>
-            ${moodBadge}
+        <div class="swipe-wrap" id="sw_${s.uid}">
+          <div class="swipe-actions">
+            <button class="swipe-action-btn" onclick="event.stopPropagation();_swipeClose('${s.uid}');ogrenciOkulDegistir(${i})">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <span>Okul</span>
+            </button>
+            <button class="swipe-action-btn" onclick="event.stopPropagation();_swipeClose('${s.uid}');ogrenciSifreSifirla('${s.uid}','${s.name}','${s.username||''}')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>Şifre</span>
+            </button>
+            <button class="swipe-action-btn" onclick="event.stopPropagation();_swipeClose('${s.uid}');deleteStudent(${i})">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+              <span>Sil</span>
+            </button>
           </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-            ${statusBadge}
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-outline" style="padding:4px 10px;font-size:0.75rem" onclick="event.stopPropagation();openStudentAnalysis('${s.name}')">📊</button>
-              <button class="btn btn-outline" style="padding:4px 10px;font-size:0.75rem;color:var(--accent)" onclick="event.stopPropagation();ogrenciOkulDegistir(${i})">🏫</button>
-              <button class="btn btn-outline" style="padding:4px 10px;font-size:0.75rem;color:#f9a825;border-color:#f9a825" onclick="event.stopPropagation();ogrenciSifreSifirla('${s.uid}','${s.name}','${s.username||''}')">🔑</button>
-              <button class="btn btn-outline" style="padding:4px 10px;font-size:0.75rem;color:#ff5c8a;border-color:#ff5c8a" onclick="event.stopPropagation();deleteStudent(${i})">🗑️</button>
+          <div class="swipe-front student-card-item" data-name="${s.name.toLowerCase()}" id="sf_${s.uid}"
+            ontouchstart="_swipeTouchStart(event,'${s.uid}')"
+            ontouchend="_swipeTouchEnd(event,'${s.uid}')"
+            onclick="_swipeTap('${s.uid}','${s.name}')">
+            ${s.photo
+              ? `<img src="${s.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+              : `<div style="width:40px;height:40px;border-radius:50%;background:${s.color}18;color:${s.color};font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${s.name[0]}</div>`}
+            <div style="flex:1;min-width:0">
+              <div style="font-size:0.88rem;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</div>
+              <div style="font-size:0.7rem;color:var(--text2);margin-top:2px">${activeDays} gün · ${totalQ} soru · Net ${avgNet} · ${isActiveToday?'✅ aktif':'⏳ giriş yok'}</div>
             </div>
+            ${statusBadge}
           </div>
         </div>`;
       }).join('')}
@@ -2561,3 +2570,43 @@ async function _sifreUygula(uid, isim, username) {
     if (btn) { btn.textContent = '✓ Şifreyi Ata & Paylaş'; btn.disabled = false; }
   }
 }
+
+// ── SWIPE KART FONKSİYONLARI ─────────────────────────────────
+let _swipeTxStart = 0;
+
+function _swipeTouchStart(e, uid) {
+  _swipeTxStart = e.touches[0].clientX;
+}
+
+function _swipeTouchEnd(e, uid) {
+  const dx = e.changedTouches[0].clientX - _swipeTxStart;
+  const f = document.getElementById('sf_' + uid);
+  if (!f) return;
+  if (dx < -40) { _swipeCloseAll(); f.classList.add('swipe-open'); }
+  else if (dx > 20) f.classList.remove('swipe-open');
+}
+
+function _swipeTap(uid, name) {
+  const f = document.getElementById('sf_' + uid);
+  if (!f) return;
+  if (f.classList.contains('swipe-open')) {
+    f.classList.remove('swipe-open');
+  } else {
+    _swipeCloseAll();
+    openStudentAnalysis(name);
+  }
+}
+
+function _swipeClose(uid) {
+  const f = document.getElementById('sf_' + uid);
+  if (f) f.classList.remove('swipe-open');
+}
+
+function _swipeCloseAll() {
+  document.querySelectorAll('.swipe-front').forEach(f => f.classList.remove('swipe-open'));
+}
+
+// Dışarı tıklayınca kapat
+document.addEventListener('click', e => {
+  if (!e.target.closest('.swipe-wrap')) _swipeCloseAll();
+});
