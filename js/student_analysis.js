@@ -534,12 +534,19 @@ function wellnessPage() {
     <!-- BÖLÜM 4: Beden -->
     <div class="card" style="margin-bottom:12px">
       <div class="card-title">Bedenin nasıl?</div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">🛌 Uyku (saat)</div>
+        <input type="number" min="2" max="12" step="0.5" id="wellnessUyku" placeholder="0"
+          value="${today.uyku||''}"
+          oninput="saveWellnessDay('uyku',this.value);if(this.value)document.getElementById('uykuTelkin').innerHTML=telkinHtml(wpUyku(parseFloat(this.value)),parseFloat(this.value)>=7?'good':parseFloat(this.value)<5?'warn':'neutral')"
+          style="width:100%;padding:8px 10px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
+        <div id="uykuTelkin">${uykuTelkin}</div>
+      </div>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <div style="flex:1">
-          <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">🛌 Uyku (saat)</div>
-          <input type="number" min="2" max="12" step="0.5" id="wellnessUyku" placeholder="0"
-            value="${today.uyku||''}"
-            oninput="saveWellnessDay('uyku',this.value);if(this.value)document.getElementById('uykuTelkin').innerHTML=telkinHtml(wpUyku(parseFloat(this.value)),parseFloat(this.value)>=7?'good':parseFloat(this.value)<5?'warn':'neutral')"
+          <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">💻 Online ders (saat)</div>
+          <input type="number" min="0" max="12" step="0.5" id="wellnessEkranOnline" placeholder="0"
+            value="${today.ekranOnline||''}" oninput="saveWellnessDay('ekranOnline',this.value)"
             style="width:100%;padding:8px 10px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
         </div>
         <div style="flex:1">
@@ -549,9 +556,8 @@ function wellnessPage() {
             style="width:100%;padding:8px 10px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
         </div>
       </div>
-      <div id="uykuTelkin">${uykuTelkin}</div>
 
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:10px 0 7px">Sabah dinç uyandın mı?</div>
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:6px 0 7px">Sabah dinç uyandın mı?</div>
       <div style="display:flex;gap:6px">
         ${[{v:'evet',l:'😄 Evet'},{v:'orta',l:'😐 Orta'},{v:'hayir',l:'😴 Hayır'}].map(o=>`
           <button onclick="saveWellnessDay('uykuKalite','${o.v}',this)"
@@ -578,24 +584,340 @@ function wellnessPage() {
       ✓ Günlüğü Kaydet
     </button>
 
-    <!-- Geçmiş günlükler -->
-    ${arşivGunler.length ? `
+    <!-- Geçmiş günlükler — PIN korumalı -->
     <div class="card" style="margin-bottom:24px">
-      <div class="card-title">Geçmiş Günlükler</div>
-      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:10px">Daha önce yazdıkların — sadece sen görebilirsin.</div>
-      ${arşivGunler.map(([k,v])=>{
-        const d = new Date(k.slice(0,4)+'-'+k.slice(4,6)+'-'+k.slice(6,8));
-        const tarih = d.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
-        const mInfo = moodOptions.find(x=>x.value===v.mood);
-        return `
-        <div style="padding:10px 0;border-bottom:1px solid var(--border)">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-            ${mInfo?`<span style="font-size:1rem">${mInfo.emoji}</span>`:''}
-            <span style="font-size:0.75rem;font-weight:700;color:var(--text2)">${tarih}</span>
-          </div>
-          <div style="font-size:0.82rem;color:var(--text);line-height:1.5">${v.not}</div>
-        </div>`;
-      }).join('')}
-    </div>` : ''}
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div class="card-title" style="margin:0">🔒 Geçmiş Günlükler</div>
+        <button onclick="_gunlukArsivAc()" style="padding:6px 14px;border-radius:99px;border:none;background:var(--accent);color:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:inherit">Aç →</button>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text2)">Özel notların PIN ile korunuyor.</div>
+    </div>
   `;
 }
+
+// ── GÜNLÜK ARŞİV SİSTEMİ ─────────────────────────────────────
+function _gunlukPinKey() {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  return 'gunluk_pin_' + myUid;
+}
+
+function _gunlukArsivAc() {
+  const pin = localStorage.getItem(_gunlukPinKey());
+  if (!pin) {
+    _gunlukPinKur();
+  } else {
+    _gunlukPinGir();
+  }
+}
+
+function _gunlukPinKur() {
+  const modal = document.createElement('div');
+  modal.id = '_pinModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = `
+    <div onclick="event.stopPropagation()" style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:28px 24px 36px">
+      <div style="width:32px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 22px"></div>
+      <div style="text-align:center;margin-bottom:6px;font-size:1.6rem">🔒</div>
+      <div style="font-size:1rem;font-weight:800;text-align:center;margin-bottom:6px">Günlük PINi Belirle</div>
+      <div style="font-size:0.78rem;color:var(--text2);text-align:center;margin-bottom:22px;line-height:1.6">Geçmiş günlüklerini korumak için 4 haneli bir PIN belirle. Bu PIN sadece sende kalacak.</div>
+      <div style="display:flex;justify-content:center;gap:10px;margin-bottom:20px" id="_pinDots1">
+        ${[0,1,2,3].map(i=>`<div id="_dot1_${i}" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all .15s"></div>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:0 auto 16px">
+        ${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(n=>`
+          <button onclick="_pinTus1('${n}')" style="padding:14px;border-radius:13px;border:1px solid var(--border);background:var(--surface2);font-size:1.1rem;font-weight:800;cursor:pointer;font-family:inherit;color:var(--text)">
+            ${n}
+          </button>`).join('')}
+      </div>
+      <div id="_pinHata1" style="text-align:center;font-size:0.78rem;color:#cc3355;display:none;margin-top:8px"></div>
+      <button onclick="document.getElementById('_pinModal').remove()" style="width:100%;margin-top:10px;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:inherit">İptal</button>
+    </div>`;
+  document.body.appendChild(modal);
+  window._pin1 = '';
+  window._pin1Onay = '';
+  window._pin1Asama = 1;
+}
+
+window._pin1 = '';
+window._pin1Onay = '';
+window._pin1Asama = 1;
+
+function _pinTus1(n) {
+  if (n === '') return;
+  if (n === '⌫') {
+    if (window._pin1Asama === 1) window._pin1 = window._pin1.slice(0,-1);
+    else window._pin1Onay = window._pin1Onay.slice(0,-1);
+  } else {
+    if (window._pin1Asama === 1 && window._pin1.length < 4) window._pin1 += n;
+    else if (window._pin1Asama === 2 && window._pin1Onay.length < 4) window._pin1Onay += n;
+  }
+
+  // Nokta güncelle
+  const aktif = window._pin1Asama === 1 ? window._pin1 : window._pin1Onay;
+  [0,1,2,3].forEach(i => {
+    const dot = document.getElementById('_dot1_' + i);
+    if (dot) {
+      dot.style.background = i < aktif.length ? 'var(--accent)' : 'transparent';
+      dot.style.borderColor = i < aktif.length ? 'var(--accent)' : 'var(--border)';
+    }
+  });
+
+  if (window._pin1Asama === 1 && window._pin1.length === 4) {
+    // Onay aşamasına geç
+    window._pin1Asama = 2;
+    const modal = document.getElementById('_pinModal');
+    if (modal) {
+      modal.querySelector('div[style*="1rem;font-weight:800"]').textContent = 'PINi Tekrar Gir';
+      modal.querySelector('div[style*="0.78rem;color:var(--text2)"]').textContent = 'Aynı PINi tekrar girerek onayla.';
+      modal.querySelector('#_pinDots1').id = '_pinDots1_done';
+      const dots = modal.querySelector('[id^="_pinDots1"]');
+      [0,1,2,3].forEach(i => { const d = document.getElementById('_dot1_'+i); if(d){d.style.background='var(--accent)44';d.style.borderColor='var(--accent)44';} });
+      // Yeni dot satırı ekle
+      const newDots = document.createElement('div');
+      newDots.id = '_pinDots1';
+      newDots.style.cssText = 'display:flex;justify-content:center;gap:10px;margin-bottom:20px';
+      newDots.innerHTML = [0,1,2,3].map(i=>`<div id="_dot1_${i}" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all .15s"></div>`).join('');
+      dots.insertAdjacentElement('afterend', newDots);
+    }
+    return;
+  }
+
+  if (window._pin1Asama === 2 && window._pin1Onay.length === 4) {
+    const hata = document.getElementById('_pinHata1');
+    if (window._pin1 === window._pin1Onay) {
+      localStorage.setItem(_gunlukPinKey(), window._pin1);
+      document.getElementById('_pinModal')?.remove();
+      showToast('✅', 'PIN belirlendi! Günlüğün artık korumalı.');
+      _gunlukArsivSayfasiAc();
+    } else {
+      if (hata) { hata.textContent = 'PINler eşleşmedi. Tekrar dene.'; hata.style.display = 'block'; }
+      window._pin1 = '';
+      window._pin1Onay = '';
+      window._pin1Asama = 1;
+      [0,1,2,3].forEach(i => {
+        const d = document.getElementById('_dot1_'+i);
+        if(d){d.style.background='transparent';d.style.borderColor='var(--border)';}
+      });
+    }
+  }
+}
+
+function _gunlukPinGir(onSuccess) {
+  const modal = document.createElement('div');
+  modal.id = '_pinGirModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = `
+    <div onclick="event.stopPropagation()" style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:28px 24px 36px">
+      <div style="width:32px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 22px"></div>
+      <div style="text-align:center;margin-bottom:6px;font-size:1.6rem">🔐</div>
+      <div style="font-size:1rem;font-weight:800;text-align:center;margin-bottom:6px">PIN Gir</div>
+      <div style="font-size:0.78rem;color:var(--text2);text-align:center;margin-bottom:22px">Günlüğünü açmak için PINini gir.</div>
+      <div style="display:flex;justify-content:center;gap:10px;margin-bottom:20px">
+        ${[0,1,2,3].map(i=>`<div id="_pinGirDot${i}" style="width:14px;height:14px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all .15s"></div>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:0 auto 16px">
+        ${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(n=>`
+          <button onclick="_pinGirTus('${n}')" style="padding:14px;border-radius:13px;border:1px solid var(--border);background:var(--surface2);font-size:1.1rem;font-weight:800;cursor:pointer;font-family:inherit;color:var(--text)">
+            ${n}
+          </button>`).join('')}
+      </div>
+      <div id="_pinGirHata" style="text-align:center;font-size:0.78rem;color:#cc3355;display:none;margin-bottom:8px"></div>
+      <button onclick="_gunlukPinUnuttum()" style="width:100%;margin-bottom:6px;padding:10px;border-radius:12px;border:none;background:transparent;color:var(--text2);font-size:0.75rem;cursor:pointer;font-family:inherit;text-decoration:underline">PINimi unuttum</button>
+      <button onclick="document.getElementById('_pinGirModal').remove()" style="width:100%;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:0.85rem;font-weight:600;cursor:pointer;font-family:inherit">İptal</button>
+    </div>`;
+  document.body.appendChild(modal);
+  window._pinGirilen = '';
+}
+
+function _pinGirTus(n) {
+  if (n === '') return;
+  if (n === '⌫') {
+    window._pinGirilen = window._pinGirilen.slice(0,-1);
+  } else if (window._pinGirilen.length < 4) {
+    window._pinGirilen += n;
+  }
+
+  [0,1,2,3].forEach(i => {
+    const dot = document.getElementById('_pinGirDot' + i);
+    if (dot) {
+      dot.style.background = i < window._pinGirilen.length ? 'var(--accent)' : 'transparent';
+      dot.style.borderColor = i < window._pinGirilen.length ? 'var(--accent)' : 'var(--border)';
+    }
+  });
+
+  if (window._pinGirilen.length === 4) {
+    const dogruPin = localStorage.getItem(_gunlukPinKey());
+    if (window._pinGirilen === dogruPin) {
+      document.getElementById('_pinGirModal')?.remove();
+      _gunlukArsivSayfasiAc();
+    } else {
+      const hata = document.getElementById('_pinGirHata');
+      if (hata) { hata.textContent = 'Yanlış PIN. Tekrar dene.'; hata.style.display = 'block'; }
+      // Salla animasyonu
+      [0,1,2,3].forEach(i => {
+        const d = document.getElementById('_pinGirDot'+i);
+        if(d){d.style.background='#cc3355';d.style.borderColor='#cc3355';}
+      });
+      setTimeout(()=>{
+        window._pinGirilen = '';
+        [0,1,2,3].forEach(i => {
+          const d = document.getElementById('_pinGirDot'+i);
+          if(d){d.style.background='transparent';d.style.borderColor='var(--border)';}
+        });
+      }, 600);
+    }
+  }
+}
+
+function _gunlukPinUnuttum() {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div onclick="event.stopPropagation()" style="background:var(--surface);border-radius:18px;padding:24px 20px;max-width:300px;width:100%;text-align:center">
+      <div style="font-size:1.8rem;margin-bottom:8px">⚠️</div>
+      <div style="font-weight:800;font-size:0.95rem;margin-bottom:8px">PINi Sıfırla</div>
+      <div style="font-size:0.8rem;color:var(--text2);margin-bottom:18px;line-height:1.6">
+        PINi sıfırlamak için tüm geçmiş günlük notların kalıcı olarak silinecek. Devam etmek istiyor musun?
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:11px;border-radius:11px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit">İptal</button>
+        <button onclick="this.closest('[style*=fixed]').remove();_gunlukPinSifirla()" style="flex:1;padding:11px;border-radius:11px;border:none;background:#cc3355;color:#fff;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit">Sıfırla</button>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function _gunlukPinSifirla() {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  // Tüm günlük notlarını sil ama diğer wellness verilerini koru
+  const storageKey = 'wellness_' + myUid;
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem(storageKey)||'{}'); } catch(e){}
+  if (data.days) {
+    Object.keys(data.days).forEach(k => {
+      if (data.days[k].not) delete data.days[k].not;
+    });
+    localStorage.setItem(storageKey, JSON.stringify(data));
+  }
+  localStorage.removeItem(_gunlukPinKey());
+  document.getElementById('_pinGirModal')?.remove();
+  showToast('✅', 'PIN sıfırlandı. Günlük notlar temizlendi.');
+}
+
+function _gunlukArsivSayfasiAc() {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem('wellness_'+myUid)||'{}'); } catch(e){}
+
+  const todayKey = getTodayKey();
+  const gunler = Object.entries(data.days||{})
+    .filter(([k,v]) => k !== todayKey)
+    .sort(([a],[b]) => b.localeCompare(a));
+
+  const modal = document.createElement('div');
+  modal.id = '_arsivModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:var(--bg,#f5f6fa);z-index:9999;display:flex;flex-direction:column;overflow:hidden';
+
+  const icerik = gunler.length === 0
+    ? `<div style="text-align:center;padding:60px 20px;color:var(--text2)">
+        <div style="font-size:2rem;margin-bottom:8px">📭</div>
+        <div style="font-weight:700">Henüz geçmiş günlük yok</div>
+        <div style="font-size:0.78rem;margin-top:4px">Günlük not yazdıkça burada görünecek</div>
+       </div>`
+    : gunler.map(([k,v]) => {
+        const d = new Date(k.slice(0,4)+'-'+k.slice(4,6)+'-'+k.slice(6,8)+'T12:00:00');
+        const tarih = d.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+        const mInfo = moodOptions.find(x=>x.value===v.mood);
+        const hasNot = !!v.not;
+        return `
+        <div style="background:var(--surface);border-radius:14px;border:1px solid var(--border);margin-bottom:10px;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px">
+            <div style="display:flex;align-items:center;gap:8px">
+              ${mInfo?`<span style="font-size:1.2rem">${mInfo.emoji}</span>`:'<span style="width:24px"></span>'}
+              <div>
+                <div style="font-size:0.82rem;font-weight:800;color:var(--text)">${tarih}</div>
+                ${v.kelime?`<div style="font-size:0.7rem;color:var(--accent);font-weight:700;margin-top:1px">"${v.kelime}"</div>`:''}
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              ${hasNot?`<button onclick="_arsivGunlukAc('${k}')" style="padding:5px 10px;border-radius:8px;border:1px solid var(--accent)44;background:var(--accent)0a;color:var(--accent);font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit">Oku</button>`:''}
+              <button onclick="_arsivGunlukSil('${k}',this)" style="padding:5px 10px;border-radius:8px;border:1px solid #ff658444;background:#ff658408;color:#cc3355;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit">Sil</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0">
+      <button onclick="document.getElementById('_arsivModal').remove()" style="width:30px;height:30px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem">←</button>
+      <div style="font-size:0.95rem;font-weight:800;color:var(--text)">🔒 Geçmiş Günlükler</div>
+      <button onclick="_arsivPinDegistir()" style="margin-left:auto;padding:5px 11px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:0.7rem;font-weight:700;cursor:pointer;font-family:inherit">PIN Değiştir</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:12px">
+      ${icerik}
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function _arsivGunlukAc(key) {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem('wellness_'+myUid)||'{}'); } catch(e){}
+  const v = data.days?.[key] || {};
+  const d = new Date(key.slice(0,4)+'-'+key.slice(4,6)+'-'+key.slice(6,8)+'T12:00:00');
+  const tarih = d.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const mInfo = moodOptions.find(x=>x.value===v.mood);
+
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99999;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = `
+    <div onclick="event.stopPropagation()" style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px 32px;max-height:80vh;overflow-y:auto">
+      <div style="width:32px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 18px"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        ${mInfo?`<span style="font-size:1.4rem">${mInfo.emoji}</span>`:''}
+        <div style="font-size:0.85rem;font-weight:800;color:var(--text)">${tarih}</div>
+      </div>
+      ${v.kelime?`<div style="font-size:0.75rem;color:var(--accent);font-weight:700;margin-bottom:12px">"${v.kelime}"</div>`:''}
+      <div style="height:1px;background:var(--border);margin-bottom:14px"></div>
+      <div style="font-size:0.88rem;color:var(--text);line-height:1.75;white-space:pre-wrap">${v.not||'(Not yazılmamış)'}</div>
+      <button onclick="this.closest('[style*=rgba]').remove()" style="width:100%;margin-top:20px;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit">Kapat</button>
+    </div>`;
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+function _arsivGunlukSil(key, btn) {
+  const onay = document.createElement('div');
+  onay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
+  onay.innerHTML = `
+    <div onclick="event.stopPropagation()" style="background:var(--surface);border-radius:18px;padding:22px 18px;max-width:280px;width:100%;text-align:center">
+      <div style="font-size:1.5rem;margin-bottom:6px">🗑️</div>
+      <div style="font-weight:800;margin-bottom:6px">Bu günlüğü sil?</div>
+      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:16px">Bu işlem geri alınamaz.</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit">İptal</button>
+        <button onclick="(function(){
+          const myUid=(window.currentUserData||{}).uid||'local';
+          let d={};try{d=JSON.parse(localStorage.getItem('wellness_'+myUid)||'{}')}catch(e){}
+          if(d.days&&d.days['${key}'])delete d.days['${key}'];
+          try{localStorage.setItem('wellness_'+myUid,JSON.stringify(d))}catch(e){}
+          const card=document.querySelector('[onclick*=\\'${key}\\']')?.closest('div[style*=border-radius]');
+          if(card)card.remove();
+          this.closest('[style*=fixed]').remove();
+          showToast('✅','Günlük silindi');
+        })()" style="flex:1;padding:10px;border-radius:10px;border:none;background:#cc3355;color:#fff;font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit">Sil</button>
+      </div>
+    </div>`;
+  onay.addEventListener('click', e => { if(e.target===onay) onay.remove(); });
+  document.body.appendChild(onay);
+}
+
+function _arsivPinDegistir() {
+  localStorage.removeItem(_gunlukPinKey());
+  document.getElementById('_arsivModal')?.remove();
+  showToast('ℹ️', 'Yeni PIN belirle');
+  setTimeout(_gunlukPinKur, 300);
+}
+
