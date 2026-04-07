@@ -283,16 +283,18 @@ function studentDashboard() {
 
       const doneRow = hasMood ? `<div style="font-size:0.68rem;color:#43b89c;font-weight:700;margin-top:6px;text-align:center">✓ Kaydedildi — <button onclick="showPage('wellness')" style="background:none;border:none;color:var(--accent);font-size:0.68rem;font-weight:700;cursor:pointer;font-family:inherit">Günlüğü aç →</button></div>` : `<button onclick="showPage('wellness')" style="width:100%;margin-top:8px;padding:7px;border:1.5px solid var(--accent)44;border-radius:9px;background:transparent;color:var(--accent);font-size:0.73rem;font-weight:700;cursor:pointer;font-family:inherit">📖 Günlüğü Aç →</button>`;
 
-      return `<div style="background:var(--surface);border-radius:16px;border:2px solid ${hasMood?'#43b89c33':'var(--accent)22'};padding:13px;margin-bottom:12px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div>
-            <div style="font-size:0.88rem;font-weight:800;color:var(--text)">📖 Günlüğüm</div>
-            <div style="font-size:0.7rem;color:var(--text2);margin-top:1px">Bugünü hızlıca kaydet</div>
+      return `<div class="wellness-banner-wrap">
+        <div class="wellness-banner-inner" style="flex-direction:column;align-items:stretch;gap:0;padding:12px 14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div>
+              <div style="font-size:0.88rem;font-weight:800;color:var(--text)"><span class="wellness-journal-icon">📖</span> Günlüğüm</div>
+              <div style="font-size:0.7rem;color:var(--text2);margin-top:1px">Bugünü hızlıca kaydet</div>
+            </div>
+            ${streakBadge}
           </div>
-          ${streakBadge}
+          <div style="display:flex;gap:5px">${moodBtns}</div>
+          ${doneRow}
         </div>
-        <div style="display:flex;gap:5px">${moodBtns}</div>
-        ${doneRow}
       </div>`;
     })()}
 
