@@ -105,6 +105,8 @@ function appConfirm(title, msg, danger=false) {
   return new Promise(resolve => {
     appConfirmResolve = (val) => {
       document.getElementById('appConfirmModal').classList.remove('open');
+      if (window._modalStack) { const i = window._modalStack.indexOf('appConfirmModal'); if (i>-1) window._modalStack.splice(i,1); }
+      history.back();
       resolve(val);
     };
     document.getElementById('appConfirmTitle').textContent = title;
@@ -112,6 +114,7 @@ function appConfirm(title, msg, danger=false) {
     const ok = document.getElementById('appConfirmOkBtn');
     ok.className = 'confirm-ok' + (danger?' danger':'');
     document.getElementById('appConfirmModal').classList.add('open');
+    _pushModal('appConfirmModal');
   });
 }
 
@@ -143,6 +146,7 @@ function openDatePicker(sName, mode) {
   // Bu yılı seç → ayları render et → bu ayı otomatik seç
   dpSelectYear(now.getFullYear(), document.querySelector('#dpYearChips .dp-chip'), true);
   document.getElementById('datePickerModal').classList.add('open');
+  _pushModal('datePickerModal');
 }
 
 function dpSelectYear(year, btn, autoSelect=false) {

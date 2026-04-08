@@ -355,47 +355,47 @@ function studentKazanimlar() {
 function studentTasks() {
   const bugun = getTodayKey();
   const gorunenGorevler = tasks.filter(t => {
-    if (t.done) return false; // tamamlananları gösterme
-    // Takvim görevi ödevler listesinde gösterilmez
+    if (t.done) return false;
     if (t.tip === 'takvim') return false;
     if (!t.dueRaw) return true;
     return t.dueRaw >= bugun;
   });
 
+  const header = '<div class="page-title">📋 Ödevlerim</div>' +
+    '<div class="page-sub">Koç tarafından atanan görevler</div>';
+
   if (gorunenGorevler.length === 0) {
-    return '<div class="page-title">📋 Ödevlerim</div>' +
-      '<div class="page-sub">Koç tarafından atanan görevler</div>' +
-      '<div style="text-align:center;padding:40px 20px;color:var(--text2)">' +
-        '<div style="font-size:2rem;margin-bottom:8px">✅</div>' +
-        '<div style="font-size:14px;font-weight:700">Bekleyen ödev yok</div>' +
-        '<div style="font-size:12px;margin-top:4px">Koçun yeni görev atadığında burada görünür</div>' +
+    return header +
+      '<div style="text-align:center;padding:48px 20px;color:var(--text2)">' +
+        '<div style="font-size:2.5rem;margin-bottom:12px">✅</div>' +
+        '<div style="font-size:15px;font-weight:700">Bekleyen ödev yok</div>' +
+        '<div style="font-size:12px;margin-top:6px">Koçun yeni görev atadığında burada görünür</div>' +
       '</div>';
   }
 
-  return '<div class="page-title">📋 Ödevlerim</div>' +
-    '<div class="page-sub">Koç tarafından atanan görevler</div>' +
-    gorunenGorevler.map(function(t) {
-      var idx = tasks.indexOf(t);
-      var baslik = t.baslik || t.title || 'Görev';
+  return header + gorunenGorevler.map(function(t) {
+    var idx = tasks.indexOf(t);
+    var baslik = t.title || t.baslik || 'Görev';
+    var ders = t.subject || '';
+    var aciklama = t.desc || t.not || '';
+    var altMetin = [aciklama, ders].filter(Boolean).join(' • ');
+    var bugunMu = t.dueRaw && t.dueRaw === bugun;
+    var sonRenk = bugunMu ? '#e67e22' : 'var(--text2)';
+    var cardBorder = bugunMu ? 'border-left:3px solid #f9ca24;' : '';
 
-      // NORMAL GÖREV
-      var sureBugün = t.dueRaw && t.dueRaw === bugun;
-      var tarihRenk = sureBugün ? '#f9ca24' : 'var(--text2)';
-      var cardStyle = (t.dueRaw && t.dueRaw === bugun && !t.done) ? 'border-left:3px solid #f9ca24;' : '';
-      var tamamlaBtn = !t.done ? '<button class="btn btn-success" style="padding:8px 14px;font-size:0.8rem" onclick="completeTask(' + idx + ')">Tamamla ✓</button>' : '';
-      return '<div class="assignment-card" style="' + cardStyle + '">' +
-        '<div class="assignment-icon" style="background:rgba(108,99,255,.15);color:var(--accent);font-size:1.3rem">📝</div>' +
-        '<div style="flex:1">' +
-          '<div class="assignment-title">' + baslik + '</div>' +
-          '<div class="assignment-desc">' + (t.desc||t.not||'') + (t.subject ? ' • ' + t.subject : '') + '</div>' +
-          '<div class="assignment-footer">' +
-            '<span class="badge ' + (t.done ? 'badge-green' : 'badge-yellow') + '">' + (t.done ? '✓ Tamamlandı' : '⏳ Bekliyor') + '</span>' +
-            '<span style="font-size:0.78rem;color:' + tarihRenk + '">📅 Son: ' + (t.due||'—') + '</span>' +
-          '</div>' +
+    return '<div class="assignment-card" style="' + cardBorder + 'gap:12px;align-items:flex-start">' +
+      '<div class="assignment-icon" style="background:rgba(108,99,255,.12);color:var(--accent);font-size:1.2rem;flex-shrink:0;margin-top:2px">📝</div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-weight:700;font-size:0.92rem;color:var(--text);margin-bottom:3px;line-height:1.3">' + baslik + '</div>' +
+        (altMetin ? '<div style="font-size:0.78rem;color:var(--text2);margin-bottom:6px;line-height:1.4">' + altMetin + '</div>' : '') +
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+          '<span class="badge badge-yellow" style="font-size:0.7rem">⏳ Bekliyor</span>' +
+          (t.due ? '<span style="font-size:0.75rem;color:' + sonRenk + ';font-weight:' + (bugunMu ? '700' : '400') + '">📅 Son: ' + t.due + '</span>' : '') +
         '</div>' +
-        tamamlaBtn +
-      '</div>';
-    }).join('');
+      '</div>' +
+      '<button onclick="completeTask(' + idx + ')" style="flex-shrink:0;background:rgba(67,233,123,.12);border:1.5px solid #43e97b;color:#27ae60;border-radius:10px;padding:7px 12px;font-size:0.78rem;font-weight:700;cursor:pointer;white-space:nowrap;margin-top:2px">Tamamla ✓</button>' +
+    '</div>';
+  }).join('');
 }
 
 function _takHaftaKeyOgrenci() {

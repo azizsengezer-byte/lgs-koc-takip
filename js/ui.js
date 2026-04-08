@@ -206,10 +206,10 @@ function showPage(id) {
 // Telefon/tarayıcı geri tuşunu yakala
 window.addEventListener('popstate', (e) => {
   // Açık modal varsa önce onu kapat, sayfa geçişi yapma
-  const openOverlay = document.querySelector('.modal-overlay.open');
-  if (openOverlay) { openOverlay.classList.remove('open'); return; }
-  const openFixed = document.querySelector('.modal[style*="display: flex"], .modal[style*="display:flex"]');
-  if (openFixed) { openFixed.style.display = 'none'; return; }
+  if (window._modalStack && window._modalStack.length > 0) {
+    _closeTopModal();
+    return;
+  }
 
   if (e.state && e.state.page && currentPage) {
     const id = e.state.page;
