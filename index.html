@@ -579,7 +579,11 @@
     </div>
     <div class="form-group">
       <label class="form-label">Son Tarih</label>
-      <input class="form-input" type="date" id="taskDue">
+      <input type="hidden" id="taskDue">
+      <button type="button" id="taskDueBtn" onclick="openTaskDatePicker()"
+        class="form-input" style="text-align:left;cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:8px">
+        <span>📅</span><span id="taskDueLbl">Tarih seç</span>
+      </button>
     </div>
     <div class="modal-actions">
       <button class="btn btn-outline" onclick="closeModal('addTaskModal')">İptal</button>
