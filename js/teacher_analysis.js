@@ -85,8 +85,8 @@ function teacherTasks() {
       <div class="assignment-card" style="position:relative">
         <div class="assignment-icon" style="background:rgba(108,99,255,.15)">${t.typeLabel?t.typeLabel.split(' ')[0]:'📝'}</div>
         <div style="flex:1;min-width:0">
-          <div class="assignment-title">${t.title || t.baslik || 'Görev'}</div>
-          <div style="font-size:0.78rem;color:var(--accent);font-weight:600;margin-bottom:2px">${t.subject||''}${(t.studentName||t.student)?(' → '+(t.studentName||t.student)):''}</div>
+          <div class="assignment-title">${t.title}</div>
+          <div style="font-size:0.78rem;color:var(--accent);font-weight:600;margin-bottom:2px">${t.subject||''}${t.student?' → '+t.student:''}</div>
           <div class="assignment-desc">${t.desc||''}</div>
           <div class="assignment-footer">
             <span class="badge ${t.done?'badge-green':'badge-yellow'}">${t.done?'✅ Tamamlandı':'⏳ Bekliyor'}</span>
@@ -104,36 +104,7 @@ function teacherTasks() {
 
 /* =================== STUDENT PAGES =================== */
 
-// ============================================================
-// ÖĞRENCİ ANALİZ SAYFASI AÇICI
-// ============================================================
-        <span style="font-size:0.68rem;color:var(--text2)">${e.time||''}</span>
-      </div>`;
-  });
-
-  panel.innerHTML = html;
-  panel.style.display = 'block';
-  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function toggleDenemeAcc(id) {
-  const el = document.getElementById(id);
-  const arrow = document.getElementById(id+'_arrow');
-  if (!el) return;
-  const isOpen = el.style.display !== 'none';
-  el.style.display = isOpen ? 'none' : 'block';
-  if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
-}
-
-function toggleDersAcc(id) {
-  const el = document.getElementById(id);
-  const arrow = document.getElementById(id+'_arrow');
-  if (!el) return;
-  const isOpen = el.style.display !== 'none';
-  el.style.display = isOpen ? 'none' : 'block';
-  if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-}
-
+// openStudentAnalysis
 function openStudentAnalysis(name) {
   // İki seçenek sun: Bireysel Analiz veya Psikolojik Takip
   selectedStudentName = name;
@@ -162,3 +133,32 @@ function openStudentAnalysis(name) {
       <div style="display:flex;flex-direction:column;gap:10px">
         <button onclick="document.getElementById('_studentChoiceModal').remove();studentAnalysisPeriod='daily';showPage('student-detail')"
           style="padding:16px;border-radius:14px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
+          <span style="font-size:1.6rem">📊</span>
+          <div>
+            <div style="font-weight:800;font-size:0.95rem">Bireysel Analiz Raporu</div>
+            <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Soru çözümü, deneme sonuçları, performans grafikleri</div>
+          </div>
+        </button>
+        <button onclick="document.getElementById('_studentChoiceModal').remove();showPsychReport('${name}')"
+          style="padding:16px;border-radius:14px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
+          <span style="font-size:1.6rem">💙</span>
+          <div>
+            <div style="font-weight:800;font-size:0.95rem">Psikolojik Takip Raporu</div>
+            <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Duygu durumu, enerji, kaygı ve uyku takibi</div>
+          </div>
+        </button>
+        <button onclick="document.getElementById('_studentChoiceModal').remove();odul_gonderModal('${name}','${sUid}')"
+          style="padding:16px;border-radius:14px;background:linear-gradient(135deg,rgba(249,202,36,0.1),rgba(255,140,0,0.1));border:1.5px solid rgba(249,202,36,0.4);color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
+          <span style="font-size:1.6rem">🏅</span>
+          <div>
+            <div style="font-weight:800;font-size:0.95rem">Ödül Gönder</div>
+            <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Tebrik kartı veya madalya gönder</div>
+          </div>
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+}
+
+

@@ -97,6 +97,7 @@ function generateMonthOptions() {
   return opts.join('');
 }
 
+// ============================================================
 // ── AI KOTA SİSTEMİ ────────────────────────────────────────
 const AI_AYLIK_KOTA = 20;
 
@@ -871,9 +872,7 @@ function pdfInfoBox(doc, text, Y, bgColor=[240,238,255], textColor=[50,40,140]) 
 // ANA PDF FONKSİYONU — exportStudentDetailPDF
 // ============================================================
 
-// ============================================================
-// ÖĞRENCİ DETAY PDF
-// ============================================================
+// exportStudentDetailPDF
 function exportStudentDetailPDF(sName) {
   showToast('⏳', 'PDF hazirlaniyor...');
 

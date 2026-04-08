@@ -443,7 +443,6 @@ function vpSwitchTab(tab) {
 }
 
 async function editDeneme(examId, currentTitle) {
-  // Custom input modal — tarayıcı prompt() yerine
   const newTitle = await new Promise(resolve => {
     const existing = document.getElementById('_editDenemeModal');
     if (existing) existing.remove();
@@ -462,11 +461,7 @@ async function editDeneme(examId, currentTitle) {
             style="flex:1;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-family:inherit">Kaydet ✓</button>
         </div>
       </div>`;
-    window._editDenemeResolve = (val) => {
-      modal.remove();
-      delete window._editDenemeResolve;
-      resolve(val);
-    };
+    window._editDenemeResolve = (val) => { modal.remove(); delete window._editDenemeResolve; resolve(val); };
     modal.addEventListener('click', e => { if (e.target === modal) { modal.remove(); resolve(null); } });
     document.body.appendChild(modal);
     setTimeout(() => document.getElementById('_editDenemeInput')?.select(), 50);
@@ -648,8 +643,7 @@ function editTaskModal(idx) {
   document.getElementById('taskType').value = t.type || 'soru';
   document.getElementById('taskTitle').value = t.title || '';
   document.getElementById('taskDesc').value = t.desc || '';
-  // Tarih: dueRaw (YYYY-MM-DD) varsa onu kullan, yoksa boş bırak
-  if (typeof _taskDueSet === 'function') _taskDueSet(t.dueRaw || '');
+  document.getElementById('taskDue').value = t.due || '';
   // Buton label'larını güncelle
   const sLbl = document.getElementById('taskStudentLabel');
   if (sLbl) sLbl.textContent = t.studentName || t.student || '— Öğrenci seç —';
@@ -761,31 +755,30 @@ function showDayEntries(dk, dateLabel) {
           <div style="font-size:0.75rem;color:var(--accent)">${typeLabel} · ${e.topic||'Genel'}</div>
           <div style="font-size:0.73rem;color:var(--text2)">⏱${e.duration||0}dk${e.questions>0?' · 📝'+e.questions+' soru · ✅'+(e.correct||0)+' ❌'+(e.wrong||0)+' · Net:'+(e.net||0).toFixed(1):''}</div>
         </div>
-          <span style="font-size:1.6rem">📊</span>
-          <div>
-            <div style="font-weight:800;font-size:0.95rem">Bireysel Analiz Raporu</div>
-            <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Soru çözümü, deneme sonuçları, performans grafikleri</div>
-          </div>
-        </button>
-        <button onclick="document.getElementById('_studentChoiceModal').remove();showPsychReport('${name}')"
-          style="padding:16px;border-radius:14px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
-          <span style="font-size:1.6rem">💙</span>
-          <div>
-            <div style="font-weight:800;font-size:0.95rem">Psikolojik Takip Raporu</div>
-            <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Duygu durumu, enerji, kaygı ve uyku takibi</div>
-          </div>
-        </button>
-        <button onclick="document.getElementById('_studentChoiceModal').remove();odul_gonderModal('${name}','${sUid}')"
-          style="padding:16px;border-radius:14px;background:linear-gradient(135deg,rgba(249,202,36,0.1),rgba(255,140,0,0.1));border:1.5px solid rgba(249,202,36,0.4);color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
-          <span style="font-size:1.6rem">🏅</span>
-          <div>
-            <div style="font-weight:800;font-size:0.95rem">Ödül Gönder</div>
-            <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Tebrik kartı veya madalya gönder</div>
-          </div>
-        </button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+        <span style="font-size:0.68rem;color:var(--text2)">${e.time||''}</span>
+      </div>`;
+  });
+
+  panel.innerHTML = html;
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function toggleDenemeAcc(id) {
+  const el = document.getElementById(id);
+  const arrow = document.getElementById(id+'_arrow');
+  if (!el) return;
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
+}
+
+function toggleDersAcc(id) {
+  const el = document.getElementById(id);
+  const arrow = document.getElementById(id+'_arrow');
+  if (!el) return;
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
 }
 
