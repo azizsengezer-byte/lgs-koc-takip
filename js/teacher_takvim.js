@@ -383,6 +383,42 @@ function _takSelectMonthDay(d, month, year) {
 }
 
 // ETKİNLİK EKLE MODALI
+// Saat input yardımcıları
+function _takSaatInput(el) {
+  // Sadece rakam ve : al
+  let v = el.value.replace(/[^0-9]/g, '');
+  // İki rakamdan sonra otomatik : ekle
+  if (v.length >= 2) v = v.slice(0, 2) + ':' + v.slice(2, 4);
+  else v = v.slice(0, 2);
+  el.value = v;
+  // Saat kısmı tamamlandıysa (2 rakam) sınırla
+  if (v.length >= 2) {
+    const saat = parseInt(v.slice(0, 2));
+    if (saat > 23) el.value = '23' + v.slice(2);
+  }
+  // Dakika tamamlandıysa sınırla
+  if (v.length === 5) {
+    const dk = parseInt(v.slice(3, 5));
+    if (dk > 59) el.value = v.slice(0, 3) + '59';
+  }
+}
+function _takSaatBlur(el) {
+  const v = el.value;
+  // Tam değil veya format yanlışsa temizle
+  if (!v) return;
+  const m = v.match(/^(\d{2}):(\d{2})$/);
+  if (!m || parseInt(m[1]) > 23 || parseInt(m[2]) > 59) {
+    el.value = '';
+    el.style.borderColor = 'var(--border)';
+    showToast('⚠️', 'Geçersiz saat — SS:DD formatında girin (ör. 14:30)');
+  }
+}
+function _takSaatValidate(val) {
+  if (!val) return true; // boş geçerli (opsiyonel)
+  const m = val.match(/^(\d{2}):(\d{2})$/);
+  return m && parseInt(m[1]) <= 23 && parseInt(m[2]) <= 59;
+}
+
 function _takEtkinlikEkle(gunIndex) {
   const modal = document.createElement('div');
   modal.id = '_takModal';
@@ -410,14 +446,16 @@ function _takEtkinlikEkle(gunIndex) {
         </div>
         <div style="flex:1">
           <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">BAŞLANGIÇ</div>
-          <input id="_takSaatBaslangic" class="form-input" placeholder="14:00" maxlength="5"
-            oninput="this.value=this.value.replace(/[^0-9:]/g,'');if(this.value.length===2&&!this.value.includes(':'))this.value+=':'"
+          <input id="_takSaatBaslangic" class="form-input" placeholder="--:--" maxlength="5"
+            oninput="_takSaatInput(this)"
+            onblur="_takSaatBlur(this)"
             style="margin:0;text-align:center;font-size:1rem;font-weight:700;letter-spacing:.05em">
         </div>
         <div style="flex:1">
           <div style="font-size:0.72rem;color:var(--text2);margin-bottom:4px;font-weight:700">BİTİŞ</div>
-          <input id="_takSaatBitis" class="form-input" placeholder="15:30" maxlength="5"
-            oninput="this.value=this.value.replace(/[^0-9:]/g,'');if(this.value.length===2&&!this.value.includes(':'))this.value+=':'"
+          <input id="_takSaatBitis" class="form-input" placeholder="--:--" maxlength="5"
+            oninput="_takSaatInput(this)"
+            onblur="_takSaatBlur(this)"
             style="margin:0;text-align:center;font-size:1rem;font-weight:700;letter-spacing:.05em">
         </div>
       </div>
@@ -482,8 +520,20 @@ async function _takKaydet() {
   if (!baslik) { showToast('⚠️', 'Başlık girin'); return; }
 
   const gun  = parseInt(gunEl?.value ?? 0);
-  const saatBaslangic = document.getElementById('_takSaatBaslangic')?.value || '';
-  const saatBitis    = document.getElementById('_takSaatBitis')?.value || '';
+  const saatBaslangic = document.getElementById('_takSaatBaslangic')?.value.trim() || '';
+  const saatBitis    = document.getElementById('_takSaatBitis')?.value.trim() || '';
+
+  // Saat doğrulama
+  if (saatBaslangic && !_takSaatValidate(saatBaslangic)) {
+    showToast('⚠️', 'Başlangıç saati geçersiz — SS:DD formatında girin (ör. 14:00)'); return;
+  }
+  if (saatBitis && !_takSaatValidate(saatBitis)) {
+    showToast('⚠️', 'Bitiş saati geçersiz — SS:DD formatında girin (ör. 15:30)'); return;
+  }
+  if (saatBaslangic && saatBitis && saatBitis <= saatBaslangic) {
+    showToast('⚠️', 'Bitiş saati başlangıçtan sonra olmalı'); return;
+  }
+
   const saat  = saatBaslangic && saatBitis ? `${saatBaslangic}–${saatBitis}` : saatBaslangic || '';
   const sure  = document.getElementById('_takSure')?.value || '';
   const ders  = document.getElementById('_takDers')?.value || '';
