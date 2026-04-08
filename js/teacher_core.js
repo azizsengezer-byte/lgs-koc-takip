@@ -621,7 +621,8 @@ function editTaskModal(idx) {
   document.getElementById('taskType').value = t.type || 'soru';
   document.getElementById('taskTitle').value = t.title || '';
   document.getElementById('taskDesc').value = t.desc || '';
-  document.getElementById('taskDue').value = t.due || '';
+  // Tarih: dueRaw (YYYY-MM-DD) varsa onu kullan, yoksa boş bırak
+  if (typeof _taskDueSet === 'function') _taskDueSet(t.dueRaw || '');
   // Buton label'larını güncelle
   const sLbl = document.getElementById('taskStudentLabel');
   if (sLbl) sLbl.textContent = t.studentName || t.student || '— Öğrenci seç —';

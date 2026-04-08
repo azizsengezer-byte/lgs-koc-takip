@@ -562,7 +562,8 @@ async function _takKaydet() {
 }
 
 async function _takEvSil(evId, key) {
-  if (!confirm('Bu etkinliği silmek istiyor musun?')) return;
+  const onay = await appConfirm('Etkinliği Sil', 'Bu etkinliği silmek istiyor musun?', true);
+  if (!onay) return;
   try {
     await db.collection('takvimler').doc(evId).delete();
     // State'ten kaldır

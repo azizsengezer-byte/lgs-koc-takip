@@ -609,11 +609,102 @@ function updateTaskTitle() {
   if (unit && titleEl) titleEl.value = `${unit} — ${typeLabels[type]||'Görev'}`;
 }
 
+function _taskDueSet(isoVal) {
+  document.getElementById('taskDue').value = isoVal;
+  const lbl = document.getElementById('taskDueLbl');
+  if (lbl) {
+    lbl.textContent = isoVal
+      ? new Date(isoVal + 'T12:00:00').toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' })
+      : 'Tarih seç';
+    lbl.style.color = isoVal ? 'var(--text)' : 'var(--text2)';
+  }
+}
+
+function openTaskDatePicker() {
+  const existing = document.getElementById('_taskDuePicker');
+  if (existing) { existing.remove(); return; }
+
+  const curVal = document.getElementById('taskDue').value;
+  let viewDate = curVal ? new Date(curVal + 'T12:00:00') : new Date();
+  let selVal = curVal || '';
+
+  const overlay = document.createElement('div');
+  overlay.id = '_taskDuePicker';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:flex-end;justify-content:center';
+
+  function renderPicker() {
+    const todayKey = new Date().toISOString().split('T')[0];
+    const y = viewDate.getFullYear();
+    const m = viewDate.getMonth();
+    const monthNames = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+    const dayNames = ['Pt','Sa','Ça','Pe','Cu','Ct','Pz'];
+
+    // Ayın 1'inin haftanın kaçıncı günü (Pzt=0)
+    const firstDay = new Date(y, m, 1);
+    let startDow = firstDay.getDay() - 1; if (startDow < 0) startDow = 6;
+    const daysInMonth = new Date(y, m+1, 0).getDate();
+
+    let cells = '';
+    // Boş hücreler
+    for (let i = 0; i < startDow; i++) cells += '<div></div>';
+    // Günler
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const isToday = iso === todayKey;
+      const isSel = iso === selVal;
+      const isPast = iso < todayKey;
+      cells += `<div onclick="${isPast ? '' : `_taskDueCellClick('${iso}')`}"
+        style="display:flex;align-items:center;justify-content:center;height:36px;border-radius:50%;cursor:${isPast?'default':'pointer'};
+        background:${isSel?'var(--accent)':isToday?'var(--accent)22':'transparent'};
+        color:${isSel?'#fff':isPast?'var(--border)':isToday?'var(--accent)':'var(--text)'};
+        font-weight:${isSel||isToday?'800':'400'};font-size:0.85rem">${d}</div>`;
+    }
+
+    overlay.innerHTML = `
+      <div onclick="event.stopPropagation()" style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:420px;padding:20px 16px 32px">
+        <div style="width:32px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 16px"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <button onclick="_taskDueMonth(-1)" style="background:var(--accent)15;border:none;width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:1.1rem;color:var(--accent)">‹</button>
+          <div style="font-weight:800;font-size:1rem;color:var(--text)">${monthNames[m]} ${y}</div>
+          <button onclick="_taskDueMonth(1)" style="background:var(--accent)15;border:none;width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:1.1rem;color:var(--accent)">›</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:8px">
+          ${dayNames.map(d=>`<div style="text-align:center;font-size:0.7rem;font-weight:700;color:var(--text2);padding:4px 0">${d}</div>`).join('')}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">${cells}</div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button onclick="_taskDueClear()" style="flex:1;padding:10px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-weight:700;cursor:pointer;font-family:inherit;font-size:0.85rem">Temizle</button>
+          <button onclick="document.getElementById('_taskDuePicker').remove()" style="flex:1;padding:10px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-family:inherit;font-size:0.85rem">Kapat ✓</button>
+        </div>
+      </div>`;
+  }
+
+  window._taskDueCellClick = (iso) => {
+    selVal = iso;
+    _taskDueSet(iso);
+    renderPicker();
+  };
+  window._taskDueMonth = (dir) => {
+    viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + dir, 1);
+    renderPicker();
+  };
+  window._taskDueClear = () => {
+    selVal = '';
+    _taskDueSet('');
+    renderPicker();
+  };
+
+  renderPicker();
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
 function openTaskModal() {
   populateTaskStudents();
   const d = new Date();
   d.setDate(d.getDate() + 3);
-  document.getElementById('taskDue').value = d.toISOString().split('T')[0];
+  const defIso = d.toISOString().split('T')[0];
+  _taskDueSet(defIso);
   document.getElementById('taskTitle').value = '';
   document.getElementById('taskDesc').value = '';
   // Başlık ve butonu sıfırla (editTaskModal'dan gelmiş olabilir)
