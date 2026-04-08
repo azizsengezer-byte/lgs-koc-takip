@@ -68,6 +68,12 @@ function _closeTopModal() {
   if (!el) return false;
   el.classList.remove('open');
   el.style.display = 'none';
+  // appConfirm Promise askıda kalmasın — geri tuşuyla kapatıldıysa false döndür
+  if (id === 'appConfirmModal' && typeof window.appConfirmResolve === 'function') {
+    const res = window.appConfirmResolve;
+    window.appConfirmResolve = null;
+    res(false);
+  }
   return true;
 }
 
