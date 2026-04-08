@@ -550,8 +550,8 @@ function teacherTasks() {
       <div class="assignment-card" style="position:relative">
         <div class="assignment-icon" style="background:rgba(108,99,255,.15)">${t.typeLabel?t.typeLabel.split(' ')[0]:'📝'}</div>
         <div style="flex:1;min-width:0">
-          <div class="assignment-title">${t.title}</div>
-          <div style="font-size:0.78rem;color:var(--accent);font-weight:600;margin-bottom:2px">${t.subject||''}${t.student?' → '+t.student:''}</div>
+          <div class="assignment-title">${t.title || t.baslik || 'Görev'}</div>
+          <div style="font-size:0.78rem;color:var(--accent);font-weight:600;margin-bottom:2px">${t.subject||''}${(t.studentName||t.student)?(' → '+(t.studentName||t.student)):''}</div>
           <div class="assignment-desc">${t.desc||''}</div>
           <div class="assignment-footer">
             <span class="badge ${t.done?'badge-green':'badge-yellow'}">${t.done?'✅ Tamamlandı':'⏳ Bekliyor'}</span>

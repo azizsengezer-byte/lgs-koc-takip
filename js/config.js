@@ -99,7 +99,7 @@ function renderMobileNav() {
   const studentNav = studentNavAll;
   const items = currentRole==='teacher' ? teacherNav : studentNav;
   const unreadMsg = (currentRole==='teacher' ? teacherNotifs : studentNotifs).filter(n=>!n.read&&n.type==='message').length;
-  const pendingTaskCount = currentRole==='student' ? tasks.filter(t=>!t.done).length : 0;
+  const pendingTaskCount = currentRole==='student' ? tasks.filter(t=>!t.done && t.tip!=='takvim').length : 0;
   nav.innerHTML = `<div class="mobile-nav-inner">${items.map(n=>{
     let badge = '';
     if(n.id==='messages' && unreadMsg>0) badge=`<span class="nav-badge">${unreadMsg>9?'9+':unreadMsg}</span>`;

@@ -56,6 +56,8 @@ function openEntryForDay(dk) {
 function openModal(id) {
   const el = document.getElementById(id);
   if (!el) return;
+  // Geri tuşu ile modal kapatılabilsin diye history'e state push et
+  history.pushState({ page: currentPage, _modal: id }, '', location.pathname + location.search);
   // Tam ekran modallar display:flex ile açılır
   if (el.style.position === 'fixed' && !el.classList.contains('modal-overlay')) {
     el.style.display = 'flex';
