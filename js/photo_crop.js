@@ -133,7 +133,8 @@ async function saveCroppedPhoto() {
 async function removePhoto() {
   const user = auth.currentUser;
   if (!user) return;
-  if (!confirm('Profil fotoğrafını kaldırmak istiyor musunuz?')) return;
+  const onay = await appConfirm('Fotoğrafı Kaldır', 'Profil fotoğrafını kaldırmak istiyor musunuz?', true);
+  if (!onay) return;
   try {
     await db.collection('users').doc(user.uid).update({ photo: '' });
     window.currentUserData = {...(window.currentUserData||{}), photo: ''};

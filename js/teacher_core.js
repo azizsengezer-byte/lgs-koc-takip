@@ -443,7 +443,34 @@ function vpSwitchTab(tab) {
 }
 
 async function editDeneme(examId, currentTitle) {
-  const newTitle = prompt('Deneme adını düzenle:', currentTitle);
+  // Custom input modal — tarayıcı prompt() yerine
+  const newTitle = await new Promise(resolve => {
+    const existing = document.getElementById('_editDenemeModal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = '_editDenemeModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:flex-end;justify-content:center';
+    modal.innerHTML = `
+      <div onclick="event.stopPropagation()" style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:22px 18px 32px">
+        <div style="width:32px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 16px"></div>
+        <div style="font-size:1rem;font-weight:800;margin-bottom:14px">✏️ Deneme Adını Düzenle</div>
+        <input id="_editDenemeInput" class="form-input" value="${currentTitle.replace(/"/g,'&quot;')}" style="margin-bottom:14px">
+        <div style="display:flex;gap:8px">
+          <button onclick="document.getElementById('_editDenemeModal').remove();window._editDenemeResolve(null)"
+            style="flex:1;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-weight:700;cursor:pointer;font-family:inherit">İptal</button>
+          <button onclick="window._editDenemeResolve(document.getElementById('_editDenemeInput').value)"
+            style="flex:1;padding:11px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-family:inherit">Kaydet ✓</button>
+        </div>
+      </div>`;
+    window._editDenemeResolve = (val) => {
+      modal.remove();
+      delete window._editDenemeResolve;
+      resolve(val);
+    };
+    modal.addEventListener('click', e => { if (e.target === modal) { modal.remove(); resolve(null); } });
+    document.body.appendChild(modal);
+    setTimeout(() => document.getElementById('_editDenemeInput')?.select(), 50);
+  });
   if (!newTitle || newTitle.trim() === currentTitle) return;
   const trimmed = newTitle.trim();
   const user = auth.currentUser;
@@ -734,61 +761,6 @@ function showDayEntries(dk, dateLabel) {
           <div style="font-size:0.75rem;color:var(--accent)">${typeLabel} · ${e.topic||'Genel'}</div>
           <div style="font-size:0.73rem;color:var(--text2)">⏱${e.duration||0}dk${e.questions>0?' · 📝'+e.questions+' soru · ✅'+(e.correct||0)+' ❌'+(e.wrong||0)+' · Net:'+(e.net||0).toFixed(1):''}</div>
         </div>
-        <span style="font-size:0.68rem;color:var(--text2)">${e.time||''}</span>
-      </div>`;
-  });
-
-  panel.innerHTML = html;
-  panel.style.display = 'block';
-  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function toggleDenemeAcc(id) {
-  const el = document.getElementById(id);
-  const arrow = document.getElementById(id+'_arrow');
-  if (!el) return;
-  const isOpen = el.style.display !== 'none';
-  el.style.display = isOpen ? 'none' : 'block';
-  if (arrow) arrow.textContent = isOpen ? '▼' : '▲';
-}
-
-function toggleDersAcc(id) {
-  const el = document.getElementById(id);
-  const arrow = document.getElementById(id+'_arrow');
-  if (!el) return;
-  const isOpen = el.style.display !== 'none';
-  el.style.display = isOpen ? 'none' : 'block';
-  if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-}
-
-function openStudentAnalysis(name) {
-  // İki seçenek sun: Bireysel Analiz veya Psikolojik Takip
-  selectedStudentName = name;
-  const sObj = students.find(s=>s.name===name) || {};
-  const initials = name[0];
-  const color = sObj.color || '#6c63ff';
-  const sUid = sObj.uid || '';
-
-  // Basit seçim modalı
-  const existing = document.getElementById('_studentChoiceModal');
-  if (existing) existing.remove();
-
-  const modal = document.createElement('div');
-  modal.id = '_studentChoiceModal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:0';
-  modal.innerHTML = `
-    <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:22px 18px 36px;width:100%;max-width:480px;animation:slideUp .2s ease">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-        <div style="width:42px;height:42px;border-radius:50%;background:${color}22;color:${color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem">${initials}</div>
-        <div>
-          <div style="font-weight:800;font-size:1rem">${name}</div>
-          <div style="font-size:0.72rem;color:var(--text2)">Hangi raporu görmek istiyorsun?</div>
-        </div>
-        <button onclick="document.getElementById('_studentChoiceModal').remove()" style="margin-left:auto;background:none;border:none;color:var(--text2);font-size:1.3rem;cursor:pointer">✕</button>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <button onclick="document.getElementById('_studentChoiceModal').remove();studentAnalysisPeriod='daily';showPage('student-detail')"
-          style="padding:16px;border-radius:14px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
           <span style="font-size:1.6rem">📊</span>
           <div>
             <div style="font-weight:800;font-size:0.95rem">Bireysel Analiz Raporu</div>
