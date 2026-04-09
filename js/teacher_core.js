@@ -184,6 +184,86 @@ function teacherStudents() {
   const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
   const weekKey = weekAgo.toISOString().split('T')[0];
 
+  // Öğrencileri okula göre grupla
+  const groups = {};
+  const NO_SCHOOL = '— Okul Belirtilmemiş —';
+  students.forEach((s, i) => {
+    const key = s.school && s.school.trim() ? s.school.trim() : NO_SCHOOL;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push({ s, i });
+  });
+  const sortedKeys = Object.keys(groups).sort((a,b) => {
+    if (a === NO_SCHOOL) return 1;
+    if (b === NO_SCHOOL) return -1;
+    return a.localeCompare(b, 'tr');
+  });
+
+  function renderCard(s, i) {
+    const sEntries = studyEntries.filter(e=>e.studentName===s.name);
+    const weekEntries = sEntries.filter(e=>e.dateKey>=weekKey);
+    const activeDays = new Set(weekEntries.map(e=>e.dateKey)).size;
+    const totalQ = sEntries.reduce((a,e)=>a+(e.questions||0),0);
+    const avgNet = weekEntries.length > 0
+      ? (weekEntries.reduce((a,e)=>a+(e.net||0),0) / weekEntries.length).toFixed(1) : 0;
+    const isActiveToday = sEntries.some(e=>e.dateKey===todayKey);
+    const status = activeDays >= 4 ? 'good' : activeDays >= 2 ? 'normal' : 'warn';
+    const statusBadge = status==='good'
+      ? `<span class="badge badge-green">✅ Aktif</span>`
+      : status==='normal'
+      ? `<span class="badge badge-yellow">📊 Normal</span>`
+      : `<span class="badge badge-red">⚠️ Dikkat!</span>`;
+
+    const avatar = s.photo
+      ? `<img src="${s.photo}" onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')"
+           style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;cursor:pointer">`
+      : `<div onclick="event.stopPropagation();showUserProfile('${s.uid}','${s.name}','${s.color}')"
+           style="width:42px;height:42px;border-radius:50%;background:${s.color}18;color:${s.color};font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer">${s.name[0]}</div>`;
+
+    return `
+      <div class="swipe-wrap" id="sw_${s.uid}">
+        <div class="swipe-actions">
+          <button class="swipe-action-btn" onclick="event.stopPropagation();_swipeClose('${s.uid}');ogrenciOkulDegistir(${i})">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>Okul</span>
+          </button>
+          <button class="swipe-action-btn" onclick="event.stopPropagation();_swipeClose('${s.uid}');ogrenciSifreSifirla('${s.uid}','${s.name}','${s.username||''}')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>Şifre</span>
+          </button>
+          <button class="swipe-action-btn" onclick="event.stopPropagation();_swipeClose('${s.uid}');deleteStudent(${i})">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            <span>Sil</span>
+          </button>
+        </div>
+        <div class="swipe-front student-card-item" data-name="${s.name.toLowerCase()}" id="sf_${s.uid}"
+          ontouchstart="_swipeTouchStart(event,'${s.uid}')"
+          ontouchend="_swipeTouchEnd(event,'${s.uid}')"
+          onclick="_swipeTap('${s.uid}','${s.name}')">
+          ${avatar}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:0.88rem;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</div>
+            <div style="font-size:0.7rem;color:var(--text2);margin-top:2px">${activeDays} gün · ${totalQ} soru · Net ${avgNet} · ${isActiveToday?'✅ aktif':'⏳ giriş yok'}</div>
+          </div>
+          ${statusBadge}
+          <button onclick="event.stopPropagation();_swipeToggle('${s.uid}')"
+            style="background:none;border:none;cursor:pointer;padding:4px 6px;color:var(--text2);font-size:1.1rem;flex-shrink:0;line-height:1" title="İşlemler">⋯</button>
+        </div>
+      </div>`;
+  }
+
+  const studentListHTML = students.length === 0
+    ? `<div style="text-align:center;padding:40px 20px;color:var(--text2)">
+        <div style="font-size:3rem;margin-bottom:12px">👥</div>
+        <div style="font-weight:700;margin-bottom:8px">Henüz öğrenci eklenmedi</div>
+        <div style="font-size:0.85rem">+ Öğrenci Ekle butonuna basarak başla</div>
+      </div>`
+    : sortedKeys.map(key => `
+        <div data-school-header="1" style="font-size:0.68rem;font-weight:800;color:var(--text2);letter-spacing:.08em;text-transform:uppercase;padding:10px 4px 4px;margin-top:4px">
+          🏫 ${key}
+        </div>
+        ${groups[key].map(({s,i}) => renderCard(s,i)).join('')}
+      `).join('');
+
   return `
     <div class="page-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Öğrencilerim</div>
     <div class="page-sub">Koçluk takibindeki öğrenciler</div>
@@ -191,71 +271,14 @@ function teacherStudents() {
       <button class="btn btn-primary" onclick="ogrenciEkleModalAc()">+ Öğrenci Ekle</button>
       <button class="btn btn-outline" onclick="openTaskModal()">📋 Görev Ata</button>
     </div>
-    <!-- Arama -->
     <div style="position:relative;margin-bottom:16px">
       <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:1rem">🔍</span>
       <input type="text" id="studentSearchInput" placeholder="Öğrenci ara..."
         oninput="filterStudentList(this.value)"
         style="width:100%;padding:10px 12px 10px 36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.92rem;outline:none;box-sizing:border-box">
     </div>
-    <div class="card" id="studentListCard">
-      ${students.length === 0 ? `
-        <div style="text-align:center;padding:40px 20px;color:var(--text2)">
-          <div style="font-size:3rem;margin-bottom:12px">👥</div>
-          <div style="font-weight:700;margin-bottom:8px">Henüz öğrenci eklenmedi</div>
-          <div style="font-size:0.85rem">+ Öğrenci Ekle butonuna basarak başla</div>
-        </div>
-      ` : students.map((s,i)=>{
-        const sEntries = studyEntries.filter(e=>e.studentName===s.name);
-        const weekEntries = sEntries.filter(e=>e.dateKey>=weekKey);
-        const activeDays = new Set(weekEntries.map(e=>e.dateKey)).size;
-        const totalQ = sEntries.reduce((a,e)=>a+(e.questions||0),0);
-        const totalNet = sEntries.reduce((a,e)=>a+(e.net||0),0);
-        const avgNet = weekEntries.length > 0
-          ? (weekEntries.reduce((a,e)=>a+(e.net||0),0) / weekEntries.length).toFixed(1)
-          : 0;
-        const isActiveToday = sEntries.some(e=>e.dateKey===todayKey);
-        const pendingTasks = tasks.filter(t=>t.studentName===s.name && !t.done).length;
-        // Durum: son 7 günde 4+ gün aktifse İyi, 2-3 gün Normal, <2 gün Dikkat
-        const status = activeDays >= 4 ? 'good' : activeDays >= 2 ? 'normal' : 'warn';
-        const statusBadge = status==='good'
-          ? `<span class="badge badge-green">✅ Aktif</span>`
-          : status==='normal'
-          ? `<span class="badge badge-yellow">📊 Normal</span>`
-          : `<span class="badge badge-red">⚠️ Dikkat!</span>`;
-        // Bugünkü wellness cache'den mood al
-        const moodBadge = '';
-        return `
-        <div class="swipe-wrap" id="sw_${s.uid}">
-          <div class="swipe-actions">
-            <button class="swipe-action-btn" onclick="event.stopPropagation();_swipeClose('${s.uid}');ogrenciOkulDegistir(${i})">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              <span>Okul</span>
-            </button>
-            <button class="swipe-action-btn" onclick="event.stopPropagation();_swipeClose('${s.uid}');ogrenciSifreSifirla('${s.uid}','${s.name}','${s.username||''}')">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <span>Şifre</span>
-            </button>
-            <button class="swipe-action-btn" onclick="event.stopPropagation();_swipeClose('${s.uid}');deleteStudent(${i})">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-              <span>Sil</span>
-            </button>
-          </div>
-          <div class="swipe-front student-card-item" data-name="${s.name.toLowerCase()}" id="sf_${s.uid}"
-            ontouchstart="_swipeTouchStart(event,'${s.uid}')"
-            ontouchend="_swipeTouchEnd(event,'${s.uid}')"
-            onclick="_swipeTap('${s.uid}','${s.name}')">
-            ${s.photo
-              ? `<img src="${s.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">`
-              : `<div style="width:40px;height:40px;border-radius:50%;background:${s.color}18;color:${s.color};font-size:1rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${s.name[0]}</div>`}
-            <div style="flex:1;min-width:0">
-              <div style="font-size:0.88rem;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</div>
-              <div style="font-size:0.7rem;color:var(--text2);margin-top:2px">${activeDays} gün · ${totalQ} soru · Net ${avgNet} · ${isActiveToday?'✅ aktif':'⏳ giriş yok'}</div>
-            </div>
-            ${statusBadge}
-          </div>
-        </div>`;
-      }).join('')}
+    <div class="card" id="studentListCard" style="padding:8px 10px">
+      ${studentListHTML}
     </div>
     <div style="margin-top:20px" class="card">
       <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Haftalık Öğrenci Özeti</div>
@@ -279,6 +302,8 @@ function teacherStudents() {
     </div>
   `;
 }
+
+
 
 /* ========== ÖĞRENCI DETAY ANALİZİ ========== */
 let selectedStudentName = '';

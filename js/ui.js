@@ -148,10 +148,21 @@ function renderSidebar() {
 
 function filterStudentList(query) {
   const q = query.toLowerCase().trim();
-  const cards = document.querySelectorAll('#studentListCard .student-card-item');
-  cards.forEach(card => {
-    const name = (card.dataset.name || '').toLowerCase();
-    card.style.display = (!q || name.includes(q)) ? '' : 'none';
+  // swipe-wrap kartları filtrele
+  document.querySelectorAll('#studentListCard .swipe-wrap').forEach(wrap => {
+    const nameEl = wrap.querySelector('.student-card-item');
+    const name = (nameEl?.dataset.name || '').toLowerCase();
+    wrap.style.display = (!q || name.includes(q)) ? '' : 'none';
+  });
+  // Okul başlıklarını: altında görünür kart varsa göster
+  document.querySelectorAll('#studentListCard [data-school-header]').forEach(header => {
+    let next = header.nextElementSibling;
+    let hasVisible = false;
+    while (next && !next.dataset.schoolHeader) {
+      if (next.style.display !== 'none') { hasVisible = true; break; }
+      next = next.nextElementSibling;
+    }
+    header.style.display = hasVisible ? '' : 'none';
   });
 }
 

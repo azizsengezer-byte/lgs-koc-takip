@@ -97,6 +97,17 @@ async function _sifreUygula(uid, isim, username) {
 // ── SWIPE KART FONKSİYONLARI ─────────────────────────────────
 let _swipeTxStart = 0;
 
+function _swipeToggle(uid) {
+  const f = document.getElementById('sf_' + uid);
+  if (!f) return;
+  if (f.classList.contains('swipe-open')) {
+    f.classList.remove('swipe-open');
+  } else {
+    _swipeCloseAll();
+    f.classList.add('swipe-open');
+  }
+}
+
 function _swipeTouchStart(e, uid) {
   _swipeTxStart = e.touches[0].clientX;
 }
