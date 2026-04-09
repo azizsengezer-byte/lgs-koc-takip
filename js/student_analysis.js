@@ -79,14 +79,48 @@ function saveWellnessAll(btn) {
 
   _syncW(myUid, storageKey, data);
   // Bildirimler sadece kaydet butonuna basılınca
-  const kaygiVal = parseInt(data.days[todayKey]?.kaygi || 0);
-  const uykuVal = parseFloat(data.days[todayKey]?.uyku || 0);
+  const today = data.days[todayKey];
+  const kaygiVal = parseInt(today?.kaygi || 0);
+  const uykuVal = parseFloat(today?.uyku || 0);
   if (kaygiVal >= 8) kaygiBildirimiGonder(kaygiVal);
   if (uykuVal > 0 && uykuVal < 5) uykuBildirimiGonder(uykuVal);
-  if (btn) { btn.textContent = '✅ Kaydedildi!'; setTimeout(()=>{ btn.textContent = '💾 Kaydet'; }, 1500); }
+  if (btn) { btn.textContent = '✅ Kaydedildi!'; setTimeout(()=>{ btn.textContent = '✓ Günlüğü Kaydet'; }, 2000); }
   checkBadges();
-  // Altın sistemi — wellness tam kontrolü
   if (typeof _marketWellnessTamKontrol === 'function') _marketWellnessTamKontrol();
+
+  // Kaydet sonrası telkin modalı
+  const telkinler = [];
+  if (today.mood)  telkinler.push(wpMood(today.mood));
+  if (today.enerji) telkinler.push(wpEnerji(parseInt(today.enerji)));
+  if (today.odak)   telkinler.push(wpOdak(parseInt(today.odak)));
+  if (today.kaygi)  telkinler.push(wpKaygi(parseInt(today.kaygi)));
+  if (today.uyku)   telkinler.push(wpUyku(parseFloat(today.uyku)));
+  if (today.gurur)  telkinler.push(wpGurur());
+  if (telkinler.length === 0) return;
+
+  // Rasgele 1–2 telkin seç
+  const shuffle = arr => arr.sort(()=>Math.random()-.5);
+  const secilen = shuffle(telkinler).slice(0, 2);
+
+  const existing = document.getElementById('_wellnessTelkinModal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = '_wellnessTelkinModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = `
+    <div onclick="event.stopPropagation()" style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:22px 18px 36px">
+      <div style="width:32px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 18px"></div>
+      <div style="font-size:1rem;font-weight:800;margin-bottom:14px">✨ Günlüğün kaydedildi</div>
+      ${secilen.map(t=>`
+        <div style="background:var(--surface2);border-radius:12px;padding:12px 14px;margin-bottom:8px;font-size:0.85rem;color:var(--text);line-height:1.5">${t}</div>
+      `).join('')}
+      <button onclick="document.getElementById('_wellnessTelkinModal').remove()"
+        style="width:100%;margin-top:8px;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-weight:800;font-size:0.88rem;cursor:pointer;font-family:inherit">
+        Tamam 👋
+      </button>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
 }
 
 // ============================================================
