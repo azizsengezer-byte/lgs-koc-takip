@@ -53,50 +53,95 @@ function openEntryForDay(dk) {
   openEntryFor(null);
 }
 
-// Global modal stack — tüm modal açma/kapama buradan yönetilir
+// ─────────────────────────────────────────────────────────────
+//  MERKEZI MODAL YÖNETİMİ
+//  openModal / closeModal  → ID tabanlı (HTML'de tanımlı) modaller
+//  MutationObserver        → JS ile dinamik eklenen tüm overlay'leri
+//                            otomatik yakalar, geri tuşuna bağlar
+// ─────────────────────────────────────────────────────────────
+
 window._modalStack = window._modalStack || [];
 
-function _pushModal(id) {
-  window._modalStack.push(id);
-  history.pushState({ page: currentPage, _modal: id }, '', location.pathname + location.search);
+// Bir elementin "overlay modal" olup olmadığını anla
+function _isOverlayEl(el) {
+  if (!el || el.nodeType !== 1) return false;
+  if (el.classList.contains('modal-overlay')) return true;
+  const cs = el.style.cssText || '';
+  return (cs.includes('position:fixed') || cs.includes('position: fixed')) &&
+         (cs.includes('inset:0') || cs.includes('inset: 0') ||
+          (cs.includes('top:0') && cs.includes('left:0')));
 }
 
+// Stack'e ekle + history push
+function _pushModal(idOrEl) {
+  const key = typeof idOrEl === 'string' ? idOrEl : (idOrEl.id || ('_dyn_' + Date.now()));
+  // Aynı modal ikince kez stacke girmesin
+  if (window._modalStack.includes(key)) return;
+  if (typeof idOrEl !== 'string' && !idOrEl.id) idOrEl.id = key;
+  window._modalStack.push(key);
+  history.pushState({ page: currentPage, _modal: key }, '', location.pathname + location.search);
+}
+
+// Stack'ten çıkar + elementi kapat/sil
 function _closeTopModal() {
-  const id = window._modalStack.pop();
-  if (!id) return false;
-  const el = document.getElementById(id);
-  if (!el) return false;
-  el.classList.remove('open');
-  el.style.display = 'none';
-  // appConfirm Promise askıda kalmasın — geri tuşuyla kapatıldıysa false döndür
-  if (id === 'appConfirmModal' && typeof window.appConfirmResolve === 'function') {
+  const key = window._modalStack.pop();
+  if (!key) return false;
+
+  const el = document.getElementById(key);
+  if (!el) return true; // zaten DOM'dan çıkmış
+
+  // appConfirm askıda kalmasın
+  if (key === 'appConfirmModal' && typeof window.appConfirmResolve === 'function') {
     const res = window.appConfirmResolve;
     window.appConfirmResolve = null;
     res(false);
   }
+  // Dinamik (DOM'a append edilen) modaller → remove()
+  if (key.startsWith('_dyn_') || !document.getElementById(key)?.closest('#app, body > .modal-overlay')) {
+    el.remove();
+    return true;
+  }
+  // HTML'de tanımlı modaller → gizle
+  el.classList.remove('open');
+  el.style.display = 'none';
   return true;
 }
 
+// Stack'ten belirli bir key'i sil (closeModal çağrıldığında)
+function _removeFromStack(key) {
+  const i = window._modalStack.indexOf(key);
+  if (i > -1) {
+    window._modalStack.splice(i, 1);
+    // history stack'ini de temizle — bir adım geri al (sessizce)
+    // Ama sadece bu modal için pushlanmış state varsa
+    history.go(-1);
+  }
+}
+
+// ── openModal: HTML'de tanımlı modaller için ──
 function openModal(id) {
   const el = document.getElementById(id);
   if (!el) return;
   _pushModal(id);
-  // Tam ekran modallar display:flex ile açılır
-  if (el.style.position === 'fixed' && !el.classList.contains('modal-overlay')) {
-    el.style.display = 'flex';
-  } else {
+  if (el.classList.contains('modal-overlay') || el.style.position !== 'fixed') {
     el.classList.add('open');
+    el.style.display = '';
+  } else {
+    el.style.display = 'flex';
   }
 }
+
+// ── closeModal: HTML'de tanımlı modaller için ──
 function closeModal(id) {
   const el = document.getElementById(id);
   if (!el) return;
-  if (el.style.position === 'fixed' && !el.classList.contains('modal-overlay')) {
-    el.style.display = 'none';
-  } else {
+  _removeFromStack(id);
+  if (el.classList.contains('modal-overlay') || el.style.position !== 'fixed') {
     el.classList.remove('open');
+  } else {
+    el.style.display = 'none';
   }
-  // Kayıt modalı kapanınca formu temizle
+  // ── Form temizlikleri ──
   if (id === 'registerModal') {
     setTimeout(() => {
       ['regName','regEmail','regPass','regPass2','regSchool'].forEach(i => {
@@ -110,7 +155,6 @@ function closeModal(id) {
       if (typeof secRolKart === 'function') secRolKart('student');
     }, 250);
   }
-  // Öğrenci ekleme formu temizle
   if (id === 'addStudentModal') {
     setTimeout(() => {
       ['newStudentName','newStudentUsername','newStudentPass'].forEach(i => {
@@ -123,6 +167,38 @@ function closeModal(id) {
     }, 250);
   }
 }
+
+// ── MutationObserver: JS ile body'e eklenen tüm dinamik overlay'leri yakala ──
+(function _initDynamicModalObserver() {
+  const observer = new MutationObserver(mutations => {
+    mutations.forEach(m => {
+      m.addedNodes.forEach(node => {
+        if (_isOverlayEl(node) && node.parentNode === document.body) {
+          // Eğer zaten bir id'si varsa ve openModal ile açıldıysa atla
+          if (node.id && window._modalStack.includes(node.id)) return;
+          _pushModal(node);
+
+          // Bu overlay .remove() ile kapatıldığında stack'ten düş
+          const origRemove = node.remove.bind(node);
+          node.remove = function() {
+            const key = node.id;
+            const idx = window._modalStack.indexOf(key);
+            if (idx > -1) {
+              window._modalStack.splice(idx, 1);
+              // history.go geri al — ama sadece bu modal'ın pushladığı adımı
+              // popstate tetiklenirse _closeTopModal çağrılmasın diye geçici flag
+              window._skipNextPopstate = true;
+              history.go(-1);
+              setTimeout(() => { window._skipNextPopstate = false; }, 100);
+            }
+            origRemove();
+          };
+        }
+      });
+    });
+  });
+  observer.observe(document.body, { childList: true });
+})();
 
 function toggleEntryFields() {
   const type = document.getElementById('entryType').value;

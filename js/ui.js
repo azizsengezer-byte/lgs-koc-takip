@@ -216,6 +216,11 @@ function showPage(id) {
 
 // Telefon/tarayıcı geri tuşunu yakala
 window.addEventListener('popstate', (e) => {
+  // Dinamik modal .remove() tetiklediyse bu popstate'i atla
+  if (window._skipNextPopstate) {
+    window._skipNextPopstate = false;
+    return;
+  }
   // Açık modal varsa önce onu kapat, sayfa geçişi yapma
   if (window._modalStack && window._modalStack.length > 0) {
     _closeTopModal();
