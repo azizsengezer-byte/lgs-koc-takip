@@ -705,7 +705,7 @@ function openTaskDatePicker() {
   document.body.appendChild(overlay);
 }
 
-function openTaskModal() {
+function openTaskModal(preStudent) {
   populateTaskStudents();
   const d = new Date();
   d.setDate(d.getDate() + 3);
@@ -718,6 +718,14 @@ function openTaskModal() {
   if (titleEl) titleEl.textContent = '📋 Görev Ata';
   const btn = document.getElementById('taskSaveBtn');
   if (btn) btn.onclick = saveTask;
+  // Öğrenci kartından açıldıysa otomatik seç
+  if (preStudent) {
+    const inp = document.getElementById('taskStudent');
+    if (inp) inp.value = preStudent;
+    const lbl = document.getElementById('taskStudentLabel');
+    if (lbl) lbl.textContent = preStudent;
+    updateTaskUnits();
+  }
   openModal('addTaskModal');
 }
 

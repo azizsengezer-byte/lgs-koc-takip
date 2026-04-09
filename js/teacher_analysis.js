@@ -76,29 +76,117 @@ function teacherAnalysis() {
 }
 
 function teacherTasks() {
-  return `
-    <div class="page-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Görevler</div>
-    <div class="page-sub">Ödevler ve çalışma programları</div>
-    <button class="btn btn-primary" style="margin-bottom:20px" onclick="openTaskModal()">+ Yeni Görev Ata</button>
-    ${tasks.length === 0 ? `<div style="text-align:center;padding:30px;color:var(--text2)">Henüz görev atanmadı</div>` :
-    tasks.map((t,i)=>`
-      <div class="assignment-card" style="position:relative">
-        <div class="assignment-icon" style="background:rgba(108,99,255,.15)">${t.typeLabel?t.typeLabel.split(' ')[0]:'📝'}</div>
-        <div style="flex:1;min-width:0">
-          <div class="assignment-title">${t.title}</div>
-          <div style="font-size:0.78rem;color:var(--accent);font-weight:600;margin-bottom:2px">${t.subject||''}${t.student?' → '+t.student:''}</div>
-          <div class="assignment-desc">${t.desc||''}</div>
-          <div class="assignment-footer">
-            <span class="badge ${t.done?'badge-green':'badge-yellow'}">${t.done?'✅ Tamamlandı':'⏳ Bekliyor'}</span>
-            <span style="font-size:0.75rem;color:var(--text2)">Son: ${t.due||'-'}</span>
+  // Öğrenci bazlı gruplama
+  const grouped = {};
+  tasks.forEach((t, globalIdx) => {
+    const sName = t.studentName || t.student || '—';
+    if (!grouped[sName]) grouped[sName] = [];
+    grouped[sName].push({ ...t, _globalIdx: globalIdx });
+  });
+
+  // Öğrenci sıralaması: bekleyen görevi olan önce, sonra isime göre
+  const sortedNames = Object.keys(grouped).sort((a, b) => {
+    const aPending = grouped[a].filter(t => !t.done).length;
+    const bPending = grouped[b].filter(t => !t.done).length;
+    if (bPending !== aPending) return bPending - aPending;
+    return a.localeCompare(b, 'tr');
+  });
+
+  const totalPending = tasks.filter(t => !t.done).length;
+  const totalDone    = tasks.filter(t => t.done).length;
+
+  const typeIcon = { soru:'📝', okuma:'📖', video:'🎬', tekrar:'🔁', deneme:'📊' };
+
+  const studentBlocks = sortedNames.map(sName => {
+    const sObj = students.find(s => s.name === sName) || {};
+    const color = sObj.color || '#6c63ff';
+    const initials = sName !== '—' ? sName[0] : '?';
+    const sList = grouped[sName];
+    const pending = sList.filter(t => !t.done).length;
+    const done    = sList.filter(t => t.done).length;
+
+    // Görevler: bekleyenler önce, sonra son tarihe göre
+    const sorted = [...sList].sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      return (a.due || '9999').localeCompare(b.due || '9999');
+    });
+
+    const taskRows = sorted.map(t => {
+      const idx = t._globalIdx;
+      const icon = typeIcon[t.type] || '📝';
+      const isOverdue = !t.done && t.due && t.due < new Date().toISOString().slice(0,10);
+      const dueBadge = t.due
+        ? `<span style="font-size:0.72rem;color:${isOverdue?'#ff6584':'var(--text2)'}">📅 ${t.due}</span>`
+        : '';
+      return `
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)">
+          <div style="width:34px;height:34px;border-radius:10px;background:${t.done?'rgba(0,200,120,.12)':'rgba(108,99,255,.12)'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${icon}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:0.88rem;${t.done?'text-decoration:line-through;color:var(--text2)':''}">${t.title}</div>
+            <div style="font-size:0.76rem;color:var(--accent);font-weight:600;margin-top:1px">${t.subject||''}${t.unit?' · '+t.unit:''}</div>
+            ${t.desc?`<div style="font-size:0.77rem;color:var(--text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.desc}</div>`:''}
+            <div style="display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap">
+              <span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:20px;${t.done?'background:rgba(0,200,120,.15);color:#00c878':'background:rgba(255,193,7,.15);color:#e6a800'}">${t.done?'✅ Teslim Edildi':'⏳ Bekliyor'}</span>
+              ${dueBadge}
+              ${isOverdue?`<span style="font-size:0.7rem;font-weight:700;color:#ff6584">⚠️ Gecikti</span>`:''}
+            </div>
           </div>
+          <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+            <button onclick="editTaskModal(${idx})" style="background:var(--accent)15;border:none;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:0.78rem;color:var(--accent)">✏️</button>
+            <button onclick="deleteTask('${t.id||''}',${idx})" style="background:#ff658415;border:none;padding:5px 9px;border-radius:8px;cursor:pointer;font-size:0.78rem;color:#ff6584">🗑️</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="card" style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px">
+          <div style="width:36px;height:36px;border-radius:50%;background:${color}22;color:${color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;flex-shrink:0">${initials}</div>
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:0.95rem">${sName}</div>
+            <div style="font-size:0.75rem;color:var(--text2);margin-top:1px">
+              ${pending>0?`<span style="color:#e6a800;font-weight:700">${pending} bekliyor</span>`:'<span style="color:#00c878;font-weight:700">Hepsi tamamlandı</span>'}
+              ${done>0?` · <span style="color:var(--text2)">${done} teslim</span>`:''}
+            </div>
+          </div>
+          <button onclick="openTaskModal('${sName}')" style="background:var(--accent)15;border:1px solid var(--accent)30;color:var(--accent);font-size:0.78rem;font-weight:700;padding:5px 12px;border-radius:20px;cursor:pointer;flex-shrink:0">+ Görev Ekle</button>
         </div>
-        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-          <button onclick="editTaskModal(${i})" style="background:var(--accent)15;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:0.8rem;color:var(--accent)">✏️</button>
-          <button onclick="deleteTask('${t.id||''}',${i})" style="background:#ff658415;border:none;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:0.8rem;color:#ff6584">🗑️</button>
-        </div>
+        ${taskRows}
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="page-title">
+      <svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Ödev Takip &amp; Kontrol
+    </div>
+    <div class="page-sub">Öğrenci bazlı ödev ve görev yönetimi</div>
+
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <div class="card" style="flex:1;text-align:center;padding:14px 10px;margin-bottom:0">
+        <div style="font-size:1.5rem;font-weight:800;color:var(--accent4)">${totalPending}</div>
+        <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Bekleyen</div>
       </div>
-    `).join('')}
+      <div class="card" style="flex:1;text-align:center;padding:14px 10px;margin-bottom:0">
+        <div style="font-size:1.5rem;font-weight:800;color:#00c878">${totalDone}</div>
+        <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Teslim Edildi</div>
+      </div>
+      <div class="card" style="flex:1;text-align:center;padding:14px 10px;margin-bottom:0">
+        <div style="font-size:1.5rem;font-weight:800;color:var(--accent)">${sortedNames.length}</div>
+        <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Öğrenci</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;margin-bottom:20px" onclick="openTaskModal()">+ Yeni Görev Ata</button>
+
+    ${tasks.length === 0
+      ? `<div style="text-align:center;padding:40px 20px;color:var(--text2)">
+           <div style="font-size:3rem;margin-bottom:12px">📋</div>
+           <div style="font-weight:700;margin-bottom:6px">Henüz görev atanmadı</div>
+           <div style="font-size:0.83rem">Yukarıdaki butona tıklayarak öğrencilere görev atayabilirsiniz.</div>
+         </div>`
+      : studentBlocks
+    }
   `;
 }
 

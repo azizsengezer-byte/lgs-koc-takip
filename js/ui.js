@@ -122,7 +122,7 @@ function renderSidebar() {
     { id:'dashboard',     icon:ICONS.grid,   label:'Ana Panel' },
     { id:'students',      icon:ICONS.users,  label:'Öğrencilerim' },
     { id:'analysis',      icon:ICONS.trend,  label:'Analizler' },
-    { id:'tasks-teacher', icon:ICONS.check,  label:'Görevler' },
+    { id:'tasks-teacher', icon:ICONS.check,  label:'Ödev Takip & Kontrol' },
     { id:'takvim',        icon:ICONS.cal,    label:'Takvim' },
     { id:'notifs',        icon:ICONS.bell,   label:'Bildirimler' },
   ];
