@@ -60,12 +60,20 @@ function saveWellnessAll(btn) {
   if (!data.days[todayKey]) data.days[todayKey] = {};
 
   // Tüm input değerlerini topla
-  const fields = ['wellnessEnerji','wellnessKaygi','wellnessOdak'];
+  const fields = ['wellnessEnerji','wellnessKaygi','wellnessOdak','wellnessUyku','wellnessEkranOnline','wellnessEkranSosyal'];
   fields.forEach(id => {
     const el = document.getElementById(id);
-    if (el) {
+    if (el && el.value !== '') {
       const fieldName = id.replace('wellness','').toLowerCase();
       data.days[todayKey][fieldName] = el.value;
+    }
+  });
+  const textFields = ['wellnessKelime','wellnessGurur','wellnessPozitif','wellnessNegatif'];
+  textFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.value.trim()) {
+      const fieldName = id.replace('wellness','').toLowerCase();
+      data.days[todayKey][fieldName] = el.value.trim();
     }
   });
 
@@ -274,8 +282,8 @@ function showDagilimDetail(ders) {
 // ============================================================
 
 const moodOptions = [
+  { emoji:'😢', label:'Mutsuz',  value:'sad',     color:'#9b59b6' },
   { emoji:'😣', label:'Kötü',    value:'bad',     color:'#ff6584' },
-  { emoji:'😕', label:'Zor',     value:'hard',    color:'#f9a825' },
   { emoji:'😐', label:'Normal',  value:'ok',      color:'#888' },
   { emoji:'😊', label:'İyi',     value:'good',    color:'#43b89c' },
   { emoji:'😄', label:'Harika',  value:'great',   color:'#6c63ff' },
@@ -405,23 +413,14 @@ function wellnessPage() {
   const selamlama = hour < 12 ? 'Günaydın' : hour < 18 ? 'İyi günler' : 'İyi akşamlar';
   const userName = (window.currentUserData?.name || '').split(' ')[0] || '';
 
-  // Son 7 gün mood şeridi
   const last7 = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); const dk=d.toISOString().slice(0,10).replace(/-/g,''); const dayData=data.days?.[dk]||{}; const mInfo=moodOptions.find(x=>x.value===dayData.mood); return {label:d.toLocaleDateString('tr-TR',{weekday:'short'}), emoji:mInfo?.emoji||'·', color:mInfo?.color||'var(--border)', filled:!!dayData.mood}; }).reverse();
-
-  const moodTelkin = today.mood ? telkinHtml(wpMood(today.mood), ['good','great'].includes(today.mood)?'good':['bad','hard'].includes(today.mood)?'warn':'neutral') : '';
-  const enerjiTelkin = today.enerji ? telkinHtml(wpEnerji(parseInt(today.enerji)), parseInt(today.enerji)>=7?'good':parseInt(today.enerji)<=3?'warn':'neutral') : '';
-  const odakTelkin = today.odak ? telkinHtml(wpOdak(parseInt(today.odak)), parseInt(today.odak)>=7?'good':parseInt(today.odak)<=3?'warn':'neutral') : '';
-  const kaygiTelkin = today.kaygi ? telkinHtml(wpKaygi(parseInt(today.kaygi)), parseInt(today.kaygi)>=9?'alert':parseInt(today.kaygi)>=7?'warn':parseInt(today.kaygi)<=3?'good':'neutral') : '';
-  const dersTelkin = today.zorDers ? telkinHtml(wpDers(today.zorDers), 'neutral') : '';
-  const uykuTelkin = today.uyku ? telkinHtml(wpUyku(parseFloat(today.uyku)), parseFloat(today.uyku)>=7?'good':parseFloat(today.uyku)<5?'warn':'neutral') : '';
-  const gururTelkin = today.gurur ? telkinHtml(wpGurur(), 'good') : '';
-  const streakTelkin = streak>=2 ? telkinHtml(wpStreak(streak), 'good') : '';
 
   const subjects = ['Türkçe','Matematik','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce'];
 
-  // Günlük notlar — ayrı key, Firestore'a gitmiyor
   const gunlukNotData = (() => { try { const myUid=(window.currentUserData||{}).uid||'local'; return JSON.parse(localStorage.getItem('gunluk_not_'+myUid)||'{}'); } catch(e){ return {}; } })();
   const todayNot = gunlukNotData[todayKey] || '';
+
+  const streakTelkin = streak>=2 ? telkinHtml(wpStreak(streak), 'good') : '';
 
   return `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
@@ -430,7 +429,6 @@ function wellnessPage() {
     </div>
     <div class="page-sub">Bugünü kaydet — sadece senin için</div>
 
-    <!-- Kişisel başlık -->
     <div style="background:linear-gradient(135deg,#6c63ff,#4cc9f0);border-radius:18px;padding:16px;margin:12px 0">
       <div style="font-size:0.68rem;color:rgba(255,255,255,0.8);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">${now.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
       <div style="font-size:1.05rem;font-weight:800;color:#fff">${selamlama}${userName?' '+userName:''} 👋</div>
@@ -438,7 +436,6 @@ function wellnessPage() {
       ${streakHtml}
     </div>
 
-    <!-- Son 7 gün şeridi -->
     <div style="display:flex;gap:4px;margin-bottom:14px">
       ${last7.map(d=>`
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
@@ -450,107 +447,99 @@ function wellnessPage() {
     <!-- BÖLÜM 1: Duygu & Enerji -->
     <div class="card" style="margin-bottom:12px">
       <div class="card-title">Nasıl hissediyorsun?</div>
-      <div style="display:flex;gap:5px;margin-bottom:8px">
+      <div style="display:flex;gap:4px;margin-bottom:8px">
         ${moodOptions.map(m=>`
           <button onclick="saveWellnessDay('mood','${m.value}',this)"
-            style="flex:1;padding:8px 3px;border-radius:11px;border:2px solid ${today.mood===m.value?m.color:'var(--border)'};background:${today.mood===m.value?m.color+'22':'transparent'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s">
-            <span style="font-size:1.35rem">${m.emoji}</span>
-            <span style="font-size:0.55rem;font-weight:700;color:${today.mood===m.value?m.color:'var(--text2)'}">${m.label}</span>
+            style="flex:1;padding:8px 2px;border-radius:11px;border:2px solid ${today.mood===m.value?m.color:'var(--border)'};background:${today.mood===m.value?m.color+'22':'transparent'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.15s">
+            <span style="font-size:1.2rem">${m.emoji}</span>
+            <span style="font-size:0.52rem;font-weight:700;color:${today.mood===m.value?m.color:'var(--text2)'}">${m.label}</span>
           </button>`).join('')}
       </div>
-      <div id="moodTelkin">${moodTelkin}</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:12px 0 6px">Enerji seviyesi (1–10)</div>
       <div style="display:flex;align-items:center;gap:12px">
         <input type="range" min="1" max="10" value="${today.enerji||5}" id="wellnessEnerji"
-          oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('enerji',this.value);document.getElementById('enerjiTelkin').innerHTML=telkinHtml(wpEnerji(parseInt(this.value)),parseInt(this.value)>=7?'good':parseInt(this.value)<=3?'warn':'neutral')"
+          oninput="this.nextElementSibling.textContent=this.value"
           style="flex:1;accent-color:var(--accent)">
         <span style="font-weight:900;font-size:1.1rem;color:var(--accent);min-width:22px;text-align:center">${today.enerji||5}</span>
       </div>
-      <div id="enerjiTelkin">${enerjiTelkin}</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:10px 0 5px">Bugünü tek kelimeyle?</div>
       <input type="text" id="wellnessKelime" placeholder="kararlı, dağınık, umutlu…"
-        value="${today.kelime||''}" onchange="saveWellnessDay('kelime',this.value)"
+        value="${today.kelime||''}"
         style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box">
     </div>
 
     <!-- BÖLÜM 2: Akademik -->
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title">Bugün çalışmak nasıldı?</div>
+      <div class="card-title">Akademik</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:7px">En çok zorlandığın ders?</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px">
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
         ${subjects.map(s=>`
-          <button onclick="saveWellnessDay('zorDers','${s}',this);document.getElementById('dersTelkin').innerHTML=telkinHtml(wpDers('${s}'),'neutral')"
+          <button onclick="saveWellnessDay('zorDers','${s}',this)"
             style="padding:6px 10px;border-radius:9px;font-size:0.73rem;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid ${today.zorDers===s?'var(--accent)':'var(--border)'};background:${today.zorDers===s?'var(--accent)0d':'transparent'};color:${today.zorDers===s?'var(--accent)':'var(--text2)'}">
             ${s}
           </button>`).join('')}
       </div>
-      <div id="dersTelkin">${dersTelkin}</div>
 
-      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:12px 0 6px">Odak seviyesi (1–10)</div>
+      <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:0 0 6px">Odak seviyesi (1–10)</div>
       <div style="display:flex;align-items:center;gap:12px">
         <input type="range" min="1" max="10" value="${today.odak||5}" id="wellnessOdak"
-          oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('odak',this.value);document.getElementById('odakTelkin').innerHTML=telkinHtml(wpOdak(parseInt(this.value)),parseInt(this.value)>=7?'good':parseInt(this.value)<=3?'warn':'neutral')"
+          oninput="this.nextElementSibling.textContent=this.value"
           style="flex:1;accent-color:#45b7d1">
         <span style="font-weight:900;font-size:1.1rem;color:#45b7d1;min-width:22px;text-align:center">${today.odak||5}</span>
       </div>
-      <div id="odakTelkin">${odakTelkin}</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:10px 0 5px">Seni gururlandıran küçük bir an? 💪</div>
       <input type="text" id="wellnessGurur" placeholder="Küçük de olsa bir şey…"
-        value="${today.gurur||''}" onchange="saveWellnessDay('gurur',this.value);if(this.value)document.getElementById('gururTelkin').innerHTML=telkinHtml(wpGurur(),'good')"
+        value="${today.gurur||''}"
         style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box">
-      <div id="gururTelkin">${gururTelkin}</div>
     </div>
 
     <!-- BÖLÜM 3: İç dünya -->
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title">İç dünyan nasıl?</div>
+      <div class="card-title">İç dünya</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Kaygı seviyesi (1–10)</div>
       <div style="display:flex;align-items:center;gap:12px">
         <input type="range" min="1" max="10" value="${today.kaygi||3}" id="wellnessKaygi"
-          oninput="this.nextElementSibling.textContent=this.value;saveWellnessDay('kaygi',this.value);document.getElementById('kaygiTelkin').innerHTML=telkinHtml(wpKaygi(parseInt(this.value)),parseInt(this.value)>=9?'alert':parseInt(this.value)>=7?'warn':parseInt(this.value)<=3?'good':'neutral')"
+          oninput="this.nextElementSibling.textContent=this.value"
           style="flex:1;accent-color:#ff6b6b">
         <span style="font-weight:900;font-size:1.1rem;color:#ff6b6b;min-width:22px;text-align:center">${today.kaygi||3}</span>
       </div>
-      <div id="kaygiTelkin">${kaygiTelkin}</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:10px 0 5px">Bugün iyi giden bir şey?</div>
       <input type="text" id="wellnessPozitif" placeholder="Her şeye rağmen…"
-        value="${today.pozitif||''}" onchange="saveWellnessDay('pozitif',this.value)"
+        value="${today.pozitif||''}"
         style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box;margin-bottom:10px">
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:5px">Aklını karıştıran bir düşünce?</div>
       <input type="text" id="wellnessNegatif" placeholder="İstersen yaz, sadece sana özel…"
-        value="${today.negatif||''}" onchange="saveWellnessDay('negatif',this.value)"
+        value="${today.negatif||''}"
         style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;outline:none;box-sizing:border-box">
     </div>
 
     <!-- BÖLÜM 4: Beden -->
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title">Bedenin nasıl?</div>
+      <div class="card-title">Beden</div>
       <div style="margin-bottom:10px">
         <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">🛌 Uyku (saat)</div>
         <input type="number" min="2" max="12" step="0.5" id="wellnessUyku" placeholder="0"
           value="${today.uyku||''}"
-          oninput="saveWellnessDay('uyku',this.value);if(this.value)document.getElementById('uykuTelkin').innerHTML=telkinHtml(wpUyku(parseFloat(this.value)),parseFloat(this.value)>=7?'good':parseFloat(this.value)<5?'warn':'neutral')"
           style="width:100%;padding:8px 10px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
-        <div id="uykuTelkin">${uykuTelkin}</div>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <div style="flex:1">
           <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">💻 Online ders (saat)</div>
           <input type="number" min="0" max="12" step="0.5" id="wellnessEkranOnline" placeholder="0"
-            value="${today.ekranOnline||''}" oninput="saveWellnessDay('ekranOnline',this.value)"
+            value="${today.ekranOnline||''}"
             style="width:100%;padding:8px 10px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
         </div>
         <div style="flex:1">
           <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">📱 Sosyal medya (saat)</div>
           <input type="number" min="0" max="12" step="0.5" id="wellnessEkranSosyal" placeholder="0"
-            value="${today.ekranSosyal||''}" oninput="saveWellnessDay('ekranSosyal',this.value)"
+            value="${today.ekranSosyal||''}"
             style="width:100%;padding:8px 10px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.9rem;outline:none;box-sizing:border-box">
         </div>
       </div>
@@ -565,10 +554,27 @@ function wellnessPage() {
       </div>
     </div>
 
-    <!-- BÖLÜM 5: Günlük not -->
-    <div class="card" style="margin-bottom:12px" id="gunlukNotKart">
-      <div class="card-title">Bugün ne düşündüm?</div>
-      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:8px">Sadece sana özel — kimse okuyamaz, PIN ile korunuyor.</div>
+    ${streakTelkin ? `<div style="margin-bottom:12px">${streakTelkin}</div>` : ''}
+
+    <!-- ANA KAYDET -->
+    <button onclick="saveWellnessAll(this)"
+      style="width:100%;padding:14px;border-radius:14px;background:var(--accent);color:#fff;border:none;font-weight:800;font-size:0.95rem;cursor:pointer;margin-bottom:28px">
+      ✓ Günlüğü Kaydet
+    </button>
+
+    <!-- ÖZEL GÜNLÜK — görsel ayraç ile ayrılmış -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <div style="font-size:0.65rem;font-weight:800;color:var(--text2);letter-spacing:.1em;white-space:nowrap">🔒 ÖZEL GÜNLÜK</div>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+    <div class="card" style="margin-bottom:12px;border:1.5px solid var(--border)" id="gunlukNotKart">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div class="card-title" style="margin:0">Bugün ne düşündüm?</div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;line-height:1.5">
+        🔒 Bu alan tamamen sana özel — koçun dahil kimse okuyamaz. PIN ile korunuyor.
+      </div>
       ${todayNot ? `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#43b89c12;border:1px solid #43b89c33;border-radius:10px">
         <div style="display:flex;align-items:center;gap:8px">
@@ -580,19 +586,11 @@ function wellnessPage() {
       ` : `
       <textarea rows="4" style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box;margin-bottom:8px"></textarea>
       <button onclick="_gunlukNotKaydet(this)"
-        style="width:100%;padding:11px;border-radius:11px;background:var(--accent);color:#fff;border:none;font-weight:800;font-size:0.85rem;cursor:pointer;font-family:inherit">
+        style="width:100%;padding:11px;border-radius:11px;background:#444;color:#fff;border:none;font-weight:800;font-size:0.85rem;cursor:pointer;font-family:inherit">
         🔒 Kaydet &amp; Gizle
       </button>
       `}
     </div>
-
-    ${streakTelkin ? `<div style="margin-bottom:12px">${streakTelkin}</div>` : ''}
-
-    <!-- Kaydet -->
-    <button onclick="saveWellnessAll(this)"
-      style="width:100%;padding:14px;border-radius:14px;background:var(--accent);color:#fff;border:none;font-weight:800;font-size:0.95rem;cursor:pointer;margin-bottom:14px">
-      ✓ Günlüğü Kaydet
-    </button>
 
     <!-- Geçmiş günlükler — PIN korumalı -->
     <div class="card" style="margin-bottom:24px">
@@ -604,6 +602,7 @@ function wellnessPage() {
     </div>
   `;
 }
+
 
 // ── GÜNLÜK NOT KAYDET / DÜZENLE ──────────────────────────────
 // Günlük notları için ayrı key — loadWellnessFromFirestore bunu asla ezmez
