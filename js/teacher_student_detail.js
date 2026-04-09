@@ -182,78 +182,48 @@ function studentDetailAnalysis() {
   const maxTQ = Math.max(...trendDays.map(t=>t.q),1);
   const maxTN = Math.max(...trendDays.map(t=>t.net),1);
 
-  // Korelasyon analizi — seçili döneme göre psiko vs akademik
+  // ── Senaryo Motoru ──────────────────────────────────────
+  // wellness verisini gunler formatına dönüştür
   const wellnessLocal = (() => { try { return JSON.parse(localStorage.getItem('wellness_'+sUid)||'{}'); } catch(e){ return {}; } })();
   const wDays = wellnessLocal.days || {};
-  const korelasyonInsights = [];
 
-  // Seçili döneme göre gün listesi oluştur
   const periodStart = studentAnalysisPeriod==='daily' ? todayKey
     : studentAnalysisPeriod==='weekly' ? mondayKey : monthStart;
-  const allPeriodKeys = Object.keys(wDays).filter(k=>k>=periodStart).sort();
-  // Akademik verisi olan günler için eşleştir
-  const periodDataDays = allPeriodKeys.map(dk=>{
-    const we=wDays[dk]||{};
-    const ac=allEntries.filter(e=>e.dateKey===dk&&e.type==='soru');
-    return { dk, kaygi:parseFloat(we.kaygi)||0, uyku:parseFloat(we.uyku)||0,
-      ekran:parseFloat(we.ekran)||0, enerji:parseFloat(we.enerji)||0,
-      net:ac.reduce((a,e)=>a+(e.net||0),0), q:ac.reduce((a,e)=>a+(e.questions||0),0) };
-  });
 
-  const minDays = studentAnalysisPeriod==='monthly' ? 3 : 2;
-  const wDataDays = periodDataDays.filter(d=>d.kaygi>0||d.uyku>0);
-  const korLabel = studentAnalysisPeriod==='monthly' ? 'Bu ay' : studentAnalysisPeriod==='weekly' ? 'Bu hafta' : 'Bugün';
+  const motorGunler = Object.keys(wDays)
+    .filter(k => k >= periodStart)
+    .sort()
+    .map(dk => {
+      const p = wDays[dk] || {};
+      const sg = allEntries.filter(e => e.dateKey === dk && e.type === 'soru');
+      const dg = allEntries.filter(e => e.dateKey === dk && e.type === 'deneme');
+      const soru = sg.reduce((a, e) => a + (e.questions || 0), 0);
+      const sure = sg.reduce((a, e) => a + (e.duration || 0), 0);
+      const net  = sg.reduce((a, e) => a + (e.net || 0), 0);
+      const topQ = soru + dg.reduce((a, e) => a + (e.correct || 0) + (e.wrong || 0), 0);
+      const topY = sg.reduce((a, e) => a + (e.wrong || 0), 0) + dg.reduce((a, e) => a + (e.wrong || 0), 0);
+      const dersHata = {};
+      sg.forEach(e => { if(!dersHata[e.subject]) dersHata[e.subject]={q:0,y:0}; dersHata[e.subject].q+=(e.questions||0); dersHata[e.subject].y+=(e.wrong||0); });
+      dg.forEach(e => { if(!dersHata[e.subject]) dersHata[e.subject]={q:0,y:0}; dersHata[e.subject].q+=(e.correct||0)+(e.wrong||0); dersHata[e.subject].y+=(e.wrong||0); });
+      return {
+        dk, soru, sure, net, dersHata,
+        hataOrani: topQ >= 30 ? (topY / topQ * 100) : null,
+        enerji: parseFloat(p.enerji) || 0,
+        odak:   parseFloat(p.odak)   || 0,
+        kaygi:  parseFloat(p.kaygi)  || 0,
+        uyku:   parseFloat(p.uyku)   || 0,
+        sosyal: parseFloat(p.ekranSosyal) || parseFloat(p.ekran) || 0,
+        online: parseFloat(p.ekranOnline) || 0,
+        mood:   p.mood || '',
+        pozitif: p.pozitif || p.gurur || '',
+        negatif: p.negatif || '',
+      };
+    });
 
-  if (wDataDays.length>=minDays) {
-    // Uyku-başarı korelasyonu
-    const highSleep = wDataDays.filter(d=>d.uyku>=7&&d.q>0);
-    const lowSleep = wDataDays.filter(d=>d.uyku>0&&d.uyku<6&&d.q>0);
-    if (highSleep.length>0&&lowSleep.length>0) {
-      const avgNetHS = highSleep.reduce((a,d)=>a+d.net,0)/highSleep.length;
-      const avgNetLS = lowSleep.reduce((a,d)=>a+d.net,0)/lowSleep.length;
-      if (Math.abs(avgNetHS-avgNetLS)>0.3) korelasyonInsights.push(`💤 ${korLabel} uyku süresi 7+ saat olan günlerde ortalama net ${avgNetHS.toFixed(1)}, 6 saat altında ise ${avgNetLS.toFixed(1)}. ${avgNetHS>avgNetLS?'Uyku kalitesi akademik performansı olumlu etkiliyor.':'Uyku artmasına rağmen performans farkı beklendiği kadar değil.'}`);
-    }
-    // Kaygı-başarı korelasyonu
-    const highAnx = wDataDays.filter(d=>d.kaygi>=7&&d.q>0);
-    const lowAnx = wDataDays.filter(d=>d.kaygi>0&&d.kaygi<=4&&d.q>0);
-    if (highAnx.length>0&&lowAnx.length>0) {
-      const avgNetHA = highAnx.reduce((a,d)=>a+d.net,0)/highAnx.length;
-      const avgNetLA = lowAnx.reduce((a,d)=>a+d.net,0)/lowAnx.length;
-      if (Math.abs(avgNetHA-avgNetLA)>0.3) korelasyonInsights.push(`😰 ${korLabel} kaygı skoru yüksek günlerde (7+) net ortalama ${avgNetHA.toFixed(1)}, düşük kaygılı günlerde ise ${avgNetLA.toFixed(1)}. ${avgNetHA<avgNetLA?'Yüksek kaygı performansı olumsuz etkiliyor.':'Kaygıya rağmen performans korunuyor.'}`);
-    }
-    // Ekran süresi korelasyonu
-    const highScreen = wDataDays.filter(d=>d.ekran>=3&&d.q>0);
-    const lowScreen = wDataDays.filter(d=>d.ekran>0&&d.ekran<=1.5&&d.q>0);
-    if (highScreen.length>0&&lowScreen.length>0) {
-      const avgNetHSc = highScreen.reduce((a,d)=>a+d.net,0)/highScreen.length;
-      const avgNetLSc = lowScreen.reduce((a,d)=>a+d.net,0)/lowScreen.length;
-      if (Math.abs(avgNetHSc-avgNetLSc)>0.3) korelasyonInsights.push(`📱 ${korLabel} ekran süresi 3+ saat olan günlerde net ${avgNetHSc.toFixed(1)}, 1.5 saat altında ise ${avgNetLSc.toFixed(1)}. ${avgNetHSc<avgNetLSc?'Ekran süresini azaltmak performansı artırabilir.':'Ekran süresi bu dönemde performansı belirgin etkilemiyor.'}`);
-    }
-    // Enerji trendi (son 3-5 gün)
-    const recentDays = wDataDays.slice(-Math.min(5,wDataDays.length));
-    const energyTrend = recentDays.map(d=>d.enerji).filter(e=>e>0);
-    if (energyTrend.length>=3) {
-      const first = energyTrend.slice(0,Math.floor(energyTrend.length/2));
-      const last = energyTrend.slice(Math.floor(energyTrend.length/2));
-      const avgFirst = first.reduce((a,b)=>a+b,0)/first.length;
-      const avgLast = last.reduce((a,b)=>a+b,0)/last.length;
-      if (avgFirst-avgLast>1) korelasyonInsights.push(`⚡ ${korLabel} enerji seviyesi düşüş eğiliminde (${energyTrend.join(' → ')}). Motivasyon desteği ve dinlenme önerilir.`);
-      else if (avgLast-avgFirst>1) korelasyonInsights.push(`⚡ ${korLabel} enerji seviyesi yükseliş eğiliminde (${energyTrend.join(' → ')}). Bu ivmeyi akademik çalışmaya yönlendirme iyi bir fırsat.`);
-    }
-    // Aylık özet — ek istatistik
-    if (studentAnalysisPeriod==='monthly' && wDataDays.length>=7) {
-      const avgKaygi = wDataDays.reduce((a,d)=>a+d.kaygi,0)/wDataDays.filter(d=>d.kaygi>0).length;
-      const avgUyku = wDataDays.filter(d=>d.uyku>0).reduce((a,d)=>a+d.uyku,0)/wDataDays.filter(d=>d.uyku>0).length||0;
-      const netTrend = wDataDays.filter(d=>d.q>0);
-      if (netTrend.length>=4) {
-        const firstHalf = netTrend.slice(0,Math.floor(netTrend.length/2));
-        const secondHalf = netTrend.slice(Math.floor(netTrend.length/2));
-        const avgFirst = firstHalf.reduce((a,d)=>a+d.net,0)/firstHalf.length;
-        const avgSecond = secondHalf.reduce((a,d)=>a+d.net,0)/secondHalf.length;
-        if (avgSecond-avgFirst>0.5) korelasyonInsights.push(`📈 Bu ay akademik performans ikinci yarıda ilerleme gösterdi (Ort. net: ${avgFirst.toFixed(1)} → ${avgSecond.toFixed(1)}). Kaygı ort. ${avgKaygi.toFixed(1)}/10, uyku ort. ${avgUyku.toFixed(1)} saat.`);
-        else if (avgFirst-avgSecond>0.5) korelasyonInsights.push(`📉 Bu ay akademik performans ikinci yarıda geriledi (Ort. net: ${avgFirst.toFixed(1)} → ${avgSecond.toFixed(1)}). Kaygı ort. ${avgKaygi.toFixed(1)}/10, uyku ort. ${avgUyku.toFixed(1)} saat. Nedenler incelenmeli.`);
-      }
-    }
+  // Motoru çalıştır
+  let motorSonuc = { insights: [], positives: [], vaka: null };
+  if (motorGunler.length >= 2 && window.calistirSenaryolar) {
+    motorSonuc = window.calistirSenaryolar(motorGunler, allEntries, todayKey);
   }
 
   // Deneme sonuçları (son 3)
@@ -504,16 +474,52 @@ function studentDetailAnalysis() {
         </div>`;}).join('')}
     </div>`:''}
 
-    <!-- Psikolojik-Akademik Korelasyon -->
-    ${korelasyonInsights.length>0?`
+    <!-- Dinamik Senaryo Analizi -->
+    ${(motorSonuc.insights.length > 0 || motorSonuc.positives.length > 0 || motorSonuc.vaka) ? `
     <div class="card" style="margin-bottom:12px;border:1px solid #6c63ff44;background:linear-gradient(135deg,#6c63ff0a,#fd79a80a)">
-      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Psikolojik-Akademik Korelasyon</div>
-      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:10px">${periodLabel} psikolojik veri ile akademik performans karşılaştırması:</div>
-      ${korelasyonInsights.map(ins=>`
-        <div style="padding:10px 12px;background:var(--surface2);border-radius:10px;margin-bottom:8px;font-size:0.83rem;line-height:1.6;color:var(--text)">
-          ${ins}
+      <div class="card-title">
+        <svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Psikolojik-Akademik Analiz
+        ${motorSonuc.kalOzet ? `<span style="font-size:0.7rem;font-weight:400;color:var(--text2);margin-left:8px">Kalibrasyon: ~${motorSonuc.kalOzet.soruOrt} soru/gün</span>` : ''}
+      </div>
+
+      ${motorSonuc.vaka ? `
+      <div style="padding:11px 13px;background:linear-gradient(135deg,rgba(253,121,168,0.12),rgba(108,99,255,0.10));border:1.5px solid rgba(253,121,168,0.4);border-radius:12px;margin-bottom:10px">
+        <div style="font-size:0.75rem;font-weight:800;color:#fd79a8;margin-bottom:4px;letter-spacing:.04em">⚡ KOMBİNE VAKA: ${motorSonuc.vaka.ad}</div>
+        <div style="font-size:0.83rem;line-height:1.6;color:var(--text);margin-bottom:6px">${motorSonuc.vaka.analiz}</div>
+        <div style="font-size:0.78rem;color:var(--accent);font-weight:600">→ ${motorSonuc.vaka.strateji}</div>
+      </div>` : ''}
+
+      ${motorSonuc.insights.map(ins => {
+        const renkler = {
+          crisis:    { bg: 'rgba(255,101,84,0.10)', border: 'rgba(255,101,84,0.4)', label: '#ff6554', ikon: '🔴' },
+          urgent:    { bg: 'rgba(255,159,67,0.10)', border: 'rgba(255,159,67,0.4)', label: '#ff9f43', ikon: '🟠' },
+          empathetic:{ bg: 'rgba(108,99,255,0.08)', border: 'rgba(108,99,255,0.3)', label: '#6c63ff', ikon: '💜' },
+          rational:  { bg: 'rgba(9,132,227,0.08)',  border: 'rgba(9,132,227,0.3)',  label: '#0984e3', ikon: '🔵' },
+          coaching:  { bg: 'rgba(0,184,148,0.08)',  border: 'rgba(0,184,148,0.3)',  label: '#00b894', ikon: '🟢' },
+          informative:{ bg:'rgba(108,99,255,0.06)', border: 'rgba(108,99,255,0.2)', label: '#6c63ff', ikon: '📋' },
+          directive: { bg: 'rgba(253,203,110,0.10)',border: 'rgba(253,203,110,0.4)',label: '#e17055', ikon: '🟡' },
+          balanced:  { bg: 'rgba(0,184,148,0.06)',  border: 'rgba(0,184,148,0.2)', label: '#00b894', ikon: '⚖️' },
+        };
+        const r = renkler[ins.ton] || renkler.informative;
+        return `
+        <div style="padding:10px 13px;background:${r.bg};border:1px solid ${r.border};border-radius:11px;margin-bottom:8px">
+          <div style="font-size:0.7rem;font-weight:800;color:${r.label};margin-bottom:3px;letter-spacing:.04em">${r.ikon} ${ins.etiket}</div>
+          <div style="font-size:0.82rem;line-height:1.6;color:var(--text);margin-bottom:5px">${ins.analiz}</div>
+          <div style="font-size:0.77rem;color:${r.label};font-weight:600;border-top:1px solid ${r.border};padding-top:5px;margin-top:3px">→ ${ins.strateji}</div>
+        </div>`;
+      }).join('')}
+
+      ${motorSonuc.positives.length > 0 ? `
+      <div style="margin-top:4px">
+        <div style="font-size:0.7rem;font-weight:800;color:#00b894;margin-bottom:6px;letter-spacing:.04em">✅ GÜÇLÜ YANLAR</div>
+        ${motorSonuc.positives.map(p => `
+        <div style="padding:9px 12px;background:rgba(0,184,148,0.08);border:1px solid rgba(0,184,148,0.3);border-radius:10px;margin-bottom:6px">
+          <div style="font-size:0.7rem;font-weight:700;color:#00b894;margin-bottom:2px">${p.etiket}</div>
+          <div style="font-size:0.81rem;line-height:1.55;color:var(--text)">${p.analiz}</div>
         </div>`).join('')}
-    </div>`:''}
+      </div>` : ''}
+    </div>` : ''}
 
 
 
