@@ -847,8 +847,6 @@ async function exportPsychPDF(sName, aiAcik) {
       // HAFTALIK veya AYLIK RAPOR
       // ═══════════════════════════════════════════════════════════
       } else { // end daily -> start weekly/monthly
-        // KORELASYON başlığı + ilk bölüm başlığını birlikte taşı — araya boşluk girmesin
-        if (Y > 180) { Y = pdfNewPage(doc); }
         // ── PSİKOLOJİK-AKADEMİK KORELASYON: DİNAMİK SENARYO MOTORU ──
         if (Y > 180) { Y = pdfNewPage(doc); }
         Y = pdfSecHeader(doc, 'PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ', Y, 220, 50, 100);
@@ -1125,7 +1123,6 @@ async function exportPsychPDF(sName, aiAcik) {
 
 
       } // end weekly/monthly
-      } // end if daily / else weekly-monthly
     } // end veriGunler
 
     } // end sortedDays
