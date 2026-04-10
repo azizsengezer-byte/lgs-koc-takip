@@ -998,52 +998,57 @@ async function exportPsychPDF(sName, aiAcik) {
             // Profil metin havuzu (Turkce karakter yok — tx() ile render)
             const _pm = {
               bloke: {
-                foto:     'Ogrenci bu donemde akademik uretimi tamamen durduran bir psikolojik blok yasamistir. Yuksek kaygi ile gelen eylemisizlik, sureci anlamlandirma guclugune isaret etmektedir.',
-                strateji: 'Akademik baski tamamen kaldirilmali; koc gorusmesi rakamlar degil ogrencinin neden calisamadigini kefsetmek uzerine kurgulanmalidir. Mikro adimlar — tek bir soru, tek bir sayfa — yeniden baslatma noktasi olacaktir.',
-                gelecek:  'Gelecek ay onceligi akademik hedef degil, sisteme geri donme ritmini oturtmaktir.'
+                foto:     'Öğrenci bu dönemde akademik üretimi tamamen durduran bir psikolojik blok yaşamıştır. Yüksek kaygı ile gelen eylemsizlik, süreci anlamlandırma güçlüğüne işaret etmektedir.',
+                strateji: 'Akademik baskı tamamen kaldırılmalı; koç görüşmesi rakamlar değil öğrencinin neden çalışamadığını keşfetmek üzerine kurgulanmalıdır. Mikro adımlar — tek bir soru, tek bir sayfa — yeniden başlatma noktası olacaktır.',
+                gelecek:  'Gelecek ay önceliği akademik hedef değil, sisteme geri dönme ritmini oturtmaktır.'
               },
               tukenmis: {
-                foto:     'Ogrenci bu donemde biyolojik rezervlerini tuketerek performansini surdurmaya calismistir. Uyku borcu, dusuk enerji ve yuksek kaygi ayni anda etki etmis; sistem alarm vermistir.',
-                strateji: 'Soru sayisi yerine uyku ve enerji yonetimi onceliklendirilmeli; iletisimde "daha cok calis" mesajindan kacinilmalidir. Dinlenmek bir odul degil, performans araci olarak konumlandirilmalidir.',
-                gelecek:  'Gelecek ay ilk haftasi onarim haftasi ilan edilmeli; uyku rutini stabilize edilmeden akademik hedef artirimi yapilmamalidir.'
+                foto:     'Öğrenci bu dönemde biyolojik rezervlerini tüketerek performansını sürdürmeye çalışmıştır. Uyku borcu, düşük enerji ve yüksek kaygı aynı anda etki etmiş; sistem alarm vermiştir.',
+                strateji: 'Soru sayısı yerine uyku ve enerji yönetimi önceliklendirilmeli; iletişimde "daha çok çalış" mesajından kaçınılmalıdır. Dinlenmek bir ödül değil, performans aracı olarak konumlandırılmalıdır.',
+                gelecek:  'Gelecek ay ilk haftası onarım haftası ilan edilmeli; uyku rutini stabilize edilmeden akademik hedef artırımı yapılmamalıdır.'
               },
               yuksekFonKaygi: {
-                foto:     'Ogrenci yuksek akademik uretimini korurken yogun ic baski altinda oldugu gozlemlenmistir. Dis gozlemden basarili gorunen tablo, ic dunyada surdurulemez bir gerilim barindirmaktadir.',
-                strateji: 'Basari somut verilerle tescil edilmeli ve ogrenciye geri yansitilmalidir. Koc iletisimi performans degil, ogrencinin kendisiyle barisi uzerine kurgulanmalidir.',
-                gelecek:  'Gelecek ay hedefi niceliksel degil, basariyi fark etme ve icselestirme kapasitesi olmalidir.'
+                foto:     'Öğrenci yüksek akademik üretimini korurken yoğun iç baskı altında olduğu gözlemlenmiştir. Dış gözlemden başarılı görünen tablo, iç dünyada sürdürülemez bir gerilim barındırmaktadır.',
+                strateji: 'Başarı somut verilerle tescil edilmeli ve öğrenciye geri yansıtılmalıdır. Koç iletişimi performans değil, öğrencinin kendisiyle barışı üzerine kurgulanmalıdır.',
+                gelecek:  'Gelecek ay hedefi niceliksel değil, başarıyı fark etme ve içselleştirme kapasitesi olmalıdır.'
               },
               kacinan: {
-                foto:     'Ogrenci bu donem akademik zamanini guclu hissettigi alanlarda yogunlastirmis; zayif branslarla temas sistematik bicimde azalmistir. Bu durum kisa vadede iyi hissettirse de uzun vadeli brans dengesini bozmaktadir.',
-                strateji: 'Koc, zayif bransa calis demek yerine gunun en yuksek enerjisine denk gelecek 15 dakikalık minimal temas protokolu onermelidir. Kucuk basilar aninda geri bildirimle odullendirilmelidir.',
-                gelecek:  'Gelecek ay zayif brans icin haftalik minimum sure kotasi belirlenmeli; once cok dusuk tutulup kademeli arttirilmalidir.'
+                foto:     'Öğrenci bu dönem akademik zamanını güçlü hissettiği alanlarda yoğunlaştırmış; zayıf branşlarla temas sistematik biçimde azalmıştır. Bu durum kısa vadede iyi hissettirse de uzun vadeli branş dengesini bozmaktadır.',
+                strateji: 'Koç, zayıf branşa çalış demek yerine günün en yüksek enerjisine denk gelecek 15 dakikalık minimal temas protokolü önermelidir. Küçük başarılar anında geri bildirimle ödüllendirilmelidir.',
+                gelecek:  'Gelecek ay zayıf branş için haftalık minimum süre kotası belirlenmeli; önce çok düşük tutulup kademeli artırılmalıdır.'
               },
               dijitalGolgeli: {
-                foto:     'Bu donemde dijital kullanim ile odaklanma kalitesi arasinda belirgin bir ters iliski gozlemlenmistir. Yuksek ekran suresi olan gunlerin ertesinde odak ve uretim degerleri dusmektedir.',
-                strateji: 'Ogrenciye dijital kisitlama bir yaptirim olarak degil, netlerini artiran bir performans araci olarak sunulmalidir. Somut veri gosterimi en etkili ikna yontemidir.',
-                gelecek:  'Gelecek ay icin gunluk ekran ust limiti belirlenmeli; calisma oncesi 15 dakika ekransiz baslangic rutini denenmeli.'
+                foto:     'Bu dönemde dijital kullanım ile odaklanma kalitesi arasında belirgin bir ters ilişki gözlemlenmiştir. Yüksek ekran süresi olan günlerin ertesinde odak ve üretim değerleri düşmektedir.',
+                strateji: 'Öğrenciye dijital kısıtlama bir yaptırım olarak değil, netlerini artıran bir performans aracı olarak sunulmalıdır. Somut veri gösterimi en etkili ikna yöntemidir.',
+                gelecek:  'Gelecek ay için günlük ekran üst limiti belirlenmeli; çalışma öncesi 15 dakika ekransız başlangıç rutini denenmeli.'
               },
               dengeli: {
-                foto:     'Ogrenci bu donemde genel olarak dengeli bir performans sergilemistir. Hem akademik hem duygusal verilerde belirgin bir istikrar gozlemlenmekte; surecin surdurulebilir oldugunu gosteren sinyaller alinmaktadir.',
-                strateji: 'Mevcut ritim korunmali ve onaylanmalidir. Gelisim icin kucuk bir zorluk esigi eklenebilir; favori bransta hedef yukseltmek gibi.',
-                gelecek:  'Gelecek ay hedefi mevcut dengeyi bozmadan bir ya da iki zayif alanda kucuk kazanimlar eklemek olmalidir.'
+                foto:     'Öğrenci bu dönemde genel olarak dengeli bir performans sergilemiştir. Hem akademik hem duygusal verilerde belirgin bir istikrar gözlemlenmekte; sürecin sürdürülebilir olduğunu gösteren sinyaller alınmaktadır.',
+                strateji: 'Mevcut ritim korunmalı ve onaylanmalıdır. Gelişim için küçük bir zorluk eşiği eklenebilir; favori branşta hedef yükseltmek gibi.',
+                gelecek:  'Gelecek ay hedefi mevcut dengeyi bozmadan bir ya da iki zayıf alanda küçük kazanımlar eklemek olmalıdır.'
               },
               karisik: {
-                foto:     'Bu donem birden fazla alanda cesitli guclukler gozlemlenmistir. Tek bir baskin patern yerine farkli gunlerde farkli tetikleyicilerin devreye girdigi karma bir tablo soz konusudur.',
-                strateji: 'En yuksek frekanslı senaryoya odaklanilmali; tum sorunlari ayni anda cozmeye calismak yerine tek bir oncelik belirlenmesi gerekmektedir.',
-                gelecek:  'Gelecek ay icin tek somut degisiklik hedeflenmeli; birden fazla alani ayni anda duzeltmeye calismak surecten kopmaya neden olabilir.'
+                foto:     'Bu dönem birden fazla alanda çeşitli güçlükler gözlemlenmiştir. Tek bir baskın patern yerine farklı günlerde farklı tetikleyicilerin devreye girdiği karma bir tablo söz konusudur.',
+                strateji: 'En yüksek frekanslı senaryoya odaklanılmalı; tüm sorunları aynı anda çözmeye çalışmak yerine tek bir öncelik belirlenmesi gerekmektedir.',
+                gelecek:  'Gelecek ay için tek somut değişiklik hedeflenmeli; birden fazla alanı aynı anda düzeltmeye çalışmak süreçten kopmaya neden olabilir.'
               }
             }[_profil] || { foto:'', strateji:'', gelecek:'' };
 
             // Render: 3 kutu
             const _kutular = [
-              { baslik: 'AYLIK FOTOGRAFIN', metin: _pm.foto,     ar:242, ag:240, ab:255, sr:70,  sg:40,  sb:180 },
-              { baslik: 'KOCLUK STRATEJISI', metin: _pm.strateji, ar:238, ag:255, ab:245, sr:20,  sg:130, sb:70  },
+              { baslik: 'AYLIK FOTOĞRAFIN', metin: _pm.foto,     ar:242, ag:240, ab:255, sr:70,  sg:40,  sb:180 },
+              { baslik: 'KOÇLUK STRATEJİSİ', metin: _pm.strateji, ar:238, ag:255, ab:245, sr:20,  sg:130, sb:70  },
               { baslik: 'GELECEK AY PLANI',  metin: _pm.gelecek,  ar:255, ag:248, ab:235, sr:170, sg:80,  sb:0   },
             ];
 
-            Y = pdfCheck(doc, Y, 16);
-            doc.setFont(PF,'bold'); doc.setFontSize(8.5); doc.setTextColor(40, 30, 100);
-            doc.text(tx('Butuncel Analiz Koprusu'), 16, Y); Y += 8;
+            // Bütüncül Analiz bölüm başlığı — belirgin section header
+            Y = pdfCheck(doc, Y, 22);
+            const _bridgeH = 12;
+            doc.setFillColor(40, 30, 100);
+            doc.roundedRect(15, Y, 180, _bridgeH, 2, 2, 'F');
+            doc.setFont(PF, 'bold'); doc.setFontSize(8.5); doc.setTextColor(255, 255, 255);
+            doc.text(tx('BÜTÜNCÜL ANALİZ KÖPRÜSÜ'), 105, Y + 8, { align: 'center' });
+            Y += _bridgeH + 6;
 
             _kutular.forEach(k => {
               if (!k.metin) return;
