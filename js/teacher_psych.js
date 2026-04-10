@@ -966,32 +966,104 @@ async function exportPsychPDF(sName, aiAcik) {
             });
           }
 
-          // ── BÜTÜNCÜL ANALİZ ÖZETİ ─────────────────────────────
+          // ── BÜTÜNCÜL ANALİZ KÖPRÜSÜ ───────────────────────────
           if (_ins.length > 0 || _pos.length > 0 || _vaka) {
             const _tetIdler = _m.tetiklenenTumIdler || [];
-            const _modul1 = _tetIdler.filter(id => id.startsWith('DYN-0') || id === 'DYN-10' || id === 'DYN-14' || id === 'DYN-15').length;
-            const _modul2 = _tetIdler.filter(id => ['DYN-41','DYN-42','DYN-43','DYN-44','DYN-49','DYN-50','DYN-55','DYN-56'].includes(id)).length;
-            const _modul3 = _tetIdler.filter(id => id.startsWith('DYN-7') || id.startsWith('DYN-8') || id.startsWith('DYN-9')).length;
-            const _modul4 = _tetIdler.filter(id => id.startsWith('DYN-10') || id.startsWith('DYN-11') || id.startsWith('DYN-12')).length;
-            const _modul5 = _tetIdler.filter(id => id.startsWith('DYN-12') || id.startsWith('DYN-13') || id.startsWith('DYN-14') || id === 'DYN-150').length;
-            const _ozet = [];
-            if (_modul1 > 0) _ozet.push('Bilişsel Restorasyon: ' + _modul1 + ' sinyal');
-            if (_modul2 > 0) _ozet.push('Branş Dinamikleri: ' + _modul2 + ' sinyal');
-            if (_modul3 > 0) _ozet.push('Öz-Yeterlilik: ' + _modul3 + ' sinyal');
-            if (_modul4 > 0) _ozet.push('Dijital Etki: ' + _modul4 + ' sinyal');
-            if (_modul5 > 0) _ozet.push('Fizyolojik Limit: ' + _modul5 + ' sinyal');
-            if (_ozet.length > 0) {
-              const _ozetH = 12 + _ozet.length * 5;
-              Y = pdfCheck(doc, Y, _ozetH + 6);
-              doc.setFillColor(240, 237, 255);
-              doc.roundedRect(15, Y, 180, _ozetH, 1.5, 1.5, 'F');
-              doc.setFont(PF,'bold'); doc.setFontSize(7); doc.setTextColor(70, 40, 160);
-              doc.text(tx('Modül Sinyal Özeti'), 21, Y + 5.5);
-              doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(80, 60, 140);
-              _ozet.forEach((o, i) => doc.text(tx('• ' + o), 21, Y + 11 + i * 5));
-              Y += _ozetH + 5;
-            }
+            const _frek = _m.frekansMap || {};
+
+            // Modül ağırlık skorları (frekans bazlı)
+            const _skor = {
+              bilissel: _ins.filter(s => s.modul === 1).reduce((a,s) => a + (s.frekans||1), 0),
+              brans:    _ins.filter(s => s.modul === 2).reduce((a,s) => a + (s.frekans||1), 0),
+              ozyet:    _ins.filter(s => s.modul === 3).reduce((a,s) => a + (s.frekans||1), 0),
+              dijital:  _ins.filter(s => s.modul === 4).reduce((a,s) => a + (s.frekans||1), 0),
+              fizyoloj: _ins.filter(s => s.modul === 5).reduce((a,s) => a + (s.frekans||1), 0),
+              pozitif:  _pos.reduce((a,p) => a + (p.frekans||1), 0),
+            };
+            const _toplamNeg = _skor.bilissel + _skor.brans + _skor.ozyet + _skor.dijital + _skor.fizyoloj;
+            const _kritikBlok = _tetIdler.some(id => ['DYN-04','DYN-82','DYN-90'].includes(id));
+            const _tukenmis   = _tetIdler.some(id => ['DYN-134','DYN-10','DYN-128'].includes(id));
+            const _yuksekFon  = _tetIdler.some(id => ['DYN-76','DYN-96'].includes(id));
+
+            // Profil tipi — baskın modüle göre
+            let _profil = 'dengeli';
+            if (_kritikBlok) _profil = 'bloke';
+            else if (_tukenmis && _skor.fizyoloj >= 2) _profil = 'tukenmis';
+            else if (_yuksekFon && _skor.bilissel >= 2) _profil = 'yuksekFonKaygi';
+            else if (_skor.brans >= 3 && _skor.brans >= _skor.bilissel && _skor.brans >= _skor.dijital) _profil = 'kacinan';
+            else if (_skor.dijital >= 3 && _skor.dijital >= _skor.brans) _profil = 'dijitalGolgeli';
+            else if (_toplamNeg <= 2 && _skor.pozitif >= 3) _profil = 'dengeli';
+            else _profil = 'karisik';
+
+            // Profil metin havuzu (Turkce karakter yok — tx() ile render)
+            const _pm = {
+              bloke: {
+                foto:     'Ogrenci bu donemde akademik uretimi tamamen durduran bir psikolojik blok yasamistir. Yuksek kaygi ile gelen eylemisizlik, sureci anlamlandirma guclugune isaret etmektedir.',
+                strateji: 'Akademik baski tamamen kaldirilmali; koc gorusmesi rakamlar degil ogrencinin neden calisamadigini kefsetmek uzerine kurgulanmalidir. Mikro adimlar — tek bir soru, tek bir sayfa — yeniden baslatma noktasi olacaktir.',
+                gelecek:  'Gelecek ay onceligi akademik hedef degil, sisteme geri donme ritmini oturtmaktir.'
+              },
+              tukenmis: {
+                foto:     'Ogrenci bu donemde biyolojik rezervlerini tuketerek performansini surdurmaya calismistir. Uyku borcu, dusuk enerji ve yuksek kaygi ayni anda etki etmis; sistem alarm vermistir.',
+                strateji: 'Soru sayisi yerine uyku ve enerji yonetimi onceliklendirilmeli; iletisimde "daha cok calis" mesajindan kacinilmalidir. Dinlenmek bir odul degil, performans araci olarak konumlandirilmalidir.',
+                gelecek:  'Gelecek ay ilk haftasi onarim haftasi ilan edilmeli; uyku rutini stabilize edilmeden akademik hedef artirimi yapilmamalidir.'
+              },
+              yuksekFonKaygi: {
+                foto:     'Ogrenci yuksek akademik uretimini korurken yogun ic baski altinda oldugu gozlemlenmistir. Dis gozlemden basarili gorunen tablo, ic dunyada surdurulemez bir gerilim barindirmaktadir.',
+                strateji: 'Basari somut verilerle tescil edilmeli ve ogrenciye geri yansitilmalidir. Koc iletisimi performans degil, ogrencinin kendisiyle barisi uzerine kurgulanmalidir.',
+                gelecek:  'Gelecek ay hedefi niceliksel degil, basariyi fark etme ve icselestirme kapasitesi olmalidir.'
+              },
+              kacinan: {
+                foto:     'Ogrenci bu donem akademik zamanini guclu hissettigi alanlarda yogunlastirmis; zayif branslarla temas sistematik bicimde azalmistir. Bu durum kisa vadede iyi hissettirse de uzun vadeli brans dengesini bozmaktadir.',
+                strateji: 'Koc, zayif bransa calis demek yerine gunun en yuksek enerjisine denk gelecek 15 dakikalık minimal temas protokolu onermelidir. Kucuk basilar aninda geri bildirimle odullendirilmelidir.',
+                gelecek:  'Gelecek ay zayif brans icin haftalik minimum sure kotasi belirlenmeli; once cok dusuk tutulup kademeli arttirilmalidir.'
+              },
+              dijitalGolgeli: {
+                foto:     'Bu donemde dijital kullanim ile odaklanma kalitesi arasinda belirgin bir ters iliski gozlemlenmistir. Yuksek ekran suresi olan gunlerin ertesinde odak ve uretim degerleri dusmektedir.',
+                strateji: 'Ogrenciye dijital kisitlama bir yaptirim olarak degil, netlerini artiran bir performans araci olarak sunulmalidir. Somut veri gosterimi en etkili ikna yontemidir.',
+                gelecek:  'Gelecek ay icin gunluk ekran ust limiti belirlenmeli; calisma oncesi 15 dakika ekransiz baslangic rutini denenmeli.'
+              },
+              dengeli: {
+                foto:     'Ogrenci bu donemde genel olarak dengeli bir performans sergilemistir. Hem akademik hem duygusal verilerde belirgin bir istikrar gozlemlenmekte; surecin surdurulebilir oldugunu gosteren sinyaller alinmaktadir.',
+                strateji: 'Mevcut ritim korunmali ve onaylanmalidir. Gelisim icin kucuk bir zorluk esigi eklenebilir; favori bransta hedef yukseltmek gibi.',
+                gelecek:  'Gelecek ay hedefi mevcut dengeyi bozmadan bir ya da iki zayif alanda kucuk kazanimlar eklemek olmalidir.'
+              },
+              karisik: {
+                foto:     'Bu donem birden fazla alanda cesitli guclukler gozlemlenmistir. Tek bir baskin patern yerine farkli gunlerde farkli tetikleyicilerin devreye girdigi karma bir tablo soz konusudur.',
+                strateji: 'En yuksek frekanslı senaryoya odaklanilmali; tum sorunlari ayni anda cozmeye calismak yerine tek bir oncelik belirlenmesi gerekmektedir.',
+                gelecek:  'Gelecek ay icin tek somut degisiklik hedeflenmeli; birden fazla alani ayni anda duzeltmeye calismak surecten kopmaya neden olabilir.'
+              }
+            }[_profil] || { foto:'', strateji:'', gelecek:'' };
+
+            // Render: 3 kutu
+            const _kutular = [
+              { baslik: 'AYLIK FOTOGRAFIN', metin: _pm.foto,     ar:242, ag:240, ab:255, sr:70,  sg:40,  sb:180 },
+              { baslik: 'KOCLUK STRATEJISI', metin: _pm.strateji, ar:238, ag:255, ab:245, sr:20,  sg:130, sb:70  },
+              { baslik: 'GELECEK AY PLANI',  metin: _pm.gelecek,  ar:255, ag:248, ab:235, sr:170, sg:80,  sb:0   },
+            ];
+
+            Y = pdfCheck(doc, Y, 16);
+            doc.setFont(PF,'bold'); doc.setFontSize(8.5); doc.setTextColor(40, 30, 100);
+            doc.text(tx('Butuncel Analiz Koprusu'), 16, Y); Y += 8;
+
+            _kutular.forEach(k => {
+              if (!k.metin) return;
+              const _sat = doc.splitTextToSize(tx(k.metin), 152);
+              const _h   = _sat.length * 4.8 + 18;
+              Y = pdfCheck(doc, Y, _h + 5);
+              doc.setFillColor(k.ar, k.ag, k.ab);
+              doc.roundedRect(15, Y, 180, _h, 1.5, 1.5, 'F');
+              doc.setFillColor(k.sr, k.sg, k.sb);
+              doc.roundedRect(15, Y, 3.5, _h, 1, 1, 'F');
+              doc.setFont(PF,'bold'); doc.setFontSize(7);
+              doc.setTextColor(k.sr, k.sg, k.sb);
+              doc.text(tx(k.baslik), 21, Y + 6);
+              doc.setFont(PF,'normal'); doc.setFontSize(6.6);
+              doc.setTextColor(40, 35, 60);
+              doc.text(_sat, 21, Y + 12);
+              Y += _h + 5;
+            });
           }
+
 
           // ── VERİ YETERSİZSE ────────────────────────────────────
           if (_ins.length === 0 && _pos.length === 0 && !_vaka) {
