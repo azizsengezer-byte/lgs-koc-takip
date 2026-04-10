@@ -1513,7 +1513,7 @@ SENARYOLAR.push(
       const zayif = b.dersHata[h.zayifBrans];
       if (!zayif || zayif.q < 10) return false;
       const isabet = (1-zayif.y/zayif.q)*100;
-      return isabet < 45 && b.sosyal > k.sosyal.yuksek;
+      return isabet < 45 && (b.sosyal > k.sosyal.yuksek || h.haftaSosyalOrt > k.sosyal.yuksek);
     },
     cikti: {
       analiz: 'Zayıf branşta yaşanan zorlanma, öğrencide anlık bir özgüven kırılması yaratmakta ve dijital kaçışı tetiklemektedir.',
@@ -1898,7 +1898,7 @@ SENARYOLAR.push(
     id: 'DYN-111', modul: 4, priority: 65,
     etiket: 'Sınav Yorgunluğu İstismarı',
     tetikle: (b, h, a, k) =>
-      b.sosyal > 4 && h.denemeSonrasiGun,
+      (b.sosyal > k.sosyal.yuksek || h.haftaSosyalOrt > k.sosyal.yuksek) && h.denemeSonrasiGun && b.enerji < k.enerji.ort,
     cikti: {
       analiz: 'Öğrenci ağır bir sınavın ardından zihnini dinlendirmek yerine dijital uyaranlarla daha fazla yormaktadır.',
       strateji: 'Deneme sonrası için "aktif dinlenme" (uyku, spor, hobi) alternatifleri sunulmalı; ekranın yorgunluğu artırdığı anlatılmalıdır.',
@@ -1925,7 +1925,7 @@ SENARYOLAR.push(
     tetikle: (b, h, a, k) => {
       if (!b.dersHata) return false;
       const bransSayisi = Object.keys(b.dersHata).filter(d => b.dersHata[d].q > 0).length;
-      return bransSayisi >= 4 && b.sosyal > k.sosyal.yuksek &&
+      return bransSayisi >= 4 && h.haftaSosyalOrt > k.sosyal.ort &&
         Object.values(b.dersHata).every(v => v.q < 15);
     },
     cikti: {
@@ -1940,8 +1940,8 @@ SENARYOLAR.push(
     etiket: 'Hafta Sonu Dijital Patlaması',
     tetikle: (b, h, a, k) => {
       const gun = new Date(b.dk + 'T12:00:00').getDay();
-      return (gun === 0 || gun === 6) && b.sosyal > 4 &&
-        h.haftaSosyalOrt <= k.sosyal.ort;
+      return (gun === 0 || gun === 6) && b.sosyal > k.sosyal.yuksek * 1.5 &&
+        h.haftaSosyalOrt <= k.sosyal.ort * 1.2;
     },
     cikti: {
       analiz: 'Hafta boyunca biriken stresin kontrolsüzce dijital alana boşaltılması, tüm haftanın akademik kazanımlarını tehdit etmektedir.',
@@ -1954,7 +1954,7 @@ SENARYOLAR.push(
     id: 'DYN-115', modul: 4, priority: 60,
     etiket: 'Yüzeysel Çalışma Telafisi',
     tetikle: (b, h, a, k) =>
-      b.sosyal > k.sosyal.yuksek && b.tekrarSure > 60 && b.soru < 20,
+      h.haftaSosyalOrt > k.sosyal.ort && b.tekrarSure > 60 && b.soru < 20,
     cikti: {
       analiz: 'Öğrenci vaktini dijitalde tükettiği için vicdanını rahatlatmak adına zihni yormayan basit işlerle (tekrar) günü kapatmaktadır.',
       strateji: 'Akademik önceliğin "soru ve yeni konu" olduğu hatırlatılmalı; dijital süre bu önceliklerin önüne geçmemelidir.',
@@ -2017,7 +2017,7 @@ SENARYOLAR.push(
     id: 'DYN-122', modul: 4, priority: 32,
     etiket: 'Zihinsel Keskinlik',
     tetikle: (b, h, a, k) =>
-      b.sosyal <= 0.5 && b.odak >= k.odak.yuksek &&
+      h.haftaSosyalOrt < k.sosyal.ort * 0.7 && b.odak >= k.odak.yuksek &&
       b.hataOrani !== null && b.hataOrani < 15,
     cikti: {
       analiz: 'Minimal dijital temasın zihinsel berraklığı ve akademik motivasyonu maksimize ettiği saptanmıştır.',
@@ -2030,7 +2030,7 @@ SENARYOLAR.push(
     id: 'DYN-123', modul: 4, priority: 58,
     etiket: 'Vicdan Rahatlatma Modu',
     tetikle: (b, h, a, k) =>
-      b.sosyal > k.sosyal.yuksek && b.tekrarSure > 40 && b.soru < 20,
+      h.haftaSosyalOrt > k.sosyal.ort && b.tekrarSure > 40 && b.soru < 20,
     cikti: {
       analiz: 'Öğrenci ağır akademik sorumluluktan kaçıp vaktini ekranda harcamış, gün sonunda ise "tekrar yaptım" diyerek kendini teselli etmiştir.',
       strateji: 'Günlük raporlama dilinde "Üretim (Soru)" ve "Tüketim (Ekran)" dengesi vurgulanmalı; sahte verimliliğe dikkat çekilmelidir.',
@@ -2270,8 +2270,7 @@ SENARYOLAR.push(
     etiket: 'Sabotajcı Hazırlık',
     tetikle: (b, h, a, k) => {
       // Deneme gününden önceki gece kontrolü
-      return b.uyku > 0 && b.uyku < 5 && b.kaygi >= k.kaygi.yuksek &&
-        h.denemedeSonraSoru === 0;
+      return b.uyku > 0 && b.uyku < 5.5 && b.kaygi >= k.kaygi.yuksek;
     },
     cikti: {
       analiz: 'Öğrenci sınav stresini uykusuzlukla birleştirerek gerçek potansiyelini sergileme şansını biyolojik olarak yok etmiştir.',
