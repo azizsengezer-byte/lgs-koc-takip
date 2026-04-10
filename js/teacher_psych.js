@@ -865,7 +865,7 @@ async function exportPsychPDF(sName, aiAcik) {
 
           // Kalibrasyon özeti
           if (_kal) {
-            const _kalSat = tx('Dinamik Kalibrasyon: ' + _kal.soruOrt + ' soru/gün ortalaması · Kaygı eşiği: ' + _kal.kaygiEsik + ' · Uyku ort: ' + _kal.uyku + ' sa');
+            const _kalSat = tx('Kalibrasyon: ' + _kal.soruOrt + ' soru/gun ort. | Kaygi esigi: ' + _kal.kaygiEsik + ' | Uyku ort: ' + _kal.uyku + ' sa');
             Y = pdfCheck(doc, Y, 10);
             doc.setFont(PF,'italic'); doc.setFontSize(6.2); doc.setTextColor(140,120,180);
             doc.text(_kalSat, 16, Y); Y += 7;
@@ -924,7 +924,8 @@ async function exportPsychPDF(sName, aiAcik) {
               // Etiket
               doc.setFont(PF,'bold'); doc.setFontSize(6.5);
               doc.setTextColor(r.sol[0], r.sol[1], r.sol[2]);
-              doc.text(tx(ins.etiket + '  [' + ins.id + ']'), 21, Y + 5.5);
+              const _freqStr = ins.frekans > 1 ? '  (' + ins.frekans + ' gun)' : '';
+              doc.text(tx(ins.etiket + _freqStr + '  [' + ins.id + ']'), 21, Y + 5.5);
               // Analiz
               doc.setFont(PF,'normal'); doc.setFontSize(6.5);
               doc.setTextColor(40, 35, 60);
