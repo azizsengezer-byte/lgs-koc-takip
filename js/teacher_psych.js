@@ -853,7 +853,7 @@ async function exportPsychPDF(sName, aiAcik) {
         doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(100,90,140);
         doc.text(tx(period==='weekly'
           ? 'Haftalık psikolojik-akademik örüntü analizi — dinamik senaryo motoru'
-          : 'Aylık bütüncül teşhis — 5 modül, 40 senaryo, kalibre eşikler'), 16, Y); Y+=8;
+          : 'Aylık bütüncül teşhis — 5 modül, ' + (window.SENARYOLAR ? window.SENARYOLAR.length : 0) + ' senaryo, kalibre eşikler'), 16, Y); Y+=8;
 
         // Motor çıktısı
         // Motor güvenlik kontrolü — typeof ile güvenli kontrol

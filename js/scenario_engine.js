@@ -1987,17 +1987,7 @@ SENARYOLAR.push(
     }
   },
 
-  {
-    id: 'DYN-118', modul: 4, priority: 68,
-    etiket: 'Sabah Sabotajı',
-    tetikle: (b, h, a, k) =>
-      b.sosyal > 1.5 && b.odak < k.odak.dusuk,
-    cikti: {
-      analiz: 'Güne ekranla başlaması zihinsel enerjiyi henüz ders başına oturmadan tüketmiş ve günün geri kalanını "verimsiz" kılmıştır.',
-      strateji: '"İlk 1 Saat Ekransız" kuralı getirilmeli; günün ilk ışıkları ve zihinsel berraklığı en zor branşa ayrılmalıdır.',
-      aylikEtiket: 'Sabah_Sabotajı', ton: 'directive'
-    }
-  },
+
 
   {
     id: 'DYN-119', modul: 4, priority: 62,
