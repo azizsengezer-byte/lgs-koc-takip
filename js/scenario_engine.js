@@ -13,20 +13,24 @@ function _kalibre(gunler14) {
     const v = arr.filter(d => d[field] > 0).map(d => d[field]);
     if (!v.length) return null;
     const ort = v.reduce((a, b) => a + b, 0) / v.length;
-    const sd = Math.sqrt(v.reduce((a, b) => a + Math.pow(b - ort, 2), 0) / v.length);
-    return { ort, sd, min: Math.min(...v), max: Math.max(...v) };
+    const sd = v.length > 1
+      ? Math.sqrt(v.reduce((a, b) => a + Math.pow(b - ort, 2), 0) / v.length)
+      : ort * 0.2;
+    return { ort, sd, min: Math.min(...v), max: Math.max(...v), yuksek: ort + sd, dusuk: Math.max(ort - sd, 0) };
   };
   const soruV = gunler14.filter(d => d.soru > 0).map(d => d.soru);
   const soruOrt = soruV.length ? soruV.reduce((a, b) => a + b, 0) / soruV.length : 100;
-  const soruSd  = soruV.length > 1 ? Math.sqrt(soruV.reduce((a, b) => a + Math.pow(b - soruOrt, 2), 0) / soruV.length) : 30;
+  const soruSd  = soruV.length > 1
+    ? Math.sqrt(soruV.reduce((a, b) => a + Math.pow(b - soruOrt, 2), 0) / soruV.length)
+    : soruOrt * 0.3;
 
   return {
-    soru:   { ort: soruOrt,  sd: soruSd,  yuksek: soruOrt + soruSd,  dusuk: Math.max(soruOrt - soruSd, 10) },
-    kaygi:  fn(gunler14, 'kaygi')  || { ort: 5,   sd: 1.5, yuksek: 7.5,  dusuk: 3.5 },
+    soru:   { ort: soruOrt, sd: soruSd, yuksek: soruOrt + soruSd, dusuk: Math.max(soruOrt - soruSd, 10) },
+    kaygi:  fn(gunler14, 'kaygi')  || { ort: 5,   sd: 1.5, yuksek: 6.5,  dusuk: 3.5 },
     uyku:   fn(gunler14, 'uyku')   || { ort: 7,   sd: 0.8, yuksek: 8,    dusuk: 6   },
-    enerji: fn(gunler14, 'enerji') || { ort: 6,   sd: 1.5, yuksek: 7.5,  dusuk: 4   },
-    odak:   fn(gunler14, 'odak')   || { ort: 6,   sd: 1.5, yuksek: 7.5,  dusuk: 4   },
-    sosyal: fn(gunler14, 'sosyal') || { ort: 1.5, sd: 0.8, yuksek: 2.5,  dusuk: 0.5 },
+    enerji: fn(gunler14, 'enerji') || { ort: 6,   sd: 1.5, yuksek: 7.5,  dusuk: 4.5 },
+    odak:   fn(gunler14, 'odak')   || { ort: 6,   sd: 1.5, yuksek: 7.5,  dusuk: 4.5 },
+    sosyal: fn(gunler14, 'sosyal') || { ort: 1.5, sd: 0.8, yuksek: 2.3,  dusuk: 0.5 },
     isabet: fn(gunler14.filter(d => d.hataOrani !== null), 'hataOrani') || { ort: 25, sd: 10, yuksek: 35, dusuk: 15 },
   };
 }
@@ -46,8 +50,7 @@ const SENARYOLAR = [
     id: 'DYN-01', modul: 1, priority: 82,
     etiket: 'Hasarlı Yüksek Hacim',
     tetikle: (b, h, a, k) =>
-      b.kaygi >= k.kaygi.yuksek && b.soru >= k.soru.yuksek &&
-      h.isatetTrend < -8,
+      b.kaygi >= k.kaygi.yuksek && b.soru >= k.soru.yuksek,
     cikti: {
       analiz: 'Kaygı etkisiyle yapılan yüksek hacimli çalışmanın bilişsel maliyetinin yüksek olduğu saptanmıştır.',
       strateji: 'Akademik yük hafifletilmeli; kriz anında işlenen üniteler "Temiz Zihin" tekrarına alınmalıdır.',
@@ -74,8 +77,7 @@ const SENARYOLAR = [
     id: 'DYN-03', modul: 1, priority: 88,
     etiket: 'Bilişsel İflas',
     tetikle: (b, h, a, k) =>
-      b.uyku > 0 && b.uyku < 6 && b.odak < k.odak.dusuk &&
-      h.enerjiTrend === 'düşüş',
+      b.uyku > 0 && b.uyku < 6 && b.odak < k.odak.dusuk,
     cikti: {
       analiz: 'Fizyolojik yetersizliğin bilişsel fonksiyonları kısıtladığı değerlendirilmektedir.',
       strateji: 'Yeni konu eklenmesi ertelenmeli; uyku hijyeni ve biyolojik restorasyon önceliklendirilmelidir.',
@@ -116,8 +118,7 @@ const SENARYOLAR = [
     id: 'DYN-06', modul: 1, priority: 62,
     etiket: 'Bilişsel Yorgunluk',
     tetikle: (b, h, a, k) =>
-      b.odak < k.odak.dusuk && b.soru > k.soru.ort &&
-      h.birimSoreSure > 3.5,
+      b.odak < k.odak.dusuk && b.soru > k.soru.ort,
     cikti: {
       analiz: 'Öğrencinin zihinsel olarak tükenmiş olmasına rağmen çalışmaya devam ettiği (boşa mesai) gözlemlenmiştir.',
       strateji: 'Çalışma periyotları kısaltılmalı; dinlenme süreleri nitelikli (ekransız) hale getirilmelidir.',
@@ -130,8 +131,7 @@ const SENARYOLAR = [
     id: 'DYN-09', modul: 1, priority: 78,
     etiket: 'Dijital Anestezi',
     tetikle: (b, h, a, k) =>
-      b.kaygi >= k.kaygi.yuksek && b.sosyal > 2 &&
-      h.odakTrend === 'negatif',
+      b.kaygi >= k.kaygi.yuksek && b.sosyal > k.sosyal.yuksek,
     cikti: {
       analiz: 'Stresle başa çıkma yöntemi olarak dijital dünyada "zamanı dondurma" eğilimi saptanmıştır.',
       strateji: 'Dijital kullanımın bir dinlenme değil, odak sızıntısı olduğu somut verilerle öğrenciye aktarılmalıdır.',
@@ -144,8 +144,7 @@ const SENARYOLAR = [
     id: 'DYN-10', modul: 1, priority: 92,
     etiket: 'Kombine Çöküş',
     tetikle: (b, h, a, k) =>
-      b.uyku > 0 && b.uyku < 6 && b.kaygi >= k.kaygi.yuksek &&
-      h.denemeTrend === 'düşüş',
+      b.uyku > 0 && b.uyku < 6 && b.kaygi >= k.kaygi.yuksek,
     cikti: {
       analiz: 'Hem biyolojik hem de psikolojik bariyerlerin aşılması nedeniyle sistemin alarm verdiği saptanmıştır.',
       strateji: '24 saatlik tam akademik mola verilmeli; süreç uyku ve duygusal stabilizasyon ile başlatılmalıdır.',
@@ -173,8 +172,7 @@ const SENARYOLAR = [
     id: 'DYN-15', modul: 1, priority: 72,
     etiket: 'Yalancı İvme',
     tetikle: (b, h, a, k) =>
-      b.uyku > 0 && b.uyku < 6 && b.soru >= k.soru.yuksek &&
-      h.isatetTrend > 5,
+      b.uyku > 0 && b.uyku < 6 && b.soru >= k.soru.yuksek,
     cikti: {
       analiz: 'Öğrenci uyku vaktinden çalarak performans artışı sağlamaktadır; bilişsel rezervlerin hızla tükendiğini gösterir.',
       strateji: 'Başarı takdir edilmeli ancak uyku süresinin uzun vadeli zeka performansı üzerindeki riski vurgulanmalıdır.',
@@ -244,7 +242,7 @@ const SENARYOLAR = [
     id: 'DYN-44', modul: 2, priority: 68,
     etiket: 'Öğrenilmiş Çaresizlik',
     tetikle: (b, h, a, k) =>
-      h.zayifBransDenemeIsabet < 40 && b.mood === 'sad' &&
+      h.zayifBransDenemeIsabet < 45 &&
       h.zayifBransSureAzalma === true,
     cikti: {
       analiz: 'Düşük isabet oranının yarattığı moral bozukluğu, öğrenciyi o branştan tamamen kopma noktasına getirmiştir.',
@@ -328,8 +326,8 @@ const SENARYOLAR = [
     etiket: 'Yüksek Fonksiyonlu Kaygı',
     tetikle: (b, h, a, k) =>
       b.soru >= k.soru.yuksek &&
-      b.hataOrani !== null && b.hataOrani < 15 &&
-      (b.mood === 'sad' || b.mood === 'anxious'),
+      b.hataOrani !== null && b.hataOrani < 20 &&
+      b.kaygi >= k.kaygi.yuksek,
     cikti: {
       analiz: 'Öğrenci akademik hedeflerine tam kapasiteyle ulaşmasına rağmen performansı "yetersiz" algılamaktadır.',
       strateji: 'Başarı somut verilerle tescil edilmeli; öğrencinin kendine koyduğu "hayali çıtalar" esnetilmelidir.',
@@ -433,7 +431,7 @@ const SENARYOLAR = [
     id: 'DYN-106', modul: 4, priority: 78,
     etiket: 'Duygusal Anestezi',
     tetikle: (b, h, a, k) =>
-      b.sosyal > k.sosyal.yuksek && b.kaygi >= k.kaygi.yuksek,
+      b.sosyal > k.sosyal.ort && b.kaygi >= k.kaygi.yuksek,
     cikti: {
       analiz: 'Öğrenci akademik stresle başa çıkamadığı anlarda dijital dünyaya sığınarak gerçeklikten uzaklaşmaktadır.',
       strateji: 'Sosyal medyanın bir "ödül" değil, "stres tetikleyici" olarak analiz edilmesi; ekran dışı rahatlama yöntemleri önerilmelidir.',
@@ -460,7 +458,7 @@ const SENARYOLAR = [
     id: 'DYN-108', modul: 4, priority: 70,
     etiket: 'Bilişsel Sis',
     tetikle: (b, h, a, k) =>
-      h.dunkuSosyal > 2.5 && b.odak < k.odak.dusuk,
+      h.dunkuSosyal > k.sosyal.ort && b.odak < k.odak.ort,
     cikti: {
       analiz: 'Bir önceki günün aşırı dijital tüketimi, zihni dopamin yorgunluğuna sürükleyerek odaklanma eşiğini yükseltmiştir.',
       strateji: 'Odaklanma sorununun "yeteneksizlik" değil, "dijital yorgunluk" olduğu somut verilerle öğrenciye gösterilmelidir.',
@@ -503,8 +501,7 @@ const SENARYOLAR = [
     id: 'DYN-126', modul: 5, priority: 85,
     etiket: 'Bilişsel Borçlanma',
     tetikle: (b, h, a, k) =>
-      b.uyku > 0 && b.uyku < 6 && b.enerji < k.enerji.dusuk &&
-      b.soru >= k.soru.yuksek,
+      b.uyku > 0 && b.uyku < 6.5 && b.soru >= k.soru.yuksek,
     cikti: {
       analiz: 'Öğrenci bedensel sınırlarını zorlayarak hedefi yakalamıştır; ancak bilişsel kalıcılığı düşük, hata payı yüksektir.',
       strateji: 'Akademik başarı takdir edilmeli, ancak 8 saatlik uyku kuralının "hafıza konsolidasyonu" için önemi hatırlatılmalıdır.',
@@ -517,7 +514,7 @@ const SENARYOLAR = [
     id: 'DYN-128', modul: 5, priority: 88,
     etiket: 'Kronik Stres Döngüsü',
     tetikle: (b, h, a, k) =>
-      h.ortUyku < 6.5 && h.ortKaygi >= k.kaygi.yuksek,
+      h.ortUyku > 0 && h.ortUyku < 7 && h.ortKaygi > 0 && h.ortKaygi >= k.kaygi.ort,
     cikti: {
       analiz: 'Yetersiz uyku kaygıyı tetiklemekte, yüksek kaygı ise uykuya geçişi zorlaştırmaktadır; sistem alarm vermektedir.',
       strateji: 'Acil uyku hijyeni protokolü uygulanmalı; akşam 21:00\'den sonra tüm akademik ve dijital uyaranlar kesilmelidir.',
@@ -544,7 +541,7 @@ const SENARYOLAR = [
     id: 'DYN-134', modul: 5, priority: 90,
     etiket: 'Pre-Burnout',
     tetikle: (b, h, a, k) =>
-      h.dusukOdakGunSayisi >= 4 && h.dusukEnerjiGunSayisi >= 4,
+      h.dusukOdakGunSayisi >= 3 && h.dusukEnerjiGunSayisi >= 3,
     cikti: {
       analiz: 'Hem zihinsel hem fiziksel enerjinin uzun süreli düşük seyretmesi, öğrencinin süreci terk etme riskini doğurmaktadır.',
       strateji: 'Program "minimum hayatta kalma" seviyesine çekilmeli; 2 gün tam dinlenme verilmelidir.',
@@ -759,8 +756,8 @@ const POZITIF_SENARYOLAR = [
     id: 'POS-11', modul: 0, priority: 36,
     etiket: 'Haftalık Momentum',
     tetikle: (b, h, a, k) =>
-      h.haftaSoruToplamı >= k.soru.ort * 7 * 0.85 &&
-      h.haftalikMoodOrt >= 3,
+      h.haftaSoruToplamı >= k.soru.ort * 5 * 0.7 &&
+      h.haftalikMoodOrt >= 2.5,
     cikti: {
       analiz: 'Hafta genelinde hem akademik hem duygusal dengeyi koruyarak güçlü bir momentum yakalanmıştır.',
       strateji: 'Bu haftalık tablo koçla paylaşılmalı; başarının neyi doğru yapmanın sonucu olduğu analiz edilmelidir.',
@@ -844,7 +841,7 @@ const POZITIF_SENARYOLAR = [
     id: 'POS-17', modul: 0, priority: 37,
     etiket: 'Veri Tutarlılığı',
     tetikle: (b, h, a, k) =>
-      h.veriGirisTutarliligi >= 6,
+      h.veriGirisTutarliligi >= 4,
     cikti: {
       analiz: 'Öğrenci takip sistemine düzenli ve tutarlı veri girişi yaparak koçluk sürecini aktif desteklemektedir.',
       strateji: 'Bu sorumluluk bilinci takdir edilmeli; veri düzenliliğinin kişiselleştirilmiş analizlere katkısı hatırlatılmalıdır.',

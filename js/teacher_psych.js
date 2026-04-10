@@ -962,6 +962,33 @@ async function exportPsychPDF(sName, aiAcik) {
             });
           }
 
+          // ── BÜTÜNCÜL ANALİZ ÖZETİ ─────────────────────────────
+          if (_ins.length > 0 || _pos.length > 0 || _vaka) {
+            const _tetIdler = _m.tetiklenenTumIdler || [];
+            const _modul1 = _tetIdler.filter(id => id.startsWith('DYN-0') || id === 'DYN-10' || id === 'DYN-14' || id === 'DYN-15').length;
+            const _modul2 = _tetIdler.filter(id => ['DYN-41','DYN-42','DYN-43','DYN-44','DYN-49','DYN-50','DYN-55','DYN-56'].includes(id)).length;
+            const _modul3 = _tetIdler.filter(id => id.startsWith('DYN-7') || id.startsWith('DYN-8') || id.startsWith('DYN-9')).length;
+            const _modul4 = _tetIdler.filter(id => id.startsWith('DYN-10') || id.startsWith('DYN-11') || id.startsWith('DYN-12')).length;
+            const _modul5 = _tetIdler.filter(id => id.startsWith('DYN-12') || id.startsWith('DYN-13') || id.startsWith('DYN-14') || id === 'DYN-150').length;
+            const _ozet = [];
+            if (_modul1 > 0) _ozet.push('Bilişsel Restorasyon: ' + _modul1 + ' sinyal');
+            if (_modul2 > 0) _ozet.push('Branş Dinamikleri: ' + _modul2 + ' sinyal');
+            if (_modul3 > 0) _ozet.push('Öz-Yeterlilik: ' + _modul3 + ' sinyal');
+            if (_modul4 > 0) _ozet.push('Dijital Etki: ' + _modul4 + ' sinyal');
+            if (_modul5 > 0) _ozet.push('Fizyolojik Limit: ' + _modul5 + ' sinyal');
+            if (_ozet.length > 0) {
+              const _ozetH = 12 + _ozet.length * 5;
+              Y = pdfCheck(doc, Y, _ozetH + 6);
+              doc.setFillColor(240, 237, 255);
+              doc.roundedRect(15, Y, 180, _ozetH, 1.5, 1.5, 'F');
+              doc.setFont(PF,'bold'); doc.setFontSize(7); doc.setTextColor(70, 40, 160);
+              doc.text(tx('Modül Sinyal Özeti'), 21, Y + 5.5);
+              doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(80, 60, 140);
+              _ozet.forEach((o, i) => doc.text(tx('• ' + o), 21, Y + 11 + i * 5));
+              Y += _ozetH + 5;
+            }
+          }
+
           // ── VERİ YETERSİZSE ────────────────────────────────────
           if (_ins.length === 0 && _pos.length === 0 && !_vaka) {
             Y = pdfCheck(doc, Y, 14);

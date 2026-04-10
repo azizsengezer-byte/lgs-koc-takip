@@ -252,8 +252,14 @@ function calistirSenaryolar(gunler, allEntries, bugunDk) {
   const gunler30 = gunler.slice(-30);
   const kal = window._kalibre(gunler14);
 
-  const bugunGun = gunler.find(d => d.dk === bugunDk) || gunler[gunler.length - 1] || {};
-  const bugun = _bugunHazirla(bugunGun, allEntries, bugunDk);
+  // Aylık/haftalık raporlarda endKey'de veri olmayabilir
+  // Son verisi olan günü bul (wellness VEYA akademik)
+  const _sonVeriGun = [...gunler].reverse().find(d =>
+    d.kaygi > 0 || d.uyku > 0 || d.enerji > 0 || d.soru > 0
+  );
+  const bugunGun = gunler.find(d => d.dk === bugunDk) || _sonVeriGun || gunler[gunler.length - 1] || {};
+  const bugunDkGercek = bugunGun.dk || bugunDk;
+  const bugun = _bugunHazirla(bugunGun, allEntries, bugunDkGercek);
   const hafta = _hesaplaHafta(gunler7, allEntries, kal);
   const ay    = _hesaplaAy(gunler30, kal);
 
