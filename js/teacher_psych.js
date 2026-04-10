@@ -856,7 +856,10 @@ async function exportPsychPDF(sName, aiAcik) {
           : 'Aylık bütüncül teşhis — 5 modül, 40 senaryo, kalibre eşikler'), 16, Y); Y+=8;
 
         // Motor çıktısı
-        if (window.calistirSenaryolar && gunler.length >= 2) {
+        // Motor güvenlik kontrolü — typeof ile güvenli kontrol
+        const _motorMevcut = typeof window.calistirSenaryolar === 'function';
+        const _gunlerYeterli = gunler && gunler.length >= 2;
+        if (_motorMevcut && _gunlerYeterli) {
           const _m = window.calistirSenaryolar(gunler, allAcadEntries, endKey);
           const _ins  = _m.insights  || [];
           const _pos  = _m.positives || [];
@@ -1003,7 +1006,8 @@ async function exportPsychPDF(sName, aiAcik) {
           Y = pdfCheck(doc, Y, 14);
           doc.setFont(PF,'normal'); doc.setFontSize(7);
           doc.setTextColor(150, 130, 160);
-          doc.text(tx('Senaryo motoru bu raporda kullanılamadı.'), 16, Y); Y += 10;
+          const _motorDurum = !_motorMevcut ? 'Motor yuklenemedi' : 'Veri yetersiz (' + (gunler ? gunler.length : 0) + ' gun)';
+          doc.text(tx(_motorDurum), 16, Y); Y += 10;
         }
 
         Y += 6; // nefes boşluğu
