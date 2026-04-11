@@ -371,17 +371,18 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
     // Yükseliş: son 2 güne 3x ağırlık (iyileşme baskın olsun)
     // Stabil: tüm günler eşit
 
-    gunler7.forEach((g, i) => {
+    // Haftalık modda SADECE son 2 veri günü taranır
+    // Önceki günler bağlam olarak h. değerlerine girer ama senaryo üretmez
+    // Bu sayede "iyi geçen eski gün" senaryoları karışmaz
+    const _taranacakGunler = _sonHal.length > 0 ? _sonHal : veriGunleri.slice(-2);
+
+    _taranacakGunler.forEach((g, i) => {
       if (g.kaygi === 0 && g.uyku === 0 && g.enerji === 0 && g.soru === 0) return;
-      const pencere = gunler7.slice(Math.max(0, i-3), i+1);
+      const pencere = gunler7; // tüm hafta bağlam olarak kullanılır
       const { neg, pos } = _tetikleGun(g, allEntries, pencere, gunler30, kal);
 
-      // Son 2 günde mi?
-      const _sonIkiGun = _sonHal.some(s => s.dk === g.dk);
-      const _agirlik = _sonIkiGun ? 3 : 1;
-
-      neg.forEach(s => { tumNegIdSayac[s.id] = (tumNegIdSayac[s.id]||0) + _agirlik; });
-      pos.forEach(s => { tumPosIdSayac[s.id] = (tumPosIdSayac[s.id]||0) + _agirlik; });
+      neg.forEach(s => { tumNegIdSayac[s.id] = (tumNegIdSayac[s.id]||0) + 1; });
+      pos.forEach(s => { tumPosIdSayac[s.id] = (tumPosIdSayac[s.id]||0) + 1; });
     });
 
     // ── PROFİL TESPİTİ: SADECE SON HAL ─────────────────────────────
