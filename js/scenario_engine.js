@@ -340,7 +340,7 @@ const SENARYOLAR = [
     id: 'DYN-82', modul: 3, priority: 90,
     etiket: 'Öz-Yeterlilik Çöküşü',
     tetikle: (b, h, a, k) =>
-      b.soru === 0 && (b.mood === 'sad' || b.mood === 'anxious') &&
+      b.soru === 0 && (b.mood === 'sad' || b.mood === 'bad') &&
       b.kaygi >= k.kaygi.yuksek,
     cikti: {
       analiz: 'Öğrenci başarısızlık korkusu nedeniyle masaya oturma iradesini tamamen kaybetmiştir.',
@@ -355,7 +355,7 @@ const SENARYOLAR = [
     etiket: 'Onaylanmış Disiplin',
     tetikle: (b, h, a, k) =>
       b.soru >= k.soru.yuksek && b.tekrarSure > 60 &&
-      (b.mood === 'excited' || b.mood === 'good'),
+      (b.mood === 'great' || b.mood === 'good'),
     cikti: {
       analiz: 'Öğrenci disiplinli çalışmanın yarattığı kontrol hissini içselleştirmiş ve öz-yeterliliğini güçlendirmiştir.',
       strateji: 'Bu momentum korunmalı; öğrenciye "kendi sürecinin lideri" olduğu hissettirilmelidir.',
@@ -370,7 +370,7 @@ const SENARYOLAR = [
     tetikle: (b, h, a, k) =>
       h.denemeTrend === 'düşüş' &&
       b.soru >= k.soru.yuksek &&
-      (b.mood === 'good' || b.mood === 'focused'),
+      (b.mood === 'good' || (b.mood === 'good' || b.mood === 'great')),
     cikti: {
       analiz: 'Öğrenci deneme sonucunu bir yıkım değil, bir veri olarak kabul etmiş ve rutinine dürüstçe devam etmiştir.',
       strateji: 'Bu olgun tutum koç tarafından vurgulanmalı; "gerçek kazanan" tavrının bu olduğu pekiştirilmelidir.',
@@ -385,7 +385,7 @@ const SENARYOLAR = [
     tetikle: (b, h, a, k) =>
       b.soru >= k.soru.yuksek &&
       b.hataOrani !== null && b.hataOrani > 40 &&
-      (b.mood === 'sad' || b.mood === 'tired'),
+      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok')),
     cikti: {
       analiz: 'Öğrenci çok çalışmasına rağmen sonuç alamadıkça öz-yeterlilik algısı ağır hasar almaktadır.',
       strateji: 'Hacim (soru sayısı) acilen düşürülmeli; konu eksikleri saptanarak "başarı garantili" küçük kazanımlara odaklanılmalıdır.',
@@ -399,7 +399,7 @@ const SENARYOLAR = [
     etiket: 'Öğrenilmiş Çaresizlik Sinyali',
     tetikle: (b, h, a, k) =>
       b.soru < 40 && b.hataOrani !== null && b.hataOrani > 50 &&
-      (b.mood === 'sad' || b.mood === 'anxious'),
+      (b.mood === 'sad' || b.mood === 'bad'),
     cikti: {
       analiz: 'Öğrenci "nasılsa yapamıyorum" algısıyla akademik eylemi tamamen durdurma noktasına gelmiştir.',
       strateji: '24 saatlik tam mola sonrası, akademik olmayan bir motivasyon görüşmesi planlanmalı; süreç sıfırdan yapılandırılmalıdır.',
@@ -554,7 +554,7 @@ const SENARYOLAR = [
     id: 'DYN-135', modul: 5, priority: 32,
     etiket: 'İdeal Fizyolojik Zemin',
     tetikle: (b, h, a, k) =>
-      b.enerji >= 8 && (b.mood === 'good' || b.mood === 'excited' || b.mood === 'focused') &&
+      b.enerji >= 8 && (b.mood === 'good' || b.mood === 'great' || (b.mood === 'good' || b.mood === 'great')) &&
       b.uyku >= 8,
     cikti: {
       analiz: 'Öğrenci akademik tempoyu taşıyabilecek en ideal fiziksel ve duygusal dengededir.',
@@ -638,7 +638,7 @@ const POZITIF_SENARYOLAR = [
       b.soru >= k.soru.yuksek &&
       b.hataOrani !== null && b.hataOrani < 15 &&
       b.odak >= k.odak.yuksek &&
-      (b.mood === 'excited' || b.mood === 'good' || b.mood === 'focused'),
+      (b.mood === 'great' || b.mood === 'good' || (b.mood === 'good' || b.mood === 'great')),
     cikti: {
       analiz: 'Öğrenci potansiyelini tam kapasiteyle kullanmakta ve başarısını duygusal bir tatmine dönüştürebilmektedir.',
       strateji: 'Bu "akış" (flow) hali ödüllendirilmeli; başarının anahtar bileşenleri (uyku, odak, yöntem) not edilmelidir.',
@@ -653,7 +653,7 @@ const POZITIF_SENARYOLAR = [
     tetikle: (b, h, a, k) =>
       h.denemeTrend === 'düşüş' &&
       b.soru >= k.soru.ort &&
-      (b.mood === 'good' || b.mood === 'focused'),
+      (b.mood === 'good' || (b.mood === 'good' || b.mood === 'great')),
     cikti: {
       analiz: 'Deneme sonucunun olumsuzluğuna rağmen öğrenci çalışma rutinini sürdürmüştür; psikolojik dayanıklılık sergilenmiştir.',
       strateji: 'Bu tutum somut verilerle övülmeli; başarının sonuçtan değil süreçten geldiği pekiştirilmelidir.',
@@ -756,8 +756,9 @@ const POZITIF_SENARYOLAR = [
     id: 'POS-11', modul: 0, priority: 36,
     etiket: 'Haftalık Momentum',
     tetikle: (b, h, a, k) =>
-      h.haftaSoruToplamı >= k.soru.ort * 5 * 0.7 &&
-      h.haftalikMoodOrt >= 2.5,
+      h.haftaSoruToplamı >= k.soru.ort * 6 &&
+      h.haftalikMoodOrt >= 3 &&
+      h.veriGirisTutarliligi >= 4,
     cikti: {
       analiz: 'Hafta genelinde hem akademik hem duygusal dengeyi koruyarak güçlü bir momentum yakalanmıştır.',
       strateji: 'Bu haftalık tablo koçla paylaşılmalı; başarının neyi doğru yapmanın sonucu olduğu analiz edilmelidir.',
@@ -1005,7 +1006,7 @@ SENARYOLAR.push(
     id: 'DYN-08', modul: 1, priority: 62,
     etiket: 'Maskelenmiş Başarı',
     tetikle: (b, h, a, k) =>
-      (b.mood === 'sad' || b.mood === 'tired') && b.tekrarSure > 40 &&
+      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok')) && b.tekrarSure > 40 &&
       b.hataOrani !== null && b.hataOrani < 15,
     cikti: {
       analiz: 'Öğrenci duygusal zorluklarını bastırmak için rutin işlere (tekrar) aşırı odaklanmaktadır.',
@@ -1045,7 +1046,7 @@ SENARYOLAR.push(
     id: 'DYN-13', modul: 1, priority: 55,
     etiket: 'Kriz Sonrası Boşluk',
     tetikle: (b, h, a, k) =>
-      (b.mood === 'good' || b.mood === 'excited') && b.kaygi < k.kaygi.dusuk &&
+      (b.mood === 'good' || b.mood === 'great') && b.kaygi < k.kaygi.dusuk &&
       b.soru === 0 && b.konuSure === 0 &&
       h.ortKaygi >= k.kaygi.yuksek,
     cikti: {
@@ -1117,7 +1118,7 @@ SENARYOLAR.push(
     id: 'DYN-20', modul: 1, priority: 52,
     etiket: 'Duygusal Rehavet',
     tetikle: (b, h, a, k) =>
-      (b.mood === 'excited' || b.mood === 'good') &&
+      (b.mood === 'great' || b.mood === 'good') &&
       b.kaygi < k.kaygi.dusuk && b.soru < k.soru.dusuk * 0.5 &&
       h.tutarliGunSayisi < 3,
     cikti: {
@@ -1131,7 +1132,7 @@ SENARYOLAR.push(
     id: 'DYN-21', modul: 1, priority: 70,
     etiket: 'Emosyonel İstikrarsızlık',
     tetikle: (b, h, a, k) =>
-      (b.mood === 'excited' || b.mood === 'good') && b.kaygi >= k.kaygi.yuksek &&
+      (b.mood === 'great' || b.mood === 'good') && b.kaygi >= k.kaygi.yuksek &&
       h.odakTrend === 'stabil',
     cikti: {
       analiz: 'Öğrenci dış dünyada "iyiyim" maskesi takarken, iç dünyasında yoğun sınav baskısı hissettiği değerlendirilmektedir.',
@@ -1156,7 +1157,7 @@ SENARYOLAR.push(
     id: 'DYN-23', modul: 1, priority: 58,
     etiket: 'Fizyolojik İhmal',
     tetikle: (b, h, a, k) =>
-      b.enerji < k.enerji.dusuk && (b.mood === 'good' || b.mood === 'excited') &&
+      b.enerji < k.enerji.dusuk && (b.mood === 'good' || b.mood === 'great') &&
       b.soru >= k.soru.ort && h.ortUyku < 7,
     cikti: {
       analiz: 'Fiziksel tükenmişliğe rağmen öğrencinin kendini zorladığı ve "bedensel borç" biriktirdiği saptanmıştır.',
@@ -1308,7 +1309,7 @@ SENARYOLAR.push(
       const zayif = b.dersHata[h.zayifBrans];
       if (!zayif || zayif.q < 10) return false;
       const isabet = (1 - zayif.y / zayif.q) * 100;
-      return isabet < 35 && (b.mood === 'sad' || b.mood === 'tired' || b.mood === 'anxious');
+      return isabet < 35 && (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok') || b.mood === 'bad');
     },
     cikti: {
       analiz: 'İlgili branşın öğrenci için sadece bir ders değil, bir "yetersizlik sembolü" haline geldiği gözlemlenmiştir.',
@@ -1336,7 +1337,7 @@ SENARYOLAR.push(
     id: 'DYN-58', modul: 2, priority: 58,
     etiket: 'Verimsiz Refah',
     tetikle: (b, h, a, k) =>
-      b.soru < 20 && (b.mood === 'good' || b.mood === 'excited') && b.enerji >= 9,
+      b.soru < 20 && (b.mood === 'good' || b.mood === 'great') && b.enerji >= 9,
     cikti: {
       analiz: 'Öğrencinin şartları (enerji, mod) ideal olmasına rağmen hedef odaklı disiplinden tamamen koptuğu görülmektedir.',
       strateji: '"Serbest zaman" ile "akademik zaman" arasındaki sınırlar netleştirilmeli; yüksek enerjinin meyveleri toplanmalıdır.',
@@ -1416,7 +1417,7 @@ SENARYOLAR.push(
     tetikle: (b, h, a, k) => {
       if (!b.dersHata || !h.zayifBrans) return false;
       const zayif = b.dersHata[h.zayifBrans];
-      return (!zayif || zayif.q < 15) && (b.mood === 'good' || b.mood === 'excited');
+      return (!zayif || zayif.q < 15) && (b.mood === 'good' || b.mood === 'great');
     },
     cikti: {
       analiz: 'Pozitif ruh hali, öğrencinin disiplini gevşetmesine ve "bugün zaten çok iyiyim, zorlanmama gerek yok" algısına yol açmıştır.',
@@ -1555,7 +1556,7 @@ SENARYOLAR.push(
       const zayif = b.dersHata[h.zayifBrans];
       if (!zayif || zayif.q < 20) return false;
       const isabet = (1-zayif.y/zayif.q)*100;
-      return isabet >= 75 && b.enerji < k.enerji.dusuk && (b.mood === 'sad' || b.mood === 'tired');
+      return isabet >= 75 && b.enerji < k.enerji.dusuk && (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok'));
     },
     cikti: {
       analiz: 'Öğrenci tüm psikolojik bariyerlerine rağmen kendini zorlayarak başarılı olmuştur; ancak bu durumun sürdürülebilirliği düşüktür.',
@@ -1585,7 +1586,7 @@ SENARYOLAR.push(
     etiket: 'Sahte Yetkinlik',
     tetikle: (b, h, a, k) =>
       b.soru < 40 && b.hataOrani !== null && b.hataOrani < 10 &&
-      (b.mood === 'good' || b.mood === 'excited'),
+      (b.mood === 'good' || b.mood === 'great'),
     cikti: {
       analiz: 'Öğrenci çok az soru çözerek "hata yapmama" konforuna sığınmış ve bunu bir başarı illüzyonu olarak yaşamaktadır.',
       strateji: 'Hedeflenen soru hacminin sınav dayanıklılığı için şart olduğu hatırlatılmalı; konfor alanı genişletilmelidir.',
@@ -1598,7 +1599,7 @@ SENARYOLAR.push(
     etiket: 'Akademik Aşınma',
     tetikle: (b, h, a, k) =>
       h.tutarliGunSayisi >= 5 && h.enerjiTrend === 'düşüş' &&
-      (b.mood === 'tired' || b.mood === 'sad' || b.mood === 'ok'),
+      ((b.mood === 'bad' || b.mood === 'ok') || b.mood === 'sad' || b.mood === 'ok'),
     cikti: {
       analiz: 'İstikrarlı yüksek performansın duygusal maliyeti artmaktadır; öğrenci sürdürülebilirlik sınırına yaklaşmıştır.',
       strateji: 'Acil bir "restorasyon günü" planlanmalı; akademik hacim geçici olarak %20 daraltılmalıdır.',
@@ -1611,7 +1612,7 @@ SENARYOLAR.push(
     etiket: 'Düşük Farkındalık',
     tetikle: (b, h, a, k) =>
       b.soru >= k.soru.ort && b.hataOrani !== null && b.hataOrani > 40 &&
-      (b.mood === 'good' || b.mood === 'excited'),
+      (b.mood === 'good' || b.mood === 'great'),
     cikti: {
       analiz: 'Öğrenci çalışma hacminden duyduğu memnuniyetle öğrenme kalitesindeki ciddi düşüşü (hataları) fark etmemektedir.',
       strateji: 'Yanlış sorular üzerinden acil bir "hata analizi" yaptırılmalı; niceliğin değil niteliğin önemi vurgulanmalıdır.',
@@ -1625,7 +1626,7 @@ SENARYOLAR.push(
     tetikle: (b, h, a, k) =>
       b.soru >= k.soru.dusuk && b.soru < k.soru.ort &&
       b.hataOrani !== null && b.hataOrani < 20 &&
-      (b.mood === 'good' || b.mood === 'focused'),
+      (b.mood === 'good' || (b.mood === 'good' || b.mood === 'great')),
     cikti: {
       analiz: 'Öğrenci ideal hedefi yakalayamasa da, bulunduğu şartlar içinde maksimum verim ve motivasyonu korumayı başarmıştır.',
       strateji: 'Bu denge takdir edilmeli; soru hedefine kademeli (günlük +10 soru) geçiş planlanmalıdır.',
@@ -1650,7 +1651,7 @@ SENARYOLAR.push(
     etiket: 'Süreç Yorgunluğu',
     tetikle: (b, h, a, k) =>
       h.tutarliGunSayisi >= 4 &&
-      (b.mood === 'sad' || b.mood === 'tired' || b.mood === 'anxious') &&
+      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok') || b.mood === 'bad') &&
       b.soru >= k.soru.ort * 0.7,
     cikti: {
       analiz: 'Haftalık rutinin ağırlığı hafta sonuna doğru öğrencinin psikolojik direncini kırmaktadır.',
@@ -1666,7 +1667,7 @@ SENARYOLAR.push(
       b.soru >= k.soru.yuksek &&
       b.hataOrani !== null && b.hataOrani < 10 &&
       b.odak >= k.odak.yuksek &&
-      (b.mood === 'excited' || b.mood === 'good' || b.mood === 'focused'),
+      (b.mood === 'great' || b.mood === 'good' || (b.mood === 'good' || b.mood === 'great')),
     cikti: {
       analiz: 'Öğrenci potansiyelini tam kapasiteyle kullanmakta ve başarısını duygusal bir tatmine dönüştürebilmektedir.',
       strateji: 'Bu "akış" (flow) hali ödüllendirilmeli; başarının anahtar bileşenleri (uyku, odak, yöntem) not edilmelidir.',
@@ -1731,7 +1732,7 @@ SENARYOLAR.push(
     etiket: 'Plato Travması',
     tetikle: (b, h, a, k) =>
       b.soru >= k.soru.yuksek && h.denemeTrend === 'stabil' &&
-      (b.mood === 'sad' || b.mood === 'anxious' || b.mood === 'tired'),
+      (b.mood === 'sad' || b.mood === 'bad' || (b.mood === 'bad' || b.mood === 'ok')),
     cikti: {
       analiz: 'Öğrenci "duraklama dönemini" (plato) bir son olarak algılamakta ve emeğinin boşa gittiğine inanmaktadır.',
       strateji: 'Gelişimin sıçramalı (merdiven tipi) olduğu, denge dönemlerinin (plato) güç toplama evresi olduğu anlatılmalıdır.',
@@ -1746,7 +1747,7 @@ SENARYOLAR.push(
       if (!b.dersHata) return false;
       const bransSayisi = Object.keys(b.dersHata).filter(d => b.dersHata[d].q >= 20).length;
       return bransSayisi >= 3 && b.soru >= k.soru.yuksek &&
-        (b.mood === 'good' || b.mood === 'excited' || b.mood === 'focused');
+        (b.mood === 'good' || b.mood === 'great' || (b.mood === 'good' || b.mood === 'great'));
     },
     cikti: {
       analiz: 'Öğrenci farklı derslerin yarattığı zihinsel yükü yönetebilmekte ve öz-yeterliliğini genele yayabilmektedir.',
@@ -1773,7 +1774,7 @@ SENARYOLAR.push(
     etiket: 'İllüzyonel Yeterlilik',
     tetikle: (b, h, a, k) =>
       b.soru >= k.soru.yuksek && b.hataOrani !== null && b.hataOrani > 40 &&
-      (b.mood === 'good' || b.mood === 'excited'),
+      (b.mood === 'good' || b.mood === 'great'),
     cikti: {
       analiz: 'Öğrenci niceliksel hedefe ulaşmanın verdiği hazla niteliksel çöküşü (düşük isabet) tamamen maskelemektedir.',
       strateji: 'Acil "Hata Analiz Seansı" planlanmalı; öğrencinin "yapamadıklarıyla" barışması sağlanmalıdır.',
@@ -1800,7 +1801,7 @@ SENARYOLAR.push(
     tetikle: (b, h, a, k) =>
       b.soru === 0 && b.konuSure === 0 &&
       (b.kaygi > 0 || b.enerji > 0) &&
-      (b.mood === 'sad' || b.mood === 'tired'),
+      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok')),
     cikti: {
       analiz: 'Öğrenci sürece olan inancını tamamen kaybetmiş ancak koçluk bağına tutunarak sessiz bir yardım çağrısı yapmaktadır.',
       strateji: 'Akademik tüm konu başlıkları kapatılmalı; sadece duygusal iyi oluş ve "neden" üzerine bir rehberlik seansı yapılmalıdır.',
@@ -1831,7 +1832,7 @@ SENARYOLAR.push(
     etiket: 'Başarı Sonrası Boşluk',
     tetikle: (b, h, a, k) =>
       h.denemeTrend === 'yükseliş' &&
-      (b.mood === 'ok' || b.mood === 'tired') &&
+      (b.mood === 'ok' || (b.mood === 'bad' || b.mood === 'ok')) &&
       b.soru < k.soru.ort * 0.6,
     cikti: {
       analiz: 'Beklenen net artışı gerçekleşmesine rağmen öğrenci beklediği mutluluğu hissedememekte ve bir anlamsızlık yaşamaktadır.',
@@ -1911,7 +1912,7 @@ SENARYOLAR.push(
     etiket: 'Dopaminerjik Çöküş',
     tetikle: (b, h, a, k) =>
       b.sosyal > k.sosyal.yuksek &&
-      (b.mood === 'sad' || b.mood === 'tired') && b.enerji < k.enerji.dusuk,
+      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok')) && b.enerji < k.enerji.dusuk,
     cikti: {
       analiz: 'Dijital tüketim öğrenciye beklediği hazzı vermemekte, aksine suçluluk hissi ve enerji kaybı yaratmaktadır.',
       strateji: 'Sosyal medyanın bir "enerji vampiri" olduğu vurgulanmalı; kısıtlı kullanımın ruh haline etkisi izlenmelidir.',
@@ -1967,7 +1968,7 @@ SENARYOLAR.push(
     etiket: 'Sahte Haz',
     tetikle: (b, h, a, k) =>
       b.sosyal > k.sosyal.yuksek && b.soru < k.soru.dusuk * 0.5 &&
-      (b.mood === 'good' || b.mood === 'excited'),
+      (b.mood === 'good' || b.mood === 'great'),
     cikti: {
       analiz: 'Dijital dünyadan alınan yüksek dopamin, öğrencide sahte bir iyi oluş hali yaratmakta ve akademik hedeflerin ihmal edilmesini maskelemektedir.',
       strateji: 'Akademik çıktıların "gerçek haz" kaynağı olması gerektiği vurgulanmalı; dijital süre kısıtlanarak zihinsel açlık yaratılmalıdır.',
@@ -2062,7 +2063,7 @@ SENARYOLAR.push(
     etiket: 'Duygusal Yorgunluk',
     tetikle: (b, h, a, k) =>
       b.uyku >= 8 && b.enerji < k.enerji.dusuk &&
-      (b.mood === 'sad' || b.mood === 'tired'),
+      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok')),
     cikti: {
       analiz: 'Fiziksel dinlenme (uyku) yeterli olsa da psikolojik baskı öğrencinin enerjisini tüketmektedir.',
       strateji: 'Akademik yük %30 hafifletilmeli; öğrenciye sadece "sevdiği" işlerle ilgileneceği bir "restorasyon öğleden sonrası" verilmelidir.',
@@ -2164,7 +2165,7 @@ SENARYOLAR.push(
     id: 'DYN-139', modul: 5, priority: 65,
     etiket: 'Fizyolojik Güç - Duygusal Engel',
     tetikle: (b, h, a, k) =>
-      b.enerji >= k.enerji.yuksek && (b.mood === 'sad' || b.mood === 'anxious') &&
+      b.enerji >= k.enerji.yuksek && (b.mood === 'sad' || b.mood === 'bad') &&
       b.soru >= k.soru.ort,
     cikti: {
       analiz: 'Öğrenci fiziksel olarak güçlü olmasına rağmen duygusal bir engel nedeniyle potansiyelini tam yansıtamamaktadır.',
@@ -2242,7 +2243,7 @@ SENARYOLAR.push(
     etiket: 'Yıpratıcı İrade',
     tetikle: (b, h, a, k) =>
       b.enerji < k.enerji.dusuk && b.soru >= k.soru.yuksek &&
-      (b.mood === 'sad' || b.mood === 'tired' || b.mood === 'anxious'),
+      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok') || b.mood === 'bad'),
     cikti: {
       analiz: 'Öğrenci çalışmayı bir gelişim aracı değil, vicdan azabı dindirme veya kendini cezalandırma eylemi olarak sürdürmektedir.',
       strateji: 'İrade gücü takdir edilmeli ancak bu yöntemin uzun vadede "akademik nefret" yaratacağı profesyonelce anlatılmalıdır.',
@@ -2283,7 +2284,7 @@ SENARYOLAR.push(
     id: 'DYN-149', modul: 5, priority: 65,
     etiket: 'Enerji İsrafı',
     tetikle: (b, h, a, k) =>
-      b.enerji >= k.enerji.yuksek && (b.mood === 'good' || b.mood === 'excited') &&
+      b.enerji >= k.enerji.yuksek && (b.mood === 'good' || b.mood === 'great') &&
       b.soru === 0 && b.konuSure === 0,
     cikti: {
       analiz: 'Bedenin ve zihnin en verimli olduğu saatler akademik üretim için kullanılmamış; potansiyel boşa harcanmıştır.',
