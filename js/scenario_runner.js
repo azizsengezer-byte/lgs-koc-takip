@@ -339,11 +339,11 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
     // Wellness skoru hesapla (düşük = kötü, yüksek = iyi)
     const _wellnessSkoru = (g) => {
       let s = 0, n = 0;
-      if (g.enerji > 0) { s += g.enerji / 10; n++; }
-      if (g.kaygi  > 0) { s += (10 - g.kaygi) / 10; n++; }
-      if (g.uyku   > 0) { s += Math.min(g.uyku / 9, 1); n++; }
+      if (g.enerji > 0) { s += g.enerji / 10; n += 1; }
+      if (g.kaygi  > 0) { s += (10 - g.kaygi) / 10 * 2; n += 2; } // kaygı 2x ağırlık
+      if (g.uyku   > 0) { s += Math.min(g.uyku / 9, 1); n += 1; }
       const moodPuan = { 'great':1, 'good':0.8, 'ok':0.5, 'bad':0.2, 'sad':0.1 };
-      if (g.mood) { s += moodPuan[g.mood] || 0.5; n++; }
+      if (g.mood) { s += (moodPuan[g.mood] || 0.5) * 1.5; n += 1.5; } // mood 1.5x ağırlık
       return n > 0 ? s / n : 0.5;
     };
 
@@ -356,8 +356,8 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
 
     const _trendFark = _sonSkor - _ilkSkor;
     // düşüş: son hal kötüleşmiş | yükseliş: son hal iyileşmiş | stabil: fark küçük
-    const _trend = _trendFark < -0.15 ? 'dusus' :
-                   _trendFark >  0.15 ? 'yukselis' : 'stabil';
+    const _trend = _trendFark < -0.08 ? 'dusus' :
+                   _trendFark >  0.08 ? 'yukselis' : 'stabil';
 
     // Trend anlatısı — PDF'e geçirilecek
     const _trendAnlati = _trend === 'dusus'

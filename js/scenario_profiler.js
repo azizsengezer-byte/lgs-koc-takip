@@ -65,7 +65,7 @@ const PROFIL_ACIKLAMA = {
 // ── PROFİL ÇATIŞMA KURALLARI ─────────────────────────────────────────
 // Bir profil aktifse hangi profiller susacak
 const PROFIL_CELISIK = {
-  P01: ['P03','P04','P05','P08','P09','P10','P12','P13','P17','P18','P19','P20','P22','P23','P24'],
+  P01: ['P03','P04','P05','P08','P09','P10','P12','P13','P17','P18','P19','P20','P22','P23','P24','P16'],
   P02: ['P03','P04','P05','P13','P17','P23','P24'],
   P03: ['P01','P02','P08_brans','P11','P17','P22'],
   P04: ['P01','P03'],
@@ -77,6 +77,9 @@ const PROFIL_CELISIK = {
   P12: ['P11'],
   P14: ['P15'],  // Anestezi ve hafif sızıntı aynı anda değil
   P15: ['P14'],
+  P17: ['P01','P02','P03','P05'],
+  P18: ['P01','P02','P03','P05'],
+  P19: ['P01','P02','P05'],
   P23: ['P01','P02','P06','P07'],
   P24: ['P01','P02','P06','P07','P11'],
 };
@@ -293,8 +296,23 @@ function _profilSenaryoFiltrele(tetiklenenTum, seciliProfil, maxNeg, maxPos) {
     return tetiklenenTum.slice(0, maxNeg);
   }
 
-  // Sadece bu profile ait senaryoları al
-  return tetiklenenTum.filter(s => profilSenaryolar.has(s.id)).slice(0, maxNeg);
+  // Aktif profille çelişen profillerin senaryolarını tespit et
+  const celisikProfillerKumesi = new Set(PROFIL_CELISIK[seciliProfil] || []);
+  const yasakliSenaryolar = new Set();
+  celisikProfillerKumesi.forEach(cp => {
+    (PROFIL_SENARYOLAR[cp] || []).forEach(id => yasakliSenaryolar.add(id));
+  });
+
+  // Aktif profile ait VE yasaklı olmayan senaryoları al
+  // Eğer profil senaryosu yoksa yasaklı olmayanları al (fallback)
+  let sonuc = tetiklenenTum.filter(s => profilSenaryolar.has(s.id) && !yasakliSenaryolar.has(s.id));
+
+  // Yeterli senaryo yoksa: profil senaryolarına bakmadan sadece yasaklıları çıkar
+  if (sonuc.length < 2) {
+    sonuc = tetiklenenTum.filter(s => !yasakliSenaryolar.has(s.id));
+  }
+
+  return sonuc.slice(0, maxNeg);
 }
 
 // ── DIŞ AKTARIM ─────────────────────────────────────────────────────
