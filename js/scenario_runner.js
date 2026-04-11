@@ -250,12 +250,36 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
       .filter(s => tumPosIdSayac[s.id] > 0)
       .sort((a, b) => (tumPosIdSayac[b.id]||0) - (tumPosIdSayac[a.id]||0));
 
-    // Baskınlık: kritik varsa düşük öncelikliler susar
-    const kritikVar = negSirali.some(s => s.priority >= 90);
-    const aktifNeg  = negSirali.filter(s => !(kritikVar && s.priority < 70));
+    // ── PROFİL TESPİTİ ──────────────────────────────────────────────
+    // Son veri gününü baz al
+    const _sonVeriGunAy = [...gunler].reverse().find(d =>
+      d.kaygi > 0 || d.uyku > 0 || d.enerji > 0 || d.soru > 0
+    ) || gunler[gunler.length-1] || {};
+    const _bugunAy = _bugunHazirla(_sonVeriGunAy, allEntries, _sonVeriGunAy.dk || bugunDk);
+    const _haftaAy = _hesaplaHafta(gunler7, allEntries, kal);
+    const _tetIdSetAy = new Set(negSirali.map(s => s.id));
 
-    // Max 5 negatif, 3 pozitif (aylıkta daha kapsamlı)
-    const ciktiNeg = aktifNeg.slice(0, 5);
+    let _profilSonuc = { profil: 'P25' };
+    if (window._tespit_profil) {
+      _profilSonuc = window._tespit_profil(_bugunAy, _haftaAy, ay, kal, _tetIdSetAy);
+    }
+    const _aktifProfil = _profilSonuc.profil;
+
+    // Profil filtreleme — sadece bu profile ait senaryolar çıkar
+    let aktifNeg;
+    if (window._profilSenaryoFiltrele && _aktifProfil !== 'P25') {
+      aktifNeg = window._profilSenaryoFiltrele(negSirali, _aktifProfil, 5, 3);
+      // Yeterli senaryo yoksa (< 2) karma moda geç
+      if (aktifNeg.length < 2) {
+        aktifNeg = negSirali.slice(0, 5);
+        _profilSonuc.profil = 'P25';
+      }
+    } else {
+      const kritikVar = negSirali.some(s => s.priority >= 90);
+      aktifNeg = negSirali.filter(s => !(kritikVar && s.priority < 70)).slice(0, 5);
+    }
+
+    const ciktiNeg = aktifNeg;
     const ciktiPos = posSirali.slice(0, 3);
 
     // Vaka kombinasyonları
@@ -316,10 +340,34 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
       .filter(s => tumPosIdSayac[s.id] > 0)
       .sort((a, b) => (tumPosIdSayac[b.id]||0) - (tumPosIdSayac[a.id]||0));
 
-    const kritikVar = negSirali.some(s => s.priority >= 90);
-    const aktifNeg  = negSirali.filter(s => !(kritikVar && s.priority < 70));
-    const ciktiNeg  = aktifNeg.slice(0, 4);
-    const ciktiPos  = posSirali.slice(0, 2);
+    // Haftalık profil tespiti
+    const _sonVeriGunH = [...gunler7].reverse().find(d =>
+      d.kaygi > 0 || d.uyku > 0 || d.enerji > 0 || d.soru > 0
+    ) || gunler7[gunler7.length-1] || {};
+    const _bugunH = _bugunHazirla(_sonVeriGunH, allEntries, _sonVeriGunH.dk || bugunDk);
+    const _haftaH = _hesaplaHafta(gunler7, allEntries, kal);
+    const _tetIdSetH = new Set(negSirali.map(s => s.id));
+
+    let _profilSonucH = { profil: 'P25' };
+    if (window._tespit_profil) {
+      _profilSonucH = window._tespit_profil(_bugunH, _haftaH, ay, kal, _tetIdSetH);
+    }
+    const _aktifProfilH = _profilSonucH.profil;
+
+    let aktifNeg;
+    if (window._profilSenaryoFiltrele && _aktifProfilH !== 'P25') {
+      aktifNeg = window._profilSenaryoFiltrele(negSirali, _aktifProfilH, 4, 2);
+      if (aktifNeg.length < 2) {
+        aktifNeg = negSirali.slice(0, 4);
+        _profilSonucH.profil = 'P25';
+      }
+    } else {
+      const kritikVar = negSirali.some(s => s.priority >= 90);
+      aktifNeg = negSirali.filter(s => !(kritikVar && s.priority < 70)).slice(0, 4);
+    }
+
+    const ciktiNeg = aktifNeg;
+    const ciktiPos = posSirali.slice(0, 2);
 
     const tetIdSet = new Set([...ciktiNeg.map(s=>s.id), ...ciktiPos.map(s=>s.id)]);
     let aktifVaka = null;
