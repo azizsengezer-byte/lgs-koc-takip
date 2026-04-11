@@ -996,6 +996,7 @@ async function exportPsychPDF(sName, aiAcik) {
             else _profil = 'karisik';
 
             // Profil metin havuzu — döneme göre uyarlanmış
+            const _isAylik = period === 'monthly';
             const _donem = _isAylik ? 'bu dönem' : 'bu hafta';
             const _gelecek = _isAylik ? 'Gelecek ay' : 'Önümüzdeki hafta';
             const _pm = {
@@ -1038,7 +1039,6 @@ async function exportPsychPDF(sName, aiAcik) {
 
             // Render: 3 kutu
             // Başlıkları döneme göre uyarla
-            const _isAylik = period === 'monthly';
             const _kutular = [
               { baslik: _isAylik ? 'AYLIK FOTOĞRAFIN' : 'BU HAFTANIN ÖZETİ',        metin: _pm.foto,     ar:242, ag:240, ab:255, sr:70,  sg:40,  sb:180 },
               { baslik: 'KOÇLUK STRATEJİSİ',                                           metin: _pm.strateji, ar:238, ag:255, ab:245, sr:20,  sg:130, sb:70  },
