@@ -1007,7 +1007,7 @@ async function exportPsychPDF(sName, aiAcik) {
               tukenmis: {
                 foto:     'Öğrenci ' + _donem + 'de biyolojik rezervlerini tüketerek performansını sürdürmeye çalışmıştır. Uyku borcu, düşük enerji ve yüksek kaygı aynı anda etki etmiş; sistem alarm vermiştir.',
                 strateji: 'Soru sayısı yerine uyku ve enerji yönetimi önceliklendirilmeli; iletişimde "daha çok çalış" mesajından kaçınılmalıdır. Dinlenmek bir ödül değil, performans aracı olarak konumlandırılmalıdır.',
-                gelecek:  '' + _gelecek + ' ilk ' + (_isAylik ? 'haftası onarım haftası' : 'günleri onarım günleri olarak'), ilan edilmeli; uyku rutini stabilize edilmeden akademik hedef artırımı yapılmamalıdır.'
+                gelecek:  '' + _gelecek + (_isAylik ? ' ilk haftası onarım haftası ilan edilmeli; uyku rutini stabilize edilmeden akademik hedef artırımı yapılmamalıdır.' : ' ilk günleri onarım günleri olarak planlanmalı; uyku rutini stabilize edilmeden yeni hedef eklenmemelidir.')
               },
               yuksekFonKaygi: {
                 foto:     'Öğrenci ' + _donem + ' yüksek akademik üretimini korurken yoğun iç baskı altında olduğu gözlemlenmiştir. Dış gözlemden başarılı görünen tablo, iç dünyada sürdürülemez bir gerilim barındırmaktadır.',
@@ -1017,7 +1017,7 @@ async function exportPsychPDF(sName, aiAcik) {
               kacinan: {
                 foto:     'Öğrenci ' + _donem + ' akademik zamanını güçlü hissettiği alanlarda yoğunlaştırmış; zayıf branşlarla temas sistematik biçimde azalmıştır. Bu durum kısa vadede iyi hissettirse de uzun vadeli branş dengesini bozmaktadır.',
                 strateji: 'Koç, zayıf branşa çalış demek yerine günün en yüksek enerjisine denk gelecek 15 dakikalık minimal temas protokolü önermelidir. Küçük başarılar anında geri bildirimle ödüllendirilmelidir.',
-                gelecek:  '' + _gelecek + ' zayıf branş için ' + (_isAylik ? 'haftalık' : 'günlük'), minimum süre kotası belirlenmeli; önce çok düşük tutulup kademeli artırılmalıdır.'
+                gelecek:  '' + _gelecek + ' zayıf branş için ' + (_isAylik ? 'haftalık' : 'günlük') + ' minimum süre kotası belirlenmeli; önce çok düşük tutulup kademeli artırılmalıdır.'
               },
               dijitalGolgeli: {
                 foto:     '' + _donem.charAt(0).toUpperCase() + _donem.slice(1) + 'de dijital kullanım ile odaklanma kalitesi arasında belirgin bir ters ilişki gözlemlenmiştir. Yüksek ekran süresi olan günlerin ertesinde odak ve üretim değerleri düşmektedir.',
