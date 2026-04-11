@@ -325,27 +325,83 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
 
   // ── HAFTALIK: son 7 günü tara ─────────────────────────
   } else if (_mod === 'haftalik') {
+
+    // ── TREND TESPİTİ ────────────────────────────────────────────────
+    // Veri olan günleri kronolojik sıraya koy
+    const veriGunleri = gunler7.filter(d =>
+      d.kaygi > 0 || d.uyku > 0 || d.enerji > 0 || d.soru > 0
+    ).sort((a, b) => a.dk.localeCompare(b.dk));
+
+    // Son hal: son 2 gün — profilin temeli bu
+    const _sonHal = veriGunleri.slice(-2);
+    const _ilkHal = veriGunleri.slice(0, Math.max(1, veriGunleri.length - 2));
+
+    // Wellness skoru hesapla (düşük = kötü, yüksek = iyi)
+    const _wellnessSkoru = (g) => {
+      let s = 0, n = 0;
+      if (g.enerji > 0) { s += g.enerji / 10; n++; }
+      if (g.kaygi  > 0) { s += (10 - g.kaygi) / 10; n++; }
+      if (g.uyku   > 0) { s += Math.min(g.uyku / 9, 1); n++; }
+      const moodPuan = { 'great':1, 'good':0.8, 'ok':0.5, 'bad':0.2, 'sad':0.1 };
+      if (g.mood) { s += moodPuan[g.mood] || 0.5; n++; }
+      return n > 0 ? s / n : 0.5;
+    };
+
+    const _sonSkor = _sonHal.length > 0
+      ? _sonHal.reduce((a, g) => a + _wellnessSkoru(g), 0) / _sonHal.length
+      : 0.5;
+    const _ilkSkor = _ilkHal.length > 0
+      ? _ilkHal.reduce((a, g) => a + _wellnessSkoru(g), 0) / _ilkHal.length
+      : 0.5;
+
+    const _trendFark = _sonSkor - _ilkSkor;
+    // düşüş: son hal kötüleşmiş | yükseliş: son hal iyileşmiş | stabil: fark küçük
+    const _trend = _trendFark < -0.15 ? 'dusus' :
+                   _trendFark >  0.15 ? 'yukselis' : 'stabil';
+
+    // Trend anlatısı — PDF'e geçirilecek
+    const _trendAnlati = _trend === 'dusus'
+      ? 'Hafta iyi başladı ancak son günlere doğru belirgin bir düşüş yaşandı.'
+      : _trend === 'yukselis'
+      ? 'Hafta zorlu başladı ancak son günlere doğru toparlanma gözlemlendi.'
+      : 'Hafta boyunca görece stabil bir tablo izlendi.';
+
+    // ── TREND BAZLI TARAMA ───────────────────────────────────────────
+    // Düşüş: son 2 güne 3x ağırlık, önceki günlere 1x
+    // Yükseliş: son 2 güne 3x ağırlık (iyileşme baskın olsun)
+    // Stabil: tüm günler eşit
+
     gunler7.forEach((g, i) => {
       if (g.kaygi === 0 && g.uyku === 0 && g.enerji === 0 && g.soru === 0) return;
       const pencere = gunler7.slice(Math.max(0, i-3), i+1);
       const { neg, pos } = _tetikleGun(g, allEntries, pencere, gunler30, kal);
-      neg.forEach(s => { tumNegIdSayac[s.id] = (tumNegIdSayac[s.id]||0) + 1; });
-      pos.forEach(s => { tumPosIdSayac[s.id] = (tumPosIdSayac[s.id]||0) + 1; });
+
+      // Son 2 günde mi?
+      const _sonIkiGun = _sonHal.some(s => s.dk === g.dk);
+      const _agirlik = _sonIkiGun ? 3 : 1;
+
+      neg.forEach(s => { tumNegIdSayac[s.id] = (tumNegIdSayac[s.id]||0) + _agirlik; });
+      pos.forEach(s => { tumPosIdSayac[s.id] = (tumPosIdSayac[s.id]||0) + _agirlik; });
     });
 
+    // ── PROFİL TESPİTİ: SADECE SON HAL ─────────────────────────────
+    // Profil son halin verisiyle belirlenir — önceki günler karıştırmaz
+    const _sonVeriGunH = _sonHal[_sonHal.length - 1] || gunler7[gunler7.length-1] || {};
+    const _bugunH = _bugunHazirla(_sonVeriGunH, allEntries, _sonVeriGunH.dk || bugunDk);
+    const _haftaH = _hesaplaHafta(gunler7, allEntries, kal);
+
+    // Trend düşüşse: pozitif senaryo havuzunu kısıtla
+    // Trend yükselişse: negatif senaryo havuzunu kısıtla
     const negSirali = window.SENARYOLAR
       .filter(s => tumNegIdSayac[s.id] > 0)
-      .sort((a, b) => b.priority - a.priority);
+      .sort((a, b) => (tumNegIdSayac[b.id]||0) !== (tumNegIdSayac[a.id]||0)
+        ? (tumNegIdSayac[b.id]||0) - (tumNegIdSayac[a.id]||0)
+        : b.priority - a.priority);
+
     const posSirali = window.POZITIF_SENARYOLAR
       .filter(s => tumPosIdSayac[s.id] > 0)
       .sort((a, b) => (tumPosIdSayac[b.id]||0) - (tumPosIdSayac[a.id]||0));
 
-    // Haftalık profil tespiti
-    const _sonVeriGunH = [...gunler7].reverse().find(d =>
-      d.kaygi > 0 || d.uyku > 0 || d.enerji > 0 || d.soru > 0
-    ) || gunler7[gunler7.length-1] || {};
-    const _bugunH = _bugunHazirla(_sonVeriGunH, allEntries, _sonVeriGunH.dk || bugunDk);
-    const _haftaH = _hesaplaHafta(gunler7, allEntries, kal);
     const _tetIdSetH = new Set(negSirali.map(s => s.id));
 
     let _profilSonucH = { profil: 'P25' };
@@ -366,8 +422,13 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
       aktifNeg = negSirali.filter(s => !(kritikVar && s.priority < 70)).slice(0, 4);
     }
 
-    const ciktiNeg = aktifNeg;
-    const ciktiPos = posSirali.slice(0, 2);
+    // Trend düşüşse pozitif sayısını kısıtla (1'e indir)
+    // Trend yükselişse negatif sayısını kısıtla (2'ye indir)
+    const _maxPos = _trend === 'dusus' ? 1 : 2;
+    const _maxNeg = _trend === 'yukselis' ? 2 : 4;
+
+    const ciktiNeg = aktifNeg.slice(0, _maxNeg);
+    const ciktiPos = posSirali.slice(0, _maxPos);
 
     const tetIdSet = new Set([...ciktiNeg.map(s=>s.id), ...ciktiPos.map(s=>s.id)]);
     let aktifVaka = null;
@@ -395,7 +456,14 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
       uyku: isNaN(kal.uyku.ort) ? '—' : (Math.round(kal.uyku.ort * 10) / 10),
     };
 
-    return { insights, positives, vaka: aktifVaka, kalOzet, tetiklenenTumIdler: [...tetIdSet] };
+    return {
+      insights, positives, vaka: aktifVaka, kalOzet,
+      tetiklenenTumIdler: [...tetIdSet],
+      trend: _trend,
+      trendAnlati: _trendAnlati,
+      sonSkor: Math.round(_sonSkor * 100),
+      ilkSkor: Math.round(_ilkSkor * 100),
+    };
 
   // ── GÜNLÜK: tek gün snapshot ──────────────────────────
   } else {

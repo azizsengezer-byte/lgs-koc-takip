@@ -866,6 +866,8 @@ async function exportPsychPDF(sName, aiAcik) {
           const _pos  = _m.positives || [];
           const _vaka = _m.vaka;
           const _kal  = _m.kalOzet;
+          const _trend = _m.trend || 'stabil';
+          const _trendAnlati = _m.trendAnlati || '';
 
           // Kalibrasyon özeti
           if (_kal) {
@@ -1041,7 +1043,9 @@ async function exportPsychPDF(sName, aiAcik) {
             // Render: 3 kutu
             // Başlıkları döneme göre uyarla
             const _kutular = [
-              { baslik: _isAylik ? 'AYLIK FOTOĞRAFIN' : 'BU HAFTANIN ÖZETİ',        metin: _pm.foto,     ar:242, ag:240, ab:255, sr:70,  sg:40,  sb:180 },
+              { baslik: _isAylik ? 'AYLIK FOTOĞRAFIN' : 'BU HAFTANIN ÖZETİ',
+                metin: (!_isAylik && _trendAnlati ? _trendAnlati + ' ' : '') + _pm.foto,
+                ar:242, ag:240, ab:255, sr:70, sg:40, sb:180 },
               { baslik: 'KOÇLUK STRATEJİSİ',                                           metin: _pm.strateji, ar:238, ag:255, ab:245, sr:20,  sg:130, sb:70  },
               { baslik: _isAylik ? 'GELECEK AY PLANI' : 'ÖNÜMÜZDEKİ HAFTA İÇİN',   metin: _pm.gelecek,  ar:255, ag:248, ab:235, sr:170, sg:80,  sb:0   },
             ];
