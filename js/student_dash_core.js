@@ -46,7 +46,7 @@ function renderStudentPage(id, el) {
   }
   else if(id==='badges' || id==='rozet') { showBadgesPage(); }
   else if(id==='yardim') { el.innerHTML = yardimPage(); }
-  else if(id==='program') { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">📅 Yükleniyor...</div>'; programiPage().then(html => { el.innerHTML = html; _programPostRender(); }); }
+  else if(id==='program') { el.innerHTML = _loadingHTML(); programiPage().then(html => { el.innerHTML = html; _programPostRender(); }); }
   setTimeout(()=>drawCharts(), 50);
 }
 

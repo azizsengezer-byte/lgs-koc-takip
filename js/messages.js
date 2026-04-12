@@ -438,7 +438,7 @@ async function switchChatTo(uid, role) {
   const cId = convId(myUid, uid);
 
   const el = document.getElementById('pageContent') || document.getElementById('mainContent');
-  if (el) el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">💬 Yükleniyor...</div>';
+  if (el) el.innerHTML = _loadingHTML();
 
   // Mesajları çek
   const engelli = _engelliListe();

@@ -306,7 +306,7 @@ async function _apBilgiYukle(uid) {
 async function _apRozetYukle(uid) {
   const el = document.getElementById('apRozetIcerik');
   if (!el) return;
-  el.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;padding:8px 0">Yükleniyor...</div>';
+  el.innerHTML = '<div class="page-loading" style="padding:20px"><div class="page-loading-dots"><span></span><span></span><span></span></div></div>';
   try {
     if (typeof getBadges !== 'function' || typeof BADGES === 'undefined') {
       el.innerHTML = '<span style="color:var(--text2);font-size:0.82rem">Rozet sistemi yüklenemedi.</span>';
@@ -703,7 +703,7 @@ async function showBadgesPage() {
   const uid = auth.currentUser?.uid;
   if (!uid) return;
   const el = document.getElementById('mainContent');
-  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">🏆 Yükleniyor...</div>';
+  el.innerHTML = _loadingHTML();
   el.innerHTML = await badgesPageHTML(uid);
   // Çerçeveyi uygula
   applyProfileFrame(uid, getActiveFrame(uid));

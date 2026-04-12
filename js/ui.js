@@ -1,3 +1,19 @@
+
+// Animasyonlu yükleniyor komponenti
+function _loadingHTML(emoji) {
+  return `<div class="page-loading">
+    <div class="page-loading-logo">
+      <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+        <rect x="4" y="18" width="6" height="10" rx="2" fill="rgba(255,255,255,0.45)"/>
+        <rect x="13" y="12" width="6" height="16" rx="2" fill="rgba(255,255,255,0.7)"/>
+        <rect x="22" y="6" width="6" height="22" rx="2" fill="white"/>
+        <path d="M26 4L29 1M29 1H26M29 1V4" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="page-loading-dots"><span></span><span></span><span></span></div>
+  </div>`;
+}
+
 function openProfileDrawer() {
   const drawer  = document.getElementById('profileDrawer');
   const overlay = document.getElementById('drawerOverlay');
@@ -267,7 +283,7 @@ function renderTeacherPage(id, el) {
   else if(id==='students') el.innerHTML = teacherStudents();
   else if(id==='student-detail') el.innerHTML = studentDetailAnalysis();
   else if(id==='psych-report') {
-    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">💙 Yükleniyor...</div>';
+    el.innerHTML = _loadingHTML('💙');
     psychReportPage().then(html => { el.innerHTML = html; });
   }
   else if(id==='analysis') el.innerHTML = teacherAnalysis();
@@ -279,7 +295,7 @@ function renderTeacherPage(id, el) {
   else if(id==='notifs') { el.innerHTML = notificationsPage(); updateNotifBadge(); }
   else if(id==='yardim') { el.innerHTML = yardimPage(); }
   else if(id==='satin-al') { el.innerHTML = satinAlPage(); }
-  else if(id==='takvim') { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">📅 Yükleniyor...</div>'; takvimiPage().then(html => { el.innerHTML = html; }); }
+  else if(id==='takvim') { el.innerHTML = _loadingHTML('📅'); takvimiPage().then(html => { el.innerHTML = html; }); }
   else if(id==='profile') { profilePage().then(html => { el.innerHTML = html; setTimeout(initApiSettings, 50); if(currentRole==='student') { setTimeout(okulArkadaslariniYukle, 200); setTimeout(odulleriniYukle, 500); } }); }
   setTimeout(()=>drawCharts(), 50);
 }
