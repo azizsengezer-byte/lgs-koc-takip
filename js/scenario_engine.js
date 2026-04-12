@@ -108,7 +108,7 @@ const SENARYOLAR = [
   },
   {
     id: 'DYN-10', modul: 1, priority: 88, etiket: 'Motivasyonel Dalgalanma',
-    tetikle: (b, h, a, k) => (b.mood === 'bad' || b.mood === 'sad') && b.soru < k.soru.dusuk,
+    tetikle: (b, h, a, k) => (b.mood === 'bad' || b.mood === 'sad') && b.soru < k.soru.dusuk && h.soruHedefiKarsilama < 0.5,
     cikti: {
       daily:   { teshis: 'Düşük Enerji ve İsteksizlik.', aksiyon: 'Zorunlu hedefleri bugünlük askıya alın; sevdiği bir branştan 1 test çözmesini isteyin.' },
       weekly:  { teshis: 'Süreçten Kopuş Sinyalleri.', aksiyon: 'Görüşmede "Neden LGS?" sorusunu tekrar gündeme getirin.' },
@@ -136,6 +136,7 @@ const SENARYOLAR = [
     id: 'DYN-41', modul: 2, priority: 85, etiket: 'Branş Gettosu',
     tetikle: (b, h, a, k) =>
       b.soru > k.soru.ort &&
+      h.soruHedefiKarsilama >= 0.4 &&
       b.bransAnalizi.zayifBransSoru <= k.zayifBransSoru.dusuk,
     cikti: {
       daily:   { teshis: 'Konfor Alanı: Bugün sadece başarılı olunan branşlara odaklanılmış.', aksiyon: 'Yarına en az 1 testlik zayıf branş zorunluluğu ekleyin.' },
@@ -148,6 +149,7 @@ const SENARYOLAR = [
     id: 'DYN-45', modul: 2, priority: 82, etiket: 'Nicelik Tuzağı',
     tetikle: (b, h, a, k) =>
       b.soru >= k.soru.yuksek &&
+      h.soruHedefiKarsilama >= 0.7 &&
       b.isabet !== null &&
       b.isabet < k.isabet.dusuk,
     cikti: {
@@ -174,7 +176,8 @@ const SENARYOLAR = [
     id: 'DYN-62', modul: 2, priority: 70, etiket: 'Atıl Masa Mesaisi',
     tetikle: (b, h, a, k) =>
       b.calismaSuresi >= k.calismaSuresi.yuksek &&
-      b.soru <= k.soru.dusuk,
+      b.soru <= k.soru.dusuk &&
+      h.soruHedefiKarsilama < 0.4,
     cikti: {
       daily:   { teshis: 'Pasif Direnç: Masada kalınmış ama üretim yapılmamış.', aksiyon: 'Çalışma ortamındaki uyaran sızıntılarını sorgulayın.' },
       weekly:  { teshis: 'Odaklanma Erozyonu: Masa süresi verime dönüşmüyor.', aksiyon: 'Bu hafta Pomodoro tekniğini zorunlu tutun.' },
@@ -266,6 +269,7 @@ const SENARYOLAR = [
     id: 'DYN-100', modul: 3, priority: 87, etiket: 'Pozitif Kırılma',
     tetikle: (b, h, a, k) =>
       a.son3GunSoruOrt > (k.soru.ort * 1.3) &&
+      h.soruHedefiKarsilama >= 0.75 &&
       b.isabet !== null &&
       b.isabet >= k.isabet.ort,
     cikti: {
@@ -280,7 +284,8 @@ const SENARYOLAR = [
     tetikle: (b, h, a, k) =>
       a.son3GunIsabetOrt !== undefined &&
       a.son3GunIsabetOrt < k.isabet.ort &&
-      a.son3GunSoruOrt < k.soru.ort,
+      a.son3GunSoruOrt < k.soru.ort &&
+      h.soruHedefiKarsilama < 0.5,
     cikti: {
       daily:   { teshis: 'Enerji Kaçağı: Bugün verim ve süre eş zamanlı düşüş göstermiş.', aksiyon: 'Koçluk görüşmesiyle enerjiyi ne emiyor sorusuna yanıt arayın.' },
       weekly:  { teshis: 'İstikrar Kaybı: Bu hafta genel gerileme ve süreçten kopma eğilimi var.', aksiyon: 'Haftalık programı sadeleştirin; yapabildikleri üzerinden geri dönüş hattı kurun.' },
@@ -309,7 +314,8 @@ const SENARYOLAR = [
     id: 'DYN-113', modul: 4, priority: 78, etiket: 'Parçalanmış Dikkat',
     tetikle: (b, h, a, k) =>
       b.calismaSuresi >= k.calismaSuresi.yuksek &&
-      b.soru <= k.soru.dusuk,
+      b.soru <= k.soru.dusuk &&
+      h.soruHedefiKarsilama < 0.4,
     cikti: {
       daily:   { teshis: 'Yüzeysel Odak: Dikkat dağıtıcılar derinleşmeyi engellemiş.', aksiyon: 'Telefonu çalışma odasının dışına çıkartarak 40 dakikalık tam odak seansı yapın.' },
       weekly:  { teshis: 'Derinleşme Yeteneği Kaybı: Bu hafta hiçbir konuda akış haline geçilememiş.', aksiyon: 'Pomodoro süresini kademeli olarak 25 ten 45 dakikaya zorlayın.' },
@@ -353,385 +359,20 @@ const SENARYOLAR = [
 const POZITIF_SENARYOLAR = [
 
   {
-    id: 'POS-01', modul: 0, priority: 40,
-    etiket: 'Sabah İradesi',
-    tetikle: (b, h, a, k) => {
-      if (!b.dersHata) return false;
-      const zayif = h.zayifBrans;
-      return zayif && b.dersHata[zayif] && b.dersHata[zayif].q >= 20 &&
-        b.enerji > 0 && b.enerji < k.enerji.ort;
-    },
-    cikti: {
-      analiz: 'Enerji düşük olmasına rağmen en zor branşa başlama cesareti gösterilmiştir.',
-      strateji: 'Bu irade takdir edilmeli; zorlukların üstesinden gelme kapasitesi pekiştirilmelidir.',
-      aylikEtiket: 'Sabah_İradesi',
-      ton: 'celebratory'
-    }
-  },
-
-  {
-    id: 'POS-02', modul: 0, priority: 38,
-    etiket: 'Hata Analiz Şampiyonu',
+    id: 'POS-BELIEF-01', modul: 3, priority: 92, etiket: 'Zihinsel Kırılma',
     tetikle: (b, h, a, k) =>
-      b.hataOrani !== null && b.hataOrani > 30 &&
-      b.tekrarSure > 45,
-    cikti: {
-      analiz: 'İsabet düşük olsa da hataların üzerine gitme iradesi takdire şayandır.',
-      strateji: 'Bu analitik tutum övülmeli; hatayı fırsata çevirme alışkanlığı desteklenmelidir.',
-      aylikEtiket: 'Hata_Analisti',
-      ton: 'celebratory'
-    }
-  },
-
-  {
-    id: 'POS-03', modul: 0, priority: 35,
-    etiket: 'Akış Hali',
-    tetikle: (b, h, a, k) =>
-      b.soru >= k.soru.yuksek &&
-      b.hataOrani !== null && b.hataOrani < 15 &&
-      b.odak >= k.odak.yuksek &&
-      (b.mood === 'great' || b.mood === 'good' || (b.mood === 'good' || b.mood === 'great')),
-    cikti: {
-      analiz: 'Öğrenci potansiyelini tam kapasiteyle kullanmakta ve başarısını duygusal bir tatmine dönüştürebilmektedir.',
-      strateji: 'Bu "akış" (flow) hali ödüllendirilmeli; başarının anahtar bileşenleri (uyku, odak, yöntem) not edilmelidir.',
-      aylikEtiket: 'Peak_Performance',
-      ton: 'celebratory'
-    }
-  },
-
-  {
-    id: 'POS-04', modul: 0, priority: 42,
-    etiket: 'Deneme Sonrası Toparlanma',
-    tetikle: (b, h, a, k) =>
-      h.denemeTrend === 'düşüş' &&
-      b.soru >= k.soru.ort &&
-      (b.mood === 'good' || (b.mood === 'good' || b.mood === 'great')),
-    cikti: {
-      analiz: 'Deneme sonucunun olumsuzluğuna rağmen öğrenci çalışma rutinini sürdürmüştür; psikolojik dayanıklılık sergilenmiştir.',
-      strateji: 'Bu tutum somut verilerle övülmeli; başarının sonuçtan değil süreçten geldiği pekiştirilmelidir.',
-      aylikEtiket: 'Toparlanma_Gücü',
-      ton: 'celebratory'
-    }
-  },
-
-  {
-    id: 'POS-05', modul: 0, priority: 36,
-    etiket: 'Dengeli Gelişim',
-    tetikle: (b, h, a, k) => {
-      if (!b.dersHata) return false;
-      const dersler = Object.entries(b.dersHata).filter(([d, v]) => v.q > 10);
-      if (dersler.length < 3) return false;
-      const isabetler = dersler.map(([d, v]) => (1 - v.y / v.q) * 100);
-      const min = Math.min(...isabetler);
-      const max = Math.max(...isabetler);
-      return max - min < 25 && b.soru >= k.soru.ort;
-    },
-    cikti: {
-      analiz: 'Tüm branşlara dengeli yaklaşım sergilenmiş; tek bir derse sığınmadan kapsamlı çalışma gerçekleştirilmiştir.',
-      strateji: 'Bu denge takdir edilmeli; LGS\'in tüm branşları birlikte değerlendirdiği hatırlatılarak motivasyon güçlendirilmelidir.',
-      aylikEtiket: 'Dengeli_Gelişim',
-      ton: 'positive'
-    }
-  },
-
-  {
-    id: 'POS-06', modul: 0, priority: 40,
-    etiket: 'Kriz Altında Üretim',
-    tetikle: (b, h, a, k) =>
-      b.kaygi >= k.kaygi.yuksek && b.soru >= k.soru.ort &&
-      b.hataOrani !== null && b.hataOrani < 25,
-    cikti: {
-      analiz: 'Yüksek kaygıya rağmen akademik üretim sürdürülmüş; baskı altında çalışabilme kapasitesi ortaya konmuştur.',
-      strateji: 'Bu direnç takdirle karşılanmalı; ancak kaygı kaynağı da ele alınarak sürdürülebilirlik sağlanmalıdır.',
-      aylikEtiket: 'Kriz_Altı_Üretim',
-      ton: 'validating'
-    }
-  },
-
-  {
-    id: 'POS-07', modul: 0, priority: 37,
-    etiket: 'Pozitif Sıçrama',
-    tetikle: (b, h, a, k) =>
-      b.soru >= k.soru.ort + k.soru.sd * 1.5 &&
-      h.ortSoru > 0 && b.soru > h.ortSoru * 1.4,
-    cikti: {
-      analiz: 'Kendi normunun belirgin üzerinde bir performans sergilenmiştir; önemli bir kişisel gelişim anı yaşanmaktadır.',
-      strateji: 'Bu sıçrama geri bildirimle pekiştirilmeli; "bunu yapabiliyorum" deneyimi kalıcı hale getirilmelidir.',
-      aylikEtiket: 'Pozitif_Sıçrama',
-      ton: 'celebratory'
-    }
-  },
-
-  {
-    id: 'POS-08', modul: 0, priority: 33,
-    etiket: 'Sürdürülebilir Ritim',
-    tetikle: (b, h, a, k) =>
-      h.tutarliGunSayisi >= 5 && h.ortSoru >= k.soru.ort * 0.9,
-    cikti: {
-      analiz: 'Öğrenci 5 gün veya daha fazla istikrarlı bir çalışma ritmi yakalamıştır; bu sürdürülebilir başarının temelidir.',
-      strateji: 'Bu istikrar tebrik edilmeli; günlük rutinin sınav başarısındaki kritik rolü hatırlatılmalıdır.',
-      aylikEtiket: 'İstikrar_Pozitif',
-      ton: 'positive'
-    }
-  },
-
-  {
-    id: 'POS-09', modul: 0, priority: 44,
-    etiket: 'Wellness Dürüstlüğü',
-    tetikle: (b, h, a, k) =>
-      b.pozitif && b.pozitif.length > 10 &&
-      b.negatif && b.negatif.length > 10,
-    cikti: {
-      analiz: 'Öğrenci hem olumlu hem olumsuz deneyimlerini açıkça paylaşmıştır; bu dürüstlük koçluk sürecini güçlendirmektedir.',
-      strateji: 'Açık iletişim takdir edilmeli; paylaşılan düşünceler üzerine odaklı bir koçluk görüşmesi yapılmalıdır.',
-      aylikEtiket: 'Dürüst_Paylaşım',
-      ton: 'validating'
-    }
-  },
-
-  {
-    id: 'POS-10', modul: 0, priority: 39,
-    etiket: 'Fizyolojik Farkındalık',
-    tetikle: (b, h, a, k) =>
-      b.uyku >= 8 && b.enerji >= 8 &&
+      (b.mood === 'great' || b.mood === 'good') &&
+      a.son3GunMoodPuan > k.mood.ort * 1.4 &&
       b.soru >= k.soru.ort,
     cikti: {
-      analiz: 'Uyku ve enerji yönetimine verilen önem, akademik verimliliğe doğrudan yansımaktadır.',
-      strateji: 'Bu bilinç takdir edilmeli; fizyolojik öz-bakımın "akıllı sporcunun sırrı" olduğu vurgulanmalıdır.',
-      aylikEtiket: 'Fizyolojik_Farkındalık',
+      daily:   { teshis: 'Zihinsel Aydınlanma: Öğrenci bugün kendi potansiyeline dair pozitif bir uyanış yaşadı.', aksiyon: 'Bu özgüven artışını, bekletilen zor bir konuyu vererek perçinleyin.' },
+      weekly:  { teshis: 'İnanç Dönüşümü: Bu hafta yapamam bariyeri pozitif yönde yıkıldı.', aksiyon: 'Öğrenciye artık bu seviyedesin mesajını net şekilde verin.' },
+      monthly: { teshis: 'Karakteristik Güçlenme: Ayın başındaki düşük özgüven, sağlam yeterlilik algısına dönüştü.', aksiyon: 'Hedefleri üst lige taşıma zamanı geldi.' },
       ton: 'positive'
     }
-  },
-
-  // POS-11..20: Haftalık/aylık pozitifler
-  {
-    id: 'POS-11', modul: 0, priority: 36,
-    etiket: 'Haftalık Momentum',
-    tetikle: (b, h, a, k) =>
-      h.haftaSoruToplamı >= k.soru.ort * 6 &&
-      h.haftalikMoodOrt >= 3 &&
-      h.veriGirisTutarliligi >= 4,
-    cikti: {
-      analiz: 'Hafta genelinde hem akademik hem duygusal dengeyi koruyarak güçlü bir momentum yakalanmıştır.',
-      strateji: 'Bu haftalık tablo koçla paylaşılmalı; başarının neyi doğru yapmanın sonucu olduğu analiz edilmelidir.',
-      aylikEtiket: 'Haftalık_Momentum',
-      ton: 'positive'
-    }
-  },
-
-  {
-    id: 'POS-12', modul: 0, priority: 34,
-    etiket: 'Kaygı Yönetimi',
-    tetikle: (b, h, a, k) =>
-      h.oncekiHaftaKaygi >= k.kaygi.yuksek &&
-      h.ortKaygi < k.kaygi.ort && b.soru >= k.soru.ort,
-    cikti: {
-      analiz: 'Önceki haftaya kıyasla kaygı belirgin biçimde gerilemiş; öğrenci duygusal dengeyi akademik üretimle birleştirmeyi başarmıştır.',
-      strateji: 'Bu ilerleme somut verilerle paylaşılmalı; hangi değişikliğin bu iyileşmeyi sağladığı öğrenciyle konuşulmalıdır.',
-      aylikEtiket: 'Kaygı_Yönetimi_Pozitif',
-      ton: 'validating'
-    }
-  },
-
-  {
-    id: 'POS-13', modul: 0, priority: 38,
-    etiket: 'Zayıf Branşa Temas',
-    tetikle: (b, h, a, k) => {
-      if (!b.dersHata || !h.zayifBrans) return false;
-      const zayif = b.dersHata[h.zayifBrans];
-      return zayif && zayif.q >= 30;
-    },
-    cikti: {
-      analiz: 'Kaçınma eğilimine rağmen zayıf branşla bugün temas kurulmuş; bu cesaret sürecin kırılma noktası olabilir.',
-      strateji: 'Küçük de olsa bu adım büyük bir cesaret göstergesidir; anında ve somut olarak ödüllendirilmelidir.',
-      aylikEtiket: 'Zayıf_Branş_Temas',
-      ton: 'celebratory'
-    }
-  },
-
-  {
-    id: 'POS-14', modul: 0, priority: 35,
-    etiket: 'Tekrar Disiplini',
-    tetikle: (b, h, a, k) =>
-      b.tekrarSure >= 40 && b.soru >= k.soru.ort * 0.7 &&
-      h.tekrarTutarlilik >= 4,
-    cikti: {
-      analiz: 'Hem soru çözümü hem tekrar dengesini tutarlı biçimde sürdürmüştür; öğrenme kalıcılığı artmaktadır.',
-      strateji: 'Bu denge takdir edilmeli; tekrarın "hafızayı sabitlemek" için neden kritik olduğu vurgulanmalıdır.',
-      aylikEtiket: 'Tekrar_Disiplini',
-      ton: 'positive'
-    }
-  },
-
-  {
-    id: 'POS-15', modul: 0, priority: 40,
-    etiket: 'Dijital Kontrol',
-    tetikle: (b, h, a, k) =>
-      h.haftaSosyalOrt < k.sosyal.ort * 0.6 &&
-      h.haftaOdakOrt >= k.odak.ort,
-    cikti: {
-      analiz: 'Hafta genelinde dijital kullanımın düşük, odaklanmanın yüksek seyrettiği saptanmıştır; verimli bir hafta geçirilmiştir.',
-      strateji: 'Bu "dijital hijyen" takdir edilmeli; ekran azalmasının odak ve isabete etkisi verilerle gösterilmelidir.',
-      aylikEtiket: 'Dijital_Kontrol_Pozitif',
-      ton: 'positive'
-    }
-  },
-
-  {
-    id: 'POS-16', modul: 0, priority: 42,
-    etiket: 'İsabet Yükselişi',
-    tetikle: (b, h, a, k) =>
-      h.isatetTrend > 10 && b.soru >= k.soru.ort * 0.8,
-    cikti: {
-      analiz: 'İsabet oranında belirgin bir artış gözlemlenmiştir; çalışma yöntemi ve anlama kalitesi iyileşmektedir.',
-      strateji: 'Bu gelişim somutlaştırılmalı; öğrenci neyi farklı yaptığının farkına varmalıdır.',
-      aylikEtiket: 'İsabet_Yükselişi',
-      ton: 'positive'
-    }
-  },
-
-  {
-    id: 'POS-17', modul: 0, priority: 37,
-    etiket: 'Veri Tutarlılığı',
-    tetikle: (b, h, a, k) =>
-      h.veriGirisTutarliligi >= 4,
-    cikti: {
-      analiz: 'Öğrenci takip sistemine düzenli ve tutarlı veri girişi yaparak koçluk sürecini aktif desteklemektedir.',
-      strateji: 'Bu sorumluluk bilinci takdir edilmeli; veri düzenliliğinin kişiselleştirilmiş analizlere katkısı hatırlatılmalıdır.',
-      aylikEtiket: 'Veri_Tutarlılığı',
-      ton: 'validating'
-    }
-  },
-
-  {
-    id: 'POS-18', modul: 0, priority: 43,
-    etiket: 'Deneme Sonrası Analiz',
-    tetikle: (b, h, a, k) =>
-      h.denemedeSonraSoru >= k.soru.ort && h.denemeSonrasiGun === true,
-    cikti: {
-      analiz: 'Deneme sınavının hemen ardından analiz yapmak ve çalışmaya devam etmek olgun bir akademik tutum sergiler.',
-      strateji: 'Bu rutinin sürdürülmesi teşvik edilmeli; hatalı soruların detaylı incelenmesi için bir protokol önerilmelidir.',
-      aylikEtiket: 'Deneme_Analiz_Rutini',
-      ton: 'positive'
-    }
-  },
-
-  {
-    id: 'POS-19', modul: 0, priority: 36,
-    etiket: 'Enerji-Odak Uyumu',
-    tetikle: (b, h, a, k) =>
-      b.enerji >= k.enerji.yuksek && b.odak >= k.odak.yuksek,
-    cikti: {
-      analiz: 'Fiziksel enerji ve zihinsel odaklanma aynı anda zirvededir; bu kombinasyon en verimli çalışma koşullarını yaratır.',
-      strateji: 'Bu "altın saat" en zor branşa ve yeni konu kazanımına ayrılmalıdır.',
-      aylikEtiket: 'Altın_Saat',
-      ton: 'directive'
-    }
-  },
-
-  {
-    id: 'POS-20', modul: 0, priority: 45,
-    etiket: 'Aylık İlerleme',
-    tetikle: (b, h, a, k) =>
-      a.aylikSoruArtisSuresi > 0.1 && a.aylikIsabetArtis > 0,
-    cikti: {
-      analiz: 'Ay genelinde hem soru hacminde hem isabet oranında artış kaydedilmiştir; ölçülebilir bir ilerleme yaşanmaktadır.',
-      strateji: 'Bu büyüme grafiği öğrenciyle paylaşılmalı; somut gelişim öz-yeterliliği güçlendirir.',
-      aylikEtiket: 'Aylık_İlerleme_Pozitif',
-      ton: 'celebratory'
-    }
-  },
+  }
 
 ];
-
-// ════════════════════════════════════════════
-// VAKA KOMBİNASYONLARI
-// ════════════════════════════════════════════
-
-const VAKA_KOMBINASYONLARI = [
-  {
-    id: 'VAKA-01',
-    senaryolar: ['DYN-10', 'DYN-03'],
-    ad: 'Kombine Fizyolojik-Psikolojik Çöküş',
-    analiz: 'Hem uykusuzluk hem yüksek kaygı aynı anda etki etmektedir; sistemin iki cephede birden yıkıldığı saptanmıştır.',
-    strateji: '24 saatlik tam mola zorunlu; önce uyku, sonra kaygı kaynağıyla yapılandırılmış görüşme yapılmalıdır.',
-    priority: 97
-  },
-  {
-    id: 'VAKA-02',
-    senaryolar: ['DYN-130', 'DYN-42'],
-    ad: 'Bilişsel Sis Altında Atalet',
-    analiz: 'Fizyolojik tükenme öğrencinin zayıf branştan da aktif çalışmadan da kaçmasına zemin hazırlamaktadır.',
-    strateji: '1 saatlik uyku molası verilmeli; uyandıktan sonra en kolay branştan 15 dakikalık mikro başlangıç yapılmalıdır.',
-    priority: 95
-  },
-  {
-    id: 'VAKA-03',
-    senaryolar: ['DYN-106', 'DYN-82'],
-    ad: 'Duygusal Savunma Bloğu',
-    analiz: 'Başarısızlık korkusu ile dijital kaçış birbiriyle beslendiği için öğrenci hem akademik hem duygusal çıkmazda kalmaktadır.',
-    strateji: 'Sosyal medyayı eleştirmek yerine, başarısızlık korkusunu masaya yatıran bir koçluk görüşmesi önceliklendirilmelidir.',
-    priority: 90
-  },
-  {
-    id: 'VAKA-04',
-    senaryolar: ['DYN-41', 'DYN-83'],
-    ad: 'Limitli Şampiyon',
-    analiz: 'Öğrenci güçlü branşta yüksek performans sergilerken zayıf alanı sistematik olarak ihmal etmektedir.',
-    strateji: 'Konfor alanındaki güveni yerindeyken, hemen ardından zayıf branşa "sızma" fırsatı değerlendirilmelidir.',
-    priority: 65
-  },
-  {
-    id: 'VAKA-05',
-    senaryolar: ['DYN-76', 'DYN-96'],
-    ad: 'Mükemmeliyetçilik Tuzağı',
-    analiz: 'Yüksek performansı koruma kaygısı ile yüksek fonksiyonlu kaygı örtüşmekte; başarı öğrenciye rahatlık değil, baskı getirmektedir.',
-    strateji: 'Başarı bir "varmak gereken yer" değil, "devam eden bir süreç" olarak yeniden çerçevelenmelidir.',
-    priority: 85
-  },
-  {
-    id: 'VAKA-06',
-    senaryolar: ['DYN-87', 'DYN-03'],
-    ad: 'Yıkıcı Biyolojik Yük',
-    analiz: 'Hem çok çalışıp sonuç alamamak hem de uyku yetersizliği eş zamanlı etki etmekte; öğrenci iki yönlü erozyon yaşamaktadır.',
-    strateji: 'Hacim derhal düşürülmeli; önce uyku restore edilmeli, ardından isabet odaklı küçük hedefler tanımlanmalıdır.',
-    priority: 88
-  },
-  {
-    id: 'VAKA-07',
-    senaryolar: ['DYN-55', 'DYN-42'],
-    ad: 'Çift Katmanlı Kaçınma',
-    analiz: 'Öğrenci hem yeni konu öğrenmekten hem de soru çözme testinden kaçınmakta; pasif döngüde hapsolmaktadır.',
-    strateji: 'Tek bir yeni kazanım ve hemen ardından 10 soruluk mini uygulama şeklinde kırılma sağlanmalıdır.',
-    priority: 72
-  },
-  {
-    id: 'VAKA-08',
-    senaryolar: ['DYN-128', 'DYN-107'],
-    ad: 'Gece Döngüsü',
-    analiz: 'Gece geç saatte ekran kullanımı uyku süresini çalmakta, yetersiz uyku da ertesi gün kaygıyı artırmaktadır; kısır döngü oluşmuştur.',
-    strateji: '"Dijital Sokağa Çıkma Yasağı" ve sabit yatış saati birlikte uygulanmalı; 1 haftalık pilot test önerilmelidir.',
-    priority: 88
-  },
-  {
-    id: 'VAKA-09',
-    senaryolar: ['DYN-134', 'DYN-02'],
-    ad: 'Sessiz Tükenmişlik',
-    analiz: 'Öğrenci ne veri girmekte ne de enerji göstermektedir; sisteme ve sürece olan bağlılık tehlikeli biçimde zayıflamıştır.',
-    strateji: 'Akademik tüm beklentiler askıya alınmalı; önce duygusal bağ ve güven tazelenmelidir.',
-    priority: 95
-  },
-  {
-    id: 'VAKA-10',
-    senaryolar: ['POS-03', 'POS-10'],
-    ad: 'Altın Gün',
-    analiz: 'Hem akış halinde hem fizyolojik olarak ideal durumda çalışılmıştır; bu gün öğrencinin gerçek potansiyelini göstermektedir.',
-    strateji: 'Bu günün koşulları (uyku, yatış saati, mola düzeni) ayrıntılı not edilmeli; tekrarlanabilir bir şablon oluşturulmalıdır.',
-    priority: 30
-  },
-];
-
-// Dışa aktarım
 
 window.SENARYOLAR = SENARYOLAR;
 window.POZITIF_SENARYOLAR = POZITIF_SENARYOLAR;
