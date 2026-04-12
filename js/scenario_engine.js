@@ -369,7 +369,293 @@ const SENARYOLAR = [
       monthly: { teshis: 'Kronik Hedef Uzaklaşması: Aylık hedef öğrenci için hayali bir rakama dönüşmüş.', aksiyon: 'Mevcut hedefi revize edin veya temel çalışma motivasyonunu rehberlik servisiyle sorgulayın.' },
       ton: 'urgent'
     }
+  },,
+
+  // ── MODÜL 1 EKLEMELERİ ──────────────────────────────────
+
+  {
+    id: 'DYN-02', modul: 1, priority: 85, etiket: 'Veri Sessizliği',
+    // Öğrenci veri girmemiş ama önceki günlerde aktifti
+    tetikle: (b, h, a, k) =>
+      b.kaygi === 0 && b.enerji === 0 && b.soru === 0 &&
+      h.veriGirisTutarliligi >= 3,
+    cikti: {
+      daily:   { teshis: 'Sistemden Kopuş: Düzenli veri giren öğrenci bugün sessiz kalmış.', aksiyon: 'Kısa bir mesajla öğrencinin durumunu sorgulayın; sessizlik erken uyarı işareti olabilir.' },
+      weekly:  { teshis: 'Aralıklı Takip Bozukluğu: Bu hafta veri girişleri tutarsız.', aksiyon: 'Veri girişinin neden kesildiğini görüşün; alışkanlık kırılıyor olabilir.' },
+      monthly: { teshis: 'Sisteme Güven Kaybı: Öğrenci takip sistemini terk etme eğiliminde.', aksiyon: 'Sistemin öğrenciye ne kazandırdığını somut verilerle gösterin.' },
+      ton: 'warning'
+    }
   },
+
+  {
+    id: 'DYN-03', modul: 1, priority: 87, etiket: 'Gece Krizi',
+    // Uyku çok düşük + kaygı yüksek → gece zor geçmiş
+    tetikle: (b, h, a, k) =>
+      b.uyku > 0 && b.uyku < 5 &&
+      b.kaygi >= k.kaygi.yuksek,
+    cikti: {
+      daily:   { teshis: 'Gece Krizi: Uyku 5 saatin altında ve kaygı zirvedeydi; bugün bilişsel kapasite ciddi kısıtlı.', aksiyon: 'Bugün yeni konu veya deneme vermeyin; sadece basit tekrar yaptırın.' },
+      weekly:  { teshis: 'Kronik Gece Savaşı: Bu hafta uyku-kaygı kısır döngüsü izleniyor.', aksiyon: 'Akşam rutinini yeniden tasarlayın; yatmadan 1 saat önce ekransız kural koyun.' },
+      monthly: { teshis: 'Uyku Borcunu Ödeme Zamanı: Ay genelinde uyku kalitesi sürdürülemez düzeyde.', aksiyon: 'Uyku düzenini normalleştirmeden akademik performans artışı beklenmesin.' },
+      ton: 'urgent'
+    }
+  },
+
+  {
+    id: 'DYN-06', modul: 1, priority: 80, etiket: 'Hafta Sonu Çöküşü',
+    // Hafta içi iyi ama hafta sonu kaygı patlaması
+    tetikle: (b, h, a, k) =>
+      b.dayName !== undefined &&
+      (b.dayName === 'Cumartesi' || b.dayName === 'Pazar') &&
+      b.kaygi >= k.kaygi.yuksek &&
+      h.ortKaygi < k.kaygi.yuksek,
+    cikti: {
+      daily:   { teshis: 'Hafta Sonu Kaygı Patlaması: Serbest zaman öğrenciyi rahatlatmak yerine bunaltıyor.', aksiyon: 'Hafta sonu için yapılandırılmış ama hafif bir program önerin; boşluk kaygıyı artırıyor.' },
+      weekly:  { teshis: 'Yapısız Zaman Korkusu: Hafta sonları düzensizlik kaygı tetikliyor.', aksiyon: 'Hafta sonu için sabah rutini oluşturun; gün başlangıcı çıpası kaygıyı azaltır.' },
+      monthly: { teshis: 'Dinlenme Zamanı Paradoksu: Öğrenci için tatil kavramı stres kaynağına dönüşmüş.', aksiyon: 'Dinlenmenin performansı artırdığını veri göstererek öğretirn; izin hakkı verilmeli.' },
+      ton: 'warning'
+    }
+  },
+
+  {
+    id: 'DYN-07', modul: 1, priority: 83, etiket: 'Deneme Sonrası Çöküş',
+    // Deneme sonrası gün: kaygı yüksek, soru düşük
+    tetikle: (b, h, a, k) =>
+      h.denemeSonrasiGun &&
+      b.kaygi >= k.kaygi.yuksek &&
+      b.soru < k.soru.ort,
+    cikti: {
+      daily:   { teshis: 'Deneme Şoku: Sınav sonrası kaygı yükselmiş, üretim durmuş.', aksiyon: 'Deneme sonuçlarını bugün değerlendirmeyin; sadece bir yanlışı birlikte analiz edin.' },
+      weekly:  { teshis: 'Deneme Kırılganlığı: Her sınavın ardından çöküş yaşanıyor.', aksiyon: 'Deneme sonuçlarını tehdit değil veri olarak çerçeveleme alışkanlığı kazandırın.' },
+      monthly: { teshis: 'Sınav Fobisi Sinyali: Denemeler motivasyon artırmak yerine çökertmeye başlamış.', aksiyon: 'Deneme sıklığını azaltın; sonuç odaklı değil süreç odaklı değerlendirmeye geçin.' },
+      ton: 'warning'
+    }
+  },
+
+  {
+    id: 'DYN-08', modul: 1, priority: 78, etiket: 'Robotik Devam',
+    // Düzenli çalışıyor ama mood sürekli nötr — tükenmişlik öncüsü
+    tetikle: (b, h, a, k) =>
+      b.soru >= k.soru.ort &&
+      b.mood === 'ok' &&
+      h.haftalikMoodOrt < 3.2 &&
+      h.tutarliGunSayisi >= 4,
+    cikti: {
+      daily:   { teshis: 'Mekanik Çalışma: Üretim var ama içsel motivasyon sıfırlanmış; robot modunda ilerleniyor.', aksiyon: 'Bugün çalışmanın neden önemli olduğunu konuşun; hedefe bağlantı kurun.' },
+      weekly:  { teshis: 'Duygusal Donukluk: Bu hafta ne iyi ne kötü; öğrenci süreci sadece "bitirmek" istiyor.', aksiyon: 'Haftalık programa öğrencinin seveceği küçük bir sürpriz ekleyin.' },
+      monthly: { teshis: 'Pre-Burnout Zemini: Duygusal katılım azalmış; tükenmişlik kapıda.', aksiyon: 'Hazırlık sürecine anlam katan yeni bir motivasyon kaynağı bulun.' },
+      ton: 'warning'
+    }
+  },
+
+  // ── MODÜL 2 EKLEMELERİ ──────────────────────────────────
+
+  {
+    id: 'DYN-46', modul: 2, priority: 79, etiket: 'Tekrar Tuzağı',
+    // Tekrar süresi yüksek ama yeni konu yok → konfor alanı
+    tetikle: (b, h, a, k) =>
+      b.tekrarSure > 60 &&
+      b.konuSure < 15 &&
+      b.soru >= k.soru.ort,
+    cikti: {
+      daily:   { teshis: 'Konfor Tekrarı: Öğrenci bildiklerini tekrar ederek güvende hissediyor ama yeni şey öğrenmiyor.', aksiyon: 'Bugün en az 30 dakika yeni konu çalışmasını zorunlu tutun.' },
+      weekly:  { teshis: 'Gelişim Duraksaması: Bu hafta tekrarlar yeni kazanımın önüne geçmiş.', aksiyon: 'Haftalık planda konu-tekrar oranını 60-40 olarak sabitleyin.' },
+      monthly: { teshis: 'Statik Öğrenme Karakteri: Öğrenci hep bildiğini pekiştiriyor, bilinmeyene girmiyor.', aksiyon: 'Müfredat haritası çıkarıp hangi konuların hiç çalışılmadığını gösterin.' },
+      ton: 'stable'
+    }
+  },
+
+  {
+    id: 'DYN-48', modul: 2, priority: 86, etiket: 'Hedef-Performans Makası',
+    // Soru sayısı kalibrasyon ortasında ama hedefin çok gerisinde
+    tetikle: (b, h, a, k) =>
+      b.soru >= k.soru.dusuk &&
+      b.soru < k.soru.ort &&
+      h.soruHedefiKarsilama < 0.4,
+    cikti: {
+      daily:   { teshis: 'Hedef Makası: Kendi geçmişine göre normal ama hedefe göre çok yetersiz.', aksiyon: 'Öğrenciye gerçek hedefe ne kadar uzak olduğunu somut sayılarla gösterin.' },
+      weekly:  { teshis: 'Kalibrasyon Yanılması: Sistem normal diyor ama hedef gerçeği farklı.', aksiyon: 'Haftalık hedefi LGS geri sayımına göre yeniden hesaplayıp paylaşın.' },
+      monthly: { teshis: 'Kronik Hedef Açığı: Aylık üretim hedefe ulaşmak için yeterli değil.', aksiyon: 'Ya hedefi düşürün ya da çalışma saatlerini artırın; ikisi aynı anda olamaz.' },
+      ton: 'urgent'
+    }
+  },
+
+  {
+    id: 'DYN-50', modul: 2, priority: 77, etiket: 'Deneme Kaçınması',
+    // Uzun süre deneme yapmamış + soru çözüyor
+    tetikle: (b, h, a, k) =>
+      h.denemeSonrasiGun === false &&
+      b.soru >= k.soru.ort &&
+      h.tutarliGunSayisi >= 5,
+    cikti: {
+      daily:   { teshis: 'Deneme Fobisi: Düzenli çalışıyor ama kendinini sınav koşullarında test etmekten kaçınıyor.', aksiyon: 'Bu hafta en az bir deneme sınavı planlamasını isteyin.' },
+      weekly:  { teshis: 'Sınav Ortamı Yabancılığı: Bu hafta deneme yoksa çalışma gerçekçi değil.', aksiyon: 'Cumartesi günü için kısa bir mini deneme (30 soru) planlayın.' },
+      monthly: { teshis: 'Sınav Dayanıklılığı Eksikliği: Ay boyunca deneme sayısı yetersiz.', aksiyon: 'Ayda en az 4 deneme minimum standart olarak belirleyin.' },
+      ton: 'warning'
+    }
+  },
+
+  // ── MODÜL 3 EKLEMELERİ ──────────────────────────────────
+
+  {
+    id: 'DYN-80', modul: 3, priority: 85, etiket: 'Başarı Körlüğü',
+    // İsabet yükseliyor ama öğrenci fark etmiyor (mood hâlâ kötü)
+    tetikle: (b, h, a, k) =>
+      b.isabet !== null &&
+      b.isabet > k.isabet.ort &&
+      h.isatetTrend > 5 &&
+      (b.mood === 'bad' || b.mood === 'sad'),
+    cikti: {
+      daily:   { teshis: 'Başarı Körlüğü: İsabet oranı yükseliyor ama öğrenci bunu görmüyor.', aksiyon: 'Son 7 günün isabet grafiğini gösterin; gelişim somutlaştırılmalı.' },
+      weekly:  { teshis: 'Fark Etmeme Sendromu: Bu hafta net artışı var ama içselleştiremiyor.', aksiyon: 'Haftalık görüşmede sadece rakamları değil, hangi konuları fethetti onu konuşun.' },
+      monthly: { teshis: 'Kronik Öz-Küçümseme: Ay boyunca gerçek gelişim psikolojik kabul görmüyor.', aksiyon: 'Başarı günlüğü tutmasını önerin; her gün 1 şeyin üstesinden geldiğini yazmalı.' },
+      ton: 'warning'
+    }
+  },
+
+  {
+    id: 'DYN-83', modul: 3, priority: 72, etiket: 'Konfor Zaferi',
+    // Yüksek isabet ama sadece kolay sorulardan
+    tetikle: (b, h, a, k) =>
+      b.isabet !== null &&
+      b.isabet >= k.isabet.yuksek &&
+      b.soru < k.soru.ort &&
+      h.soruHedefiKarsilama < 0.5,
+    cikti: {
+      daily:   { teshis: 'Sahte Zafer: Yüksek isabet ama az soru ve hedefin yarısında — kolay sorular seçilmiş.', aksiyon: 'Bugün zorluk seviyesini bir basamak artırın; gerçek seviyeyi test edin.' },
+      weekly:  { teshis: 'Konfor Bölgesi Başarısı: Bu hafta yüksek isabet düşük hacimle sağlandı.', aksiyon: 'Soru sayısını artırıp isabeti bu seviyede tutabilirse gerçek gelişim başlar.' },
+      monthly: { teshis: 'Yapay Öz-Yeterlilik: Ay boyunca kolay sorularda yüksek isabet gerçek sınav hazırlığı değil.', aksiyon: 'Deneme sınavlarındaki zorluk dağılımıyla karşılaştırın; gerçeği gösterin.' },
+      ton: 'warning'
+    }
+  },
+
+  {
+    id: 'DYN-86', modul: 3, priority: 88, etiket: 'İstikrar Sinyali',
+    // Son 3 gün hem soru hem isabet istikrarlı
+    tetikle: (b, h, a, k) =>
+      a.son3GunSoruOrt >= k.soru.ort &&
+      a.son3GunSoruOrt <= k.soru.ort * 1.3 &&
+      a.son3GunIsabetOrt !== undefined &&
+      a.son3GunIsabetOrt >= k.isabet.ort &&
+      h.soruHedefiKarsilama >= 0.6,
+    cikti: {
+      daily:   { teshis: 'İstikrar Günü: Son 3 gün tutarlı soru ve isabet; sistem sağlıklı çalışıyor.', aksiyon: 'Bu dengeyi bozmayın; rutini koruyun ve küçük bir takdir mesajı gönderin.' },
+      weekly:  { teshis: 'Sürdürülebilir Ritim: Bu hafta nicelik ve nitelik dengesinde ilerleniyor.', aksiyon: 'Haftalık hedefi hafifçe yukarı çekerek bu ivmeyi güçlendirin.' },
+      monthly: { teshis: 'Karakteristik İstikrar: Öğrenci tutarlı çalışma alışkanlığını içselleştirmiş.', aksiyon: 'Bu temeli kullanarak bir sonraki ay hedeflerini yukarı revize edin.' },
+      ton: 'positive'
+    }
+  },
+
+  // ── MODÜL 4 EKLEMELERİ ──────────────────────────────────
+
+  {
+    id: 'DYN-108', modul: 4, priority: 81, etiket: 'Gece Ekranı',
+    // Sosyal medya yüksek + uyku düşük → gece ekran kullanımı
+    tetikle: (b, h, a, k) =>
+      b.dijitalSure >= k.dijital.yuksek &&
+      b.uyku > 0 &&
+      b.uyku < k.uyku.ort,
+    cikti: {
+      daily:   { teshis: 'Gece Ekranı: Yüksek dijital kullanım uyku kalitesini düşürmüş; bugün zihin yorgun.', aksiyon: 'Yatmadan 1 saat önce ekran yasağını bu hafta deneyin.' },
+      weekly:  { teshis: 'Uyku-Ekran Kısır Döngüsü: Bu hafta gece ekranı ertesi gün verimliliğini sürekli düşürüyor.', aksiyon: 'Akşam programını 21:00 de bitirip telefonu başka odaya koyun.' },
+      monthly: { teshis: 'Sirkadiyen Ritim Bozukluğu: Dijital alışkanlık biyolojik saati bozmuş.', aksiyon: 'Yaşam döngüsünü düzeltemeden akademik sıçrama beklenmesin.' },
+      ton: 'warning'
+    }
+  },
+
+  {
+    id: 'DYN-110', modul: 4, priority: 76, etiket: 'Dijital Rehavet',
+    // Mood iyi, kaygı düşük ama dijital süre yüksek → keyif amaçlı ekran
+    tetikle: (b, h, a, k) =>
+      b.dijitalSure >= k.dijital.yuksek &&
+      b.kaygi < k.kaygi.dusuk &&
+      (b.mood === 'good' || b.mood === 'great') &&
+      h.soruHedefiKarsilama < 0.5,
+    cikti: {
+      daily:   { teshis: 'Dijital Rehavet: Kaygı yok, keyif var ama ekran hedefin önüne geçmiş.', aksiyon: 'Öğrenciye LGS geri sayımını hatırlatın; rahat hissetmek hareketsizlik değil.' },
+      weekly:  { teshis: 'Konfor Tuzağı: Bu hafta iyi hissetmek çalışma motivasyonunu azaltmış.', aksiyon: 'Haftalık görüşmede iyi günlerin fırsata dönüştürülmesi gerektiğini konuşun.' },
+      monthly: { teshis: 'Motivasyon-Performans Kopukluğu: Öğrenci mutlu ama hedefe gitmiyor.', aksiyon: 'İyi mood u akademik ataklar için kullanmayı alışkanlık haline getirin.' },
+      ton: 'warning'
+    }
+  },
+
+  {
+    id: 'DYN-112', modul: 4, priority: 83, etiket: 'Dijital Telafi',
+    // Zor bir gün sonrası aşırı dijital kullanım
+    tetikle: (b, h, a, k) =>
+      b.dijitalSure >= k.dijital.yuksek &&
+      b.kaygi >= k.kaygi.yuksek &&
+      b.soru >= k.soru.ort,
+    cikti: {
+      daily:   { teshis: 'Dijital Telafi: Yoğun bir çalışma gününün ardından ekranla ödüllendirme yapılmış.', aksiyon: 'Ekranı tamamen yasaklamayın; süreyi 45 dakika ile sınırlayın.' },
+      weekly:  { teshis: 'Stres-Ekran Döngüsü: Yoğun günlerin ardından dijital tüketim ani artış gösteriyor.', aksiyon: 'Ekran yerine yürüyüş veya müzik gibi alternatif dinlenme yöntemleri önerin.' },
+      monthly: { teshis: 'Tek Rahatlama Kanalı: Öğrencinin stres yönetim repertuarı dijital medyayla sınırlı.', aksiyon: 'Farklı rahatlama aktiviteleri keşfetmesine yardımcı olun.' },
+      ton: 'stable'
+    }
+  },
+
+  // ── MODÜL 5 EKLEMELERİ ──────────────────────────────────
+
+  {
+    id: 'DYN-127', modul: 5, priority: 88, etiket: 'Enerji Çöküşü',
+    // Enerji çok düşük + soru ortanın altında
+    tetikle: (b, h, a, k) =>
+      b.enerji > 0 &&
+      b.enerji <= k.enerji.dusuk &&
+      b.soru < k.soru.ort,
+    cikti: {
+      daily:   { teshis: 'Enerji Çöküşü: Fiziksel enerji dipte; üretim kaçınılmaz olarak düşmüş.', aksiyon: 'Bugün kısa ve odaklı çalışma blokları (2x25 dk) yeterli; uzun seans beklemeyin.' },
+      weekly:  { teshis: 'Kronik Düşük Enerji: Bu hafta enerji seviyesi sürekli düşük seyretti.', aksiyon: 'Uyku düzeni, beslenme ve hareket alışkanlıklarını gözden geçirin.' },
+      monthly: { teshis: 'Fizyolojik Taban Sorunu: Enerji tabanı yükseltilmeden akademik performans artmaz.', aksiyon: 'Gerekirse aileyle birlikte sağlık kontrolü planlayın.' },
+      ton: 'warning'
+    }
+  },
+
+  {
+    id: 'DYN-128', modul: 5, priority: 92, etiket: 'Fizyolojik Çelişki',
+    // Uyku iyi ama enerji düşük → uyku kalitesi bozuk
+    tetikle: (b, h, a, k) =>
+      b.uyku >= k.uyku.yuksek &&
+      b.enerji > 0 &&
+      b.enerji <= k.enerji.dusuk,
+    cikti: {
+      daily:   { teshis: 'Uyku Paradoksu: Uyku süresi yeterli ama enerji yok; uyku kalitesi bozuk olabilir.', aksiyon: 'Geç saatte yemek, gece ekranı veya stres uyku kalitesini düşürüyor olabilir.' },
+      weekly:  { teshis: 'Restoratif Uyku Eksikliği: Bu hafta süre var ama dinlendirici uyku yok.', aksiyon: 'Yatmadan önceki 1 saati stressiz geçirme rutini oluşturun.' },
+      monthly: { teshis: 'Kronik Uyku Kalitesi Sorunu: Uzun vadede bilişsel performansı olumsuz etkiler.', aksiyon: 'Gerekirse uyku hijyeni üzerine profesyonel destek alın.' },
+      ton: 'warning'
+    }
+  },
+
+  {
+    id: 'DYN-130', modul: 5, priority: 94, etiket: 'Sürdürülebilirlik Alarmı',
+    // Haftalık enerji trendi sürekli düşüş
+    tetikle: (b, h, a, k) =>
+      h.enerjiTrend === 'düşüş' &&
+      h.dusukEnerjiGunSayisi >= 3 &&
+      h.tutarliGunSayisi >= 3,
+    cikti: {
+      daily:   { teshis: 'Tükeniş Yolunda: Haftalık enerji trendi sürekli aşağı; sistem yavaşlıyor.', aksiyon: 'Bugün akademik yükü yarıya indirin; enerjiyi önce doldurun.' },
+      weekly:  { teshis: 'Haftanın Enerji Karnesi Kötü: Bu hafta her gün biraz daha yorgun başlanmış.', aksiyon: 'Hafta sonu tam dinlenme günü planlayın; hiç soru yok, sadece dinlenme.' },
+      monthly: { teshis: 'Tükenmişlik Eşiği: Ay boyunca enerji eğrisi aşağı; burnout an meselesi.', aksiyon: 'Çalışma temposunu kalıcı olarak düşürün; yorgun öğrenci öğrenemez.' },
+      ton: 'urgent'
+    }
+  },
+
+  {
+    id: 'DYN-132', modul: 5, priority: 78, etiket: 'Fizyolojik Zirve',
+    // Uyku + enerji ikisi de yüksek → fırsat günü
+    tetikle: (b, h, a, k) =>
+      b.uyku >= k.uyku.yuksek &&
+      b.enerji >= k.enerji.yuksek &&
+      h.soruHedefiKarsilama < 0.6,
+    cikti: {
+      daily:   { teshis: 'Kaçırılan Fırsat: Uyku ve enerji zirvedeyken hedefin yarısında kalınmış.', aksiyon: 'Öğrenciye bu enerjinin kıymetini hatırlatın; zor konuya bugün girmek için ideal gün.' },
+      weekly:  { teshis: 'Yüksek Kapasite-Düşük Kullanım: Bu hafta biyolojik koşullar iyiydi ama kullanılamadı.', aksiyon: 'İyi fiziksel günleri zorlu konulara ayırma alışkanlığı kazandırın.' },
+      monthly: { teshis: 'Fırsat Maliyeti: Ay boyunca iyi günler boşa geçti; bu fark LGS sonucuna yansır.', aksiyon: 'Enerji yüksekken çalışma, düşükken dinlenme rutinini program haline getirin.' },
+      ton: 'warning'
+    }
+  }
+
 ];
 
 const POZITIF_SENARYOLAR = [
