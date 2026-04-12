@@ -349,7 +349,7 @@ auth.onAuthStateChanged(async (user) => {
           await auth.signOut();
           document.getElementById('app').style.display = 'none';
           document.getElementById('loginScreen').style.display = 'flex';
-          const _spH = document.getElementById('splashScreen'); if (_spH) { _spH.classList.add('hidden'); setTimeout(() => _spH.remove(), 450); }
+          const _spH = document.getElementById('splashScreen'); if (_spH) { _spH.classList.add('sp-hidden'); setTimeout(() => _spH.remove(), 450); }
           // Doğrulama ekranını göster
           setTimeout(() => {
             const el = document.getElementById('dogrulamaEkrani');
@@ -366,7 +366,7 @@ auth.onAuthStateChanged(async (user) => {
           await auth.signOut();
           document.getElementById('app').style.display = 'none';
           document.getElementById('loginScreen').style.display = 'flex';
-          const _spH = document.getElementById('splashScreen'); if (_spH) { _spH.classList.add('hidden'); setTimeout(() => _spH.remove(), 450); }
+          const _spH = document.getElementById('splashScreen'); if (_spH) { _spH.classList.add('sp-hidden'); setTimeout(() => _spH.remove(), 450); }
           return;
         }
       }
@@ -380,7 +380,7 @@ auth.onAuthStateChanged(async (user) => {
       document.getElementById('app').style.display = 'block';
       // Splash'ı gizle
       const _sp = document.getElementById('splashScreen');
-      if (_sp) { _sp.classList.add('hidden'); setTimeout(() => _sp.remove(), 450); }
+      if (_sp) { _sp.classList.add('sp-hidden'); setTimeout(() => _sp.remove(), 450); }
       document.getElementById('menuName') && (document.getElementById('menuName').textContent = data.name || user.email);
       const roleLabel = currentRole==='teacher'
         ? `Koç Öğretmen${data.branch?' • '+data.branch:''}`
