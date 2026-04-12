@@ -24,14 +24,44 @@ function _kalibre(gunler14) {
     ? Math.sqrt(soruV.reduce((a, b) => a + Math.pow(b - soruOrt, 2), 0) / soruV.length)
     : soruOrt * 0.3;
 
+  // Çalışma süresi kalibrasyonu
+  const sureV = gunler14.filter(d => d.sure > 0).map(d => d.sure);
+  const sureOrt = sureV.length ? sureV.reduce((a,b)=>a+b,0)/sureV.length : 60;
+  const sureSd  = sureV.length > 1
+    ? Math.sqrt(sureV.reduce((a,b)=>a+Math.pow(b-sureOrt,2),0)/sureV.length)
+    : sureOrt * 0.3;
+
+  // Dijital süre kalibrasyonu
+  const dijV = gunler14.filter(d => d.sosyal > 0).map(d => d.sosyal);
+  const dijOrt = dijV.length ? dijV.reduce((a,b)=>a+b,0)/dijV.length : 1.5;
+  const dijSd  = dijV.length > 1
+    ? Math.sqrt(dijV.reduce((a,b)=>a+Math.pow(b-dijOrt,2),0)/dijV.length)
+    : dijOrt * 0.3;
+
+  // Mood puan kalibrasyonu
+  const _mp = { 'great':5, 'good':4, 'ok':3, 'bad':2, 'sad':1 };
+  const moodV = gunler14.filter(d => d.mood).map(d => _mp[d.mood] || 3);
+  const moodOrt = moodV.length ? moodV.reduce((a,b)=>a+b,0)/moodV.length : 3;
+
+  // İsabet oranı kalibrasyonu
+  const isabetV = gunler14.filter(d => d.hataOrani !== null && d.soru > 0).map(d => 100 - d.hataOrani);
+  const isabetOrt = isabetV.length ? isabetV.reduce((a,b)=>a+b,0)/isabetV.length : 70;
+  const isabetSd  = isabetV.length > 1
+    ? Math.sqrt(isabetV.reduce((a,b)=>a+Math.pow(b-isabetOrt,2),0)/isabetV.length)
+    : 10;
+
   return {
-    soru:   { ort: soruOrt, sd: soruSd, yuksek: soruOrt + soruSd, dusuk: Math.max(soruOrt - soruSd, 10) },
-    kaygi:  fn(gunler14, 'kaygi')  || { ort: 5,   sd: 1.5, yuksek: 6.5,  dusuk: 3.5 },
-    uyku:   fn(gunler14, 'uyku')   || { ort: 7,   sd: 0.8, yuksek: 8,    dusuk: 6   },
-    enerji: fn(gunler14, 'enerji') || { ort: 6,   sd: 1.5, yuksek: 7.5,  dusuk: 4.5 },
-    odak:   fn(gunler14, 'odak')   || { ort: 6,   sd: 1.5, yuksek: 7.5,  dusuk: 4.5 },
-    sosyal: fn(gunler14, 'sosyal') || { ort: 1.5, sd: 0.8, yuksek: 2.3,  dusuk: 0.5 },
-    isabet: fn(gunler14.filter(d => d.hataOrani !== null), 'hataOrani') || { ort: 25, sd: 10, yuksek: 35, dusuk: 15 },
+    soru:          { ort: soruOrt, sd: soruSd, yuksek: soruOrt + soruSd, dusuk: Math.max(soruOrt - soruSd, 10) },
+    kaygi:         fn(gunler14, 'kaygi')  || { ort: 5,   sd: 1.5, yuksek: 6.5,  dusuk: 3.5 },
+    uyku:          fn(gunler14, 'uyku')   || { ort: 7,   sd: 0.8, yuksek: 8,    dusuk: 6   },
+    enerji:        fn(gunler14, 'enerji') || { ort: 6,   sd: 1.5, yuksek: 7.5,  dusuk: 4.5 },
+    odak:          fn(gunler14, 'odak')   || { ort: 6,   sd: 1.5, yuksek: 7.5,  dusuk: 4.5 },
+    sosyal:        fn(gunler14, 'sosyal') || { ort: 1.5, sd: 0.8, yuksek: 2.3,  dusuk: 0.5 },
+    isabet:        { ort: isabetOrt, sd: isabetSd, yuksek: isabetOrt + isabetSd, dusuk: Math.max(isabetOrt - isabetSd, 20) },
+    calismaSuresi: { ort: sureOrt, sd: sureSd, yuksek: sureOrt + sureSd, dusuk: Math.max(sureOrt - sureSd, 10) },
+    dijital:       { ort: dijOrt, sd: dijSd, yuksek: dijOrt + dijSd, dusuk: Math.max(dijOrt - dijSd, 0) },
+    mood:          { ort: moodOrt },
+    zayifBransSoru: { dusuk: soruOrt * 0.1, ort: soruOrt * 0.2, yuksek: soruOrt * 0.3 },
   };
 }
 

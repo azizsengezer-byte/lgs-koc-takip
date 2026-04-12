@@ -1,4 +1,55 @@
-// scenario_runner.js — LGSKoç Senaryo Eşleştirme Motoru v2
+// scenario_runner.js — LGSKoç Senaryo Eşleştirme Motoru v3
+// ── HİYERARŞİK KARAR MOTORU ─────────────────────────────
+// Periyoda göre doğru teşhis dilini seçer
+// Modül 5 kritikse Modül 2'yi susturur
+function _applyHierarchicalLogic(period, triggeredScenarios) {
+  if (!triggeredScenarios || triggeredScenarios.length === 0) return [];
+
+  // Modül 5 (Fizyolojik) kritikse Modül 2 (Akademik Kaçınma) susar
+  const hasCriticalPhysical = triggeredScenarios.some(s => s.modul === 5 && s.priority >= 95);
+  let filtered = triggeredScenarios;
+  if (hasCriticalPhysical) {
+    filtered = triggeredScenarios.filter(s => s.modul !== 2);
+  }
+
+  // Periyoda göre doğru metin bloğunu seç
+  const periodKey = period === 'aylik' ? 'aylik' : period === 'haftalik' ? 'weekly' : 'daily';
+
+  return filtered.map(s => {
+    // Yeni format: cikti.daily/weekly/aylik
+    // Eski format: cikti.analiz/strateji (geriye dönük uyumluluk)
+    const yeniFormat = s.cikti && (s.cikti.daily || s.cikti.weekly || s.cikti.aylik);
+    let teshis, aksiyon;
+
+    if (yeniFormat) {
+      const pData = s.cikti[periodKey] || s.cikti.daily || {};
+      teshis  = pData.teshis  || '';
+      aksiyon = pData.aksiyon || '';
+    } else {
+      // Eski format fallback
+      teshis  = s.cikti.analiz   || '';
+      aksiyon = s.cikti.strateji || '';
+    }
+
+    return {
+      id:       s.id,
+      modul:    s.modul,
+      priority: s.priority,
+      etiket:   s.etiket,
+      ton:      s.cikti.ton || 'informative',
+      teshis,
+      aksiyon,
+      // Geriye dönük uyumluluk için eski alanlar da kalsın
+      analiz:   teshis,
+      strateji: aksiyon,
+      aylikEtiket: s.cikti.aylikEtiket || s.etiket,
+      frekans:  s.frekans || 0,
+      tip:      'negatif',
+    };
+  }).sort((a, b) => b.priority - a.priority);
+}
+
+// ─────────────────────────────────────────────────────────
 // =========================================================
 // TEMEL MİMARİ:
 //   Günlük mod  → tek gün snapshot
@@ -176,10 +227,24 @@ function _hesaplaAy(gunler30, kal) {
     ? (sonIsabet.reduce((a,b)=>a+b,0)/sonIsabet.length) - (ilkIsabet.reduce((a,b)=>a+b,0)/ilkIsabet.length)
     : 0;
 
+  // Son 3 gün delta değerleri
+  const son3 = gunler30.slice(-3);
+  const _mp = { 'great':5, 'good':4, 'ok':3, 'bad':2, 'sad':1 };
+  const son3GunKaygiOrt  = (() => { const v=son3.filter(d=>d.kaygi>0).map(d=>d.kaygi); return v.length?v.reduce((a,b)=>a+b,0)/v.length:0; })();
+  const son3GunEnerjiOrt = (() => { const v=son3.filter(d=>d.enerji>0).map(d=>d.enerji); return v.length?v.reduce((a,b)=>a+b,0)/v.length:0; })();
+  const son3GunMoodPuan  = (() => { const v=son3.filter(d=>d.mood).map(d=>_mp[d.mood]||3); return v.length?v.reduce((a,b)=>a+b,0)/v.length:3; })();
+  const son3GunSoruOrt   = (() => { const v=son3.filter(d=>d.soru>0).map(d=>d.soru); return v.length?v.reduce((a,b)=>a+b,0)/v.length:0; })();
+
+  // Ay geneli mood ortalaması
+  const ayMoodOrt = (() => { const v=gunler30.filter(d=>d.mood).map(d=>_mp[d.mood]||3); return v.length?v.reduce((a,b)=>a+b,0)/v.length:3; })();
+
   return {
     aylikSoruArtisSuresi, aylikIsabetArtis,
-    ortUyku:  fn(gunler30, 'uyku'),
-    ortEnerji: fn(gunler30, 'enerji'),
+    ortUyku:    fn(gunler30, 'uyku'),
+    ortEnerji:  fn(gunler30, 'enerji'),
+    ortKaygi:   fn(gunler30, 'kaygi'),
+    son3GunKaygiOrt, son3GunEnerjiOrt, son3GunMoodPuan, son3GunSoruOrt,
+    ayMoodOrt,
   };
 }
 
@@ -187,11 +252,51 @@ function _hesaplaAy(gunler30, kal) {
 function _bugunHazirla(bugunGun, allEntries, dk) {
   const konuEntries   = (allEntries||[]).filter(e => e.type==='konu'   && e.dateKey===dk);
   const tekrarEntries = (allEntries||[]).filter(e => e.type==='tekrar' && e.dateKey===dk);
+  const soruEntries   = (allEntries||[]).filter(e => e.type==='soru'   && e.dateKey===dk);
+  const tumEntries    = (allEntries||[]).filter(e => e.dateKey===dk);
+
+  // Çalışma süresi (dakika)
+  const calismaSuresi = tumEntries.reduce((a,e)=>a+(e.duration||0), 0);
+
+  // Dijital süre (saat olarak gelir, dakikaya çevirme gerekmiyor)
+  const dijitalSure = bugunGun.sosyal || 0;
+
+  // İsabet oranı (%)
+  const isabet = bugunGun.hataOrani !== null && bugunGun.hataOrani !== undefined
+    ? 100 - bugunGun.hataOrani : null;
+
+  // Branş analizi — bugün zayıf branşa ne kadar çalışıldı
+  const bransHata = bugunGun.dersHata || {};
+  const bransAnalizi = (() => {
+    const dersler = Object.entries(bransHata);
+    if (!dersler.length) return { zayifBransSoru: 0, zayifBransAdi: null, toplamDersSoru: bugunGun.soru || 0 };
+    const sirali = dersler
+      .filter(([d,v]) => v.q > 0)
+      .map(([d,v]) => ({ ders: d, isabet: (1 - v.y/v.q)*100, soru: v.q }))
+      .sort((a,b) => a.isabet - b.isabet);
+    const zayif = sirali[0];
+    return {
+      zayifBransSoru:  zayif ? zayif.soru : 0,
+      zayifBransAdi:   zayif ? zayif.ders : null,
+      zayifBransIsabet: zayif ? zayif.isabet : null,
+      toplamDersSoru:  dersler.reduce((a,[,v])=>a+v.q, 0),
+    };
+  })();
+
+  // Gün adı
+  const dayNames = ['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+  const dayName = dk ? dayNames[new Date(dk + 'T12:00:00').getDay()] : '';
+
   return {
     ...bugunGun,
-    konuSure:   konuEntries.reduce((a,e)=>a+(e.duration||0), 0),
-    tekrarSure: tekrarEntries.reduce((a,e)=>a+(e.duration||0), 0),
-    hataOrani:  bugunGun.hataOrani,
+    konuSure:      konuEntries.reduce((a,e)=>a+(e.duration||0), 0),
+    tekrarSure:    tekrarEntries.reduce((a,e)=>a+(e.duration||0), 0),
+    hataOrani:     bugunGun.hataOrani,
+    calismaSuresi,
+    dijitalSure,
+    isabet,
+    bransAnalizi,
+    dayName,
   };
 }
 
@@ -291,21 +396,16 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
       }
     });
 
-    const insights = ciktiNeg.map(s => ({
-      id: s.id, modul: s.modul, priority: s.priority,
-      etiket: s.etiket,
-      analiz: s.cikti.analiz,
-      strateji: s.cikti.strateji,
-      aylikEtiket: s.cikti.aylikEtiket,
-      ton: s.cikti.ton,
-      tip: 'negatif',
-      frekans: tumNegIdSayac[s.id] || 0,
-    }));
+    // Hiyerarşik mantık + periyot dili seçimi
+    const _ciktiNegFrekansli = ciktiNeg.map(s => ({ ...s, frekans: tumNegIdSayac[s.id]||0 }));
+    const insights = _applyHierarchicalLogic('aylik', _ciktiNegFrekansli);
     const positives = ciktiPos.map(s => ({
       id: s.id, etiket: s.etiket,
-      analiz: s.cikti.analiz,
-      strateji: s.cikti.strateji,
-      aylikEtiket: s.cikti.aylikEtiket,
+      analiz: s.cikti.analiz || (s.cikti.aylik||{}).teshis || '',
+      strateji: s.cikti.strateji || (s.cikti.aylik||{}).aksiyon || '',
+      teshis: (s.cikti.aylik||{}).teshis || s.cikti.analiz || '',
+      aksiyon: (s.cikti.aylik||{}).aksiyon || s.cikti.strateji || '',
+      aylikEtiket: s.cikti.aylikEtiket || s.etiket,
       ton: s.cikti.ton,
       tip: 'pozitif',
       frekans: tumPosIdSayac[s.id] || 0,
@@ -321,6 +421,7 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
       insights, positives, vaka: aktifVaka, kalOzet,
       tetiklenenTumIdler: [...tetIdSet],
       frekansMap: { ...tumNegIdSayac, ...tumPosIdSayac },
+      aktifProfil: _aktifProfil,
     };
 
   // ── HAFTALIK: son 7 günü tara ─────────────────────────
@@ -439,12 +540,8 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
       }
     });
 
-    const insights = ciktiNeg.map(s => ({
-      id: s.id, modul: s.modul, priority: s.priority,
-      etiket: s.etiket, analiz: s.cikti.analiz, strateji: s.cikti.strateji,
-      aylikEtiket: s.cikti.aylikEtiket, ton: s.cikti.ton, tip: 'negatif',
-      frekans: tumNegIdSayac[s.id] || 0,
-    }));
+    const _hNegFrekansli = ciktiNeg.map(s => ({ ...s, frekans: tumNegIdSayac[s.id]||0 }));
+    const insights = _applyHierarchicalLogic('haftalik', _hNegFrekansli);
     const positives = ciktiPos.map(s => ({
       id: s.id, etiket: s.etiket, analiz: s.cikti.analiz, strateji: s.cikti.strateji,
       aylikEtiket: s.cikti.aylikEtiket, ton: s.cikti.ton, tip: 'pozitif',
@@ -464,6 +561,7 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
       trendAnlati: _trendAnlati,
       sonSkor: Math.round(_sonSkor * 100),
       ilkSkor: Math.round(_ilkSkor * 100),
+      aktifProfil: _aktifProfilH,
     };
 
   // ── GÜNLÜK: tek gün snapshot ──────────────────────────
