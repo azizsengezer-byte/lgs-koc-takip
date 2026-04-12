@@ -391,7 +391,7 @@ async function exportPsychPDF(sName, aiAcik) {
 
     // ── AI ANALİZİ (haftalık/aylık, API key varsa) ───────────
     let aiAnaliz = null;
-    if (period !== 'daily' && aiAcik && localStorage.getItem('lgs_api_enabled') === 'true' && localStorage.getItem('lgs_anthropic_key')) {
+    if (period !== 'daily' && aiAcik && typeof ANTHROPIC_KEY !== 'undefined' && ANTHROPIC_KEY && ANTHROPIC_KEY !== 'BURAYA_KEY_GIR') {
       try {
         const sozelNotlar = gunler
           .filter(d => d.pozitif || d.negatif)
@@ -849,6 +849,7 @@ async function exportPsychPDF(sName, aiAcik) {
       } else { // end daily -> start weekly/monthly
         // ── PSİKOLOJİK-AKADEMİK KORELASYON: DİNAMİK SENARYO MOTORU ──
         if (Y > 180) { Y = pdfNewPage(doc); }
+        Y = pdfCheck(doc, Y, 50); // Başlık + kalibrasyon + ilk senaryo için yer aç
         Y = pdfSecHeader(doc, 'PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ', Y, 220, 50, 100);
         doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(100,90,140);
         doc.text(tx(period==='weekly'
@@ -862,12 +863,13 @@ async function exportPsychPDF(sName, aiAcik) {
         if (_motorMevcut && _gunlerYeterli) {
           const _mod = period === 'monthly' ? 'aylik' : period === 'weekly' ? 'haftalik' : 'gunluk';
           const _m = window.calistirSenaryolar(gunler, allAcadEntries, endKey, _mod);
-          const _ins  = _m.insights  || [];
-          const _pos  = _m.positives || [];
+          const _ins  = Array.isArray(_m.insights)  ? _m.insights  : [];
+          const _pos  = Array.isArray(_m.positives) ? _m.positives : [];
           const _vaka = _m.vaka;
           const _kal  = _m.kalOzet;
           const _trend = _m.trend || 'stabil';
           const _trendAnlati = _m.trendAnlati || '';
+          const _motorProfil = _m.aktifProfil || null; // Runner'dan gelen P01..P25
 
           // Kalibrasyon özeti
           if (_kal) {
@@ -912,15 +914,20 @@ async function exportPsychPDF(sName, aiAcik) {
           };
 
           if (_ins.length > 0) {
-            Y = pdfCheck(doc, Y, 12);
+            // Başlık + ilk kart birlikte sığmazsa yeni sayfa
+            const _ilkIns = _ins[0] || {};
+            const _ilkAnaSat = doc.splitTextToSize(tx(_ilkIns.teshis || _ilkIns.analiz || ''), 151);
+            const _ilkStrSat = doc.splitTextToSize(tx('Strateji: ' + (_ilkIns.aksiyon || _ilkIns.strateji || '')), 151);
+            const _ilkKartH = _ilkAnaSat.length * 4.6 + _ilkStrSat.length * 4.5 + 20;
+            Y = pdfCheck(doc, Y, 18 + _ilkKartH + 4);
             doc.setFont(PF,'bold'); doc.setFontSize(7.5);
             doc.setTextColor(100, 30, 30);
             doc.text(tx('Risk & Müdahale Alanları'), 16, Y); Y += 6;
 
             _ins.forEach(ins => {
               const r = _tonRenk[ins.ton] || _tonRenk.informative;
-              const _anaSat = doc.splitTextToSize(tx(ins.analiz), 151);
-              const _strSat = doc.splitTextToSize(tx('Strateji: ' + ins.strateji), 151);
+              const _anaSat = doc.splitTextToSize(tx(ins.teshis || ins.analiz || ''), 151);
+              const _strSat = doc.splitTextToSize(tx('Strateji: ' + (ins.aksiyon || ins.strateji || '')), 151);
               const _iH = _anaSat.length * 4.6 + _strSat.length * 4.5 + 20;
               Y = pdfCheck(doc, Y, _iH + 4);
               doc.setFillColor(r.arkaR, r.arkaG, r.arkaB);
@@ -946,13 +953,17 @@ async function exportPsychPDF(sName, aiAcik) {
 
           // ── POZİTİF SENARYOLAR ─────────────────────────────────
           if (_pos.length > 0) {
-            Y = pdfCheck(doc, Y, 12);
+            // Başlık + ilk kart birlikte sığmazsa yeni sayfa
+            const _ilkPos = _pos[0] || {};
+            const _ilkPosSat = doc.splitTextToSize(tx(_ilkPos.teshis || _ilkPos.analiz || ''), 152);
+            const _ilkPosH = _ilkPosSat.length * 4.6 + 16;
+            Y = pdfCheck(doc, Y, 18 + _ilkPosH + 4);
             doc.setFont(PF,'bold'); doc.setFontSize(7.5);
             doc.setTextColor(20, 120, 70);
             doc.text(tx('Güçlü Yanlar'), 16, Y); Y += 6;
 
             _pos.forEach(p => {
-              const _pSat = doc.splitTextToSize(tx(p.analiz), 152);
+              const _pSat = doc.splitTextToSize(tx(p.teshis || p.analiz || ''), 152);
               const _pH = _pSat.length * 4.6 + 16;
               Y = pdfCheck(doc, Y, _pH + 4);
               doc.setFillColor(238, 255, 246);
@@ -989,14 +1000,28 @@ async function exportPsychPDF(sName, aiAcik) {
             const _yuksekFon  = _tetIdler.some(id => ['DYN-76','DYN-96'].includes(id));
 
             // Profil tipi — baskın modüle göre
-            let _profil = 'dengeli';
-            if (_kritikBlok) _profil = 'bloke';
-            else if (_tukenmis && _skor.fizyoloj >= 2) _profil = 'tukenmis';
-            else if (_yuksekFon && _skor.bilissel >= 2) _profil = 'yuksekFonKaygi';
-            else if (_skor.brans >= 3 && _skor.brans >= _skor.bilissel && _skor.brans >= _skor.dijital) _profil = 'kacinan';
-            else if (_skor.dijital >= 3 && _skor.dijital >= _skor.brans) _profil = 'dijitalGolgeli';
-            else if (_toplamNeg <= 2 && _skor.pozitif >= 3) _profil = 'dengeli';
-            else _profil = 'karisik';
+            // Runner'dan gelen profil kodunu köprü profil ismine çevir
+            const _pKodMap = {
+              P01:'bloke', P02:'tukenmis', P03:'yuksekFonKaygi', P04:'tukenmis',
+              P05:'yuksekFonKaygi', P06:'tukenmis', P07:'tukenmis',
+              P08:'kacinan', P09:'kacinan', P10:'kacinan',
+              P11:'bloke', P12:'yuksekFonKaygi', P13:'karisik',
+              P14:'dijitalGolgeli', P15:'dijitalGolgeli', P16:'dijitalGolgeli',
+              P17:'karisik', P18:'karisik', P19:'karisik',
+              P20:'yuksekFonKaygi', P21:'tukenmis', P22:'karisik',
+              P23:'dengeli', P24:'dengeli', P25:'karisik',
+            };
+            let _profil = _motorProfil ? (_pKodMap[_motorProfil] || 'karisik') : 'dengeli';
+            // Runner profil yoksa eski mantığa düş
+            if (!_motorProfil) {
+              if (_kritikBlok) _profil = 'bloke';
+              else if (_tukenmis && _skor.fizyoloj >= 2) _profil = 'tukenmis';
+              else if (_yuksekFon && _skor.bilissel >= 2) _profil = 'yuksekFonKaygi';
+              else if (_skor.brans >= 3 && _skor.brans >= _skor.bilissel && _skor.brans >= _skor.dijital) _profil = 'kacinan';
+              else if (_skor.dijital >= 3 && _skor.dijital >= _skor.brans) _profil = 'dijitalGolgeli';
+              else if (_toplamNeg <= 2 && _skor.pozitif >= 3) _profil = 'dengeli';
+              else _profil = 'karisik';
+            }
 
             // Profil metin havuzu — döneme göre uyarlanmış
             const _isAylik = period === 'monthly';
@@ -1050,31 +1075,36 @@ async function exportPsychPDF(sName, aiAcik) {
               { baslik: _isAylik ? 'GELECEK AY PLANI' : 'ÖNÜMÜZDEKİ HAFTA İÇİN',   metin: _pm.gelecek,  ar:255, ag:248, ab:235, sr:170, sg:80,  sb:0   },
             ];
 
-            // Bütüncül Analiz bölüm başlığı — belirgin section header
-            Y = pdfCheck(doc, Y, 22);
+            // Bütüncül köprü: önce toplam yüksekliği hesapla
             const _bridgeH = 12;
+            const _kutularMetin = _kutular.map(k => {
+              if (!k.metin) return { ...k, sat: [], h: 0 };
+              const sat = doc.splitTextToSize(tx(k.metin), 152);
+              return { ...k, sat, h: sat.length * 4.8 + 18 };
+            }).filter(k => k.h > 0);
+            const _ilkKutuH = _kutularMetin.length > 0 ? _kutularMetin[0].h : 30;
+            // Başlık + ilk kutu birlikte sığmazsa yeni sayfa
+            Y = pdfCheck(doc, Y, _bridgeH + 10 + _ilkKutuH + 5);
             doc.setFillColor(40, 30, 100);
             doc.roundedRect(15, Y, 180, _bridgeH, 2, 2, 'F');
             doc.setFont(PF, 'bold'); doc.setFontSize(8.5); doc.setTextColor(255, 255, 255);
             doc.text(tx('BÜTÜNCÜL ANALİZ KÖPRÜSÜ'), 105, Y + 8, { align: 'center' });
             Y += _bridgeH + 6;
 
-            _kutular.forEach(k => {
-              if (!k.metin) return;
-              const _sat = doc.splitTextToSize(tx(k.metin), 152);
-              const _h   = _sat.length * 4.8 + 18;
-              Y = pdfCheck(doc, Y, _h + 5);
+            _kutularMetin.forEach(k => {
+              // Her kutu kendi içinde sayfa taşması kontrolü
+              Y = pdfCheck(doc, Y, k.h + 5);
               doc.setFillColor(k.ar, k.ag, k.ab);
-              doc.roundedRect(15, Y, 180, _h, 1.5, 1.5, 'F');
+              doc.roundedRect(15, Y, 180, k.h, 1.5, 1.5, 'F');
               doc.setFillColor(k.sr, k.sg, k.sb);
-              doc.roundedRect(15, Y, 3.5, _h, 1, 1, 'F');
+              doc.roundedRect(15, Y, 3.5, k.h, 1, 1, 'F');
               doc.setFont(PF,'bold'); doc.setFontSize(7);
               doc.setTextColor(k.sr, k.sg, k.sb);
               doc.text(tx(k.baslik), 21, Y + 6);
               doc.setFont(PF,'normal'); doc.setFontSize(6.6);
               doc.setTextColor(40, 35, 60);
-              doc.text(_sat, 21, Y + 12);
-              Y += _h + 5;
+              doc.text(k.sat, 21, Y + 12);
+              Y += k.h + 5;
             });
           }
 
