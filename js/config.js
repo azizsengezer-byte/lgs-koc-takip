@@ -349,7 +349,7 @@ auth.onAuthStateChanged(async (user) => {
           await auth.signOut();
           document.getElementById('app').style.display = 'none';
           document.getElementById('loginScreen').style.display = 'flex';
-          const _spH = document.getElementById('splashScreen'); if (_spH) { _spH.classList.add('sp-hidden'); setTimeout(() => _spH.remove(), 450); }
+          if (window._hideSplash) window._hideSplash();
           // Doğrulama ekranını göster
           setTimeout(() => {
             const el = document.getElementById('dogrulamaEkrani');
@@ -366,7 +366,7 @@ auth.onAuthStateChanged(async (user) => {
           await auth.signOut();
           document.getElementById('app').style.display = 'none';
           document.getElementById('loginScreen').style.display = 'flex';
-          const _spH = document.getElementById('splashScreen'); if (_spH) { _spH.classList.add('sp-hidden'); setTimeout(() => _spH.remove(), 450); }
+          if (window._hideSplash) window._hideSplash();
           return;
         }
       }
