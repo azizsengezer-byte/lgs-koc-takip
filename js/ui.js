@@ -1,17 +1,7 @@
 
-// Animasyonlu yükleniyor komponenti
+// Sayfa geçiş loading — sade spinner
 function _loadingHTML(emoji) {
-  return `<div class="page-loading">
-    <div class="page-loading-logo">
-      <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
-        <rect x="4" y="18" width="6" height="10" rx="2" fill="rgba(255,255,255,0.45)"/>
-        <rect x="13" y="12" width="6" height="16" rx="2" fill="rgba(255,255,255,0.7)"/>
-        <rect x="22" y="6" width="6" height="22" rx="2" fill="white"/>
-        <path d="M26 4L29 1M29 1H26M29 1V4" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </div>
-    <div class="page-loading-dots"><span></span><span></span><span></span></div>
-  </div>`;
+  return '<div style="display:flex;align-items:center;justify-content:center;padding:60px 20px"><div style="width:28px;height:28px;border:3px solid rgba(108,99,255,0.2);border-top-color:#6c63ff;border-radius:50%;animation:sp-spin 0.7s linear infinite"></div></div>';
 }
 
 function openProfileDrawer() {
