@@ -72,557 +72,192 @@ function _kalibre(gunler14) {
 
 const SENARYOLAR = [
 
-  // ════════════════════════════════════════════
-  // MODÜL 1: BİLİŞSEL RESTORASYON (DYN-01..10)
-  // ════════════════════════════════════════════
+  // ══════════════════════════════════════════════
+  // MODÜL 1: KRİZ VE BİLİŞSEL ONARIM
+  // ══════════════════════════════════════════════
 
   {
-    id: 'DYN-01', modul: 1, priority: 82,
-    etiket: 'Hasarlı Yüksek Hacim',
-    tetikle: (b, h, a, k) =>
-      b.kaygi >= k.kaygi.yuksek && b.soru >= k.soru.yuksek,
+    id: 'DYN-01', modul: 1, priority: 95, etiket: 'Toksik Yüklenme',
+    tetikle: (b, h, a, k) => b.kaygi >= k.kaygi.yuksek && b.soru >= k.soru.yuksek,
     cikti: {
-      analiz: 'Kaygı etkisiyle yapılan yüksek hacimli çalışmanın bilişsel maliyetinin yüksek olduğu saptanmıştır.',
-      strateji: 'Akademik yük hafifletilmeli; kriz anında işlenen üniteler "Temiz Zihin" tekrarına alınmalıdır.',
-      aylikEtiket: 'Hasarlı_Kayıt',
-      ton: 'empathetic'
-    }
-  },
-
-  {
-    id: 'DYN-02', modul: 1, priority: 70,
-    etiket: 'Duygusal Çekilme',
-    tetikle: (b, h, a, k) =>
-      b.soru === 0 && b.kaygi === 0 && b.enerji === 0 &&
-      h.bosGunSayisi >= 3,
-    cikti: {
-      analiz: 'Takip sistemine karşı bir direnç veya kriz kaynaklı sessizlik evresi saptanmıştır.',
-      strateji: 'Veli ve öğrenciyle samimi bir durum tespiti görüşmesi planlanmalı; kopuşun kök nedeni netleştirilmelidir.',
-      aylikEtiket: 'Duygusal_Çekilme',
-      ton: 'gentle'
-    }
-  },
-
-  {
-    id: 'DYN-03', modul: 1, priority: 88,
-    etiket: 'Bilişsel İflas',
-    tetikle: (b, h, a, k) =>
-      b.uyku > 0 && b.uyku < 6 && b.odak < k.odak.dusuk,
-    cikti: {
-      analiz: 'Fizyolojik yetersizliğin bilişsel fonksiyonları kısıtladığı değerlendirilmektedir.',
-      strateji: 'Yeni konu eklenmesi ertelenmeli; uyku hijyeni ve biyolojik restorasyon önceliklendirilmelidir.',
-      aylikEtiket: 'Bilişsel_İflas',
+      daily:   { teshis: 'Akut Kaygı Altında Yüklenme.', aksiyon: 'Bugün yeni konu vermeyin; dünkü hataları analiz ettirin.' },
+      weekly:  { teshis: 'Kaygılı Çaba Eğilimi.', aksiyon: 'Haftalık görüşmede netlere değil, huzura odaklanın.' },
+      monthly: { teshis: 'Kronik Performans Anksiyetesi.', aksiyon: 'Gelecek ay stratejisini duygusal onarım üzerine kurun.' },
       ton: 'urgent'
     }
   },
-
   {
-    id: 'DYN-04', modul: 1, priority: 95,
-    etiket: 'Akut Blokaj',
+    id: 'DYN-04', modul: 1, priority: 98, etiket: 'Akut Blokaj',
+    tetikle: (b, h, a, k) => b.kaygi >= k.kaygi.yuksek && b.soru <= k.soru.dusuk,
+    cikti: {
+      daily:   { teshis: 'Duygusal Felç: Kaygı sistemi durdurmuş.', aksiyon: 'Görevleri iptal edin, sadece moral görüşmesi yapın.' },
+      weekly:  { teshis: 'Süreçten Kopma Haftası.', aksiyon: 'Planı Mikro Hedeflerle (günde 10-20 soru) resetleyin.' },
+      monthly: { teshis: 'Akademik Yıkım Riski.', aksiyon: 'Hedefleri revize edin; baskıyı tamamen kaldırın.' },
+      ton: 'urgent'
+    }
+  },
+  {
+    id: 'DYN-134', modul: 1, priority: 99, etiket: 'Pre-Burnout',
     tetikle: (b, h, a, k) =>
-      b.kaygi >= 9 && b.soru < 40 &&
-      h.ozYeterlilikTrend === 'negatif',
+      a.son3GunEnerjiOrt <= (k.enerji.ort * 0.6) &&
+      a.son3GunMoodPuan  <= (k.mood.ort * 0.6),
     cikti: {
-      analiz: 'Yüksek kaygı düzeyinin öğrenciyi tamamen savunmasız bıraktığı ve akademik üretimi durdurduğu saptanmıştır.',
-      strateji: 'Akademik beklenti minimize edilmeli; duygusal güvenlik ve moral desteği odaklı bir iletişim kurulmalıdır.',
-      aylikEtiket: 'Akut_Blokaj',
-      ton: 'crisis'
+      daily:   { teshis: 'Sistem Alarmı: Fiziksel ve zihinsel enerji dipte.', aksiyon: 'Acil 24 saatlik mutlak akademik mola verdirin.' },
+      weekly:  { teshis: 'Motivasyonel İflas Haftası.', aksiyon: 'Haftalık hedefleri yüzde elli düşürüp öğrenciyi dinlendirin.' },
+      monthly: { teshis: 'Akademik Tükenmişlik Teşhisi.', aksiyon: 'Mevcut strateji sürdürülemez; yöntemi aileyle revize edin.' },
+      ton: 'urgent'
     }
   },
-
   {
-    id: 'DYN-05', modul: 1, priority: 75,
-    etiket: 'Hasarlı Konu Kaydı',
+    id: 'DYN-150', modul: 1, priority: 90, etiket: 'Krizden Çıkış',
     tetikle: (b, h, a, k) =>
-      b.kaygi >= k.kaygi.yuksek && b.konuSure > 60 &&
-      h.tekrarSure === 0,
+      a.son3GunKaygiOrt < (k.kaygi.ort * 0.8) &&
+      b.soru >= k.soru.ort,
     cikti: {
-      analiz: 'Stres altında yapılan konu çalışmasının kalıcı belleğe aktarımında sorunlar yaşanabileceği saptanmıştır.',
-      strateji: 'İlgili konu, wellness verilerinin ideal olduğu ilk fırsatta kısa bir "check-up" testine tabi tutulmalıdır.',
-      aylikEtiket: 'Hasarlı_Konu',
-      ton: 'informative'
-    }
-  },
-
-  {
-    id: 'DYN-06', modul: 1, priority: 62,
-    etiket: 'Bilişsel Yorgunluk',
-    tetikle: (b, h, a, k) =>
-      b.odak < k.odak.dusuk && b.soru > k.soru.ort,
-    cikti: {
-      analiz: 'Öğrencinin zihinsel olarak tükenmiş olmasına rağmen çalışmaya devam ettiği (boşa mesai) gözlemlenmiştir.',
-      strateji: 'Çalışma periyotları kısaltılmalı; dinlenme süreleri nitelikli (ekransız) hale getirilmelidir.',
-      aylikEtiket: 'Boşa_Mesai',
-      ton: 'coaching'
-    }
-  },
-
-  {
-    id: 'DYN-09', modul: 1, priority: 78,
-    etiket: 'Dijital Anestezi',
-    tetikle: (b, h, a, k) =>
-      b.kaygi >= k.kaygi.yuksek && b.sosyal > k.sosyal.yuksek,
-    cikti: {
-      analiz: 'Stresle başa çıkma yöntemi olarak dijital dünyada "zamanı dondurma" eğilimi saptanmıştır.',
-      strateji: 'Dijital kullanımın bir dinlenme değil, odak sızıntısı olduğu somut verilerle öğrenciye aktarılmalıdır.',
-      aylikEtiket: 'Dijital_Kaçış',
-      ton: 'rational'
-    }
-  },
-
-  {
-    id: 'DYN-10', modul: 1, priority: 92,
-    etiket: 'Kombine Çöküş',
-    tetikle: (b, h, a, k) =>
-      b.uyku > 0 && b.uyku < 6 && b.kaygi >= k.kaygi.yuksek,
-    cikti: {
-      analiz: 'Hem biyolojik hem de psikolojik bariyerlerin aşılması nedeniyle sistemin alarm verdiği saptanmıştır.',
-      strateji: '24 saatlik tam akademik mola verilmeli; süreç uyku ve duygusal stabilizasyon ile başlatılmalıdır.',
-      aylikEtiket: 'Kombine_Çöküş',
-      ton: 'crisis'
-    }
-  },
-
-  {
-    id: 'DYN-14', modul: 1, priority: 85,
-    etiket: 'Robotik Performans',
-    tetikle: (b, h, a, k) =>
-      b.kaygi >= k.kaygi.yuksek && b.soru >= k.soru.yuksek &&
-      b.hataOrani !== null && b.hataOrani < 15 &&
-      b.odak < k.odak.dusuk,
-    cikti: {
-      analiz: 'Öğrenci hiçbir şey hissetmeden sadece görev bilinciyle hareket etmektedir; bu durum ani bir tükenmişlik habercisidir.',
-      strateji: 'Duygusal veri takibi sıkılaştırılmalı; öğrenciye akademik başarı dışında nefes alabileceği alanlar hatırlatılmalıdır.',
-      aylikEtiket: 'Tükenmişlik_Habercisi',
-      ton: 'empathetic'
-    }
-  },
-
-  {
-    id: 'DYN-15', modul: 1, priority: 72,
-    etiket: 'Yalancı İvme',
-    tetikle: (b, h, a, k) =>
-      b.uyku > 0 && b.uyku < 6 && b.soru >= k.soru.yuksek,
-    cikti: {
-      analiz: 'Öğrenci uyku vaktinden çalarak performans artışı sağlamaktadır; bilişsel rezervlerin hızla tükendiğini gösterir.',
-      strateji: 'Başarı takdir edilmeli ancak uyku süresinin uzun vadeli zeka performansı üzerindeki riski vurgulanmalıdır.',
-      aylikEtiket: 'Borçlu_Başarı',
-      ton: 'balanced'
-    }
-  },
-
-  // ════════════════════════════════════════════
-  // MODÜL 2: BRANŞ KUTUPLAŞMASI (DYN-41..50)
-  // ════════════════════════════════════════════
-
-  {
-    id: 'DYN-41', modul: 2, priority: 65,
-    etiket: 'Branş Gettosu',
-    tetikle: (b, h, a, k) => {
-      if (!b.dersHata || Object.keys(b.dersHata).length < 2) return false;
-      const dersler = Object.entries(b.dersHata);
-      const enIyi = dersler.sort((x, y) => (y[1].q > 0 ? (1 - y[1].y/y[1].q) : 0) - (x[1].q > 0 ? (1 - x[1].y/x[1].q) : 0))[0];
-      const enKotu = dersler[dersler.length - 1];
-      if (!enIyi || !enKotu || enIyi[0] === enKotu[0]) return false;
-      const iyiIsabet = enIyi[1].q > 0 ? (1 - enIyi[1].y / enIyi[1].q) * 100 : 0;
-      const kotuIsabet = enKotu[1].q > 0 ? (1 - enKotu[1].y / enKotu[1].q) * 100 : 0;
-      return iyiIsabet >= 85 && kotuIsabet < 50 && h.zayifBransSure < 15;
-    },
-    cikti: {
-      analiz: 'Öğrencinin başarısızlık riskinden kaçmak için sadece yetkin hissettiği alanda vakit geçirdiği saptanmıştır.',
-      strateji: 'Zayıf branş çalışmaları günün en yüksek enerji saatine çekilmeli ve mikro hedeflerle başlatılmalıdır.',
-      aylikEtiket: 'Branş_Gettosu',
-      ton: 'coaching'
-    }
-  },
-
-  {
-    id: 'DYN-42', modul: 2, priority: 58,
-    etiket: 'Teorik Kaçış',
-    tetikle: (b, h, a, k) =>
-      b.konuSure > 60 && b.soru < 20 &&
-      h.zayifBransDenemeIsabet < 50,
-    cikti: {
-      analiz: 'Öğrenci zayıf olduğu branşta "öğreniyormuş gibi yaparak" aslında kendini test etmekten kaçınmaktadır.',
-      strateji: 'Konu çalışma süresi 30 dakika ile sınırlandırılmalı; hemen ardından 15 soruluk "başarı garantili" kolay test eklenmelidir.',
-      aylikEtiket: 'Pasif_Öğrenme',
-      ton: 'directive'
-    }
-  },
-
-  {
-    id: 'DYN-43', modul: 2, priority: 52,
-    etiket: 'Sahte Başarı Hazzı',
-    tetikle: (b, h, a, k) => {
-      if (!b.dersHata) return false;
-      const favori = Object.entries(b.dersHata).sort((x, y) => y[1].q - x[1].q)[0];
-      if (!favori) return false;
-      const toplam = Object.values(b.dersHata).reduce((s, d) => s + d.q, 0);
-      return favori[1].q / Math.max(toplam, 1) > 0.65 && toplam >= k.soru.ort;
-    },
-    cikti: {
-      analiz: 'Günlük soru hedefine ulaşmak için sadece sevilen derslerin seçildiği, dengesiz bir gelişim modeli gözlemlenmiştir.',
-      strateji: 'Günlük soru hedefi branş bazlı kotalara bölünerek disipline edilmelidir.',
-      aylikEtiket: 'Dengesiz_Gelişim',
-      ton: 'informative'
-    }
-  },
-
-  {
-    id: 'DYN-44', modul: 2, priority: 68,
-    etiket: 'Öğrenilmiş Çaresizlik',
-    tetikle: (b, h, a, k) =>
-      h.zayifBransDenemeIsabet < 45 &&
-      h.zayifBransSureAzalma === true,
-    cikti: {
-      analiz: 'Düşük isabet oranının yarattığı moral bozukluğu, öğrenciyi o branştan tamamen kopma noktasına getirmiştir.',
-      strateji: 'İlgili branşta akademik beklenti geçici olarak durdurulmalı; sadece temel kavramlar üzerinden özgüven onarımı yapılmalıdır.',
-      aylikEtiket: 'Öğrenilmiş_Çaresizlik',
-      ton: 'empathetic'
-    }
-  },
-
-  {
-    id: 'DYN-49', modul: 2, priority: 45,
-    etiket: 'Bariyer Aşımı',
-    tetikle: (b, h, a, k) => {
-      if (!b.dersHata) return false;
-      const zayifDers = h.zayifBrans;
-      if (!zayifDers || !b.dersHata[zayifDers]) return false;
-      const isabet = b.dersHata[zayifDers].q > 0
-        ? (1 - b.dersHata[zayifDers].y / b.dersHata[zayifDers].q) * 100 : 0;
-      return isabet >= 80 && b.dersHata[zayifDers].q >= 50 &&
-        h.ozYeterlilikTrend === 'pozitif';
-    },
-    cikti: {
-      analiz: 'Öğrencinin direnç gösterdiği branşta eşik değerin üzerine çıktığı ve psikolojik bariyeri yıktığı gözlemlenmiştir.',
-      strateji: 'Bu başarı anı anında geri bildirimle pekiştirilmeli; "yapabiliyorum" algısı diğer günlere taşınmalıdır.',
-      aylikEtiket: 'Bariyer_Aşımı_Pozitif',
-      ton: 'celebratory'
-    }
-  },
-
-  {
-    id: 'DYN-50', modul: 2, priority: 60,
-    etiket: 'Hata Fobisi',
-    tetikle: (b, h, a, k) =>
-      b.hataOrani !== null && b.hataOrani < 10 &&
-      b.soru < 40,
-    cikti: {
-      analiz: 'Öğrenci hata yapmamak için çok az soru çözmekte; mükemmeliyetçilik kaygısı üretim hacmini kısıtlamaktadır.',
-      strateji: 'Hata yapmanın serbest olduğu "hızlı soru çözme" seansları düzenlenmeli; isabetten ziyade hacim teşvik edilmelidir.',
-      aylikEtiket: 'Mükemmeliyetçilik_Tuzağı',
-      ton: 'coaching'
-    }
-  },
-
-  {
-    id: 'DYN-55', modul: 2, priority: 55,
-    etiket: 'Gelişimsel Duraklama',
-    tetikle: (b, h, a, k) =>
-      b.konuSure === 0 && b.tekrarSure > 90,
-    cikti: {
-      analiz: 'Öğrenci hata yapma riskini sıfırlamak adına sürekli geçmiş konuları tekrar etmekte, müfredatta ilerlemeyi reddetmektedir.',
-      strateji: 'Haftalık planda "Yeni Kazanım" kotası zorunlu tutulmalı; hata yapmanın öğrenmenin bir parçası olduğu vurgulanmalıdır.',
-      aylikEtiket: 'Müfredat_Durması',
-      ton: 'directive'
-    }
-  },
-
-  {
-    id: 'DYN-56', modul: 2, priority: 42,
-    etiket: 'Motivasyon Motoru Branş',
-    tetikle: (b, h, a, k) => {
-      if (!b.dersHata) return false;
-      const guclu = Object.entries(b.dersHata)
-        .filter(([d, v]) => v.q > 0 && (1 - v.y / v.q) * 100 >= 85)
-        .sort((x, y) => y[1].q - x[1].q)[0];
-      return guclu && b.enerji >= 8 && b.soru >= k.soru.ort;
-    },
-    cikti: {
-      analiz: 'Güçlü branştaki başarının öğrencinin genel enerji ve özgüven seviyesini yukarı çektiği saptanmıştır.',
-      strateji: 'Bu branş, zor bir sayısal dersten hemen sonra "moral restorasyonu" için kullanılmalıdır.',
-      aylikEtiket: 'Çapa_Branş',
+      daily:   { teshis: 'Duygusal Toparlanma: Stres yönetimi sağlandı.', aksiyon: 'Bu kararlılığı pozitif bir mesajla ödüllendirin.' },
+      weekly:  { teshis: 'Kriz Sonrası İstikrar.', aksiyon: 'Normal tempoya dönüşü koç olarak onaylayın.' },
+      monthly: { teshis: 'Psikolojik Sağlamlık Artışı.', aksiyon: 'Kriz yönetme becerisini başarı hanesine yazın.' },
       ton: 'positive'
     }
   },
 
-  // ════════════════════════════════════════════
-  // MODÜL 3: ÖZ-YETERLİLİK (DYN-76..96)
-  // ════════════════════════════════════════════
+  // ══════════════════════════════════════════════
+  // MODÜL 2: AKADEMİK KAÇINMA VE SAVUNMA
+  // ══════════════════════════════════════════════
 
   {
-    id: 'DYN-76', modul: 3, priority: 80,
-    etiket: 'Yüksek Fonksiyonlu Kaygı',
+    id: 'DYN-41', modul: 2, priority: 85, etiket: 'Branş Gettosu',
+    tetikle: (b, h, a, k) =>
+      b.soru > k.soru.ort &&
+      b.bransAnalizi.zayifBransSoru <= k.zayifBransSoru.dusuk,
+    cikti: {
+      daily:   { teshis: 'Branş Kaçınması: Konfor alanında kalınıyor.', aksiyon: 'Yarına zayıf branş kotası (en az 20 soru) ekleyin.' },
+      weekly:  { teshis: 'Sistematik Branş Dışlama.', aksiyon: 'Programda Önce Zor Olanı Yap kuralını işletin.' },
+      monthly: { teshis: 'Konfor Alanı Bağımlılığı.', aksiyon: 'Zayıf branş kotalarını sabitleyin ve koç denetimine alın.' },
+      ton: 'warning'
+    }
+  },
+  {
+    id: 'DYN-60', modul: 2, priority: 88, etiket: 'Analiz Kaçışı',
+    tetikle: (b, h, a, k) =>
+      b.hataOrani !== null &&
+      b.hataOrani >= 35 &&
+      b.konuSure < 10,
+    cikti: {
+      daily:   { teshis: 'Hata Körlüğü: Yüksek hata oranına rağmen analiz süresi yetersiz.', aksiyon: 'Hatalı soruların video çözümlerini izlemeden günü kapatmamasını sağlayın.' },
+      weekly:  { teshis: 'Sistematik Analiz İhmali: Hatalardan ders çıkarma süreci zayıf.', aksiyon: 'Haftalık analizde yanlış sayısına değil çözüm sürelerine odaklanın.' },
+      monthly: { teshis: 'Gelişim Durması Riski: Yanlışlardan kaçma karakteri izleniyor.', aksiyon: 'Analiz yapılmayan çalışmaları tamamlanmamış kabul edin.' },
+      ton: 'urgent'
+    }
+  },
+  {
+    id: 'DYN-45', modul: 2, priority: 82, etiket: 'Nicelik Tuzağı',
     tetikle: (b, h, a, k) =>
       b.soru >= k.soru.yuksek &&
-      b.hataOrani !== null && b.hataOrani < 20 &&
-      b.kaygi >= k.kaygi.yuksek,
+      b.isabet !== null &&
+      b.isabet < k.isabet.dusuk,
     cikti: {
-      analiz: 'Öğrenci akademik hedeflerine tam kapasiteyle ulaşmasına rağmen performansı "yetersiz" algılamaktadır.',
-      strateji: 'Başarı somut verilerle tescil edilmeli; öğrencinin kendine koyduğu "hayali çıtalar" esnetilmelidir.',
-      aylikEtiket: 'Mükemmeliyetçilik_Riski',
-      ton: 'validating'
+      daily:   { teshis: 'Mekanik Soru Çözümü: Soru sayısı fazla ama öğrenme kalitesi düşük.', aksiyon: 'Soru sayısını azaltıp her sorunun çözüm mantığına odaklanmasını isteyin.' },
+      weekly:  { teshis: 'Hız Tuzağı: Bu hafta nicelik niteliğin önüne geçmiş.', aksiyon: 'Haftalık hedefi kazanım üzerinden kurun, soru sayısı üzerinden değil.' },
+      monthly: { teshis: 'Yüzeysel Çalışma Karakteri: Öğrenci öğrenmek yerine soru tüketiyor.', aksiyon: 'Zorluk seviyesi yüksek testlerle gerçek seviyesini yüzleştirin.' },
+      ton: 'warning'
     }
   },
 
-  {
-    id: 'DYN-82', modul: 3, priority: 90,
-    etiket: 'Öz-Yeterlilik Çöküşü',
-    tetikle: (b, h, a, k) =>
-      b.soru === 0 && (b.mood === 'sad' || b.mood === 'bad') &&
-      b.kaygi >= k.kaygi.yuksek,
-    cikti: {
-      analiz: 'Öğrenci başarısızlık korkusu nedeniyle masaya oturma iradesini tamamen kaybetmiştir.',
-      strateji: 'Akademik tüm talepler durdurulmalı; sadece "tek bir soru çözme" gibi mikro adımlarla süreç başlatılmalıdır.',
-      aylikEtiket: 'Akut_Blokaj',
-      ton: 'crisis'
-    }
-  },
+  // ══════════════════════════════════════════════
+  // MODÜL 3: ÖZ-YETERLİLİK VE ALGI MAKASI
+  // ══════════════════════════════════════════════
 
   {
-    id: 'DYN-83', modul: 3, priority: 38,
-    etiket: 'Onaylanmış Disiplin',
+    id: 'DYN-76', modul: 3, priority: 88, etiket: 'Zirve Felci',
     tetikle: (b, h, a, k) =>
-      b.soru >= k.soru.yuksek && b.tekrarSure > 60 &&
+      b.isabet !== null &&
+      b.isabet >= 85 &&
+      b.kaygi >= k.kaygi.yuksek,
+    cikti: {
+      daily:   { teshis: 'Başarı Baskısı: Yüksek isabet korkuyu artırmış.', aksiyon: 'Netleri övmeyi bırakın; süreci ve çabayı ön plana çıkarın.' },
+      weekly:  { teshis: 'Sürdürülebilirlik Kaygısı: Her başarı daha çok sıkmış.', aksiyon: 'Odağı sonuçtan çıkarıp sevdiği bir branşa kaydırın.' },
+      monthly: { teshis: 'Karakteristik Başarı Fobisi: Potansiyelini tehdit olarak görme eğilimi.', aksiyon: 'Uzun vadeli hedef baskısını azaltıp anlık gelişime odaklanın.' },
+      ton: 'warning'
+    }
+  },
+  {
+    id: 'DYN-82', modul: 3, priority: 82, etiket: 'Yetersizlik İllüzyonu',
+    tetikle: (b, h, a, k) =>
+      b.isabet !== null &&
+      b.isabet >= k.isabet.ort &&
+      (b.mood === 'bad' || b.mood === 'sad'),
+    cikti: {
+      daily:   { teshis: 'Negatif Filtreleme: Başarıya rağmen yetersizlik hissi hakim.', aksiyon: 'Bugün çözdüğü doğru soru sayılarını somut kanıt olarak önüne koyun.' },
+      weekly:  { teshis: 'Öz-Güven Aşınması: Akademik üretim moral yükseltmeye yetmiyor.', aksiyon: 'Sadece çok iyi olduğu konulardan test vererek inancını besleyin.' },
+      monthly: { teshis: 'Kronik Düşük Öz-Yeterlilik: Başarıyı sahiplenememe durumu.', aksiyon: 'Küçük galibiyetleri görselleştirerek koçluk yapın.' },
+      ton: 'warning'
+    }
+  },
+  {
+    id: 'DYN-90', modul: 3, priority: 75, etiket: 'Sahte Yeterlilik',
+    tetikle: (b, h, a, k) =>
+      b.isabet !== null &&
+      b.isabet <= k.isabet.dusuk &&
       (b.mood === 'great' || b.mood === 'good'),
     cikti: {
-      analiz: 'Öğrenci disiplinli çalışmanın yarattığı kontrol hissini içselleştirmiş ve öz-yeterliliğini güçlendirmiştir.',
-      strateji: 'Bu momentum korunmalı; öğrenciye "kendi sürecinin lideri" olduğu hissettirilmelidir.',
-      aylikEtiket: 'Pozitif_Disiplin',
-      ton: 'celebratory'
+      daily:   { teshis: 'Hata Körlüğü: Düşük performansa rağmen aşırı iyimserlik.', aksiyon: 'Yanlış yaptığı 3 kritik soruyu video çözümleriyle inceletin.' },
+      weekly:  { teshis: 'Yüzeysel Gelişim: Hataları görmezden gelme trendi.', aksiyon: 'Haftalık analizde netlere değil yanlışların çözüm sürelerine bakın.' },
+      monthly: { teshis: 'Suni Özgüven Riski: Gelişimi engelleyen inkar mekanizması.', aksiyon: 'Zor ve objektif bir denemeyle durumu yüzleştirin.' },
+      ton: 'stable'
     }
   },
 
+  // ══════════════════════════════════════════════
+  // MODÜL 4: DİJİTAL KAÇINMA VE ODAK KAYBI
+  // ══════════════════════════════════════════════
+
   {
-    id: 'DYN-85', modul: 3, priority: 35,
-    etiket: 'Dayanıklı Öz-Yeterlilik',
+    id: 'DYN-106', modul: 4, priority: 84, etiket: 'Dopaminerjik Kaçış',
     tetikle: (b, h, a, k) =>
-      h.denemeTrend === 'düşüş' &&
-      b.soru >= k.soru.yuksek &&
-      (b.mood === 'good' || (b.mood === 'good' || b.mood === 'great')),
+      b.kaygi >= k.kaygi.yuksek &&
+      b.dijitalSure >= k.dijital.yuksek,
     cikti: {
-      analiz: 'Öğrenci deneme sonucunu bir yıkım değil, bir veri olarak kabul etmiş ve rutinine dürüstçe devam etmiştir.',
-      strateji: 'Bu olgun tutum koç tarafından vurgulanmalı; "gerçek kazanan" tavrının bu olduğu pekiştirilmelidir.',
-      aylikEtiket: 'Resilience_Pozitif',
-      ton: 'celebratory'
+      daily:   { teshis: 'Dijital Anestezi: Stres anında ekrana sığınma.', aksiyon: 'Yasak koymayın; stresi tetikleyen dersi bulup yükünü azaltın.' },
+      weekly:  { teshis: 'Kaçış Paterni: Zorlanınca sosyal medyaya sığınma alışkanlığı.', aksiyon: 'Ekran süresini program sonuna ödül olarak koyun.' },
+      monthly: { teshis: 'Kronik Dijital Savunma: Problem çözme kası zayıflamış.', aksiyon: 'Kademeli dijital detoks protokolü başlatın.' },
+      ton: 'warning'
     }
   },
-
   {
-    id: 'DYN-87', modul: 3, priority: 75,
-    etiket: 'Yıkıcı Çaba',
+    id: 'DYN-115', modul: 4, priority: 80, etiket: 'Gece Odak Kaybı',
     tetikle: (b, h, a, k) =>
-      b.soru >= k.soru.yuksek &&
-      b.hataOrani !== null && b.hataOrani > 40 &&
-      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok')),
+      b.uyku > 0 &&
+      b.uyku <= k.uyku.dusuk &&
+      b.dijitalSure >= k.dijital.yuksek,
     cikti: {
-      analiz: 'Öğrenci çok çalışmasına rağmen sonuç alamadıkça öz-yeterlilik algısı ağır hasar almaktadır.',
-      strateji: 'Hacim (soru sayısı) acilen düşürülmeli; konu eksikleri saptanarak "başarı garantili" küçük kazanımlara odaklanılmalıdır.',
-      aylikEtiket: 'Yetersizlik_Döngüsü',
-      ton: 'empathetic'
-    }
-  },
-
-  {
-    id: 'DYN-90', modul: 3, priority: 85,
-    etiket: 'Öğrenilmiş Çaresizlik Sinyali',
-    tetikle: (b, h, a, k) =>
-      b.soru < 40 && b.hataOrani !== null && b.hataOrani > 50 &&
-      (b.mood === 'sad' || b.mood === 'bad'),
-    cikti: {
-      analiz: 'Öğrenci "nasılsa yapamıyorum" algısıyla akademik eylemi tamamen durdurma noktasına gelmiştir.',
-      strateji: '24 saatlik tam mola sonrası, akademik olmayan bir motivasyon görüşmesi planlanmalı; süreç sıfırdan yapılandırılmalıdır.',
-      aylikEtiket: 'Çöküş_Evresi',
-      ton: 'crisis'
-    }
-  },
-
-  {
-    id: 'DYN-96', modul: 3, priority: 88,
-    etiket: 'Zirve Felci',
-    tetikle: (b, h, a, k) =>
-      b.soru >= k.soru.yuksek &&
-      b.hataOrani !== null && b.hataOrani < 10 &&
-      b.kaygi >= 9,
-    cikti: {
-      analiz: 'Öğrenci ulaştığı yüksek seviyeyi bir "şans" olarak görmekte ve bunu koruyamama stresiyle felç olmaktadır.',
-      strateji: 'Başarının tesadüf değil, "süreç odaklı bir emek" olduğu verilerle kanıtlanmalı; beklenti baskısı hafifletilmelidir.',
-      aylikEtiket: 'Zirve_Felci',
-      ton: 'rational'
-    }
-  },
-
-  // ════════════════════════════════════════════
-  // MODÜL 4: DİJİTAL KAÇINMA (DYN-106..125)
-  // ════════════════════════════════════════════
-
-  {
-    id: 'DYN-106', modul: 4, priority: 78,
-    etiket: 'Duygusal Anestezi',
-    tetikle: (b, h, a, k) =>
-      b.sosyal > k.sosyal.ort && b.kaygi >= k.kaygi.yuksek,
-    cikti: {
-      analiz: 'Öğrenci akademik stresle başa çıkamadığı anlarda dijital dünyaya sığınarak gerçeklikten uzaklaşmaktadır.',
-      strateji: 'Sosyal medyanın bir "ödül" değil, "stres tetikleyici" olarak analiz edilmesi; ekran dışı rahatlama yöntemleri önerilmelidir.',
-      aylikEtiket: 'Dijital_Kaçış',
-      ton: 'rational'
-    }
-  },
-
-  {
-    id: 'DYN-107', modul: 4, priority: 72,
-    etiket: 'Mavi Işık Borcu',
-    tetikle: (b, h, a, k) =>
-      b.sosyal > 2 && b.uyku > 0 && b.uyku < 6 &&
-      h.geceEkranVar === true,
-    cikti: {
-      analiz: 'Geç saatteki dijital etkileşim, uyku kalitesini ve ertesi günün bilişsel kapasitesini düşürmektedir.',
-      strateji: '"Dijital Sokağa Çıkma Yasağı" (uykudan 1 saat önce telefon bırakma) kuralı akademik başarı için şart koşulmalıdır.',
-      aylikEtiket: 'Uyku_Sabotajı',
-      ton: 'directive'
-    }
-  },
-
-  {
-    id: 'DYN-108', modul: 4, priority: 70,
-    etiket: 'Bilişsel Sis',
-    tetikle: (b, h, a, k) =>
-      h.dunkuSosyal > k.sosyal.ort && b.odak < k.odak.ort,
-    cikti: {
-      analiz: 'Bir önceki günün aşırı dijital tüketimi, zihni dopamin yorgunluğuna sürükleyerek odaklanma eşiğini yükseltmiştir.',
-      strateji: 'Odaklanma sorununun "yeteneksizlik" değil, "dijital yorgunluk" olduğu somut verilerle öğrenciye gösterilmelidir.',
-      aylikEtiket: 'Dijital_Sis',
-      ton: 'informative'
-    }
-  },
-
-  {
-    id: 'DYN-110', modul: 4, priority: 35,
-    etiket: 'Nitelikli Berraklık',
-    tetikle: (b, h, a, k) =>
-      b.sosyal <= 0.5 && b.odak >= k.odak.yuksek && b.enerji >= 8,
-    cikti: {
-      analiz: 'Minimal dijital temasın, zihinsel berraklığı ve akademik motivasyonu maksimize ettiği saptanmıştır.',
-      strateji: 'Bu "yüksek verim" hali geri bildirimle desteklenmeli; "az ekran, çok başarı" korelasyonu pekiştirilmelidir.',
-      aylikEtiket: 'Dijital_Detoks_Pozitif',
-      ton: 'celebratory'
-    }
-  },
-
-  {
-    id: 'DYN-120', modul: 4, priority: 90,
-    etiket: 'Felç Edici Kaçış',
-    tetikle: (b, h, a, k) =>
-      b.sosyal > 2 && b.kaygi >= k.kaygi.yuksek && b.soru === 0,
-    cikti: {
-      analiz: 'Öğrenci başarısızlık korkusuyla yüzleşmemek için kendini dijital içeriklerin içine hapsetmiş; sistemi tamamen durdurmuştur.',
-      strateji: '"5 Dakika Kuralı" uygulanmalı; dijitalden çıkıp sadece 5 dakika dersle temas kurması istenerek atalet kırılmalıdır.',
-      aylikEtiket: 'Felç_Edici_Kaçış',
-      ton: 'crisis'
-    }
-  },
-
-  // ════════════════════════════════════════════
-  // MODÜL 5: FİZYOLOJİK LİMİT (DYN-126..155)
-  // ════════════════════════════════════════════
-
-  {
-    id: 'DYN-126', modul: 5, priority: 85,
-    etiket: 'Bilişsel Borçlanma',
-    tetikle: (b, h, a, k) =>
-      b.uyku > 0 && b.uyku < 6.5 && b.soru >= k.soru.yuksek,
-    cikti: {
-      analiz: 'Öğrenci bedensel sınırlarını zorlayarak hedefi yakalamıştır; ancak bilişsel kalıcılığı düşük, hata payı yüksektir.',
-      strateji: 'Akademik başarı takdir edilmeli, ancak 8 saatlik uyku kuralının "hafıza konsolidasyonu" için önemi hatırlatılmalıdır.',
-      aylikEtiket: 'Borçlu_Çalışma',
-      ton: 'balanced'
-    }
-  },
-
-  {
-    id: 'DYN-128', modul: 5, priority: 88,
-    etiket: 'Kronik Stres Döngüsü',
-    tetikle: (b, h, a, k) =>
-      h.ortUyku > 0 && h.ortUyku < 7 && h.ortKaygi > 0 && h.ortKaygi >= k.kaygi.ort,
-    cikti: {
-      analiz: 'Yetersiz uyku kaygıyı tetiklemekte, yüksek kaygı ise uykuya geçişi zorlaştırmaktadır; sistem alarm vermektedir.',
-      strateji: 'Acil uyku hijyeni protokolü uygulanmalı; akşam 21:00\'den sonra tüm akademik ve dijital uyaranlar kesilmelidir.',
-      aylikEtiket: 'Kısır_Döngü',
+      daily:   { teshis: 'Gece Uyaranı: Dijital kullanım uyku kalitesini bozmuş.', aksiyon: 'Yatmadan 1 saat önce ekran yasağı kuralını başlatın.' },
+      weekly:  { teshis: 'Uyku-Ekran Kısır Döngüsü.', aksiyon: 'Akşam programını erken bitirip zihni dinlendirin.' },
+      monthly: { teshis: 'Sirkadiyen Ritim Bozukluğu.', aksiyon: 'Yaşam stilini revize etmeden akademik sıçrama beklemeyin.' },
       ton: 'urgent'
     }
   },
 
-  {
-    id: 'DYN-130', modul: 5, priority: 97,
-    etiket: 'Fizyolojik İflas',
-    tetikle: (b, h, a, k) =>
-      b.uyku > 0 && b.uyku < 5 && b.odak < 3 &&
-      b.hataOrani !== null && b.hataOrani > 50,
-    cikti: {
-      analiz: 'Öğrenci masada olsa bile beyni öğrenme ve analiz yeteneğini yitirmiştir; yapılan çalışma "boşa mesai"dir.',
-      strateji: 'Çalışma derhal durdurulmalı; tam akademik mola ve derin uyku ile sistem resetlenmelidir.',
-      aylikEtiket: 'Fizyolojik_İflas',
-      ton: 'crisis'
-    }
-  },
+  // ══════════════════════════════════════════════
+  // MODÜL 5: FİZYOLOJİK LİMİT VE SÜRDÜRÜLEBİLİRLİK
+  // ══════════════════════════════════════════════
 
   {
-    id: 'DYN-134', modul: 5, priority: 90,
-    etiket: 'Pre-Burnout',
+    id: 'DYN-126', modul: 5, priority: 96, etiket: 'Bilişsel Borçlanma',
     tetikle: (b, h, a, k) =>
-      h.dusukOdakGunSayisi >= 3 && h.dusukEnerjiGunSayisi >= 3,
+      b.uyku > 0 &&
+      b.uyku <= k.uyku.dusuk &&
+      b.soru >= k.soru.ort,
     cikti: {
-      analiz: 'Hem zihinsel hem fiziksel enerjinin uzun süreli düşük seyretmesi, öğrencinin süreci terk etme riskini doğurmaktadır.',
-      strateji: 'Program "minimum hayatta kalma" seviyesine çekilmeli; 2 gün tam dinlenme verilmelidir.',
-      aylikEtiket: 'Tükenmişlik_Eşiği',
+      daily:   { teshis: 'Bilişsel Borç: Uykusuzluğa rağmen efor.', aksiyon: 'Bugün yeni konu vermeyin; uykusunu almasını sağlayın.' },
+      weekly:  { teshis: 'Performans Sürüklenmesi: Başarı sağlıktan borç alınarak sürdürülüyor.', aksiyon: 'Haftalık planda uyku süresini 7 saatin üzerine sabitleyin.' },
+      monthly: { teshis: 'Kronik Fizyolojik Aşınma: Tükenmişlik riski yüksek.', aksiyon: 'Gelecek haftayı Dinlenme Haftası ilan ederek yükü düşürün.' },
       ton: 'urgent'
     }
-  },
-
-  {
-    id: 'DYN-135', modul: 5, priority: 32,
-    etiket: 'İdeal Fizyolojik Zemin',
-    tetikle: (b, h, a, k) =>
-      b.enerji >= 8 && (b.mood === 'good' || b.mood === 'great' || (b.mood === 'good' || b.mood === 'great')) &&
-      b.uyku >= 8,
-    cikti: {
-      analiz: 'Öğrenci akademik tempoyu taşıyabilecek en ideal fiziksel ve duygusal dengededir.',
-      strateji: 'Bu dengeyi sağlayan rutinler (yatış saati, mola süresi) korunmalı ve sabitleştirilmelidir.',
-      aylikEtiket: 'İdeal_Zemin_Pozitif',
-      ton: 'celebratory'
-    }
-  },
-
-  {
-    id: 'DYN-144', modul: 5, priority: 93,
-    etiket: 'Bilişsel Kırılma',
-    tetikle: (b, h, a, k) =>
-      b.uyku > 0 && b.uyku < 6 && b.kaygi >= k.kaygi.yuksek &&
-      b.hataOrani !== null && b.hataOrani > 50,
-    cikti: {
-      analiz: 'Sistemin tamamen iflas ettiği, öğrenmenin durduğu ve hataların maksimize olduğu kritik eşik saptanmıştır.',
-      strateji: '"Acil Durum Protokolü" işletilmeli; 24 saatlik mutlak sessizlik ve dinlenme sonrası durum değerlendirmesi yapılmalıdır.',
-      aylikEtiket: 'Bilişsel_Kırılma',
-      ton: 'crisis'
-    }
-  },
-
-  {
-    id: 'DYN-150', modul: 5, priority: 30,
-    etiket: 'Sürdürülebilirlik Mührü',
-    tetikle: (b, h, a, k) =>
-      h.ortUyku >= 7.5 && h.ortEnerji >= 7 &&
-      h.soruHedefiKarsilama >= 0.95,
-    cikti: {
-      analiz: 'Akademik hacim ile biyolojik ihtiyaçların tam uyum içinde olduğu, burnout riskinin minimuma indiği saptanmıştır.',
-      strateji: 'Bu ritmin bozulmaması için dışsal uyaranlar kısıtlanmalı; stabilite korunmalıdır.',
-      aylikEtiket: 'Sürdürülebilir_İdeal',
-      ton: 'celebratory'
-    }
-  },
+  }
 
 ];
+
 
 // ════════════════════════════════════════════
 // POZİTİF SENARYO HAVUZU (POS)
