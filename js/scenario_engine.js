@@ -352,8 +352,24 @@ const SENARYOLAR = [
       monthly: { teshis: 'Akademik Tükenmişlik Teşhisi.', aksiyon: 'Mevcut strateji sürdürülemez; yöntemi aileyle revize edin.' },
       ton: 'urgent'
     }
-  }
+  },
 
+  {
+    id: 'DYN-140', modul: 2, priority: 94, etiket: 'Akademik İrtifa Kaybı',
+    // Mood nötr/iyi ama üretim hem geçmişin hem hedefin çok gerisinde
+    // DYN-10 ile çakışmaz (o mood kötü ister), DYN-62 ile çakışmaz (o süre yüksek ister)
+    tetikle: (b, h, a, k) =>
+      b.soru < k.soru.dusuk &&
+      h.soruHedefiKarsilama < 0.5 &&
+      (b.mood === 'ok' || b.mood === 'good' || b.mood === 'great') &&
+      b.calismaSuresi < k.calismaSuresi.yuksek,
+    cikti: {
+      daily:   { teshis: 'Sessiz Üretim Kaybı: Mood iyi ama üretim hem geçmişin hem hedefin çok gerisinde.', aksiyon: 'Çalışmayı engelleyen dış bir faktör olup olmadığını kontrol edin.' },
+      weekly:  { teshis: 'Süreklilik Krizi: Bu hafta hedefe ulaşma oranı yüzde ellinin altında; sistemden kopuş başlamış.', aksiyon: 'Haftalık programı başarabileceği seviyeye geçici olarak çekip özgüven tazeleyin.' },
+      monthly: { teshis: 'Kronik Hedef Uzaklaşması: Aylık hedef öğrenci için hayali bir rakama dönüşmüş.', aksiyon: 'Mevcut hedefi revize edin veya temel çalışma motivasyonunu rehberlik servisiyle sorgulayın.' },
+      ton: 'urgent'
+    }
+  },
 ];
 
 const POZITIF_SENARYOLAR = [
