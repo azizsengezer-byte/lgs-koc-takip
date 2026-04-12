@@ -170,7 +170,7 @@ function _aiToggleUI(sNameKey, acik) {
     }
     bilgi.style.display = 'block';
 
-    const apiYok = localStorage.getItem('lgs_api_enabled') !== 'true' || !localStorage.getItem('lgs_anthropic_key');
+    const apiYok = typeof ANTHROPIC_KEY === 'undefined' || !ANTHROPIC_KEY || ANTHROPIC_KEY === 'BURAYA_KEY_GIR';
 
     if (apiYok) {
       bilgi.innerHTML = '<div style="font-size:11px;color:#ff6584;margin-top:8px;padding:8px 10px;background:rgba(255,101,132,0.08);border-radius:8px;border:1px solid rgba(255,101,132,0.2)">⚠️ Profil sayfasından API anahtarı eklemen gerekiyor.</div>';
@@ -229,7 +229,7 @@ function _psychAIKontrolVeAc(sName, sNameKey, mode) {
 
   if (aiAcik) {
     // API key kontrolü
-    if (localStorage.getItem('lgs_api_enabled') !== 'true' || !localStorage.getItem('lgs_anthropic_key')) {
+    if (typeof ANTHROPIC_KEY === 'undefined' || !ANTHROPIC_KEY || ANTHROPIC_KEY === 'BURAYA_KEY_GIR') {
       showToast('⚠️', 'AI aktif ama API anahtarı yok — profil sayfasından ekle');
       openDatePicker('psych_' + sNameKey, mode);
       return;

@@ -678,7 +678,7 @@ const POZITIF_SENARYOLAR = [
 
 window.SENARYOLAR = SENARYOLAR;
 window.POZITIF_SENARYOLAR = POZITIF_SENARYOLAR;
-window.VAKA_KOMBINASYONLARI = VAKA_KOMBINASYONLARI;
+window.VAKA_KOMBINASYONLARI = []; // Vaka kombinasyonları şimdilik boş
 window._kalibre = _kalibre;
 
 // ── EK SENARYOLAR — Modül 1 (DYN-07..20) ─────────────────
