@@ -64,7 +64,7 @@
 
     <!-- Metin -->
     <div id="sp-text" style="text-align:center;opacity:0;">
-      <div style="font-size:36px;font-weight:900;background:linear-gradient(135deg,#fff 30%,#a78bff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-1px;margin-bottom:6px;">LGSKo&#x15F;</div>
+      <div style="font-size:36px;font-weight:900;background:linear-gradient(135deg,#fff 30%,#a78bff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-1px;margin-bottom:6px;">LGSKo&#x00E7;</div>
       <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:0.2em;text-transform:uppercase;">&#xD6;&#x11F;renci Takip</div>
     </div>
 
@@ -167,6 +167,14 @@
     ver.style.opacity = '1';
     setTimeout(function() { fill.style.width = '82%'; }, 300);
   }, 1600);
+  // Güvenlik: Firebase 6 saniyede cevap vermezse splash kendi kendine kapansın
+  setTimeout(function() {
+    var sp = document.getElementById('splashScreen');
+    if (sp && !sp.classList.contains('sp-hidden')) {
+      sp.classList.add('sp-hidden');
+      setTimeout(function() { if(sp.parentNode) sp.remove(); }, 500);
+    }
+  }, 6000);
 })();
 </script>
 
@@ -877,6 +885,14 @@
     const el = document.getElementById('loginUser');
     if (el) { el.value = u; setTimeout(()=>{ document.getElementById('loginPass')?.focus(); }, 100); }
   }
+  // Güvenlik: Firebase 6 saniyede cevap vermezse splash kendi kendine kapansın
+  setTimeout(function() {
+    var sp = document.getElementById('splashScreen');
+    if (sp && !sp.classList.contains('sp-hidden')) {
+      sp.classList.add('sp-hidden');
+      setTimeout(function() { if(sp.parentNode) sp.remove(); }, 500);
+    }
+  }, 6000);
 })();
 </script>
 </body>
