@@ -36,58 +36,141 @@
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo" style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:6px">
-      <div style="width:56px;height:56px;border-radius:15px;background:linear-gradient(135deg,#6c63ff,#4cc9f0);display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(108,99,255,.45),0 4px 16px rgba(108,99,255,.25);flex-shrink:0">
-        <svg width="32" height="32" viewBox="0 0 26 26" fill="none"><rect x="3" y="16" width="4" height="7" rx="1.5" fill="rgba(255,255,255,0.45)"/><rect x="9" y="11" width="4" height="12" rx="1.5" fill="rgba(255,255,255,0.7)"/><rect x="15" y="6" width="4" height="17" rx="1.5" fill="white"/><path d="M21 4L23 2M23 2H20M23 2V5" stroke="rgba(255,255,255,0.75)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<!-- SPLASH EKRANI -->
+<div id="splashScreen" style="position:fixed;inset:0;z-index:99999;background:#0d0d1a;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;">
+
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,#1a1040 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,#0a2040 0%,transparent 60%);pointer-events:none"></div>
+  <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(108,99,255,0.015) 2px,rgba(108,99,255,0.015) 4px);pointer-events:none"></div>
+  <div id="sp-stars" style="position:absolute;inset:0;pointer-events:none"></div>
+  <div style="position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(108,99,255,0.06) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);animation:sp-float 6s ease-in-out infinite"></div>
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:32px;position:relative;z-index:2;">
+
+    <!-- Logo wrap -->
+    <div id="sp-logo-wrap" style="position:relative;width:140px;height:140px;display:flex;align-items:center;justify-content:center;opacity:0;">
+      <div class="sp-ripple" style="animation-delay:0s"></div>
+      <div class="sp-ripple" style="animation-delay:0.4s"></div>
+      <div class="sp-ripple" style="animation-delay:0.8s"></div>
+      <div id="sp-orbit" style="position:absolute;width:140px;height:140px;border-radius:50%;border:1px solid rgba(108,99,255,0.15);opacity:0;"></div>
+      <div id="sp-logo-box" style="width:90px;height:90px;border-radius:24px;background:linear-gradient(135deg,#6c63ff,#4cc9f0);display:flex;align-items:center;justify-content:center;box-shadow:0 20px 60px rgba(108,99,255,0.4);">
+        <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+          <rect x="4" y="18" width="6" height="10" rx="2" fill="rgba(255,255,255,0.45)"/>
+          <rect x="13" y="12" width="6" height="16" rx="2" fill="rgba(255,255,255,0.7)"/>
+          <rect x="22" y="6" width="6" height="22" rx="2" fill="white"/>
+          <path d="M26 4L29 1M29 1H26M29 1V4" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </div>
-      <div style="text-align:left">
-        <div style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:800;letter-spacing:-.03em;line-height:1"><span style="color:#6c63ff">LGS</span><span style="color:var(--text)">Koç</span></div>
-        <div style="font-size:0.7rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#4cc9f0;opacity:.85;margin-top:2px">Öğrenci Takip</div>
+    </div>
+
+    <!-- Metin -->
+    <div id="sp-text" style="text-align:center;opacity:0;">
+      <div style="font-size:36px;font-weight:900;background:linear-gradient(135deg,#fff 30%,#a78bff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-1px;margin-bottom:6px;">LGSKo&#x15F;</div>
+      <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:0.2em;text-transform:uppercase;">&#xD6;&#x11F;renci Takip</div>
+    </div>
+
+    <!-- Loading bar -->
+    <div id="sp-bar" style="width:180px;opacity:0;">
+      <div style="height:3px;border-radius:99px;background:rgba(255,255,255,0.08);overflow:hidden;">
+        <div id="sp-bar-fill" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#6c63ff,#4cc9f0);width:0%;box-shadow:0 0 12px rgba(108,99,255,0.8);transition:width 1.8s cubic-bezier(0.4,0,0.2,1);"></div>
       </div>
-    </div>
-    <div class="login-sub">Koçluk &amp; Takip Sistemi</div>
-    <div class="role-btns" style="display:none">
-      <button class="role-btn active" onclick="selectRole('teacher')" id="roleTeacher">👨‍🏫 Öğretmen</button>
-      <button class="role-btn" onclick="selectRole('student')" id="roleStudent">🎒 Öğrenci</button>
-    </div>
-    <input class="login-input" type="text" placeholder="E-posta veya kullanıcı adı" id="loginUser" autocapitalize="none" autocorrect="off">
-    <input class="login-input" type="password" placeholder="Şifre" id="loginPass">
-    <div id="loginError" style="color:#ff6584;font-size:0.82rem;margin-bottom:8px;display:none;text-align:left;padding:0 4px"></div>
-    <button class="login-btn" onclick="doLogin()" id="loginBtn" aria-label="Giriş Yap">Giriş Yap →</button>
-    <div style="margin-top:14px;text-align:center">
-      <button onclick="showSifremiUnuttum()"
-        style="background:none;border:none;color:var(--text2);font-size:0.78rem;cursor:pointer;font-family:'Nunito',sans-serif;text-decoration:underline;text-underline-offset:2px;opacity:0.75">
-        Şifremi unuttum
-      </button>
-    </div>
-    <div style="margin-top:10px;text-align:center">
-      <span style="font-size:0.82rem;color:var(--text2)">Hesabın yok mu? </span>
-      <button onclick="showRegister()" style="background:none;border:none;color:var(--accent);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">Kayıt Ol</button>
+      <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,0.25);font-weight:700;letter-spacing:0.1em;text-align:center;">Haz&#x131rlan&#x131yor...</div>
     </div>
   </div>
+
+  <div id="sp-version" style="position:absolute;bottom:24px;font-size:10px;color:rgba(255,255,255,0.15);font-weight:700;letter-spacing:0.15em;opacity:0;">v2.4.1</div>
 </div>
 
+<style>
+#splashScreen { transition:opacity 0.5s ease,visibility 0.5s ease; }
+#splashScreen.sp-hidden { opacity:0; visibility:hidden; pointer-events:none; }
 
-<!-- FOTOĞRAF KIRPMA MODAL -->
-<div class="modal-overlay" id="cropModal">
-  <div class="modal" style="max-width:360px">
-    <div class="modal-title">📷 Fotoğraf Kırp</div>
-    <div style="position:relative;width:100%;overflow:hidden;border-radius:10px;background:#000;margin-bottom:12px">
-      <canvas id="cropCanvas" style="display:block;width:100%;touch-action:none"></canvas>
-    </div>
-    <div style="font-size:0.78rem;color:var(--text2);text-align:center;margin-bottom:12px">
-      Sürükle → kaydır &nbsp;|&nbsp; Pinch/Kaydırma → yakınlaştır
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      <button onclick="cropZoom(-0.1)" class="btn btn-outline" style="flex:1">− Uzaklaş</button>
-      <button onclick="cropZoom(0.1)" class="btn btn-outline" style="flex:1">+ Yakınlaş</button>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal('cropModal')">İptal</button>
-      <button class="btn btn-primary" onclick="saveCroppedPhoto()">Kaydet ✓</button>
+@keyframes sp-twinkle { 0%,100%{opacity:.2;transform:scale(1)} 50%{opacity:1;transform:scale(1.4)} }
+@keyframes sp-orbit   { from{transform:rotate(0deg) translateX(54px)} to{transform:rotate(360deg) translateX(54px)} }
+@keyframes sp-ripple  { 0%{transform:scale(.6);opacity:.8} 100%{transform:scale(2.8);opacity:0} }
+@keyframes sp-float   { 0%,100%{transform:translate(-50%,-50%) translateY(0)} 50%{transform:translate(-50%,-50%) translateY(-8px)} }
+@keyframes sp-wrap-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+@keyframes sp-logo-in { 0%{opacity:0;transform:translateY(-60px) scale(.7)} 60%{transform:translateY(6px) scale(1.04)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes sp-fade-up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes sp-gradient{ 0%,100%{filter:hue-rotate(0deg)} 50%{filter:hue-rotate(20deg)} }
+@keyframes sp-pulse   { 0%,100%{box-shadow:0 20px 60px rgba(108,99,255,.4),0 0 0 0 rgba(108,99,255,.3)} 50%{box-shadow:0 20px 60px rgba(108,99,255,.4),0 0 0 16px rgba(108,99,255,0)} }
+@keyframes sp-dot     { 0%,80%,100%{transform:scale(.6);opacity:.4} 40%{transform:scale(1.2);opacity:1} }
+
+.sp-ripple { position:absolute;width:140px;height:140px;border-radius:50%;border:1px solid rgba(108,99,255,.3);animation:sp-ripple 2.4s ease-out infinite; }
+.sp-particle { position:absolute;top:50%;left:50%;width:5px;height:5px;border-radius:50%;margin:-2.5px 0 0 -2.5px;animation:sp-orbit linear infinite; }
+
+/* Sayfa loading */
+.page-loading { display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:20px; }
+.page-loading-logo { width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#6c63ff,#4cc9f0);display:flex;align-items:center;justify-content:center;animation:sp-pulse 1.5s ease-in-out infinite;box-shadow:0 0 24px rgba(108,99,255,.4); }
+.page-loading-dots { display:flex;gap:7px; }
+.page-loading-dots span { width:6px;height:6px;border-radius:50%;background:#6c63ff;animation:sp-dot 1.2s ease-in-out infinite; }
+.page-loading-dots span:nth-child(2){animation-delay:.15s;background:#8b5cf6}
+.page-loading-dots span:nth-child(3){animation-delay:.3s;background:#4cc9f0}
+</style>
+
+<script>
+(function() {
+  // Yıldızlar
+  var stars = document.getElementById('sp-stars');
+  var colors = ['#4cc9f0','#6c63ff','#43e97b','#fff'];
+  for (var i = 0; i < 28; i++) {
+    var s = document.createElement('div');
+    var sz = Math.random() * 2.5 + 1;
+    s.style.cssText = 'position:absolute;border-radius:50%;' +
+      'left:' + (Math.random()*100) + '%;top:' + (Math.random()*100) + '%;' +
+      'width:' + sz + 'px;height:' + sz + 'px;' +
+      'background:' + colors[i%4] + ';' +
+      'animation:sp-twinkle ' + (Math.random()*2+2) + 's ' + (Math.random()*3) + 's ease-in-out infinite;';
+    stars.appendChild(s);
+  }
+
+  // Partiküller
+  var orbit = document.getElementById('sp-orbit');
+  var pColors = ['#6c63ff','#4cc9f0','#43e97b'];
+  for (var j = 0; j < 6; j++) {
+    var p = document.createElement('div');
+    p.className = 'sp-particle';
+    var pc = pColors[j%3];
+    p.style.cssText = 'background:' + pc + ';box-shadow:0 0 6px ' + pc + ';' +
+      'animation-duration:' + (3 + j*0.3) + 's;animation-delay:' + (j*0.08) + 's;';
+    orbit.appendChild(p);
+  }
+
+  // Fazlar
+  var wrap  = document.getElementById('sp-logo-wrap');
+  var logo  = document.getElementById('sp-logo-box');
+  var orb   = document.getElementById('sp-orbit');
+  var text  = document.getElementById('sp-text');
+  var bar   = document.getElementById('sp-bar');
+  var fill  = document.getElementById('sp-bar-fill');
+  var ver   = document.getElementById('sp-version');
+
+  // Faz 1 — logo düşer (400ms)
+  setTimeout(function() {
+    wrap.style.opacity = '1';
+    wrap.style.animation = 'sp-wrap-float 4s 0.5s ease-in-out infinite';
+    logo.style.animation = 'sp-logo-in 0.7s cubic-bezier(0.175,0.885,0.32,1.275) forwards, sp-gradient 3s 1s ease infinite, sp-pulse 2.5s 1.5s ease infinite';
+  }, 400);
+
+  // Faz 2 — orbit + ripple (1000ms)
+  setTimeout(function() {
+    orb.style.opacity = '1';
+    orb.style.animation = 'sp-fade-up 0.5s ease-out';
+  }, 1000);
+
+  // Faz 3 — metin + bar (1600ms)
+  setTimeout(function() {
+    text.style.animation = 'sp-fade-up 0.6s ease-out forwards';
+    text.style.opacity = '1';
+    bar.style.animation = 'sp-fade-up 0.6s 0.2s ease-out both';
+    bar.style.opacity = '1';
+    ver.style.animation = 'sp-fade-up 0.5s 0.4s ease-out both';
+    ver.style.opacity = '1';
+    setTimeout(function() { fill.style.width = '82%'; }, 300);
+  }, 1600);
+})();
+</script>
+
+<!-- LOGIN -->tn btn-primary" onclick="saveCroppedPhoto()">Kaydet ✓</button>
     </div>
   </div>
 </div>
@@ -315,8 +398,8 @@
 <div id="app" style="display:none">
   <div class="app-header">
     <div class="header-logo" style="display:flex;align-items:center;gap:9px">
-      <div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#6c63ff,#4cc9f0);display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(108,99,255,.4);flex-shrink:0">
-        <svg width="18" height="18" viewBox="0 0 26 26" fill="none"><rect x="3" y="16" width="4" height="7" rx="1.5" fill="rgba(255,255,255,0.45)"/><rect x="9" y="11" width="4" height="12" rx="1.5" fill="rgba(255,255,255,0.7)"/><rect x="15" y="6" width="4" height="17" rx="1.5" fill="white"/><path d="M21 4L23 2M23 2H20M23 2V5" stroke="rgba(255,255,255,0.75)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div style="width:32px;height:32px;border-radius:9px;background:#6c63ff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(108,99,255,.4);flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 32 32" fill="none"><rect x="4" y="18" width="6" height="10" rx="2" fill="white"/><rect x="13" y="12" width="6" height="16" rx="2" fill="white"/><rect x="22" y="6" width="6" height="22" rx="2" fill="white"/><path d="M26 4L29 1M29 1H26M29 1V4" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
       <div>
         <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;letter-spacing:-.02em;line-height:1"><span style="color:#6c63ff">LGS</span><span style="color:var(--text)">Koç</span></div>
