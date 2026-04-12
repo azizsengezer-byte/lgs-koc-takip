@@ -995,9 +995,12 @@ async function exportPsychPDF(sName, aiAcik) {
               pozitif:  _pos.reduce((a,p) => a + (p.frekans||1), 0),
             };
             const _toplamNeg = _skor.bilissel + _skor.brans + _skor.ozyet + _skor.dijital + _skor.fizyoloj;
-            const _kritikBlok = _tetIdler.some(id => ['DYN-04','DYN-82','DYN-90'].includes(id));
-            const _tukenmis   = _tetIdler.some(id => ['DYN-134','DYN-10','DYN-128'].includes(id));
-            const _yuksekFon  = _tetIdler.some(id => ['DYN-76','DYN-96'].includes(id));
+            // Yeni senaryo IDlerine göre profil tespiti
+            const _kritikBlok = _tetIdler.some(id => ['DYN-04','DYN-95','DYN-134'].includes(id));
+            const _tukenmis   = _tetIdler.some(id => ['DYN-134','DYN-126','DYN-127','DYN-128','DYN-130','DYN-03','DYN-08'].includes(id));
+            const _yuksekFon  = _tetIdler.some(id => ['DYN-76','DYN-80','DYN-83'].includes(id));
+            const _kacinan    = _tetIdler.some(id => ['DYN-41','DYN-46','DYN-48','DYN-50','DYN-65','DYN-68'].includes(id));
+            const _dijital    = _tetIdler.some(id => ['DYN-106','DYN-108','DYN-110','DYN-112','DYN-113'].includes(id));
 
             // Profil tipi — baskın modüle göre
             // Runner'dan gelen profil kodunu köprü profil ismine çevir
@@ -1015,11 +1018,11 @@ async function exportPsychPDF(sName, aiAcik) {
             // Runner profil yoksa eski mantığa düş
             if (!_motorProfil) {
               if (_kritikBlok) _profil = 'bloke';
-              else if (_tukenmis && _skor.fizyoloj >= 2) _profil = 'tukenmis';
-              else if (_yuksekFon && _skor.bilissel >= 2) _profil = 'yuksekFonKaygi';
-              else if (_skor.brans >= 3 && _skor.brans >= _skor.bilissel && _skor.brans >= _skor.dijital) _profil = 'kacinan';
-              else if (_skor.dijital >= 3 && _skor.dijital >= _skor.brans) _profil = 'dijitalGolgeli';
-              else if (_toplamNeg <= 2 && _skor.pozitif >= 3) _profil = 'dengeli';
+              else if (_tukenmis) _profil = 'tukenmis';
+              else if (_yuksekFon) _profil = 'yuksekFonKaygi';
+              else if (_kacinan) _profil = 'kacinan';
+              else if (_dijital) _profil = 'dijitalGolgeli';
+              else if (_toplamNeg <= 2 && _skor.pozitif >= 1) _profil = 'dengeli';
               else _profil = 'karisik';
             }
 
@@ -1029,39 +1032,39 @@ async function exportPsychPDF(sName, aiAcik) {
             const _gelecek = _isAylik ? 'Gelecek ay' : 'Önümüzdeki hafta';
             const _pm = {
               bloke: {
-                foto:     'Öğrenci ' + _donem + 'de akademik üretimi tamamen durduran bir psikolojik blok yaşamıştır. Yüksek kaygı ile gelen eylemsizlik, süreci anlamlandırma güçlüğüne işaret etmektedir.',
-                strateji: 'Akademik baskı tamamen kaldırılmalı; koç görüşmesi rakamlar değil öğrencinin neden çalışamadığını keşfetmek üzerine kurgulanmalıdır. Mikro adımlar — tek bir soru, tek bir sayfa — yeniden başlatma noktası olacaktır.',
-                gelecek:  '' + _gelecek + ' önceliği akademik hedef değil, sisteme geri dönme ritmini oturtmaktır.'
+                foto:     'Öğrenci ' + _donem + ' yüksek kaygının üretimi tamamen durdurduğu bir blokaj yaşamıştır. Sistem veri girişi yapılmasına rağmen akademik eylem gerçekleşmemiş; bu durum psikolojik bir engelin varlığına işaret etmektedir.',
+                strateji: 'Koç görüşmesi rakamlar üzerinden değil, öğrencinin neden başlayamadığı üzerine kurgulanmalıdır. Tek bir soru, tek bir sayfa gibi mikro hedeflerle yeniden başlatma sağlanmalıdır.',
+                gelecek:  '' + _gelecek + ' önceliği akademik hedef değil, sisteme dönme ritmini oturtmaktır. Baskı değil, güven inşa edilmeli.'
               },
               tukenmis: {
-                foto:     'Öğrenci ' + _donem + 'de biyolojik rezervlerini tüketerek performansını sürdürmeye çalışmıştır. Uyku borcu, düşük enerji ve yüksek kaygı aynı anda etki etmiş; sistem alarm vermiştir.',
-                strateji: 'Soru sayısı yerine uyku ve enerji yönetimi önceliklendirilmeli; iletişimde "daha çok çalış" mesajından kaçınılmalıdır. Dinlenmek bir ödül değil, performans aracı olarak konumlandırılmalıdır.',
-                gelecek:  '' + _gelecek + (_isAylik ? ' ilk haftası onarım haftası ilan edilmeli; uyku rutini stabilize edilmeden akademik hedef artırımı yapılmamalıdır.' : ' ilk günleri onarım günleri olarak planlanmalı; uyku rutini stabilize edilmeden yeni hedef eklenmemelidir.')
+                foto:     'Öğrenci ' + _donem + ' biyolojik rezervlerini zorlayarak performansını sürdürmeye çalışmıştır. Uyku borcu, enerji düşüklüğü ve motivasyon kaybı aynı anda etkili olmuş; tükenmişlik eşiği yaklaşmaktadır.',
+                strateji: 'Soru sayısı hedefi ikincil plana alınmalı; uyku düzeni ve enerji yönetimi öncelik olmalıdır. "Daha çok çalış" mesajından kesinlikle kaçınılmalıdır.',
+                gelecek:  '' + _gelecek + (_isAylik ? ' ilk haftası Restorasyon Haftası ilan edilmeli; yük yüzde otuz düşürülmeli.' : ' onarım günleri planlanmalı; uyku rutini stabilize edilmeden yeni hedef eklenmemeli.')
               },
               yuksekFonKaygi: {
-                foto:     'Öğrenci ' + _donem + ' yüksek akademik üretimini korurken yoğun iç baskı altında olduğu gözlemlenmiştir. Dış gözlemden başarılı görünen tablo, iç dünyada sürdürülemez bir gerilim barındırmaktadır.',
-                strateji: 'Başarı somut verilerle tescil edilmeli ve öğrenciye geri yansıtılmalıdır. Koç iletişimi performans değil, öğrencinin kendisiyle barışı üzerine kurgulanmalıdır.',
+                foto:     'Öğrenci ' + _donem + ' üretimini sürdürürken yoğun iç baskı altında olduğu gözlemlenmiştir. Başarı öğrenciyi rahatlatmamakta; aksine korku ve baskıyı artırmaktadır.',
+                strateji: 'Başarı somut verilerle tescil edilmeli ve öğrenciye geri yansıtılmalıdır. Koç iletişimi performans değil, öğrencinin süreçle barışması üzerine kurgulanmalıdır.',
                 gelecek:  '' + _gelecek + ' hedefi niceliksel değil, başarıyı fark etme ve içselleştirme kapasitesi olmalıdır.'
               },
               kacinan: {
-                foto:     'Öğrenci ' + _donem + ' akademik zamanını güçlü hissettiği alanlarda yoğunlaştırmış; zayıf branşlarla temas sistematik biçimde azalmıştır. Bu durum kısa vadede iyi hissettirse de uzun vadeli branş dengesini bozmaktadır.',
-                strateji: 'Koç, zayıf branşa çalış demek yerine günün en yüksek enerjisine denk gelecek 15 dakikalık minimal temas protokolü önermelidir. Küçük başarılar anında geri bildirimle ödüllendirilmelidir.',
-                gelecek:  '' + _gelecek + ' zayıf branş için ' + (_isAylik ? 'haftalık' : 'günlük') + ' minimum süre kotası belirlenmeli; önce çok düşük tutulup kademeli artırılmalıdır.'
+                foto:     'Öğrenci ' + _donem + ' güçlü hissettiği branşlara yoğunlaşmış; zayıf derslerle temas sistematik biçimde azalmıştır. Bu durum kısa vadede iyi hissettirse de LGS dengesi açısından kritik risk taşımaktadır.',
+                strateji: 'Koç zayıf branşa zorla giriş yerine günün en yüksek enerjisine denk 15 dakikalık minimal temas protokolü önermelidir. Her küçük başarı anında tescil edilmelidir.',
+                gelecek:  '' + _gelecek + ' zayıf branş için ' + (_isAylik ? 'haftalık' : 'günlük') + ' minimum soru kotası belirlenmeli; düşük tutulup kademeli artırılmalıdır.'
               },
               dijitalGolgeli: {
-                foto:     '' + _donem.charAt(0).toUpperCase() + _donem.slice(1) + 'de dijital kullanım ile odaklanma kalitesi arasında belirgin bir ters ilişki gözlemlenmiştir. Yüksek ekran süresi olan günlerin ertesinde odak ve üretim değerleri düşmektedir.',
-                strateji: 'Öğrenciye dijital kısıtlama bir yaptırım olarak değil, netlerini artıran bir performans aracı olarak sunulmalıdır. Somut veri gösterimi en etkili ikna yöntemidir.',
-                gelecek:  '' + _gelecek + ' için ekran üst limiti belirlenmeli; çalışma öncesi 15 dakika ekransız başlangıç rutini denenmeli.'
+                foto:     '' + _donem.charAt(0).toUpperCase() + _donem.slice(1) + 'de dijital kullanım ile akademik üretim arasında belirgin bir ters ilişki gözlemlenmiştir. Ekran süresi yüksek olan günlerin ertesinde odak ve verim düşmektedir.',
+                strateji: 'Dijital kısıtlama ceza olarak değil, performans aracı olarak sunulmalıdır. Somut veri (ekran süresi yüksek gün vs düşük gün verimi karşılaştırması) en etkili ikna yöntemidir.',
+                gelecek:  '' + _gelecek + ' için günlük ekran üst limiti belirlenmeli; çalışma öncesi 15 dakika ekransız başlangıç rutini denenmeli.'
               },
               dengeli: {
-                foto:     'Öğrenci ' + _donem + 'de genel olarak dengeli bir performans sergilemiştir. Hem akademik hem duygusal verilerde belirgin bir istikrar gözlemlenmekte; sürecin sürdürülebilir olduğunu gösteren sinyaller alınmaktadır.',
-                strateji: 'Mevcut ritim korunmalı ve onaylanmalıdır. Gelişim için küçük bir zorluk eşiği eklenebilir; favori branşta hedef yükseltmek gibi.',
-                gelecek:  '' + _gelecek + ' hedefi mevcut dengeyi bozmadan bir ya da iki zayıf alanda küçük kazanımlar eklemek olmalıdır.'
+                foto:     'Öğrenci ' + _donem + 'de dengeli ve sürdürülebilir bir performans sergilemiştir. Akademik üretim, fizyolojik durum ve duygusal denge aynı anda olumlu seyretmiştir.',
+                strateji: 'Mevcut ritim korunmalı ve onaylanmalıdır. Bu istikrarı bozmadan hedef hafifçe yukarı çekilebilir; zayıf branşta küçük bir zorluk eşiği eklenebilir.',
+                gelecek:  '' + _gelecek + ' hedefi mevcut dengeyi korurken bir zayıf alanda somut kazanım elde etmek olmalıdır.'
               },
               karisik: {
-                foto:     '' + _donem.charAt(0).toUpperCase() + _donem.slice(1) + ' birden fazla alanda çeşitli güçlükler gözlemlenmiştir. Tek bir baskın patern yerine farklı günlerde farklı tetikleyicilerin devreye girdiği karma bir tablo söz konusudur.',
-                strateji: 'En yüksek frekanslı senaryoya odaklanılmalı; tüm sorunları aynı anda çözmeye çalışmak yerine tek bir öncelik belirlenmesi gerekmektedir.',
-                gelecek:  '' + _gelecek + ' için tek somut değişiklik hedeflenmeli; birden fazla alanı aynı anda düzeltmeye çalışmak süreçten kopmaya neden olabilir.'
+                foto:     '' + _donem.charAt(0).toUpperCase() + _donem.slice(1) + ' farklı günlerde farklı tetikleyicilerin devreye girdiği karma bir tablo gözlemlenmiştir. Tek bir baskın örüntü yerine birden fazla alanda eş zamanlı güçlük yaşanmaktadır.',
+                strateji: 'En yüksek öncelikli senaryoya odaklanılmalı; tüm sorunları aynı anda çözmeye çalışmak yerine tek bir somut değişiklik hedeflenmeli.',
+                gelecek:  '' + _gelecek + ' için tek somut adım belirlenmeli; birden fazla alanı aynı anda düzeltmeye çalışmak motivasyonu kırabilir.'
               }
             }[_profil] || { foto:'', strateji:'', gelecek:'' };
 
