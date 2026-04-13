@@ -316,11 +316,11 @@ function showDagilimDetail(ders) {
 // ============================================================
 
 const moodOptions = [
-  { emoji:'😢', label:'Mutsuz',  value:'sad',     color:'#9b59b6' },
-  { emoji:'😣', label:'Kötü',    value:'bad',     color:'#ff6584' },
-  { emoji:'😐', label:'Normal',  value:'ok',      color:'#888' },
-  { emoji:'😊', label:'İyi',     value:'good',    color:'#43b89c' },
-  { emoji:'😄', label:'Harika',  value:'great',   color:'#6c63ff' },
+  { emoji:'😢', label:'Mutsuz',   value:'sad',   color:'#9b59b6' },
+  { emoji:'😣', label:'Kötü',     value:'bad',   color:'#ff6584' },
+  { emoji:'😐', label:'İdare Eder', value:'ok',  color:'#888' },
+  { emoji:'😊', label:'İyi',      value:'good',  color:'#43b89c' },
+  { emoji:'😄', label:'Harika',   value:'great', color:'#6c63ff' },
 ];
 
 // ── CÜMLE HAVUZU ─────────────────────────────────────────────

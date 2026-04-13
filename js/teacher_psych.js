@@ -41,7 +41,7 @@ async function exportPsychPDF(sName, aiAcik) {
   }
   const sortedDays = Object.keys(days).filter(k=>k>=startKey&&k<=endKey).sort().reverse();
 
-  const moodLabels = { excited:'Heyecanlı', good:'İyiyim', focused:'Odaklı', ok:'İdare Eder', tired:'Yorgunum', anxious:'Kaygılı', sad:'Mutsuzum' };
+  const moodLabels = { great:'Heyecanlı', good:'İyiyim', ok:'İdare Eder', bad:'Üzgün', sad:'Mutsuzum' };
   const moodColors = { excited:[249,202,36], good:[69,183,209], focused:[108,99,255], ok:[162,155,254], tired:[253,121,168], anxious:[255,107,107], sad:[119,140,163] };
 
   const { jsPDF } = window.jspdf;
@@ -488,7 +488,7 @@ async function exportPsychPDF(sName, aiAcik) {
         const bugunNegatif= (bugunW.negatif||'').trim();
         const wellnessVar = bugunKaygi>0||bugunEnerji>0||bugunUyku>0||bugunOdak>0||!!bugunMood;
         const akademikVar = bugunSoru>0;
-        const moodTr = {excited:'Heyecanlı',good:'İyiyim',focused:'Odaklı',ok:'İdare Eder',tired:'Yorgunum',anxious:'Kaygılı',sad:'Mutsuzum'};
+        const moodTr = {great:'Heyecanlı',good:'İyiyim',ok:'İdare Eder',bad:'Üzgün',sad:'Mutsuzum'};
         const bugunMoodTr = bugunMood?(moodTr[bugunMood]||bugunMood):'';
         const negatifMood = ['anxious','tired','sad'].includes(bugunMood);
 
