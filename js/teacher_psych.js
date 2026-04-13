@@ -1071,7 +1071,7 @@ async function exportPsychPDF(sName, aiAcik) {
             // Render: 3 kutu
             // Başlıkları döneme göre uyarla
             const _kutular = [
-              { baslik: _isAylik ? 'AYLIK FOTOĞRAFIN' : 'BU HAFTANIN ÖZETİ',
+              { baslik: _isAylik ? 'AYLIK FOTOĞRAF' : 'BU HAFTANIN ÖZETİ',
                 metin: (!_isAylik && _trendAnlati ? _trendAnlati + ' ' : '') + _pm.foto,
                 ar:242, ag:240, ab:255, sr:70, sg:40, sb:180 },
               { baslik: 'KOÇLUK STRATEJİSİ',                                           metin: _pm.strateji, ar:238, ag:255, ab:245, sr:20,  sg:130, sb:70  },

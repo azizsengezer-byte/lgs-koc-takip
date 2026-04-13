@@ -39,7 +39,7 @@ function _kalibre(gunler14) {
     : dijOrt * 0.3;
 
   // Mood puan kalibrasyonu
-  const _mp = { 'great':5, 'good':4, 'ok':3, 'bad':2, 'sad':1 };
+  const _mp = { 'excited':5, 'good':4, 'focused':4, 'ok':3, 'tired':2, 'anxious':2, 'sad':1 };
   const moodV = gunler14.filter(d => d.mood).map(d => _mp[d.mood] || 3);
   const moodOrt = moodV.length ? moodV.reduce((a,b)=>a+b,0)/moodV.length : 3;
 
@@ -82,7 +82,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Akut Kaygı Altında Yüklenme.', aksiyon: 'Bugün akademik baskıyı sıfırlayın; sadece dünkü hataları analiz ettirin.' },
       weekly:  { teshis: 'Kaygılı Çaba Eğilimi: Başarıyı stresle satın alma trendi.', aksiyon: 'Haftalık görüşmede netlere değil, çalışma huzuruna odaklanın.' },
-      monthly: { teshis: 'Kronik Performans Anksiyetesi.', aksiyon: 'Gelecek ay stratejisini duygusal onarım üzerine kurun.' },
+      aylik : { teshis: 'Kronik Performans Anksiyetesi.', aksiyon: 'Gelecek ay stratejisini duygusal onarım üzerine kurun.' },
       ton: 'urgent'
     }
   },
@@ -92,7 +92,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Duygusal Felç: Kaygı sistemi durdurmuş.', aksiyon: 'Görevleri iptal edin, sadece moral görüşmesi yapın.' },
       weekly:  { teshis: 'Süreçten Kopma Haftası.', aksiyon: 'Planı Mikro Hedeflerle (günde 10-20 soru) resetleyin.' },
-      monthly: { teshis: 'Akademik Yıkım Riski.', aksiyon: 'Hedefleri revize edin; baskıyı tamamen kaldırın.' },
+      aylik : { teshis: 'Akademik Yıkım Riski.', aksiyon: 'Hedefleri revize edin; baskıyı tamamen kaldırın.' },
       ton: 'urgent'
     }
   },
@@ -102,17 +102,17 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Gizli Baskı: Kaygı üretimi yavaşlatmış.', aksiyon: 'Öğrenciyle bugünkü moral durumu üzerine 5 dakikalık kısa bir görüşme yapın.' },
       weekly:  { teshis: 'Akademik Patinaj: Kaygı nedeniyle ilerleme durma noktasında.', aksiyon: 'Haftalık programı hafifletip moral verici konular ekleyin.' },
-      monthly: { teshis: 'İçsel Blokaj Karakteristiği.', aksiyon: 'Öğrencinin sınav algısını değiştirecek rehberlik çalışmaları planlayın.' },
+      aylik : { teshis: 'İçsel Blokaj Karakteristiği.', aksiyon: 'Öğrencinin sınav algısını değiştirecek rehberlik çalışmaları planlayın.' },
       ton: 'warning'
     }
   },
   {
     id: 'DYN-10', modul: 1, priority: 88, etiket: 'Motivasyonel Dalgalanma',
-    tetikle: (b, h, a, k) => (b.mood === 'bad' || b.mood === 'sad') && b.soru < k.soru.dusuk && h.soruHedefiKarsilama < 0.5,
+    tetikle: (b, h, a, k) => ((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'sad') && b.soru < k.soru.dusuk && h.soruHedefiKarsilama < 0.5,
     cikti: {
       daily:   { teshis: 'Düşük Enerji ve İsteksizlik.', aksiyon: 'Zorunlu hedefleri bugünlük askıya alın; sevdiği bir branştan 1 test çözmesini isteyin.' },
       weekly:  { teshis: 'Süreçten Kopuş Sinyalleri.', aksiyon: 'Görüşmede "Neden LGS?" sorusunu tekrar gündeme getirin.' },
-      monthly: { teshis: 'Hedeften Uzaklaşma Eğilimi.', aksiyon: 'Öğrencinin hayalindeki liseyi odağa alan bir vizyon çalışması yapın.' },
+      aylik : { teshis: 'Hedeften Uzaklaşma Eğilimi.', aksiyon: 'Öğrencinin hayalindeki liseyi odağa alan bir vizyon çalışması yapın.' },
       ton: 'warning'
     }
   },
@@ -122,7 +122,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Duygusal Toparlanma: Stres yönetimi bugün başarılı.', aksiyon: 'Bu kararlılığı fark ettiğinizi belirten pozitif bir mesaj gönderin.' },
       weekly:  { teshis: 'Pozitif Değişim Trendi: Kriz geride kalıyor.', aksiyon: 'Öğrenciyi tebrik edin; normal tempoya geçin.' },
-      monthly: { teshis: 'Psikolojik Sağlamlık Artışı.', aksiyon: 'Öğrencinin kriz yönetim becerisini başarısının temeli olarak not edin.' },
+      aylik : { teshis: 'Psikolojik Sağlamlık Artışı.', aksiyon: 'Öğrencinin kriz yönetim becerisini başarısının temeli olarak not edin.' },
       ton: 'positive'
     }
   },
@@ -141,7 +141,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Konfor Alanı: Bugün sadece başarılı olunan branşlara odaklanılmış.', aksiyon: 'Yarına en az 1 testlik zayıf branş zorunluluğu ekleyin.' },
       weekly:  { teshis: 'Sistematik Branş Dışlama: Bu hafta zor derslerden kaçış kronikleşmiş.', aksiyon: 'Programda Önce Zor Olanı Yap kuralını işletin.' },
-      monthly: { teshis: 'Gelişimi Engelleyen Konfor Bağımlılığı.', aksiyon: 'Zayıf branş kotalarını sabitleyin ve koç denetiminde çözülmesini sağlayın.' },
+      aylik : { teshis: 'Gelişimi Engelleyen Konfor Bağımlılığı.', aksiyon: 'Zayıf branş kotalarını sabitleyin ve koç denetiminde çözülmesini sağlayın.' },
       ton: 'warning'
     }
   },
@@ -155,7 +155,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Yüzeysel Çözüm: Soru sayısı fazla ama öğrenme kalitesi düşük.', aksiyon: 'Bugün yeni soru vermeyin; yanlış yapılan soruların mantığını sorgulayın.' },
       weekly:  { teshis: 'Hız Tuzağı: Bu hafta nicelik niteliğin önüne geçmiş.', aksiyon: 'Haftalık hedefi soru sayısından doğru sayısına kaydırın.' },
-      monthly: { teshis: 'Mekanik Çalışma Karakteri: Öğrenci sadece soru eritiyor.', aksiyon: 'Deneme sınavlarıyla sahte özgüveni test edin.' },
+      aylik : { teshis: 'Mekanik Çalışma Karakteri: Öğrenci sadece soru eritiyor.', aksiyon: 'Deneme sınavlarıyla sahte özgüveni test edin.' },
       ton: 'warning'
     }
   },
@@ -168,7 +168,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Hata Körlüğü: Yanlışlar incelenmeden kapatılmış.', aksiyon: 'Bugünkü yanlışların video çözümlerini izletmeden günü bitirmeyin.' },
       weekly:  { teshis: 'Sistematik Analiz İhmali: Hatalardan ders çıkarma süreci durmuş.', aksiyon: 'Haftalık görüşmede Hata Defteri üzerinden çapraz sorgu yapın.' },
-      monthly: { teshis: 'Gelişim Durması Riski: Yanlışlarından kaçma karakteri.', aksiyon: 'Analiz yapılmayan çalışmaları sistemde geçersiz sayın.' },
+      aylik : { teshis: 'Gelişim Durması Riski: Yanlışlarından kaçma karakteri.', aksiyon: 'Analiz yapılmayan çalışmaları sistemde geçersiz sayın.' },
       ton: 'urgent'
     }
   },
@@ -181,7 +181,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Pasif Direnç: Masada kalınmış ama üretim yapılmamış.', aksiyon: 'Çalışma ortamındaki uyaran sızıntılarını sorgulayın.' },
       weekly:  { teshis: 'Odaklanma Erozyonu: Masa süresi verime dönüşmüyor.', aksiyon: 'Bu hafta Pomodoro tekniğini zorunlu tutun.' },
-      monthly: { teshis: 'Masa Başında Atalet: Çalışıyor imajı var ama zihin süreçte değil.', aksiyon: 'Öğrencinin motivasyon kaynağını veya çalışma ortamını değiştirin.' },
+      aylik : { teshis: 'Masa Başında Atalet: Çalışıyor imajı var ama zihin süreçte değil.', aksiyon: 'Öğrencinin motivasyon kaynağını veya çalışma ortamını değiştirin.' },
       ton: 'stable'
     }
   },
@@ -194,7 +194,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Sayısal Kaygı: Bugün sayısal branşlarda hata artmış.', aksiyon: 'Sayısal branşlarda soru azaltıp sadece yöntem tekrarı yaptırın.' },
       weekly:  { teshis: 'Sayısal Direnç: Bu hafta sayısal derslerdeki hata kronik artış göstermiş.', aksiyon: 'Haftalık planda sayısal dersleri sabah saatlerine kaydırın.' },
-      monthly: { teshis: 'Sayısal Temel Eksikliği: Aylık veriler sayısal branşta bariyer olduğunu kanıtlıyor.', aksiyon: 'Temel seviye kaynaklara geri dönüş planlayın.' },
+      aylik : { teshis: 'Sayısal Temel Eksikliği: Aylık veriler sayısal branşta bariyer olduğunu kanıtlıyor.', aksiyon: 'Temel seviye kaynaklara geri dönüş planlayın.' },
       ton: 'warning'
     }
   },
@@ -207,7 +207,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Sözel Rehavet: Başarı yüksek olduğu için sözel dersler ihmal edilmiş.', aksiyon: 'Her gün en az 20 paragraf sorusunu rutin olarak ekleyin.' },
       weekly:  { teshis: 'Okuma Alışkanlığı Erozyonu: Sözel branşlar çerez olarak geçilmiş.', aksiyon: 'Haftalık denemede sözel dikkati ölçün; rehavet kaynaklı hataları sorgulayın.' },
-      monthly: { teshis: 'Sözel Performans Sürüklenmesi: Aylık veride sözel netlerde dalgalanma başlamış.', aksiyon: 'Sözel dersleri analiz gerektiren yeni nesil sorulara yöneltin.' },
+      aylik : { teshis: 'Sözel Performans Sürüklenmesi: Aylık veride sözel netlerde dalgalanma başlamış.', aksiyon: 'Sözel dersleri analiz gerektiren yeni nesil sorulara yöneltin.' },
       ton: 'stable'
     }
   },
@@ -225,7 +225,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Başarı Baskısı: Yüksek netler hata yapma korkusunu tetiklemiş.', aksiyon: 'Bugün netleri övmeyin; sadece çabasının güzelliğinden bahsedin.' },
       weekly:  { teshis: 'Sürdürülebilirlik Kaygısı: Her başarı öğrenciye hep böyle yapmalısın yükü bindirmiş.', aksiyon: 'Haftalık görüşmede odağı sınavdan çıkarıp sevdiği bir hobiye kaydırın.' },
-      monthly: { teshis: 'Karakteristik Başarı Fobisi: Potansiyelini tehdit olarak görme eğilimi.', aksiyon: 'Uzun vadeli hedef baskısını azaltıp mikro hedefler verin.' },
+      aylik : { teshis: 'Karakteristik Başarı Fobisi: Potansiyelini tehdit olarak görme eğilimi.', aksiyon: 'Uzun vadeli hedef baskısını azaltıp mikro hedefler verin.' },
       ton: 'warning'
     }
   },
@@ -234,11 +234,11 @@ const SENARYOLAR = [
     tetikle: (b, h, a, k) =>
       b.isabet !== null &&
       b.isabet >= k.isabet.ort &&
-      (b.mood === 'bad' || b.mood === 'sad'),
+      ((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'sad'),
     cikti: {
       daily:   { teshis: 'Negatif Filtreleme: Başarıya rağmen öğrenci kendini yetersiz hissediyor.', aksiyon: 'Bugün çözdüğü doğru soruları somut kanıt olarak önüne koyun.' },
       weekly:  { teshis: 'Öz-Güven Aşınması: Akademik üretim moral yükseltmeye yetmiyor.', aksiyon: 'Bu hafta sadece ustalaştığı konulardan test vererek yapabiliyorum hissini besleyin.' },
-      monthly: { teshis: 'Kronik Düşük Öz-Yeterlilik: Başarıyı sahiplenememe durumu.', aksiyon: 'Küçük galibiyetler stratejisiyle her hafta bir başarı tescili yapın.' },
+      aylik : { teshis: 'Kronik Düşük Öz-Yeterlilik: Başarıyı sahiplenememe durumu.', aksiyon: 'Küçük galibiyetler stratejisiyle her hafta bir başarı tescili yapın.' },
       ton: 'warning'
     }
   },
@@ -247,11 +247,11 @@ const SENARYOLAR = [
     tetikle: (b, h, a, k) =>
       b.isabet !== null &&
       b.isabet <= k.isabet.dusuk &&
-      (b.mood === 'great' || b.mood === 'good'),
+      (b.mood === 'excited' || (b.mood === 'good' || b.mood === 'focused')),
     cikti: {
       daily:   { teshis: 'Hata Körlüğü: Düşük performansa rağmen suni iyimserlik hakim.', aksiyon: 'Yanlış yaptığı 3 kritik soruyu video çözümleriyle inceletin.' },
       weekly:  { teshis: 'Yüzeysel Gelişim: Hataları görmezden gelme trendi.', aksiyon: 'Haftalık analizde netlere değil yanlışların çözüm sürelerine bakın.' },
-      monthly: { teshis: 'Suni Özgüven Riski: Gelişimi engelleyen inkar mekanizması.', aksiyon: 'Zor ve objektif bir deneme ile gerçek seviyeyi yüzleştirin.' },
+      aylik : { teshis: 'Suni Özgüven Riski: Gelişimi engelleyen inkar mekanizması.', aksiyon: 'Zor ve objektif bir deneme ile gerçek seviyeyi yüzleştirin.' },
       ton: 'stable'
     }
   },
@@ -261,7 +261,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Duygusal Çöküş: Öğrencinin içsel motivasyonu kırılmış görünüyor.', aksiyon: 'Ders konuşmayın; sadece moral ve destek odaklı sesli mesaj gönderin.' },
       weekly:  { teshis: 'Depresif Süreç: Bu hafta öğrenci süreçten tamamen kopma riskinde.', aksiyon: 'Haftalık planı durdurun ve bir resetleme günü planlayın.' },
-      monthly: { teshis: 'Kronik Motivasyon Kaybı.', aksiyon: 'Öğrencinin temel yaşam enerjisini sorgulayın; aileyle görüşün.' },
+      aylik : { teshis: 'Kronik Motivasyon Kaybı.', aksiyon: 'Öğrencinin temel yaşam enerjisini sorgulayın; aileyle görüşün.' },
       ton: 'urgent'
     }
   },
@@ -275,7 +275,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Sıçrama Günü: Öğrenci kendi limitlerini sağlıklı zorlamış.', aksiyon: 'Bu yüksek performansı tescilleyin; takdir mesajı atın.' },
       weekly:  { teshis: 'Kapasite Artışı: Bu hafta çalışma bandı bir üst seviyeye taşındı.', aksiyon: 'Haftalık hedefleri bu yeni normale göre yukarı revize edin.' },
-      monthly: { teshis: 'Akademik Evrim: Öğrenci ay boyunca istikrarlı yükseliş trendine girdi.', aksiyon: 'Başarı grafiğini aileyle paylaşarak motivasyonel ödül planlayın.' },
+      aylik : { teshis: 'Akademik Evrim: Öğrenci ay boyunca istikrarlı yükseliş trendine girdi.', aksiyon: 'Başarı grafiğini aileyle paylaşarak motivasyonel ödül planlayın.' },
       ton: 'positive'
     }
   },
@@ -289,7 +289,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Enerji Kaçağı: Bugün verim ve süre eş zamanlı düşüş göstermiş.', aksiyon: 'Koçluk görüşmesiyle enerjiyi ne emiyor sorusuna yanıt arayın.' },
       weekly:  { teshis: 'İstikrar Kaybı: Bu hafta genel gerileme ve süreçten kopma eğilimi var.', aksiyon: 'Haftalık programı sadeleştirin; yapabildikleri üzerinden geri dönüş hattı kurun.' },
-      monthly: { teshis: 'Kronik Düşüş Trendi: Öğrenci sistemden yavaş uzaklaşıyor.', aksiyon: 'Hedefleri ve çalışma ortamını kökten değiştirme vaktiniz gelmiş olabilir.' },
+      aylik : { teshis: 'Kronik Düşüş Trendi: Öğrenci sistemden yavaş uzaklaşıyor.', aksiyon: 'Hedefleri ve çalışma ortamını kökten değiştirme vaktiniz gelmiş olabilir.' },
       ton: 'urgent'
     }
   },
@@ -306,7 +306,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Dijital Anestezi: Stres anında ekrana sığınma.', aksiyon: 'Yasak koymayın; stresi tetikleyen dersi bulup yükünü hafifletin.' },
       weekly:  { teshis: 'Kaçış Paterni: Her zorlanma sosyal medya sığınağıyla sonuçlanmış.', aksiyon: 'Haftalık planda ekran süresini akademik blok sonrasına ödül olarak sabitleyin.' },
-      monthly: { teshis: 'Kronik Dijital Savunma: Problem çözme kası zayıflamış.', aksiyon: 'Kademeli dijital detoks protokolü başlatın.' },
+      aylik : { teshis: 'Kronik Dijital Savunma: Problem çözme kası zayıflamış.', aksiyon: 'Kademeli dijital detoks protokolü başlatın.' },
       ton: 'warning'
     }
   },
@@ -319,7 +319,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Yüzeysel Odak: Dikkat dağıtıcılar derinleşmeyi engellemiş.', aksiyon: 'Telefonu çalışma odasının dışına çıkartarak 40 dakikalık tam odak seansı yapın.' },
       weekly:  { teshis: 'Derinleşme Yeteneği Kaybı: Bu hafta hiçbir konuda akış haline geçilememiş.', aksiyon: 'Pomodoro süresini kademeli olarak 25 ten 45 dakikaya zorlayın.' },
-      monthly: { teshis: 'Sığ Zihin Alışkanlığı: Zor sorularda kalamama hali.', aksiyon: 'Zihinsel antrenman programı başlatın.' },
+      aylik : { teshis: 'Sığ Zihin Alışkanlığı: Zor sorularda kalamama hali.', aksiyon: 'Zihinsel antrenman programı başlatın.' },
       ton: 'warning'
     }
   },
@@ -337,7 +337,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Bilişsel Borç: Uykusuzluğa rağmen sistem zorlanarak çalışılmış.', aksiyon: 'Bugün yeni konu yüklemeyin; sadece dünkü yanlışların analizini yaptırın.' },
       weekly:  { teshis: 'Performans Sürüklenmesi: Başarı sağlıktan borç alınarak sürdürülmüş.', aksiyon: 'Haftalık planda uyku süresini 7 saatin üzerine sabitleyip gece çalışmasını durdurun.' },
-      monthly: { teshis: 'Kronik Fizyolojik Aşınma: Tükenmişlik kapıda.', aksiyon: 'Gelecek ayın ilk haftasını Restorasyon Haftası ilan ederek yükü yüzde otuz düşürün.' },
+      aylik : { teshis: 'Kronik Fizyolojik Aşınma: Tükenmişlik kapıda.', aksiyon: 'Gelecek ayın ilk haftasını Restorasyon Haftası ilan ederek yükü yüzde otuz düşürün.' },
       ton: 'urgent'
     }
   },
@@ -349,7 +349,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Sistem İflası: Fiziksel ve zihinsel enerji tamamen tükenme noktasında.', aksiyon: 'Acil 24 saatlik mutlak akademik mola verdirin.' },
       weekly:  { teshis: 'Motivasyonel İflas Haftası.', aksiyon: 'Haftalık hedefleri yüzde elli düşürüp öğrenciyi dinlendirin.' },
-      monthly: { teshis: 'Akademik Tükenmişlik Teşhisi.', aksiyon: 'Mevcut strateji sürdürülemez; yöntemi aileyle revize edin.' },
+      aylik : { teshis: 'Akademik Tükenmişlik Teşhisi.', aksiyon: 'Mevcut strateji sürdürülemez; yöntemi aileyle revize edin.' },
       ton: 'urgent'
     }
   },
@@ -361,12 +361,12 @@ const SENARYOLAR = [
     tetikle: (b, h, a, k) =>
       b.soru < k.soru.dusuk &&
       h.soruHedefiKarsilama < 0.5 &&
-      (b.mood === 'ok' || b.mood === 'good' || b.mood === 'great') &&
+      (b.mood === 'ok' || (b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited') &&
       b.calismaSuresi < k.calismaSuresi.yuksek,
     cikti: {
       daily:   { teshis: 'Sessiz Üretim Kaybı: Mood iyi ama üretim hem geçmişin hem hedefin çok gerisinde.', aksiyon: 'Çalışmayı engelleyen dış bir faktör olup olmadığını kontrol edin.' },
       weekly:  { teshis: 'Süreklilik Krizi: Bu hafta hedefe ulaşma oranı yüzde ellinin altında; sistemden kopuş başlamış.', aksiyon: 'Haftalık programı başarabileceği seviyeye geçici olarak çekip özgüven tazeleyin.' },
-      monthly: { teshis: 'Kronik Hedef Uzaklaşması: Aylık hedef öğrenci için hayali bir rakama dönüşmüş.', aksiyon: 'Mevcut hedefi revize edin veya temel çalışma motivasyonunu rehberlik servisiyle sorgulayın.' },
+      aylik : { teshis: 'Kronik Hedef Uzaklaşması: Aylık hedef öğrenci için hayali bir rakama dönüşmüş.', aksiyon: 'Mevcut hedefi revize edin veya temel çalışma motivasyonunu rehberlik servisiyle sorgulayın.' },
       ton: 'urgent'
     }
   },,
@@ -382,7 +382,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Sistemden Kopuş: Düzenli veri giren öğrenci bugün sessiz kalmış.', aksiyon: 'Kısa bir mesajla öğrencinin durumunu sorgulayın; sessizlik erken uyarı işareti olabilir.' },
       weekly:  { teshis: 'Aralıklı Takip Bozukluğu: Bu hafta veri girişleri tutarsız.', aksiyon: 'Veri girişinin neden kesildiğini görüşün; alışkanlık kırılıyor olabilir.' },
-      monthly: { teshis: 'Sisteme Güven Kaybı: Öğrenci takip sistemini terk etme eğiliminde.', aksiyon: 'Sistemin öğrenciye ne kazandırdığını somut verilerle gösterin.' },
+      aylik : { teshis: 'Sisteme Güven Kaybı: Öğrenci takip sistemini terk etme eğiliminde.', aksiyon: 'Sistemin öğrenciye ne kazandırdığını somut verilerle gösterin.' },
       ton: 'warning'
     }
   },
@@ -396,7 +396,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Gece Krizi: Uyku 5 saatin altında ve kaygı zirvedeydi; bugün bilişsel kapasite ciddi kısıtlı.', aksiyon: 'Bugün yeni konu veya deneme vermeyin; sadece basit tekrar yaptırın.' },
       weekly:  { teshis: 'Kronik Gece Savaşı: Bu hafta uyku-kaygı kısır döngüsü izleniyor.', aksiyon: 'Akşam rutinini yeniden tasarlayın; yatmadan 1 saat önce ekransız kural koyun.' },
-      monthly: { teshis: 'Uyku Borcunu Ödeme Zamanı: Ay genelinde uyku kalitesi sürdürülemez düzeyde.', aksiyon: 'Uyku düzenini normalleştirmeden akademik performans artışı beklenmesin.' },
+      aylik : { teshis: 'Uyku Borcunu Ödeme Zamanı: Ay genelinde uyku kalitesi sürdürülemez düzeyde.', aksiyon: 'Uyku düzenini normalleştirmeden akademik performans artışı beklenmesin.' },
       ton: 'urgent'
     }
   },
@@ -412,7 +412,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Hafta Sonu Kaygı Patlaması: Serbest zaman öğrenciyi rahatlatmak yerine bunaltıyor.', aksiyon: 'Hafta sonu için yapılandırılmış ama hafif bir program önerin; boşluk kaygıyı artırıyor.' },
       weekly:  { teshis: 'Yapısız Zaman Korkusu: Hafta sonları düzensizlik kaygı tetikliyor.', aksiyon: 'Hafta sonu için sabah rutini oluşturun; gün başlangıcı çıpası kaygıyı azaltır.' },
-      monthly: { teshis: 'Dinlenme Zamanı Paradoksu: Öğrenci için tatil kavramı stres kaynağına dönüşmüş.', aksiyon: 'Dinlenmenin performansı artırdığını veri göstererek öğretirn; izin hakkı verilmeli.' },
+      aylik : { teshis: 'Dinlenme Zamanı Paradoksu: Öğrenci için tatil kavramı stres kaynağına dönüşmüş.', aksiyon: 'Dinlenmenin performansı artırdığını veri göstererek öğretirn; izin hakkı verilmeli.' },
       ton: 'warning'
     }
   },
@@ -427,7 +427,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Deneme Şoku: Sınav sonrası kaygı yükselmiş, üretim durmuş.', aksiyon: 'Deneme sonuçlarını bugün değerlendirmeyin; sadece bir yanlışı birlikte analiz edin.' },
       weekly:  { teshis: 'Deneme Kırılganlığı: Her sınavın ardından çöküş yaşanıyor.', aksiyon: 'Deneme sonuçlarını tehdit değil veri olarak çerçeveleme alışkanlığı kazandırın.' },
-      monthly: { teshis: 'Sınav Fobisi Sinyali: Denemeler motivasyon artırmak yerine çökertmeye başlamış.', aksiyon: 'Deneme sıklığını azaltın; sonuç odaklı değil süreç odaklı değerlendirmeye geçin.' },
+      aylik : { teshis: 'Sınav Fobisi Sinyali: Denemeler motivasyon artırmak yerine çökertmeye başlamış.', aksiyon: 'Deneme sıklığını azaltın; sonuç odaklı değil süreç odaklı değerlendirmeye geçin.' },
       ton: 'warning'
     }
   },
@@ -443,7 +443,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Mekanik Çalışma: Üretim var ama içsel motivasyon sıfırlanmış; robot modunda ilerleniyor.', aksiyon: 'Bugün çalışmanın neden önemli olduğunu konuşun; hedefe bağlantı kurun.' },
       weekly:  { teshis: 'Duygusal Donukluk: Bu hafta ne iyi ne kötü; öğrenci süreci sadece "bitirmek" istiyor.', aksiyon: 'Haftalık programa öğrencinin seveceği küçük bir sürpriz ekleyin.' },
-      monthly: { teshis: 'Pre-Burnout Zemini: Duygusal katılım azalmış; tükenmişlik kapıda.', aksiyon: 'Hazırlık sürecine anlam katan yeni bir motivasyon kaynağı bulun.' },
+      aylik : { teshis: 'Pre-Burnout Zemini: Duygusal katılım azalmış; tükenmişlik kapıda.', aksiyon: 'Hazırlık sürecine anlam katan yeni bir motivasyon kaynağı bulun.' },
       ton: 'warning'
     }
   },
@@ -460,7 +460,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Konfor Tekrarı: Öğrenci bildiklerini tekrar ederek güvende hissediyor ama yeni şey öğrenmiyor.', aksiyon: 'Bugün en az 30 dakika yeni konu çalışmasını zorunlu tutun.' },
       weekly:  { teshis: 'Gelişim Duraksaması: Bu hafta tekrarlar yeni kazanımın önüne geçmiş.', aksiyon: 'Haftalık planda konu-tekrar oranını 60-40 olarak sabitleyin.' },
-      monthly: { teshis: 'Statik Öğrenme Karakteri: Öğrenci hep bildiğini pekiştiriyor, bilinmeyene girmiyor.', aksiyon: 'Müfredat haritası çıkarıp hangi konuların hiç çalışılmadığını gösterin.' },
+      aylik : { teshis: 'Statik Öğrenme Karakteri: Öğrenci hep bildiğini pekiştiriyor, bilinmeyene girmiyor.', aksiyon: 'Müfredat haritası çıkarıp hangi konuların hiç çalışılmadığını gösterin.' },
       ton: 'stable'
     }
   },
@@ -475,7 +475,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Hedef Makası: Kendi geçmişine göre normal ama hedefe göre çok yetersiz.', aksiyon: 'Öğrenciye gerçek hedefe ne kadar uzak olduğunu somut sayılarla gösterin.' },
       weekly:  { teshis: 'Kalibrasyon Yanılması: Sistem normal diyor ama hedef gerçeği farklı.', aksiyon: 'Haftalık hedefi LGS geri sayımına göre yeniden hesaplayıp paylaşın.' },
-      monthly: { teshis: 'Kronik Hedef Açığı: Aylık üretim hedefe ulaşmak için yeterli değil.', aksiyon: 'Ya hedefi düşürün ya da çalışma saatlerini artırın; ikisi aynı anda olamaz.' },
+      aylik : { teshis: 'Kronik Hedef Açığı: Aylık üretim hedefe ulaşmak için yeterli değil.', aksiyon: 'Ya hedefi düşürün ya da çalışma saatlerini artırın; ikisi aynı anda olamaz.' },
       ton: 'urgent'
     }
   },
@@ -490,7 +490,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Deneme Fobisi: Düzenli çalışıyor ama kendinini sınav koşullarında test etmekten kaçınıyor.', aksiyon: 'Bu hafta en az bir deneme sınavı planlamasını isteyin.' },
       weekly:  { teshis: 'Sınav Ortamı Yabancılığı: Bu hafta deneme yoksa çalışma gerçekçi değil.', aksiyon: 'Cumartesi günü için kısa bir mini deneme (30 soru) planlayın.' },
-      monthly: { teshis: 'Sınav Dayanıklılığı Eksikliği: Ay boyunca deneme sayısı yetersiz.', aksiyon: 'Ayda en az 4 deneme minimum standart olarak belirleyin.' },
+      aylik : { teshis: 'Sınav Dayanıklılığı Eksikliği: Ay boyunca deneme sayısı yetersiz.', aksiyon: 'Ayda en az 4 deneme minimum standart olarak belirleyin.' },
       ton: 'warning'
     }
   },
@@ -504,11 +504,11 @@ const SENARYOLAR = [
       b.isabet !== null &&
       b.isabet > k.isabet.ort &&
       h.isatetTrend > 5 &&
-      (b.mood === 'bad' || b.mood === 'sad'),
+      ((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'sad'),
     cikti: {
       daily:   { teshis: 'Başarı Körlüğü: İsabet oranı yükseliyor ama öğrenci bunu görmüyor.', aksiyon: 'Son 7 günün isabet grafiğini gösterin; gelişim somutlaştırılmalı.' },
       weekly:  { teshis: 'Fark Etmeme Sendromu: Bu hafta net artışı var ama içselleştiremiyor.', aksiyon: 'Haftalık görüşmede sadece rakamları değil, hangi konuları fethetti onu konuşun.' },
-      monthly: { teshis: 'Kronik Öz-Küçümseme: Ay boyunca gerçek gelişim psikolojik kabul görmüyor.', aksiyon: 'Başarı günlüğü tutmasını önerin; her gün 1 şeyin üstesinden geldiğini yazmalı.' },
+      aylik : { teshis: 'Kronik Öz-Küçümseme: Ay boyunca gerçek gelişim psikolojik kabul görmüyor.', aksiyon: 'Başarı günlüğü tutmasını önerin; her gün 1 şeyin üstesinden geldiğini yazmalı.' },
       ton: 'warning'
     }
   },
@@ -524,7 +524,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Sahte Zafer: Yüksek isabet ama az soru ve hedefin yarısında — kolay sorular seçilmiş.', aksiyon: 'Bugün zorluk seviyesini bir basamak artırın; gerçek seviyeyi test edin.' },
       weekly:  { teshis: 'Konfor Bölgesi Başarısı: Bu hafta yüksek isabet düşük hacimle sağlandı.', aksiyon: 'Soru sayısını artırıp isabeti bu seviyede tutabilirse gerçek gelişim başlar.' },
-      monthly: { teshis: 'Yapay Öz-Yeterlilik: Ay boyunca kolay sorularda yüksek isabet gerçek sınav hazırlığı değil.', aksiyon: 'Deneme sınavlarındaki zorluk dağılımıyla karşılaştırın; gerçeği gösterin.' },
+      aylik : { teshis: 'Yapay Öz-Yeterlilik: Ay boyunca kolay sorularda yüksek isabet gerçek sınav hazırlığı değil.', aksiyon: 'Deneme sınavlarındaki zorluk dağılımıyla karşılaştırın; gerçeği gösterin.' },
       ton: 'warning'
     }
   },
@@ -541,7 +541,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'İstikrar Günü: Son 3 gün tutarlı soru ve isabet; sistem sağlıklı çalışıyor.', aksiyon: 'Bu dengeyi bozmayın; rutini koruyun ve küçük bir takdir mesajı gönderin.' },
       weekly:  { teshis: 'Sürdürülebilir Ritim: Bu hafta nicelik ve nitelik dengesinde ilerleniyor.', aksiyon: 'Haftalık hedefi hafifçe yukarı çekerek bu ivmeyi güçlendirin.' },
-      monthly: { teshis: 'Karakteristik İstikrar: Öğrenci tutarlı çalışma alışkanlığını içselleştirmiş.', aksiyon: 'Bu temeli kullanarak bir sonraki ay hedeflerini yukarı revize edin.' },
+      aylik : { teshis: 'Karakteristik İstikrar: Öğrenci tutarlı çalışma alışkanlığını içselleştirmiş.', aksiyon: 'Bu temeli kullanarak bir sonraki ay hedeflerini yukarı revize edin.' },
       ton: 'positive'
     }
   },
@@ -558,7 +558,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Gece Ekranı: Yüksek dijital kullanım uyku kalitesini düşürmüş; bugün zihin yorgun.', aksiyon: 'Yatmadan 1 saat önce ekran yasağını bu hafta deneyin.' },
       weekly:  { teshis: 'Uyku-Ekran Kısır Döngüsü: Bu hafta gece ekranı ertesi gün verimliliğini sürekli düşürüyor.', aksiyon: 'Akşam programını 21:00 de bitirip telefonu başka odaya koyun.' },
-      monthly: { teshis: 'Sirkadiyen Ritim Bozukluğu: Dijital alışkanlık biyolojik saati bozmuş.', aksiyon: 'Yaşam döngüsünü düzeltemeden akademik sıçrama beklenmesin.' },
+      aylik : { teshis: 'Sirkadiyen Ritim Bozukluğu: Dijital alışkanlık biyolojik saati bozmuş.', aksiyon: 'Yaşam döngüsünü düzeltemeden akademik sıçrama beklenmesin.' },
       ton: 'warning'
     }
   },
@@ -569,12 +569,12 @@ const SENARYOLAR = [
     tetikle: (b, h, a, k) =>
       b.dijitalSure >= k.dijital.yuksek &&
       b.kaygi < k.kaygi.dusuk &&
-      (b.mood === 'good' || b.mood === 'great') &&
+      ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || b.mood === 'focused') &&
       h.soruHedefiKarsilama < 0.5,
     cikti: {
       daily:   { teshis: 'Dijital Rehavet: Kaygı yok, keyif var ama ekran hedefin önüne geçmiş.', aksiyon: 'Öğrenciye LGS geri sayımını hatırlatın; rahat hissetmek hareketsizlik değil.' },
       weekly:  { teshis: 'Konfor Tuzağı: Bu hafta iyi hissetmek çalışma motivasyonunu azaltmış.', aksiyon: 'Haftalık görüşmede iyi günlerin fırsata dönüştürülmesi gerektiğini konuşun.' },
-      monthly: { teshis: 'Motivasyon-Performans Kopukluğu: Öğrenci mutlu ama hedefe gitmiyor.', aksiyon: 'İyi mood u akademik ataklar için kullanmayı alışkanlık haline getirin.' },
+      aylik : { teshis: 'Motivasyon-Performans Kopukluğu: Öğrenci mutlu ama hedefe gitmiyor.', aksiyon: 'İyi mood u akademik ataklar için kullanmayı alışkanlık haline getirin.' },
       ton: 'warning'
     }
   },
@@ -589,7 +589,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Dijital Telafi: Yoğun bir çalışma gününün ardından ekranla ödüllendirme yapılmış.', aksiyon: 'Ekranı tamamen yasaklamayın; süreyi 45 dakika ile sınırlayın.' },
       weekly:  { teshis: 'Stres-Ekran Döngüsü: Yoğun günlerin ardından dijital tüketim ani artış gösteriyor.', aksiyon: 'Ekran yerine yürüyüş veya müzik gibi alternatif dinlenme yöntemleri önerin.' },
-      monthly: { teshis: 'Tek Rahatlama Kanalı: Öğrencinin stres yönetim repertuarı dijital medyayla sınırlı.', aksiyon: 'Farklı rahatlama aktiviteleri keşfetmesine yardımcı olun.' },
+      aylik : { teshis: 'Tek Rahatlama Kanalı: Öğrencinin stres yönetim repertuarı dijital medyayla sınırlı.', aksiyon: 'Farklı rahatlama aktiviteleri keşfetmesine yardımcı olun.' },
       ton: 'stable'
     }
   },
@@ -606,7 +606,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Enerji Çöküşü: Fiziksel enerji dipte; üretim kaçınılmaz olarak düşmüş.', aksiyon: 'Bugün kısa ve odaklı çalışma blokları (2x25 dk) yeterli; uzun seans beklemeyin.' },
       weekly:  { teshis: 'Kronik Düşük Enerji: Bu hafta enerji seviyesi sürekli düşük seyretti.', aksiyon: 'Uyku düzeni, beslenme ve hareket alışkanlıklarını gözden geçirin.' },
-      monthly: { teshis: 'Fizyolojik Taban Sorunu: Enerji tabanı yükseltilmeden akademik performans artmaz.', aksiyon: 'Gerekirse aileyle birlikte sağlık kontrolü planlayın.' },
+      aylik : { teshis: 'Fizyolojik Taban Sorunu: Enerji tabanı yükseltilmeden akademik performans artmaz.', aksiyon: 'Gerekirse aileyle birlikte sağlık kontrolü planlayın.' },
       ton: 'warning'
     }
   },
@@ -621,7 +621,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Uyku Paradoksu: Uyku süresi yeterli ama enerji yok; uyku kalitesi bozuk olabilir.', aksiyon: 'Geç saatte yemek, gece ekranı veya stres uyku kalitesini düşürüyor olabilir.' },
       weekly:  { teshis: 'Restoratif Uyku Eksikliği: Bu hafta süre var ama dinlendirici uyku yok.', aksiyon: 'Yatmadan önceki 1 saati stressiz geçirme rutini oluşturun.' },
-      monthly: { teshis: 'Kronik Uyku Kalitesi Sorunu: Uzun vadede bilişsel performansı olumsuz etkiler.', aksiyon: 'Gerekirse uyku hijyeni üzerine profesyonel destek alın.' },
+      aylik : { teshis: 'Kronik Uyku Kalitesi Sorunu: Uzun vadede bilişsel performansı olumsuz etkiler.', aksiyon: 'Gerekirse uyku hijyeni üzerine profesyonel destek alın.' },
       ton: 'warning'
     }
   },
@@ -636,7 +636,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Tükeniş Yolunda: Haftalık enerji trendi sürekli aşağı; sistem yavaşlıyor.', aksiyon: 'Bugün akademik yükü yarıya indirin; enerjiyi önce doldurun.' },
       weekly:  { teshis: 'Haftanın Enerji Karnesi Kötü: Bu hafta her gün biraz daha yorgun başlanmış.', aksiyon: 'Hafta sonu tam dinlenme günü planlayın; hiç soru yok, sadece dinlenme.' },
-      monthly: { teshis: 'Tükenmişlik Eşiği: Ay boyunca enerji eğrisi aşağı; burnout an meselesi.', aksiyon: 'Çalışma temposunu kalıcı olarak düşürün; yorgun öğrenci öğrenemez.' },
+      aylik : { teshis: 'Tükenmişlik Eşiği: Ay boyunca enerji eğrisi aşağı; burnout an meselesi.', aksiyon: 'Çalışma temposunu kalıcı olarak düşürün; yorgun öğrenci öğrenemez.' },
       ton: 'urgent'
     }
   },
@@ -651,7 +651,7 @@ const SENARYOLAR = [
     cikti: {
       daily:   { teshis: 'Kaçırılan Fırsat: Uyku ve enerji zirvedeyken hedefin yarısında kalınmış.', aksiyon: 'Öğrenciye bu enerjinin kıymetini hatırlatın; zor konuya bugün girmek için ideal gün.' },
       weekly:  { teshis: 'Yüksek Kapasite-Düşük Kullanım: Bu hafta biyolojik koşullar iyiydi ama kullanılamadı.', aksiyon: 'İyi fiziksel günleri zorlu konulara ayırma alışkanlığı kazandırın.' },
-      monthly: { teshis: 'Fırsat Maliyeti: Ay boyunca iyi günler boşa geçti; bu fark LGS sonucuna yansır.', aksiyon: 'Enerji yüksekken çalışma, düşükken dinlenme rutinini program haline getirin.' },
+      aylik : { teshis: 'Fırsat Maliyeti: Ay boyunca iyi günler boşa geçti; bu fark LGS sonucuna yansır.', aksiyon: 'Enerji yüksekken çalışma, düşükken dinlenme rutinini program haline getirin.' },
       ton: 'warning'
     }
   }
@@ -663,13 +663,13 @@ const POZITIF_SENARYOLAR = [
   {
     id: 'POS-BELIEF-01', modul: 3, priority: 92, etiket: 'Zihinsel Kırılma',
     tetikle: (b, h, a, k) =>
-      (b.mood === 'great' || b.mood === 'good') &&
+      (b.mood === 'excited' || (b.mood === 'good' || b.mood === 'focused')) &&
       a.son3GunMoodPuan > k.mood.ort * 1.4 &&
       b.soru >= k.soru.ort,
     cikti: {
       daily:   { teshis: 'Zihinsel Aydınlanma: Öğrenci bugün kendi potansiyeline dair pozitif bir uyanış yaşadı.', aksiyon: 'Bu özgüven artışını, bekletilen zor bir konuyu vererek perçinleyin.' },
       weekly:  { teshis: 'İnanç Dönüşümü: Bu hafta yapamam bariyeri pozitif yönde yıkıldı.', aksiyon: 'Öğrenciye artık bu seviyedesin mesajını net şekilde verin.' },
-      monthly: { teshis: 'Karakteristik Güçlenme: Ayın başındaki düşük özgüven, sağlam yeterlilik algısına dönüştü.', aksiyon: 'Hedefleri üst lige taşıma zamanı geldi.' },
+      aylik : { teshis: 'Karakteristik Güçlenme: Ayın başındaki düşük özgüven, sağlam yeterlilik algısına dönüştü.', aksiyon: 'Hedefleri üst lige taşıma zamanı geldi.' },
       ton: 'positive'
     }
   }
@@ -702,7 +702,7 @@ SENARYOLAR.push(
     id: 'DYN-08', modul: 1, priority: 62,
     etiket: 'Maskelenmiş Başarı',
     tetikle: (b, h, a, k) =>
-      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok')) && b.tekrarSure > 40 &&
+      (b.mood === 'sad' || ((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'ok')) && b.tekrarSure > 40 &&
       b.hataOrani !== null && b.hataOrani < 15,
     cikti: {
       analiz: 'Öğrenci duygusal zorluklarını bastırmak için rutin işlere (tekrar) aşırı odaklanmaktadır.',
@@ -742,7 +742,7 @@ SENARYOLAR.push(
     id: 'DYN-13', modul: 1, priority: 55,
     etiket: 'Kriz Sonrası Boşluk',
     tetikle: (b, h, a, k) =>
-      (b.mood === 'good' || b.mood === 'great') && b.kaygi < k.kaygi.dusuk &&
+      ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || b.mood === 'focused') && b.kaygi < k.kaygi.dusuk &&
       b.soru === 0 && b.konuSure === 0 &&
       h.ortKaygi >= k.kaygi.yuksek,
     cikti: {
@@ -814,7 +814,7 @@ SENARYOLAR.push(
     id: 'DYN-20', modul: 1, priority: 52,
     etiket: 'Duygusal Rehavet',
     tetikle: (b, h, a, k) =>
-      (b.mood === 'great' || b.mood === 'good') &&
+      (b.mood === 'excited' || (b.mood === 'good' || b.mood === 'focused')) &&
       b.kaygi < k.kaygi.dusuk && b.soru < k.soru.dusuk * 0.5 &&
       h.tutarliGunSayisi < 3,
     cikti: {
@@ -828,7 +828,7 @@ SENARYOLAR.push(
     id: 'DYN-21', modul: 1, priority: 70,
     etiket: 'Emosyonel İstikrarsızlık',
     tetikle: (b, h, a, k) =>
-      (b.mood === 'great' || b.mood === 'good') && b.kaygi >= k.kaygi.yuksek &&
+      (b.mood === 'excited' || (b.mood === 'good' || b.mood === 'focused')) && b.kaygi >= k.kaygi.yuksek &&
       h.odakTrend === 'stabil',
     cikti: {
       analiz: 'Öğrenci dış dünyada "iyiyim" maskesi takarken, iç dünyasında yoğun sınav baskısı hissettiği değerlendirilmektedir.',
@@ -853,7 +853,7 @@ SENARYOLAR.push(
     id: 'DYN-23', modul: 1, priority: 58,
     etiket: 'Fizyolojik İhmal',
     tetikle: (b, h, a, k) =>
-      b.enerji < k.enerji.dusuk && (b.mood === 'good' || b.mood === 'great') &&
+      b.enerji < k.enerji.dusuk && ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || b.mood === 'focused') &&
       b.soru >= k.soru.ort && h.ortUyku < 7,
     cikti: {
       analiz: 'Fiziksel tükenmişliğe rağmen öğrencinin kendini zorladığı ve "bedensel borç" biriktirdiği saptanmıştır.',
@@ -1005,7 +1005,7 @@ SENARYOLAR.push(
       const zayif = b.dersHata[h.zayifBrans];
       if (!zayif || zayif.q < 10) return false;
       const isabet = (1 - zayif.y / zayif.q) * 100;
-      return isabet < 35 && (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok') || b.mood === 'bad');
+      return isabet < 35 && (b.mood === 'sad' || ((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'ok') || (b.mood === 'tired' || b.mood === 'anxious'));
     },
     cikti: {
       analiz: 'İlgili branşın öğrenci için sadece bir ders değil, bir "yetersizlik sembolü" haline geldiği gözlemlenmiştir.',
@@ -1033,7 +1033,7 @@ SENARYOLAR.push(
     id: 'DYN-58', modul: 2, priority: 58,
     etiket: 'Verimsiz Refah',
     tetikle: (b, h, a, k) =>
-      b.soru < 20 && (b.mood === 'good' || b.mood === 'great') && b.enerji >= 9,
+      b.soru < 20 && ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || b.mood === 'focused') && b.enerji >= 9,
     cikti: {
       analiz: 'Öğrencinin şartları (enerji, mod) ideal olmasına rağmen hedef odaklı disiplinden tamamen koptuğu görülmektedir.',
       strateji: '"Serbest zaman" ile "akademik zaman" arasındaki sınırlar netleştirilmeli; yüksek enerjinin meyveleri toplanmalıdır.',
@@ -1113,7 +1113,7 @@ SENARYOLAR.push(
     tetikle: (b, h, a, k) => {
       if (!b.dersHata || !h.zayifBrans) return false;
       const zayif = b.dersHata[h.zayifBrans];
-      return (!zayif || zayif.q < 15) && (b.mood === 'good' || b.mood === 'great');
+      return (!zayif || zayif.q < 15) && ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || b.mood === 'focused');
     },
     cikti: {
       analiz: 'Pozitif ruh hali, öğrencinin disiplini gevşetmesine ve "bugün zaten çok iyiyim, zorlanmama gerek yok" algısına yol açmıştır.',
@@ -1252,7 +1252,7 @@ SENARYOLAR.push(
       const zayif = b.dersHata[h.zayifBrans];
       if (!zayif || zayif.q < 20) return false;
       const isabet = (1-zayif.y/zayif.q)*100;
-      return isabet >= 75 && b.enerji < k.enerji.dusuk && (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok'));
+      return isabet >= 75 && b.enerji < k.enerji.dusuk && (b.mood === 'sad' || ((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'ok'));
     },
     cikti: {
       analiz: 'Öğrenci tüm psikolojik bariyerlerine rağmen kendini zorlayarak başarılı olmuştur; ancak bu durumun sürdürülebilirliği düşüktür.',
@@ -1282,7 +1282,7 @@ SENARYOLAR.push(
     etiket: 'Sahte Yetkinlik',
     tetikle: (b, h, a, k) =>
       b.soru < 40 && b.hataOrani !== null && b.hataOrani < 10 &&
-      (b.mood === 'good' || b.mood === 'great'),
+      ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || b.mood === 'focused'),
     cikti: {
       analiz: 'Öğrenci çok az soru çözerek "hata yapmama" konforuna sığınmış ve bunu bir başarı illüzyonu olarak yaşamaktadır.',
       strateji: 'Hedeflenen soru hacminin sınav dayanıklılığı için şart olduğu hatırlatılmalı; konfor alanı genişletilmelidir.',
@@ -1295,7 +1295,7 @@ SENARYOLAR.push(
     etiket: 'Akademik Aşınma',
     tetikle: (b, h, a, k) =>
       h.tutarliGunSayisi >= 5 && h.enerjiTrend === 'düşüş' &&
-      ((b.mood === 'bad' || b.mood === 'ok') || b.mood === 'sad' || b.mood === 'ok'),
+      (((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'ok') || b.mood === 'sad' || b.mood === 'ok'),
     cikti: {
       analiz: 'İstikrarlı yüksek performansın duygusal maliyeti artmaktadır; öğrenci sürdürülebilirlik sınırına yaklaşmıştır.',
       strateji: 'Acil bir "restorasyon günü" planlanmalı; akademik hacim geçici olarak %20 daraltılmalıdır.',
@@ -1308,7 +1308,7 @@ SENARYOLAR.push(
     etiket: 'Düşük Farkındalık',
     tetikle: (b, h, a, k) =>
       b.soru >= k.soru.ort && b.hataOrani !== null && b.hataOrani > 40 &&
-      (b.mood === 'good' || b.mood === 'great'),
+      ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || b.mood === 'focused'),
     cikti: {
       analiz: 'Öğrenci çalışma hacminden duyduğu memnuniyetle öğrenme kalitesindeki ciddi düşüşü (hataları) fark etmemektedir.',
       strateji: 'Yanlış sorular üzerinden acil bir "hata analizi" yaptırılmalı; niceliğin değil niteliğin önemi vurgulanmalıdır.',
@@ -1322,7 +1322,7 @@ SENARYOLAR.push(
     tetikle: (b, h, a, k) =>
       b.soru >= k.soru.dusuk && b.soru < k.soru.ort &&
       b.hataOrani !== null && b.hataOrani < 20 &&
-      (b.mood === 'good' || (b.mood === 'good' || b.mood === 'great')),
+      ((b.mood === 'good' || b.mood === 'focused') || ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || b.mood === 'focused')),
     cikti: {
       analiz: 'Öğrenci ideal hedefi yakalayamasa da, bulunduğu şartlar içinde maksimum verim ve motivasyonu korumayı başarmıştır.',
       strateji: 'Bu denge takdir edilmeli; soru hedefine kademeli (günlük +10 soru) geçiş planlanmalıdır.',
@@ -1347,7 +1347,7 @@ SENARYOLAR.push(
     etiket: 'Süreç Yorgunluğu',
     tetikle: (b, h, a, k) =>
       h.tutarliGunSayisi >= 4 &&
-      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok') || b.mood === 'bad') &&
+      (b.mood === 'sad' || ((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'ok') || (b.mood === 'tired' || b.mood === 'anxious')) &&
       b.soru >= k.soru.ort * 0.7,
     cikti: {
       analiz: 'Haftalık rutinin ağırlığı hafta sonuna doğru öğrencinin psikolojik direncini kırmaktadır.',
@@ -1363,7 +1363,7 @@ SENARYOLAR.push(
       b.soru >= k.soru.yuksek &&
       b.hataOrani !== null && b.hataOrani < 10 &&
       b.odak >= k.odak.yuksek &&
-      (b.mood === 'great' || b.mood === 'good' || (b.mood === 'good' || b.mood === 'great')),
+      (b.mood === 'excited' || (b.mood === 'good' || b.mood === 'focused') || ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || b.mood === 'focused')),
     cikti: {
       analiz: 'Öğrenci potansiyelini tam kapasiteyle kullanmakta ve başarısını duygusal bir tatmine dönüştürebilmektedir.',
       strateji: 'Bu "akış" (flow) hali ödüllendirilmeli; başarının anahtar bileşenleri (uyku, odak, yöntem) not edilmelidir.',
@@ -1376,7 +1376,7 @@ SENARYOLAR.push(
     etiket: 'Kabullenilmiş Sınır',
     tetikle: (b, h, a, k) =>
       h.tutarliGunSayisi >= 3 && h.soruHedefiKarsilama < 0.4 &&
-      (b.mood === 'good' || b.mood === 'ok'),
+      ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'ok'),
     cikti: {
       analiz: 'Öğrenci ideal hedeften uzaklaşmasına rağmen bu durumu bir sorun olarak görmemekte, konfor alanını korumaktadır.',
       strateji: 'Sınavın rekabetçi doğası ve "istikrar" gerekliliği profesyonel bir dille hatırlatılmalı; disiplin eşiği yükseltilmelidir.',
@@ -1428,7 +1428,7 @@ SENARYOLAR.push(
     etiket: 'Plato Travması',
     tetikle: (b, h, a, k) =>
       b.soru >= k.soru.yuksek && h.denemeTrend === 'stabil' &&
-      (b.mood === 'sad' || b.mood === 'bad' || (b.mood === 'bad' || b.mood === 'ok')),
+      (b.mood === 'sad' || (b.mood === 'tired' || b.mood === 'anxious') || ((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'ok')),
     cikti: {
       analiz: 'Öğrenci "duraklama dönemini" (plato) bir son olarak algılamakta ve emeğinin boşa gittiğine inanmaktadır.',
       strateji: 'Gelişimin sıçramalı (merdiven tipi) olduğu, denge dönemlerinin (plato) güç toplama evresi olduğu anlatılmalıdır.',
@@ -1443,7 +1443,7 @@ SENARYOLAR.push(
       if (!b.dersHata) return false;
       const bransSayisi = Object.keys(b.dersHata).filter(d => b.dersHata[d].q >= 20).length;
       return bransSayisi >= 3 && b.soru >= k.soru.yuksek &&
-        (b.mood === 'good' || b.mood === 'great' || (b.mood === 'good' || b.mood === 'great'));
+        ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || b.mood === 'focused'));
     },
     cikti: {
       analiz: 'Öğrenci farklı derslerin yarattığı zihinsel yükü yönetebilmekte ve öz-yeterliliğini genele yayabilmektedir.',
@@ -1470,7 +1470,7 @@ SENARYOLAR.push(
     etiket: 'İllüzyonel Yeterlilik',
     tetikle: (b, h, a, k) =>
       b.soru >= k.soru.yuksek && b.hataOrani !== null && b.hataOrani > 40 &&
-      (b.mood === 'good' || b.mood === 'great'),
+      ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || b.mood === 'focused'),
     cikti: {
       analiz: 'Öğrenci niceliksel hedefe ulaşmanın verdiği hazla niteliksel çöküşü (düşük isabet) tamamen maskelemektedir.',
       strateji: 'Acil "Hata Analiz Seansı" planlanmalı; öğrencinin "yapamadıklarıyla" barışması sağlanmalıdır.',
@@ -1497,7 +1497,7 @@ SENARYOLAR.push(
     tetikle: (b, h, a, k) =>
       b.soru === 0 && b.konuSure === 0 &&
       (b.kaygi > 0 || b.enerji > 0) &&
-      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok')),
+      (b.mood === 'sad' || ((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'ok')),
     cikti: {
       analiz: 'Öğrenci sürece olan inancını tamamen kaybetmiş ancak koçluk bağına tutunarak sessiz bir yardım çağrısı yapmaktadır.',
       strateji: 'Akademik tüm konu başlıkları kapatılmalı; sadece duygusal iyi oluş ve "neden" üzerine bir rehberlik seansı yapılmalıdır.',
@@ -1528,7 +1528,7 @@ SENARYOLAR.push(
     etiket: 'Başarı Sonrası Boşluk',
     tetikle: (b, h, a, k) =>
       h.denemeTrend === 'yükseliş' &&
-      (b.mood === 'ok' || (b.mood === 'bad' || b.mood === 'ok')) &&
+      (b.mood === 'ok' || ((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'ok')) &&
       b.soru < k.soru.ort * 0.6,
     cikti: {
       analiz: 'Beklenen net artışı gerçekleşmesine rağmen öğrenci beklediği mutluluğu hissedememekte ve bir anlamsızlık yaşamaktadır.',
@@ -1608,7 +1608,7 @@ SENARYOLAR.push(
     etiket: 'Dopaminerjik Çöküş',
     tetikle: (b, h, a, k) =>
       b.sosyal > k.sosyal.yuksek &&
-      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok')) && b.enerji < k.enerji.dusuk,
+      (b.mood === 'sad' || ((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'ok')) && b.enerji < k.enerji.dusuk,
     cikti: {
       analiz: 'Dijital tüketim öğrenciye beklediği hazzı vermemekte, aksine suçluluk hissi ve enerji kaybı yaratmaktadır.',
       strateji: 'Sosyal medyanın bir "enerji vampiri" olduğu vurgulanmalı; kısıtlı kullanımın ruh haline etkisi izlenmelidir.',
@@ -1664,7 +1664,7 @@ SENARYOLAR.push(
     etiket: 'Sahte Haz',
     tetikle: (b, h, a, k) =>
       b.sosyal > k.sosyal.yuksek && b.soru < k.soru.dusuk * 0.5 &&
-      (b.mood === 'good' || b.mood === 'great'),
+      ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || b.mood === 'focused'),
     cikti: {
       analiz: 'Dijital dünyadan alınan yüksek dopamin, öğrencide sahte bir iyi oluş hali yaratmakta ve akademik hedeflerin ihmal edilmesini maskelemektedir.',
       strateji: 'Akademik çıktıların "gerçek haz" kaynağı olması gerektiği vurgulanmalı; dijital süre kısıtlanarak zihinsel açlık yaratılmalıdır.',
@@ -1759,7 +1759,7 @@ SENARYOLAR.push(
     etiket: 'Duygusal Yorgunluk',
     tetikle: (b, h, a, k) =>
       b.uyku >= 8 && b.enerji < k.enerji.dusuk &&
-      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok')),
+      (b.mood === 'sad' || ((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'ok')),
     cikti: {
       analiz: 'Fiziksel dinlenme (uyku) yeterli olsa da psikolojik baskı öğrencinin enerjisini tüketmektedir.',
       strateji: 'Akademik yük %30 hafifletilmeli; öğrenciye sadece "sevdiği" işlerle ilgileneceği bir "restorasyon öğleden sonrası" verilmelidir.',
@@ -1861,7 +1861,7 @@ SENARYOLAR.push(
     id: 'DYN-139', modul: 5, priority: 65,
     etiket: 'Fizyolojik Güç - Duygusal Engel',
     tetikle: (b, h, a, k) =>
-      b.enerji >= k.enerji.yuksek && (b.mood === 'sad' || b.mood === 'bad') &&
+      b.enerji >= k.enerji.yuksek && (b.mood === 'sad' || (b.mood === 'tired' || b.mood === 'anxious')) &&
       b.soru >= k.soru.ort,
     cikti: {
       analiz: 'Öğrenci fiziksel olarak güçlü olmasına rağmen duygusal bir engel nedeniyle potansiyelini tam yansıtamamaktadır.',
@@ -1939,7 +1939,7 @@ SENARYOLAR.push(
     etiket: 'Yıpratıcı İrade',
     tetikle: (b, h, a, k) =>
       b.enerji < k.enerji.dusuk && b.soru >= k.soru.yuksek &&
-      (b.mood === 'sad' || (b.mood === 'bad' || b.mood === 'ok') || b.mood === 'bad'),
+      (b.mood === 'sad' || ((b.mood === 'tired' || b.mood === 'anxious') || b.mood === 'ok') || (b.mood === 'tired' || b.mood === 'anxious')),
     cikti: {
       analiz: 'Öğrenci çalışmayı bir gelişim aracı değil, vicdan azabı dindirme veya kendini cezalandırma eylemi olarak sürdürmektedir.',
       strateji: 'İrade gücü takdir edilmeli ancak bu yöntemin uzun vadede "akademik nefret" yaratacağı profesyonelce anlatılmalıdır.',
@@ -1980,7 +1980,7 @@ SENARYOLAR.push(
     id: 'DYN-149', modul: 5, priority: 65,
     etiket: 'Enerji İsrafı',
     tetikle: (b, h, a, k) =>
-      b.enerji >= k.enerji.yuksek && (b.mood === 'good' || b.mood === 'great') &&
+      b.enerji >= k.enerji.yuksek && ((b.mood === 'good' || b.mood === 'focused') || b.mood === 'excited' || b.mood === 'focused') &&
       b.soru === 0 && b.konuSure === 0,
     cikti: {
       analiz: 'Bedenin ve zihnin en verimli olduğu saatler akademik üretim için kullanılmamış; potansiyel boşa harcanmıştır.',
