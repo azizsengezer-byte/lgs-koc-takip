@@ -1,24 +1,61 @@
 // scenario_runner.js — LGSKoç Senaryo Eşleştirme Motoru v3
 
-// ── BRANS ADI ENJEKSİYONU ────────────────────────────────
-// Senaryo metinlerindeki {{ZAYIF_BRANS}} ve eski placeholder'ları
-// gerçek branş adıyla değiştirir.
-function _injectBrans(text, bransAdi) {
-  if (!text || !bransAdi) return text;
+// ── VERİ ENJEKSİYON SİSTEMİ ─────────────────────────────
+// Senaryo metinlerindeki placeholder'ları gerçek verilerle doldurur.
+// Desteklenen placeholder'lar:
+//   {{ZAYIF_BRANS}}  → zayıf branş adı (ör. "Matematik")
+//   {{KAYGI}}        → dönem ort. kaygı (ör. "7.5")
+//   {{UYKU}}         → dönem ort. uyku (ör. "6.8sa")
+//   {{ENERJI}}       → dönem ort. enerji (ör. "5.2")
+//   {{SORU_ORT}}     → günlük ort. soru (ör. "85")
+//   {{HATA_PCT}}     → ort. hata oranı % (ör. "%38")
+//   {{ISABET}}       → ort. isabet oranı % (ör. "%72")
+//   {{LGS_GUN}}      → LGS'ye kalan gün (ör. "61")
+//   {{DONEM}}        → "bu hafta" veya "bu ay"
+
+function _injectVeri(text, ctx) {
+  if (!text || !ctx) return text;
   return text
-    .replace(/\{\{ZAYIF_BRANS\}\}/g, bransAdi)
-    .replace(/Belirli bir branş/g, bransAdi)
-    .replace(/İlgili branş/g, bransAdi)
-    .replace(/ilgili branş/g, bransAdi);
+    .replace(/\{\{ZAYIF_BRANS\}\}/g, ctx.zayifBrans || 'ilgili branş')
+    .replace(/Belirli bir branş/g, ctx.zayifBrans || 'ilgili branş')
+    .replace(/İlgili branş/g, ctx.zayifBrans || 'ilgili branş')
+    .replace(/ilgili branş/g, ctx.zayifBrans || 'ilgili branş')
+    .replace(/\{\{KAYGI\}\}/g, ctx.kaygi != null ? String(ctx.kaygi) : '—')
+    .replace(/\{\{UYKU\}\}/g, ctx.uyku != null ? ctx.uyku + 'sa' : '—')
+    .replace(/\{\{ENERJI\}\}/g, ctx.enerji != null ? String(ctx.enerji) : '—')
+    .replace(/\{\{SORU_ORT\}\}/g, ctx.soruOrt != null ? String(ctx.soruOrt) : '—')
+    .replace(/\{\{HATA_PCT\}\}/g, ctx.hataPct != null ? '%' + ctx.hataPct : '—')
+    .replace(/\{\{ISABET\}\}/g, ctx.isabet != null ? '%' + ctx.isabet : '—')
+    .replace(/\{\{LGS_GUN\}\}/g, ctx.lgsGun != null ? String(ctx.lgsGun) : '—')
+    .replace(/\{\{DONEM\}\}/g, ctx.donem || 'bu dönem');
 }
-function _injectBransIns(ins, bransAdi) {
-  if (!bransAdi) return ins;
+
+function _injectVeriIns(ins, ctx) {
+  if (!ctx) return ins;
   return {
     ...ins,
-    teshis:   _injectBrans(ins.teshis,   bransAdi),
-    aksiyon:  _injectBrans(ins.aksiyon,  bransAdi),
-    analiz:   _injectBrans(ins.analiz,   bransAdi),
-    strateji: _injectBrans(ins.strateji, bransAdi),
+    teshis:   _injectVeri(ins.teshis,   ctx),
+    aksiyon:  _injectVeri(ins.aksiyon,  ctx),
+    analiz:   _injectVeri(ins.analiz,   ctx),
+    strateji: _injectVeri(ins.strateji, ctx),
+  };
+}
+
+// Enjeksiyon bağlamı oluştur (haftalık veya aylık hesaplamalardan)
+function _buildVeriCtx(hafta, zayifBrans, period) {
+  const lgsGun = Math.max(0, Math.floor(
+    (new Date('2026-06-13T09:30:00+03:00') - new Date()) / (1000*60*60*24)
+  ));
+  const hataPct = hafta.ortHata != null ? Math.round(hafta.ortHata) : null;
+  const isabet  = hataPct != null ? (100 - hataPct) : null;
+  return {
+    zayifBrans: zayifBrans || null,
+    kaygi:  hafta.ortKaygi  != null ? Math.round(hafta.ortKaygi  * 10) / 10 : null,
+    uyku:   hafta.ortUyku   != null ? Math.round(hafta.ortUyku   * 10) / 10 : null,
+    enerji: hafta.ortEnerji != null ? Math.round(hafta.ortEnerji * 10) / 10 : null,
+    soruOrt: hafta.ortSoru  != null ? Math.round(hafta.ortSoru) : null,
+    hataPct, isabet, lgsGun,
+    donem: period === 'aylik' ? 'bu ay' : 'bu hafta',
   };
 }
 
@@ -422,8 +459,9 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
     // Hiyerarşik mantık + periyot dili seçimi
     const _ciktiNegFrekansli = ciktiNeg.map(s => ({ ...s, frekans: tumNegIdSayac[s.id]||0 }));
     const _zayifBransAy = _haftaAy.zayifBrans || null;
+    const _veriCtxAy = _buildVeriCtx(_haftaAy, _zayifBransAy, 'aylik');
     const insights = _applyHierarchicalLogic('aylik', _ciktiNegFrekansli)
-      .map(ins => _injectBransIns(ins, _zayifBransAy));
+      .map(ins => _injectVeriIns(ins, _veriCtxAy));
     const positives = ciktiPos.map(s => ({
       id: s.id, etiket: s.etiket,
       analiz: s.cikti.analiz || (s.cikti.aylik||{}).teshis || '',
@@ -568,8 +606,9 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
 
     const _hNegFrekansli = ciktiNeg.map(s => ({ ...s, frekans: tumNegIdSayac[s.id]||0 }));
     const _zayifBransH = _haftaH.zayifBrans || null;
+    const _veriCtxH = _buildVeriCtx(_haftaH, _zayifBransH, 'haftalik');
     const insights = _applyHierarchicalLogic('haftalik', _hNegFrekansli)
-      .map(ins => _injectBransIns(ins, _zayifBransH));
+      .map(ins => _injectVeriIns(ins, _veriCtxH));
     const positives = ciktiPos.map(s => ({
       id: s.id, etiket: s.etiket, analiz: s.cikti.analiz, strateji: s.cikti.strateji,
       aylikEtiket: s.cikti.aylikEtiket, ton: s.cikti.ton, tip: 'pozitif',

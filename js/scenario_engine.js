@@ -80,9 +80,9 @@ const SENARYOLAR = [
     id: 'DYN-01', modul: 1, priority: 95, etiket: 'Toksik Yüklenme',
     tetikle: (b, h, a, k) => b.kaygi >= k.kaygi.yuksek && b.soru >= k.soru.yuksek,
     cikti: {
-      daily:   { teshis: 'Akut Kaygı Altında Yüklenme.', aksiyon: 'Bugün akademik baskıyı sıfırlayın; sadece dünkü hataları analiz ettirin.' },
-      weekly:  { teshis: 'Kaygılı Çaba Eğilimi: Başarıyı stresle satın alma trendi.', aksiyon: 'Haftalık görüşmede netlere değil, çalışma huzuruna odaklanın.' },
-      aylik : { teshis: 'Kronik Performans Anksiyetesi.', aksiyon: 'Gelecek ay stratejisini duygusal onarım üzerine kurun.' },
+      daily:   { teshis: 'Bugün kaygı kalibrasyon eşiğini aşmış durumda; ancak öğrenci yine de soru çözmeye devam etmiş. Bu "stresle satın alınan üretim" sürdürülebilir değil: prefrontal korteks baskı altında hata denetimini devre dışı bırakır, çözülen sorular hatalı kodlanabilir.', aksiyon: 'Bugün akademik baskıyı sıfırlayın; dünkü 2-3 yanlış soruyu birlikte analiz edin, yeni soru yüklemeyin.' },
+      weekly:  { teshis: 'Bu hafta ortalama {{KAYGI}} kaygıyla {{SORU_ORT}} soru/gün çözüldü — kalibrasyon ortalamasının üzerinde bir tempo, ama stres altında. Başarıyı stresle satın alma trendi hem öğrenme kalitesini hem duygusal rezervi aşındırıyor.', aksiyon: 'Haftalık görüşmede netleri değil çalışma huzurunu sorgulayın; kaygıyı düşürmeden soru hedefini artırmayın.' },
+      aylik : { teshis: 'Ay genelinde ortalama kaygı {{KAYGI}}: öğrenci kronik performans anksiyetesiyle çalışmış. Yüksek üretim rakamlarının perde arkasında biyolojik stres borcu birikmiş; LGS\'ye {{LGS_GUN}} gün kala bu borcun faturası ağırlaşacak.', aksiyon: 'Gelecek ay stratejisini duygusal onarım üzerine kurun; kaygı yönetimi seansı planlayın.' },
       ton: 'urgent'
     }
   },
@@ -90,9 +90,9 @@ const SENARYOLAR = [
     id: 'DYN-04', modul: 1, priority: 98, etiket: 'Akut Blokaj',
     tetikle: (b, h, a, k) => b.kaygi >= k.kaygi.yuksek && b.soru <= k.soru.dusuk,
     cikti: {
-      daily:   { teshis: 'Duygusal Felç: Kaygı sistemi durdurmuş.', aksiyon: 'Görevleri iptal edin, sadece moral görüşmesi yapın.' },
-      weekly:  { teshis: 'Süreçten Kopma Haftası.', aksiyon: 'Planı Mikro Hedeflerle (günde 10-20 soru) resetleyin.' },
-      aylik : { teshis: 'Akademik Yıkım Riski.', aksiyon: 'Hedefleri revize edin; baskıyı tamamen kaldırın.' },
+      daily:   { teshis: 'Kaygı kalibrasyon eşiğinin üzerinde seyrederken akademik üretim sıfır. Bu bir disiplin sorunu değil nörolojik bir blokaj: amigdala alarm modundayken prefrontal korteks kapanır, öğrenci literally başlayamaz. Üretim beklentisi bu anda kontrproduktif.', aksiyon: 'Görevleri tamamen iptal edin; "Nasıl hissediyorsun?" ile başlayan 10 dakikalık destek görüşmesi yapın. Yarın için mikro hedef (5 soru) koyun.' },
+      weekly:  { teshis: 'Bu hafta blokaj günleri baskın: kaygı yüksekken soru çözümü {{SORU_ORT}}/gün hedefin çok altında kalmış. Öğrenci süreçten kopma noktasında; zorla devam ettirme tepkiyi derinleştirir.', aksiyon: 'Haftayı sıfırlayın; günde 10-20 soru ile yeniden başlayın. Kaygı kaynağını (belirli bir ders, yaklaşan deneme?) derinlemesine sorgulayın.' },
+      aylik : { teshis: 'Ay içinde birden fazla blokaj dönemi yaşandı; ort. kaygı {{KAYGI}}, üretim hedefin uzağında. Bu örüntü devam ederse LGS\'ye {{LGS_GUN}} gün kala kümülatif akademik kayıp kritik boyuta ulaşabilir.', aksiyon: 'Hedefleri gerçekçi bir seviyeye çekin; koçluk seanslarını akademik değil duygusal odaklı yeniden yapılandırın.' },
       ton: 'urgent'
     }
   },
@@ -100,9 +100,9 @@ const SENARYOLAR = [
     id: 'DYN-05', modul: 1, priority: 92, etiket: 'Sessiz Kaygı',
     tetikle: (b, h, a, k) => b.kaygi >= k.kaygi.yuksek && b.soru < k.soru.ort,
     cikti: {
-      daily:   { teshis: 'Gizli Baskı: Kaygı üretimi yavaşlatmış.', aksiyon: 'Öğrenciyle bugünkü moral durumu üzerine 5 dakikalık kısa bir görüşme yapın.' },
-      weekly:  { teshis: 'Akademik Patinaj: Kaygı nedeniyle ilerleme durma noktasında.', aksiyon: 'Haftalık programı hafifletip moral verici konular ekleyin.' },
-      aylik : { teshis: 'İçsel Blokaj Karakteristiği.', aksiyon: 'Öğrencinin sınav algısını değiştirecek rehberlik çalışmaları planlayın.' },
+      daily:   { teshis: 'Kaygı kalibrasyon eşiğinin üzerinde ama öğrenci "sessiz" çalışıyor — hedef ortalamasının altında, içe kapanmış bir tempo. Bu "gizli baskı" hali çoğunlukla yorgunluk veya yaklaşan bir stresörü (deneme, ödev, veli baskısı) işaret eder.', aksiyon: '5 dakikalık kısa sesli mesaj gönderin: "Nasılsın, bugün nasıl geçiyor?" — akademik soru sormayın, sadece dinleyin.' },
+      weekly:  { teshis: 'Bu hafta kaygı {{KAYGI}} ortalamasıyla yüksek seyretti; soru üretimi {{SORU_ORT}}/gün ile hedefin altında patinaj yaptı. Öğrenci çalışıyor görünüyor ama zihinsel engel ilerlemeyi frenliyor.', aksiyon: 'Haftalık programı yüzde yirmi hafifletin; öğrencinin "iyi hissettiği" bir ders veya konu bloğu ekleyin. Kaygı kaynağını yüz yüze görüşün.' },
+      aylik : { teshis: 'Ay boyunca kaygı kronik biçimde {{KAYGI}} ortalamasında: öğrenci LGS\'ye {{LGS_GUN}} gün kala blokaj eşiğinde seyir ediyor. Bu örüntü dışarıdan görünmez ama içten aşındırır.', aksiyon: 'Sınav algısını yeniden çerçeveleyen rehberlik çalışması planlayın; veli ile iletişime geçin.' },
       ton: 'warning'
     }
   },
@@ -110,9 +110,9 @@ const SENARYOLAR = [
     id: 'DYN-10', modul: 1, priority: 88, etiket: 'Motivasyonel Dalgalanma',
     tetikle: (b, h, a, k) => ((b.mood === 'bad' || b.mood === 'sad') || b.mood === 'sad') && b.soru < k.soru.dusuk && h.soruHedefiKarsilama < 0.5,
     cikti: {
-      daily:   { teshis: 'Düşük Enerji ve İsteksizlik.', aksiyon: 'Zorunlu hedefleri bugünlük askıya alın; sevdiği bir branştan 1 test çözmesini isteyin.' },
-      weekly:  { teshis: 'Süreçten Kopuş Sinyalleri.', aksiyon: 'Görüşmede "Neden LGS?" sorusunu tekrar gündeme getirin.' },
-      aylik : { teshis: 'Hedeften Uzaklaşma Eğilimi.', aksiyon: 'Öğrencinin hayalindeki liseyi odağa alan bir vizyon çalışması yapın.' },
+      daily:   { teshis: 'Mood düşük, soru üretimi hedefin yarısının altında: öğrenci bugün sisteme tutunmakta güçlük çekiyor. Bu tablo anlık bir isteksizlik değil, birikmekte olan bir motivasyon erozyonunun yüzeye çıkması olabilir.', aksiyon: 'Zorunlu hedefleri bugünlük askıya alın; en sevdiği branştan 1 test çözmesini isteyin. Başarı hissi motivasyonu önceliklidir.' },
+      weekly:  { teshis: 'Bu hafta soru hedefi karşılama oranı yüzde ellinin altında kaldı; mood geneli olumsuz. Öğrenci neden LGS bağlantısını kaybetmiş olabilir — dışsal baskı mı, umut kaybı mı, günlük yorgunluk mu?', aksiyon: 'Haftalık görüşmede "Neden LGS istiyorsun?" sorusunu tekrar açın; hedef lisenin somut imgesini canlandırın.' },
+      aylik : { teshis: 'Ay genelinde motivasyonel dalgalanmalar baskın; ortalama soru üretimi {{SORU_ORT}}/gün ile hedefin gerisinde. LGS\'ye {{LGS_GUN}} gün kala bu kopuş trend haline gelirse telafisi zorlaşır.', aksiyon: 'Hayalindeki liseyi merkeze alan bir vizyon çalışması yapın; kısa vadeli somut ödüller sisteme entegre edin.' },
       ton: 'warning'
     }
   },
@@ -120,9 +120,9 @@ const SENARYOLAR = [
     id: 'DYN-20', modul: 1, priority: 90, etiket: 'Krizden Çıkış',
     tetikle: (b, h, a, k) => a.son3GunKaygiOrt < (k.kaygi.ort * 0.8) && b.soru >= k.soru.ort,
     cikti: {
-      daily:   { teshis: 'Duygusal Toparlanma: Stres yönetimi bugün başarılı.', aksiyon: 'Bu kararlılığı fark ettiğinizi belirten pozitif bir mesaj gönderin.' },
-      weekly:  { teshis: 'Pozitif Değişim Trendi: Kriz geride kalıyor.', aksiyon: 'Öğrenciyi tebrik edin; normal tempoya geçin.' },
-      aylik : { teshis: 'Psikolojik Sağlamlık Artışı.', aksiyon: 'Öğrencinin kriz yönetim becerisini başarısının temeli olarak not edin.' },
+      daily:   { teshis: 'Kaygı son 3 günün ortalamasına göre belirgin biçimde düştü ve soru üretimi yeniden aktif. Bu toparlanma büyük önem taşıyor: öğrenci kriz koşullarından kendi başına çıkabildiğini kanıtladı.', aksiyon: 'Bu dayanıklılığı somut olarak tescilleyin: "Geçen hafta zorlandın ama bugün devam ettin — bu güçtür" mesajı gönderin.' },
+      weekly:  { teshis: 'Bu hafta kaygı geçen döneme kıyasla düştü, soru üretimi {{SORU_ORT}}/güne yaklaştı. Kriz geride kalıyor; öğrenci toparlanma kapasitesini gösterdi.', aksiyon: 'Öğrenciyi tebrik edin ve normal tempoya geri dönün. Krizin tetikleyicisini not alın — tekrar etmemesi için önlem alın.' },
+      aylik : { teshis: 'Ay ortasındaki kriz döneminin ardından toparlanma gerçekleşti; bu psikolojik sağlamlık LGS\'de kritik avantaj sağlayacak. Öğrenci baskı altında dağılmadığını aylık veriyle kanıtladı.', aksiyon: 'Bu kriz yönetim becerisini başarının temel taşı olarak kaydedin; aileyle de paylaşın.' },
       ton: 'positive'
     }
   },
@@ -166,9 +166,9 @@ const SENARYOLAR = [
       b.hataOrani >= 35 &&
       b.konuSure < 10,
     cikti: {
-      daily:   { teshis: 'Hata Körlüğü: Yanlışlar incelenmeden kapatılmış.', aksiyon: 'Bugünkü yanlışların video çözümlerini izletmeden günü bitirmeyin.' },
-      weekly:  { teshis: 'Sistematik Analiz İhmali: Hatalardan ders çıkarma süreci durmuş.', aksiyon: 'Haftalık görüşmede Hata Defteri üzerinden çapraz sorgu yapın.' },
-      aylik : { teshis: 'Gelişim Durması Riski: Yanlışlarından kaçma karakteri.', aksiyon: 'Analiz yapılmayan çalışmaları sistemde geçersiz sayın.' },
+      daily:   { teshis: 'Hata oranı {{HATA_PCT}} iken konu çalışma süresi 10 dakikanın altında — yanlışlar incelenmeden sayfası kapatılmış. Hataların analiz edilmediği her soru seansı, aynı yanlışların LGS\'de tekrarlanma riskini artırıyor.', aksiyon: 'Bugünkü yanlış sorulardan en az 3\'ünün çözüm mantığını birlikte inceleyin; video çözüm izletmeden günü bitirmeyin.' },
+      weekly:  { teshis: 'Bu hafta isabet oranı {{ISABET}} seviyesinde; konu çalışması minimal. Sistematik analiz ihmalinde öğrenci aynı hatayı defalarca yapıp geçiyor, net artışı durmuş görünüyor.', aksiyon: 'Haftalık görüşmede hata defteri üzerinden çapraz sorgu yapın; en çok yanlış yapılan 2 konuyu belgeleyin.' },
+      aylik : { teshis: 'Aylık isabet ortalaması {{ISABET}}: analiz kültürü yerleşmeden bu oran yükselmiyor. LGS\'ye {{LGS_GUN}} gün kala yanlış yapılan her sorunun öğrenilmeden geçilmesi kümülatif kayba dönüşüyor.', aksiyon: 'Analiz yapılmayan çalışmaları sistematik olarak takip edin; her hata için en az 2 dakika analiz kuralı koyun.' },
       ton: 'urgent'
     }
   },
@@ -223,9 +223,9 @@ const SENARYOLAR = [
       b.isabet >= 85 &&
       b.kaygi >= k.kaygi.yuksek,
     cikti: {
-      daily:   { teshis: 'Başarı Baskısı: Yüksek netler hata yapma korkusunu tetiklemiş.', aksiyon: 'Bugün netleri övmeyin; sadece çabasının güzelliğinden bahsedin.' },
-      weekly:  { teshis: 'Sürdürülebilirlik Kaygısı: Her başarı öğrenciye hep böyle yapmalısın yükü bindirmiş.', aksiyon: 'Haftalık görüşmede odağı sınavdan çıkarıp sevdiği bir hobiye kaydırın.' },
-      aylik : { teshis: 'Karakteristik Başarı Fobisi: Potansiyelini tehdit olarak görme eğilimi.', aksiyon: 'Uzun vadeli hedef baskısını azaltıp mikro hedefler verin.' },
+      daily:   { teshis: 'İsabet {{ISABET}} ile yüksek performans var ama kaygı aynı anda kalibrasyon eşiğinin üzerinde. "Bu seviyeyi koruyamam" veya "hata yaparsam düşeceğim" korkusu devreye girmiş — zirve felci. Başarı öğrenciyi rahatlatmıyor, yük bindiriyor.', aksiyon: 'Bugün rakamları övmeyin; sadece çabasından bahsedin: "Dün çok iyi çalışmıştın." Beklenti baskısını sıfırlayın.' },
+      weekly:  { teshis: 'Bu hafta isabet {{ISABET}} ama kaygı {{KAYGI}} yüksek seyretti. Her başarı "hep böyle yapmalısın" yükü bindiriyor; öğrenci performansını tehdit olarak algılıyor. Bu kırılgan başarı profili LGS\'de sabote edici olabilir.', aksiyon: 'Haftalık görüşmede odağı sınavdan çıkarın; sevdiği bir hobiden, sınavdan bağımsız bir konudan konuşun.' },
+      aylik : { teshis: 'Ay boyunca yüksek performans-yüksek kaygı örüntüsü: öğrenci potansiyelini fırsat değil tehdit olarak görüyor. Bu psikolojik profil LGS\'ye {{LGS_GUN}} gün kala bilinçli çalışılmazsa performans tavanını düşürür.', aksiyon: 'Uzun vadeli hedef baskısını azaltın; günlük mikro hedefler verin. Başarının anlamını yeniden çerçeveleyin.' },
       ton: 'warning'
     }
   },
@@ -259,9 +259,9 @@ const SENARYOLAR = [
     id: 'DYN-95', modul: 3, priority: 90, etiket: 'Kırılma Noktası Alarmı',
     tetikle: (b, h, a, k) => a.son3GunMoodPuan < (k.mood.ort * 0.5),
     cikti: {
-      daily:   { teshis: 'Duygusal Çöküş: Öğrencinin içsel motivasyonu kırılmış görünüyor.', aksiyon: 'Ders konuşmayın; sadece moral ve destek odaklı sesli mesaj gönderin.' },
-      weekly:  { teshis: 'Depresif Süreç: Bu hafta öğrenci süreçten tamamen kopma riskinde.', aksiyon: 'Haftalık planı durdurun ve bir resetleme günü planlayın.' },
-      aylik : { teshis: 'Kronik Motivasyon Kaybı.', aksiyon: 'Öğrencinin temel yaşam enerjisini sorgulayın; aileyle görüşün.' },
+      daily:   { teshis: 'Son 3 gün mood puanı kalibrasyon ortalamasının yüzde ellisinin altında: içsel motivasyon kırılma noktasında. Bu tablo klinik açıdan ihmal edilmemeli; akademik veri ikincil.', aksiyon: 'Ders konuşmayın. Sadece destek odaklı sesli mesaj gönderin: "Nasılsın?" — akademik beklenti sıfır.' },
+      weekly:  { teshis: 'Bu hafta mood ortalaması kritik düşük seyirlerde: öğrenci süreçten tamamen kopma riski taşıyor. Akademik planı sürdürmek öncelikleri yanlış hiyerarşize etmek olur.', aksiyon: 'Haftalık planı durdurun; bir resetleme günü planlayın. Öğrenciye "bu hafta sadece kendin olmanı istiyorum" mesajı verin.' },
+      aylik : { teshis: 'Ay boyunca mood ve motivasyon kronik düşük: öğrenci içsel bağlantısını kaybetmiş. LGS\'ye {{LGS_GUN}} gün kala bu tablo devam ederse sınav günü başarısı için gerekli iç kaynak kalmayacak.', aksiyon: 'Temel yaşam enerjisini sorgulayın; aileyle yüz yüze görüşün. Gerekirse kısa süreli profesyonel destek önerisinde bulunun.' },
       ton: 'urgent'
     }
   },
@@ -273,9 +273,9 @@ const SENARYOLAR = [
       b.isabet !== null &&
       b.isabet >= k.isabet.ort,
     cikti: {
-      daily:   { teshis: 'Sıçrama Günü: Öğrenci kendi limitlerini sağlıklı zorlamış.', aksiyon: 'Bu yüksek performansı tescilleyin; takdir mesajı atın.' },
-      weekly:  { teshis: 'Kapasite Artışı: Bu hafta çalışma bandı bir üst seviyeye taşındı.', aksiyon: 'Haftalık hedefleri bu yeni normale göre yukarı revize edin.' },
-      aylik : { teshis: 'Akademik Evrim: Öğrenci ay boyunca istikrarlı yükseliş trendine girdi.', aksiyon: 'Başarı grafiğini aileyle paylaşarak motivasyonel ödül planlayın.' },
+      daily:   { teshis: 'Sıçrama günü: son 3 günde {{SORU_ORT}}/gün, isabet {{ISABET}} — kalibrasyon ortalamasının yüzde otuzunun üzerinde, kaliteli bir yükseliş. Öğrenci kendi sınırını sağlıklı zorladı.', aksiyon: 'Bu performansı hemen tescilleyin: somut rakamları içeren bir takdir mesajı gönderin. Motivasyonun zirvesindeyken yeni hedef koyun.' },
+      weekly:  { teshis: 'Bu hafta soru üretimi {{SORU_ORT}}/gün ile yeni normale ulaştı; isabet {{ISABET}} seviyesinde. Çalışma bandı bir üst seviyeye taşındı — bu ivmeyi kaybetmemek kritik.', aksiyon: 'Haftalık hedefleri bu yeni normale göre yukarı revize edin. Bu momentum\'u destekleyin ama baskı oluşturmadan.' },
+      aylik : { teshis: 'Ay boyunca istikrarlı yükseliş trendi: üretim ve isabet aynı anda olumlu seyretti. LGS\'ye {{LGS_GUN}} gün kala öğrencinin bu trendde devam etmesi için koşulları koruyun.', aksiyon: 'Başarı grafiğini aileyle paylaşın; motivasyonel ödül planlayın. Bu momentum\'u somut bir ara hedefle pekiştirin.' },
       ton: 'positive'
     }
   },
@@ -304,9 +304,9 @@ const SENARYOLAR = [
       b.kaygi >= k.kaygi.yuksek &&
       b.dijitalSure >= k.dijital.yuksek,
     cikti: {
-      daily:   { teshis: 'Dijital Anestezi: Stres anında ekrana sığınma.', aksiyon: 'Yasak koymayın; stresi tetikleyen dersi bulup yükünü hafifletin.' },
-      weekly:  { teshis: 'Kaçış Paterni: Her zorlanma sosyal medya sığınağıyla sonuçlanmış.', aksiyon: 'Haftalık planda ekran süresini akademik blok sonrasına ödül olarak sabitleyin.' },
-      aylik : { teshis: 'Kronik Dijital Savunma: Problem çözme kası zayıflamış.', aksiyon: 'Kademeli dijital detoks protokolü başlatın.' },
+      daily:   { teshis: 'Kaygı yüksekken dijital süre kalibrasyon eşiğinin üzerinde: öğrenci zorlanma anında refleks olarak ekrana sığınıyor. Bu dopaminerjik kaçış döngüsü kısa vadede rahatlama sağlar ama kaygı kaynağını çözmez, biriktirir.', aksiyon: 'Dijital yasak koymayın; önce stresi tetikleyen dersi veya konuyu bulun ve yükünü hafifletin. Kaynağı çözdüğünüzde kaçış refleksi azalır.' },
+      weekly:  { teshis: 'Bu hafta her zorlanma anının ardından dijital sığınak örüntüsü izlendi. Kaygı {{KAYGI}} ortalamasıyla yüksek; dijital süre {{SORU_ORT}} soru hedefini eziyor. Problem çözme kası zayıflıyor.', aksiyon: 'Haftalık planda dijital süreyi akademik blok sonrasına ödül olarak sabitleyin; önce çalış sonra ekran rutini yerleştirin.' },
+      aylik : { teshis: 'Ay genelinde kronik dijital savunma örüntüsü: kaygı yükseldiğinde ekran süresi artıyor, akademik üretim düşüyor. LGS\'ye {{LGS_GUN}} gün kala bu refleks kırılmazsa sınav baskısıyla daha güçlü tetiklenecek.', aksiyon: 'Kademeli dijital detoks protokolü başlatın; dijital süreyi haftada 10 dk kısaltarak azaltın. Kaygı yönetimi paralel yürütülmeli.' },
       ton: 'warning'
     }
   },
@@ -335,9 +335,9 @@ const SENARYOLAR = [
       b.uyku <= k.uyku.dusuk &&
       b.soru >= k.soru.ort,
     cikti: {
-      daily:   { teshis: 'Bilişsel Borç: Uykusuzluğa rağmen sistem zorlanarak çalışılmış.', aksiyon: 'Bugün yeni konu yüklemeyin; sadece dünkü yanlışların analizini yaptırın.' },
-      weekly:  { teshis: 'Performans Sürüklenmesi: Başarı sağlıktan borç alınarak sürdürülmüş.', aksiyon: 'Haftalık planda uyku süresini 7 saatin üzerine sabitleyip gece çalışmasını durdurun.' },
-      aylik : { teshis: 'Kronik Fizyolojik Aşınma: Tükenmişlik kapıda.', aksiyon: 'Gelecek ayın ilk haftasını Restorasyon Haftası ilan ederek yükü yüzde otuz düşürün.' },
+      daily:   { teshis: 'Uyku {{UYKU}}: glimfatik sistem dün gece tam çalışmadı, dünkü öğrenme kalıcı belleğe taşınamıyor. Yine de üretim sürdürülmüş — bu irade değil "bilişsel borç". Bugün yeni bilgi yüklemek borcu katlar.', aksiyon: 'Bugün yeni konu veya soru vermeyin; sadece dünkü 2-3 yanlışın analizini yapın. Öğrenciye uykunun neden soru saymaktan önemli olduğunu açıklayın.' },
+      weekly:  { teshis: 'Bu hafta ortalama uyku {{UYKU}}: performans sağlıktan borç alınarak sürdürüldü. Kısa vadede rakamlar makul görünse de hafta boyunca kodlanan bilgilerin önemli kısmı kalıcılaşmamış olabilir.', aksiyon: 'Haftalık planda uyku süresini 7 saatin üzerine sabitleyin; gece çalışmasını durdurun. Uyku iyileşmeden soru hedefi artırmayın.' },
+      aylik : { teshis: 'Aylık uyku ortalaması {{UYKU}} ile kritik sınırın altında — kronik fizyolojik aşınma birikmiş. LGS\'ye {{LGS_GUN}} gün kala bu tempoda devam etmek sınav günü için enerji rezervi bırakmıyor.', aksiyon: 'Gelecek ayın ilk haftasını Restorasyon Haftası ilan edin; yükü yüzde otuz düşürün, uyku düzenini normalleştirin.' },
       ton: 'urgent'
     }
   },
@@ -347,9 +347,9 @@ const SENARYOLAR = [
       a.son3GunEnerjiOrt <= (k.enerji.ort * 0.6) &&
       a.son3GunMoodPuan  <= (k.mood.ort * 0.6),
     cikti: {
-      daily:   { teshis: 'Sistem İflası: Fiziksel ve zihinsel enerji tamamen tükenme noktasında.', aksiyon: 'Acil 24 saatlik mutlak akademik mola verdirin.' },
-      weekly:  { teshis: 'Motivasyonel İflas Haftası.', aksiyon: 'Haftalık hedefleri yüzde elli düşürüp öğrenciyi dinlendirin.' },
-      aylik : { teshis: 'Akademik Tükenmişlik Teşhisi.', aksiyon: 'Mevcut strateji sürdürülemez; yöntemi aileyle revize edin.' },
+      daily:   { teshis: 'Son 3 günde enerji ve mood ortalamaları kalibrasyon eşiğinin yüzde altmışının altında: sistemin hem fiziksel hem zihinsel yakıtı tükenmiş. Bu tablo Pre-Burnout eşiğidir — zorla devam etmek hasarı büyütür.', aksiyon: 'Acil 24 saatlik mutlak akademik mola verdirin. Öğrenciye şunu net söyleyin: "Bugün dinlenmek en verimli şey."' },
+      weekly:  { teshis: 'Bu hafta enerji ortalaması {{ENERJI}}/10, mood geneli çökmüş. Motivasyonel iflas haftası: öğrenci zorla devam ettiriliyor, içten hiçbir itki kalmamış. Bu noktada hedef baskısı tepkiyi kötüleştirir.', aksiyon: 'Haftalık hedefleri yüzde elli düşürün; öğrenciye dinlenme iznini net verin. Neyin bu noktaya getirdiğini derinlemesine sorgulayın.' },
+      aylik : { teshis: 'Ay genelinde enerji ve mood ikisi birden kritik düşük seyretti: klinik tükenmişlik bulguları var. LGS\'ye {{LGS_GUN}} gün kala bu stratejinin sürdürülmesi hem performansı hem öğrencinin sürece olan inancını yok edecek.', aksiyon: 'Mevcut stratejiyi aileyle birlikte kökten revize edin; gerekirse bir haftalık tam mola verin.' },
       ton: 'urgent'
     }
   },
@@ -425,9 +425,9 @@ const SENARYOLAR = [
       b.kaygi >= k.kaygi.yuksek &&
       b.soru < k.soru.ort,
     cikti: {
-      daily:   { teshis: 'Deneme Şoku: Sınav sonrası kaygı yükselmiş, üretim durmuş.', aksiyon: 'Deneme sonuçlarını bugün değerlendirmeyin; sadece bir yanlışı birlikte analiz edin.' },
-      weekly:  { teshis: 'Deneme Kırılganlığı: Her sınavın ardından çöküş yaşanıyor.', aksiyon: 'Deneme sonuçlarını tehdit değil veri olarak çerçeveleme alışkanlığı kazandırın.' },
-      aylik : { teshis: 'Sınav Fobisi Sinyali: Denemeler motivasyon artırmak yerine çökertmeye başlamış.', aksiyon: 'Deneme sıklığını azaltın; sonuç odaklı değil süreç odaklı değerlendirmeye geçin.' },
+      daily:   { teshis: 'Deneme sonrası gün: kaygı kalibrasyon eşiğini aşmış, üretim durmuş. Sınav sonuçlarını "tehdit sinyali" olarak algılayan sinir sistemi savunma moduna geçmiş. Bugün yeni soru çözmeye zorlamak tepkiyi pekiştirir.', aksiyon: 'Deneme sonuçlarını bugün konuşmayın; sadece en çok zorlayan 1 konuyu birlikte inceleme önerisi yapın. Dinleme öncelikli.' },
+      weekly:  { teshis: 'Bu hafta deneme sonrası kaygı patlaması ve üretim düşüşü yaşandı. Her sınavın ardından çöküş örüntüsü varsa öğrenci için denemeler ölçüm aracı değil stres kaynağına dönmüş demektir.', aksiyon: 'Deneme sonuçlarını "fotoğraf" olarak çerçeveleme alışkanlığı kazandırın: "Bu sınav ne öğreneceğimizi gösteriyor, yargılamıyor."' },
+      aylik : { teshis: 'Ay içinde deneme sonrası çöküş örüntüsü tekrarlandı. LGS\'ye {{LGS_GUN}} gün kala bu hassasiyet azaltılmazsa sınav günü performansını kendi kaygısı sabote edebilir.', aksiyon: 'Deneme sonrası değerlendirme ritüeli oluşturun; sıklığı azaltmayı ve süreç odaklı geri bildirimi artırmayı düşünün.' },
       ton: 'warning'
     }
   },
@@ -441,9 +441,9 @@ const SENARYOLAR = [
       h.haftalikMoodOrt < 3.2 &&
       h.tutarliGunSayisi >= 4,
     cikti: {
-      daily:   { teshis: 'Mekanik Çalışma: Üretim var ama içsel motivasyon sıfırlanmış; robot modunda ilerleniyor.', aksiyon: 'Bugün çalışmanın neden önemli olduğunu konuşun; hedefe bağlantı kurun.' },
-      weekly:  { teshis: 'Duygusal Donukluk: Bu hafta ne iyi ne kötü; öğrenci süreci sadece "bitirmek" istiyor.', aksiyon: 'Haftalık programa öğrencinin seveceği küçük bir sürpriz ekleyin.' },
-      aylik : { teshis: 'Pre-Burnout Zemini: Duygusal katılım azalmış; tükenmişlik kapıda.', aksiyon: 'Hazırlık sürecine anlam katan yeni bir motivasyon kaynağı bulun.' },
+      daily:   { teshis: 'Üretim var — {{SORU_ORT}} civarında soru çözülüyor — ama mood sürekli nötr "ok". Öğrenci robot modunda çalışıyor: iletiyor ama burada değil. Bu duygusal kopuş tükenmişliğin sessiz habercisidir.', aksiyon: 'Bugün çalışma neden önemli sorusunu konuşun; hedef lisenin imgesini, "neden istiyorum"u yeniden canlandırın.' },
+      weekly:  { teshis: 'Bu hafta {{SORU_ORT}}/gün üretim var, uyku {{UYKU}} — rakamlar makul ama duygusal bant düz. Öğrenci süreci sadece "bitirmek" istiyor. Duygusal katılım olmadan sürdürülebilirlik düşüyor.', aksiyon: 'Haftalık programa öğrencinin gerçekten seveceği küçük bir unsur ekleyin; monotonluğu kıran bir sürpriz (tercih ettiği konu, farklı format).' },
+      aylik : { teshis: 'Ay genelinde mood ortalaması nötr bölgede: öğrenci mekanik devam ediyor ama içsel ateş sönmüş. LGS\'ye {{LGS_GUN}} gün kala bu pre-burnout zemini üzerinde tempo artırmak kontrproduktif.', aksiyon: 'Hazırlık sürecine anlam katan yeni bir motivasyon kaynağı bulun; hedef somutlaştırma çalışması yapın.' },
       ton: 'warning'
     }
   },
