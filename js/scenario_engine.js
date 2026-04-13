@@ -685,33 +685,6 @@ window._kalibre = _kalibre;
 SENARYOLAR.push(
 
   {
-    id: 'DYN-07', modul: 1, priority: 65,
-    etiket: 'Hafta Sonu Kaygı Kırılması',
-    tetikle: (b, h, a, k) => {
-      const gun = new Date(b.dk + 'T12:00:00').getDay();
-      return (gun === 0 || gun === 6) && b.kaygi >= k.kaygi.yuksek && h.ortKaygi < k.kaygi.ort;
-    },
-    cikti: {
-      analiz: 'Hafta içi düşük seyreden kaygı hafta sonu belirgin biçimde yükseliyor; serbest zaman yönetimindeki belirsizliğe bağlanmaktadır.',
-      strateji: 'Cumartesi ve Pazar günleri için hafif ama net bir rutin belirlenmeli; belirsizlik hissi giderilmelidir.',
-      aylikEtiket: 'Hafta_Sonu_Kaygı', ton: 'coaching'
-    }
-  },
-
-  {
-    id: 'DYN-08', modul: 1, priority: 62,
-    etiket: 'Maskelenmiş Başarı',
-    tetikle: (b, h, a, k) =>
-      (b.mood === 'sad' || ((b.mood === 'bad' || b.mood === 'sad') || b.mood === 'ok')) && b.tekrarSure > 40 &&
-      b.hataOrani !== null && b.hataOrani < 15,
-    cikti: {
-      analiz: 'Öğrenci duygusal zorluklarını bastırmak için rutin işlere (tekrar) aşırı odaklanmaktadır.',
-      strateji: 'Başarı takdir edilmeli ancak duygusal yükün paylaşılması için rehberlik alanı açılmalıdır.',
-      aylikEtiket: 'Maskelenmiş_Başarı', ton: 'empathetic'
-    }
-  },
-
-  {
     id: 'DYN-11', modul: 1, priority: 78,
     etiket: 'Pasif Direnç',
     tetikle: (b, h, a, k) =>
@@ -811,20 +784,6 @@ SENARYOLAR.push(
   },
 
   {
-    id: 'DYN-20', modul: 1, priority: 52,
-    etiket: 'Duygusal Rehavet',
-    tetikle: (b, h, a, k) =>
-      (b.mood === 'great' || (b.mood === 'good' || b.mood === 'great')) &&
-      b.kaygi < k.kaygi.dusuk && b.soru < k.soru.dusuk * 0.5 &&
-      h.tutarliGunSayisi < 3,
-    cikti: {
-      analiz: 'Pozitif ruh halinin yarattığı rehavet, çalışma hacmini kritik seviyenin altına düşürmüştür.',
-      strateji: 'Hedefler ve sınava kalan gerçek süre hatırlatılmalı; disiplinin duygulardan bağımsızlığı vurgulanmalıdır.',
-      aylikEtiket: 'Duygusal_Rehavet', ton: 'directive'
-    }
-  },
-
-  {
     id: 'DYN-21', modul: 1, priority: 70,
     etiket: 'Emosyonel İstikrarsızlık',
     tetikle: (b, h, a, k) =>
@@ -881,39 +840,6 @@ SENARYOLAR.push(
 SENARYOLAR.push(
 
   {
-    id: 'DYN-45', modul: 2, priority: 62,
-    etiket: 'Hata İnkarı',
-    tetikle: (b, h, a, k) => {
-      if (!b.dersHata || !h.zayifBrans) return false;
-      const zayif = b.dersHata[h.zayifBrans];
-      return zayif && zayif.q < 10 && h.zayifBransDenemeIsabet < 50;
-    },
-    cikti: {
-      analiz: 'Öğrenci denemedeki başarısızlığıyla yüzleşmemek için ilgili branşı çalışma programından elemektedir.',
-      strateji: 'Deneme analizi zorunlu bir "hata avcılığı" seansına dönüştürülmeli; yanlış sorular koç eşliğinde incelenmelidir.',
-      aylikEtiket: 'Hata_İnkarı', ton: 'directive'
-    }
-  },
-
-  {
-    id: 'DYN-46', modul: 2, priority: 58,
-    etiket: 'Bilişsel Kutuplaşma',
-    tetikle: (b, h, a, k) => {
-      if (!b.dersHata) return false;
-      const sozel = ['Türkçe','İnkılap Tarihi','Din Kültürü','İngilizce'];
-      const sayisal = ['Matematik','Fen Bilimleri'];
-      const sozelSure = sozel.reduce((a, d) => a + (b.dersHata[d]?.q || 0), 0);
-      const sayisalSure = sayisal.reduce((a, d) => a + (b.dersHata[d]?.q || 0), 0);
-      return sozelSure > sayisalSure * 3 && sayisalSure < 15;
-    },
-    cikti: {
-      analiz: 'Zihinsel yorgunluk anlarında direnç göstermek yerine doğrudan sözel branşlara saptığı saptanmıştır.',
-      strateji: 'Sayısal çalışmalar bloklar halinde değil, sözel derslerin arasına "sandviç tekniği" ile yerleştirilmelidir.',
-      aylikEtiket: 'Bilişsel_Kutuplaşma', ton: 'coaching'
-    }
-  },
-
-  {
     id: 'DYN-47', modul: 2, priority: 55,
     etiket: 'Tekrar Patolojisi',
     tetikle: (b, h, a, k) =>
@@ -923,21 +849,6 @@ SENARYOLAR.push(
       analiz: 'Öğrenci yeni bir şey öğrenmenin riskini almamak için vaktini bildiği konuları tekrar ederek tüketmektedir.',
       strateji: 'Tekrar sürelerine kesin kısıtlama getirilmeli; yeni konu kazanımı haftalık performansın ana kriteri yapılmalıdır.',
       aylikEtiket: 'Tekrar_Patolojisi', ton: 'directive'
-    }
-  },
-
-  {
-    id: 'DYN-48', modul: 2, priority: 52,
-    etiket: 'Haftalık Motivasyon Erozyonu',
-    tetikle: (b, h, a, k) => {
-      const gun = new Date(b.dk + 'T12:00:00').getDay();
-      return (gun === 4 || gun === 5) && h.zayifBransSure < 10 &&
-        h.ortEnerji < k.enerji.ort;
-    },
-    cikti: {
-      analiz: 'Haftalık enerji azaldıkça öğrencinin zayıf branşlarla temas kurma iradesi hızla düşmektedir.',
-      strateji: 'Haftanın son günlerine daha hafif pekiştirme çalışmaları konulmalı; ana yük hafta başına dağıtılmalıdır.',
-      aylikEtiket: 'Motivasyon_Erozyonu', ton: 'coaching'
     }
   },
 
@@ -1090,24 +1001,6 @@ SENARYOLAR.push(
   },
 
   {
-    id: 'DYN-62', modul: 2, priority: 60,
-    etiket: 'Denge Sapması',
-    tetikle: (b, h, a, k) => {
-      if (!b.dersHata) return false;
-      const sayisal = ['Matematik','Fen Bilimleri'];
-      const sozel = ['Türkçe','İnkılap Tarihi','Din Kültürü','İngilizce'];
-      const sayisalQ = sayisal.reduce((a,d) => a+(b.dersHata[d]?.q||0), 0);
-      const sozelQ   = sozel.reduce((a,d)   => a+(b.dersHata[d]?.q||0), 0);
-      return sayisalQ < 20 && sozelQ > sayisalQ * 4 && sozelQ > 60;
-    },
-    cikti: {
-      analiz: 'Sayısal alandaki gerilemenin yarattığı özgüven kaybı, sözel derslerdeki hacim artışıyla maskelenmektedir.',
-      strateji: 'Sözel branş hacmi kontrol altına alınmalı; sayısal branştaki düşüşün teknik nedenleri (konu eksiği mi, süre mi?) ayrıştırılmalıdır.',
-      aylikEtiket: 'Denge_Sapması', ton: 'informative'
-    }
-  },
-
-  {
     id: 'DYN-64', modul: 2, priority: 52,
     etiket: 'İhmalkar Refah',
     tetikle: (b, h, a, k) => {
@@ -1119,19 +1012,6 @@ SENARYOLAR.push(
       analiz: 'Pozitif ruh hali, öğrencinin disiplini gevşetmesine ve "bugün zaten çok iyiyim, zorlanmama gerek yok" algısına yol açmıştır.',
       strateji: 'Akademik disiplinin moddan bağımsızlığı vurgulanmalı; günlük rutin plana sadakat teşvik edilmelidir.',
       aylikEtiket: 'İhmalkar_Refah', ton: 'directive'
-    }
-  },
-
-  {
-    id: 'DYN-65', modul: 2, priority: 65,
-    etiket: 'Branş İzolasyonu',
-    tetikle: (b, h, a, k) =>
-      h.zayifBrans !== null && h.zayifBransSure < 5 &&
-      h.veriGirisTutarliligi >= 5,
-    cikti: {
-      analiz: 'Belirli bir branşın haftalık plandan neredeyse tamamen silindiği ve "yok sayıldığı" saptanmıştır.',
-      strateji: 'İlgili branş, en sevilen dersin hemen önüne (ön koşul olarak) 15-20 dakikalık mini periyotlarla eklenmelidir.',
-      aylikEtiket: 'Branş_İzolasyonu', ton: 'directive'
     }
   },
 
@@ -1149,21 +1029,6 @@ SENARYOLAR.push(
       analiz: 'Öğrencinin konu çalışma yöntemi ile soru çözüm performansı arasında ciddi bir kopukluk saptanmıştır.',
       strateji: 'Konu çalışma yöntemi (not alma, video izleme vb.) revize edilmeli; "aktif okuma/dinleme" teknikleri uygulanmalıdır.',
       aylikEtiket: 'Etkisiz_Emek', ton: 'coaching'
-    }
-  },
-
-  {
-    id: 'DYN-68', modul: 2, priority: 55,
-    etiket: 'Direnç Erozyonu',
-    tetikle: (b, h, a, k) => {
-      const gun = new Date(b.dk + 'T12:00:00').getDay();
-      return (gun === 4 || gun === 5) &&
-        h.zayifBransSure < 5 && h.ortEnerji < k.enerji.ort;
-    },
-    cikti: {
-      analiz: 'Haftalık yorgunluk biriktikçe öğrencinin zayıf branşlarla temas kurma iradesi hızla düşmektedir.',
-      strateji: 'Haftanın son günlerine daha hafif pekiştirme çalışmaları konulmalı; ana yük hafta başına dağıtılmalıdır.',
-      aylikEtiket: 'Direnç_Erozyonu', ton: 'coaching'
     }
   },
 
@@ -1238,9 +1103,10 @@ SENARYOLAR.push(
       h.zayifBrans !== null && h.zayifBransSure < 3 &&
       h.bosGunSayisi < 2 && h.veriGirisTutarliligi >= 4,
     cikti: {
-      analiz: 'Belirli bir branşın sistematik olarak program dışına itildiği ve bu durumun bir alışkanlığa dönüştüğü gözlemlenmiştir.',
-      strateji: 'İlgili branş, haftalık programın en başına "kritik eşik" olarak yerleştirilmeli; veli denetimi bu derse odaklanmalıdır.',
-      aylikEtiket: 'Sistematik_İhmal', ton: 'directive'
+      daily:   { teshis: '{{ZAYIF_BRANS}} bugün neredeyse hiç çalışılmamış — sistematik ihmal örüntüsü.', aksiyon: 'Bugün en az 5 {{ZAYIF_BRANS}} sorusu çözülerek kapı aralanmalı.' },
+      weekly:  { teshis: '{{ZAYIF_BRANS}} bu hafta toplam sürenin yalnızca %3\'ünden azını aldı ve bu durum kalıplaşıyor.', aksiyon: '{{ZAYIF_BRANS}} haftalık programın ilk bloğuna alınmalı; günlük minimum 10 soru kotası belirlenmeli.' },
+      aylik:   { teshis: '{{ZAYIF_BRANS}} aylık programdan sistematik olarak dışlanmış ve bu bir alışkanlığa dönüşmüştür — LGS puan dengesini tehdit ediyor.', aksiyon: '{{ZAYIF_BRANS}} her günün başına kritik eşik olarak yerleştirilmeli; veli takibi bu derse odaklanmalı.' },
+      ton: 'directive', aylikEtiket: 'Sistematik_İhmal'
     }
   },
 
@@ -1267,9 +1133,10 @@ SENARYOLAR.push(
     tetikle: (b, h, a, k) =>
       h.zayifBransSure < 20 && h.tutarliGunSayisi >= 4,
     cikti: {
-      analiz: 'Ay genelinde akademik hacim tatmin edici olduğu ancak branş dağılımının dengesiz olduğu saptanmıştır.',
-      strateji: 'Bütüncül analizde "Branş Gettosu" uyarısı verilmeli; gelecek ay için zayıf branşlara %30\'luk bir zaman kotası tanımlanmalıdır.',
-      aylikEtiket: 'Konfor_Alanı_Tuzağı', ton: 'informative'
+      daily:   { teshis: 'Çalışma var ama {{ZAYIF_BRANS}} bugün de dışarıda kaldı.', aksiyon: '{{ZAYIF_BRANS}} için 15 dakikalık kapı aralama seansı yap.' },
+      weekly:  { teshis: 'Haftalık akademik hacim tatmin edici; ancak {{ZAYIF_BRANS}} branşına ayrılan süre %20\'nin altında kaldı.', aksiyon: 'Önümüzdeki hafta {{ZAYIF_BRANS}} için toplam sürenin en az %25\'ini ayır.' },
+      aylik:   { teshis: 'Aylık hacim yüksek ama {{ZAYIF_BRANS}} konfor alanı dışında tutulmuş — branş gettosu riski büyüyor.', aksiyon: 'Gelecek ay {{ZAYIF_BRANS}} için toplam sürenin %30\'luk kotasını belirle.' },
+      ton: 'informative', aylikEtiket: 'Konfor_Alanı_Tuzağı'
     }
   }
 );
@@ -1317,20 +1184,6 @@ SENARYOLAR.push(
   },
 
   {
-    id: 'DYN-80', modul: 3, priority: 35,
-    etiket: 'Dengeli Adaptasyon',
-    tetikle: (b, h, a, k) =>
-      b.soru >= k.soru.dusuk && b.soru < k.soru.ort &&
-      b.hataOrani !== null && b.hataOrani < 20 &&
-      ((b.mood === 'good' || b.mood === 'great') || ((b.mood === 'good' || b.mood === 'great') || b.mood === 'great' || b.mood === 'focused')),
-    cikti: {
-      analiz: 'Öğrenci ideal hedefi yakalayamasa da, bulunduğu şartlar içinde maksimum verim ve motivasyonu korumayı başarmıştır.',
-      strateji: 'Bu denge takdir edilmeli; soru hedefine kademeli (günlük +10 soru) geçiş planlanmalıdır.',
-      aylikEtiket: 'Dengeli_Adaptasyon', ton: 'positive'
-    }
-  },
-
-  {
     id: 'DYN-81', modul: 3, priority: 72,
     etiket: 'İçselleştirilemeyen Başarı',
     tetikle: (b, h, a, k) =>
@@ -1353,21 +1206,6 @@ SENARYOLAR.push(
       analiz: 'Haftalık rutinin ağırlığı hafta sonuna doğru öğrencinin psikolojik direncini kırmaktadır.',
       strateji: 'Hafta sonu programı "pekiştirme ve ödül" odaklı revize edilmeli; akademik baskı hafifletilmelidir.',
       aylikEtiket: 'Süreç_Yorgunluğu', ton: 'empathetic'
-    }
-  },
-
-  {
-    id: 'DYN-86', modul: 3, priority: 32,
-    etiket: 'Uyumlu Zirve',
-    tetikle: (b, h, a, k) =>
-      b.soru >= k.soru.yuksek &&
-      b.hataOrani !== null && b.hataOrani < 10 &&
-      b.odak >= k.odak.yuksek &&
-      (b.mood === 'great' || (b.mood === 'good' || b.mood === 'great') || ((b.mood === 'good' || b.mood === 'great') || b.mood === 'great' || b.mood === 'focused')),
-    cikti: {
-      analiz: 'Öğrenci potansiyelini tam kapasiteyle kullanmakta ve başarısını duygusal bir tatmine dönüştürebilmektedir.',
-      strateji: 'Bu "akış" (flow) hali ödüllendirilmeli; başarının anahtar bileşenleri (uyku, odak, yöntem) not edilmelidir.',
-      aylikEtiket: 'Akış_Hali', ton: 'celebratory'
     }
   },
 
@@ -1453,19 +1291,6 @@ SENARYOLAR.push(
   },
 
   {
-    id: 'DYN-95', modul: 3, priority: 65,
-    etiket: 'Robotik Uyum',
-    tetikle: (b, h, a, k) =>
-      h.tutarliGunSayisi >= 5 && h.soruHedefiKarsilama >= 0.9 &&
-      b.mood === 'ok',
-    cikti: {
-      analiz: 'Öğrenci süreci bir "memuriyet" gibi yürütmekte; heyecan ve motivasyon eksikliği tükenmişlik riski barındırmaktadır.',
-      strateji: 'Öğrencinin "neden çalışıyorum?" sorusuna verdiği yanıt (hedef/hayal) güncellenmeli; sürece ruh katılmalıdır.',
-      aylikEtiket: 'Robotik_Uyum', ton: 'coaching'
-    }
-  },
-
-  {
     id: 'DYN-97', modul: 3, priority: 68,
     etiket: 'İllüzyonel Yeterlilik',
     tetikle: (b, h, a, k) =>
@@ -1506,24 +1331,6 @@ SENARYOLAR.push(
   },
 
   {
-    id: 'DYN-100', modul: 3, priority: 65,
-    etiket: 'Yapay Öz-Güven',
-    tetikle: (b, h, a, k) => {
-      if (!b.dersHata) return false;
-      const dersler = Object.entries(b.dersHata).filter(([d,v]) => v.q >= 20);
-      if (dersler.length < 2) return false;
-      const maks = Math.max(...dersler.map(([d,v]) => v.q));
-      const toplamQ = dersler.reduce((a,[d,v]) => a+v.q, 0);
-      return maks / toplamQ > 0.6 && b.soru >= k.soru.yuksek;
-    },
-    cikti: {
-      analiz: 'Öğrenci zor branşların yarattığı yetersizlik hissini sevdiği branşta aşırı soru çözerek bastırmaktadır.',
-      strateji: 'Öz-yeterliliğin "bütünsel" olması gerektiği anlatılmalı; başarı hissi zayıf branşlara küçük adımlarla transfer edilmelidir.',
-      aylikEtiket: 'Yapay_Öz_Güven', ton: 'coaching'
-    }
-  },
-
-  {
     id: 'DYN-101', modul: 3, priority: 60,
     etiket: 'Başarı Sonrası Boşluk',
     tetikle: (b, h, a, k) =>
@@ -1534,18 +1341,6 @@ SENARYOLAR.push(
       analiz: 'Beklenen net artışı gerçekleşmesine rağmen öğrenci beklediği mutluluğu hissedememekte ve bir anlamsızlık yaşamaktadır.',
       strateji: 'Başarının bir "durak" değil "yolculuk" olduğu hatırlatılmalı; yeni ve gerçekçi alt hedefler belirlenmeli.',
       aylikEtiket: 'Başarı_Sonrası_Boşluk', ton: 'coaching'
-    }
-  },
-
-  {
-    id: 'DYN-102', modul: 3, priority: 78,
-    etiket: 'İradeli Yıkım',
-    tetikle: (b, h, a, k) =>
-      b.soru >= k.soru.yuksek && b.odak < k.odak.dusuk && b.enerji < k.enerji.dusuk,
-    cikti: {
-      analiz: 'Öğrenci fiziksel ve zihinsel sınırlarını aşırı zorlamakta; bu durum uzun vadeli bir akademik nefret riski taşımaktadır.',
-      strateji: '"Akıllı çalışma"nın dinlenmeyi de içerdiği vurgulanmalı; günlük hedef esnek hale getirilmelidir.',
-      aylikEtiket: 'İradeli_Yıkım', ton: 'urgent'
     }
   },
 
@@ -1600,35 +1395,6 @@ SENARYOLAR.push(
       analiz: 'Öğrenci ağır bir sınavın ardından zihnini dinlendirmek yerine dijital uyaranlarla daha fazla yormaktadır.',
       strateji: 'Deneme sonrası için "aktif dinlenme" (uyku, spor, hobi) alternatifleri sunulmalı; ekranın yorgunluğu artırdığı anlatılmalıdır.',
       aylikEtiket: 'Sınav_Yorgunluğu_İstismarı', ton: 'coaching'
-    }
-  },
-
-  {
-    id: 'DYN-112', modul: 4, priority: 68,
-    etiket: 'Dopaminerjik Çöküş',
-    tetikle: (b, h, a, k) =>
-      b.sosyal > k.sosyal.yuksek &&
-      (b.mood === 'sad' || ((b.mood === 'bad' || b.mood === 'sad') || b.mood === 'ok')) && b.enerji < k.enerji.dusuk,
-    cikti: {
-      analiz: 'Dijital tüketim öğrenciye beklediği hazzı vermemekte, aksine suçluluk hissi ve enerji kaybı yaratmaktadır.',
-      strateji: 'Sosyal medyanın bir "enerji vampiri" olduğu vurgulanmalı; kısıtlı kullanımın ruh haline etkisi izlenmelidir.',
-      aylikEtiket: 'Dopaminerjik_Çöküş', ton: 'rational'
-    }
-  },
-
-  {
-    id: 'DYN-113', modul: 4, priority: 65,
-    etiket: 'Parçalanmış Dikkat',
-    tetikle: (b, h, a, k) => {
-      if (!b.dersHata) return false;
-      const bransSayisi = Object.keys(b.dersHata).filter(d => b.dersHata[d].q > 0).length;
-      return bransSayisi >= 4 && h.haftaSosyalOrt > k.sosyal.ort &&
-        Object.values(b.dersHata).every(v => v.q < 15);
-    },
-    cikti: {
-      analiz: 'Dijital dünyanın "hızlı geçiş" mantığı, öğrencinin akademik sorularda uzun süre kalma (sabır) yeteneğini köreltmektedir.',
-      strateji: '"Pomodoro" veya "Blok Çalışma" gibi kesintisiz odak süreleri zorunlu tutulmalı; telefon çalışma alanından uzaklaştırılmalıdır.',
-      aylikEtiket: 'Parçalanmış_Dikkat', ton: 'directive'
     }
   },
 
@@ -1755,19 +1521,6 @@ SENARYOLAR.push(
 SENARYOLAR.push(
 
   {
-    id: 'DYN-127', modul: 5, priority: 72,
-    etiket: 'Duygusal Yorgunluk',
-    tetikle: (b, h, a, k) =>
-      b.uyku >= 8 && b.enerji < k.enerji.dusuk &&
-      (b.mood === 'sad' || ((b.mood === 'bad' || b.mood === 'sad') || b.mood === 'ok')),
-    cikti: {
-      analiz: 'Fiziksel dinlenme (uyku) yeterli olsa da psikolojik baskı öğrencinin enerjisini tüketmektedir.',
-      strateji: 'Akademik yük %30 hafifletilmeli; öğrenciye sadece "sevdiği" işlerle ilgileneceği bir "restorasyon öğleden sonrası" verilmelidir.',
-      aylikEtiket: 'Duygusal_Yorgunluk', ton: 'empathetic'
-    }
-  },
-
-  {
     id: 'DYN-129', modul: 5, priority: 65,
     etiket: 'Atıl Potansiyel',
     tetikle: (b, h, a, k) =>
@@ -1790,19 +1543,6 @@ SENARYOLAR.push(
       analiz: 'Hafta içi biriken uyku borcu hafta sonu kapatılmaya çalışılmakta; bu da "sosyal jetlag" yaratarak Pazartesi odağını bozmaktadır.',
       strateji: 'Uyku düzeninin hafta geneline yayılması (istikrar) sağlanmalı; hafta içi-sonu farkı 1 saati geçmemelidir.',
       aylikEtiket: 'Sosyal_Jetlag', ton: 'informative'
-    }
-  },
-
-  {
-    id: 'DYN-132', modul: 5, priority: 60,
-    etiket: 'Mekanik İrade',
-    tetikle: (b, h, a, k) =>
-      b.enerji < k.enerji.dusuk && b.soru >= k.soru.ort * 0.7 &&
-      b.tekrarSure > 60,
-    cikti: {
-      analiz: 'Yeni bir şey öğrenecek enerjisi olmasa da öğrenci bildiklerini yaparak "çalıştım" hissini korumaya çalışmaktadır.',
-      strateji: 'Bu direnç takdir edilmeli; ancak derin öğrenme gerektiren görevler enerjinin yüksek olduğu güne ertelenmelidir.',
-      aylikEtiket: 'Mekanik_İrade', ton: 'balanced'
     }
   },
 
@@ -1867,18 +1607,6 @@ SENARYOLAR.push(
       analiz: 'Öğrenci fiziksel olarak güçlü olmasına rağmen duygusal bir engel nedeniyle potansiyelini tam yansıtamamaktadır.',
       strateji: 'Fiziksel enerjiyi duygusal modu yükseltmek için kullanacak "aktif molalar" (spor, yürüyüş) önerilmeli.',
       aylikEtiket: 'Fiziksel_Güç_Duygusal_Engel', ton: 'coaching'
-    }
-  },
-
-  {
-    id: 'DYN-140', modul: 5, priority: 55,
-    etiket: 'Aşırı Uyku Rehaveti',
-    tetikle: (b, h, a, k) =>
-      b.uyku >= 9.5 && b.enerji < k.enerji.dusuk && b.odak < k.odak.dusuk,
-    cikti: {
-      analiz: 'Rutin dışı aşırı uykunun zihni berraklaştırmak yerine daha fazla uyuşturduğu ve odaklanmayı zorlaştırdığı görülmektedir.',
-      strateji: 'Uyku süresinin "optimum" seviyeye (8-8.5 saat) çekilmesi önerilmeli; güne fiziksel bir aktiviteyle başlanması teşvik edilmelidir.',
-      aylikEtiket: 'Aşırı_Uyku', ton: 'informative'
     }
   },
 

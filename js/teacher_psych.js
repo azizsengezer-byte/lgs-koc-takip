@@ -654,7 +654,7 @@ async function exportPsychPDF(sName, aiAcik) {
           }
         } else {
           // ID-080: Pazartesi Sendromu
-          const _gunPazar = new Date(dateKey+'T12:00:00').getDay() === 0;
+          const _gunPazar = new Date(bugunKey+'T12:00:00').getDay() === 0;
           if (_gunPazar && bugunKaygi > 7 && bugunOdak > 0 && bugunOdak < 4
               && !kullanılanOlaylar.has('G_pazar')) {
             kullanılanOlaylar.add('G_pazar');
@@ -1025,6 +1025,12 @@ async function exportPsychPDF(sName, aiAcik) {
               else if (_toplamNeg <= 2 && _skor.pozitif >= 1) _profil = 'dengeli';
               else _profil = 'karisik';
             }
+            // Trend-profil çelişkisi düzelt:
+            // Düşüş trendi tespit edilmişken profil "dengeli" diyorsa çelişki var → "karisik"
+            if (_trend === 'dusus' && _profil === 'dengeli') _profil = 'karisik';
+
+            // Zayıf branş adı — runner'dan gelir, köprü metninde kullanılır
+            const _zayifBrans = _m.zayifBrans || null;
 
             // Profil metin havuzu — döneme göre uyarlanmış
             const _isAylik = period === 'monthly';
@@ -1070,12 +1076,18 @@ async function exportPsychPDF(sName, aiAcik) {
 
             // Render: 3 kutu
             // Başlıkları döneme göre uyarla
+            // Zayıf branş varsa foto ve strateji metnine ekle
+            const _zayifBransEki = _zayifBrans
+              ? (_isAylik
+                  ? ' ' + _zayifBrans + ' branşı özellikle dikkat gerektiriyor.'
+                  : ' ' + _zayifBrans + ' branşı bu hafta en kritik alan.')
+              : '';
             const _kutular = [
-              { baslik: _isAylik ? 'AYLIK FOTOĞRAFIN' : 'BU HAFTANIN ÖZETİ',
-                metin: (!_isAylik && _trendAnlati ? _trendAnlati + ' ' : '') + _pm.foto,
+              { baslik: _isAylik ? 'AYLIK FOTOĞRAF' : 'BU HAFTANIN ÖZETİ',
+                metin: (!_isAylik && _trendAnlati ? _trendAnlati + ' ' : '') + _pm.foto + _zayifBransEki,
                 ar:242, ag:240, ab:255, sr:70, sg:40, sb:180 },
-              { baslik: 'KOÇLUK STRATEJİSİ',                                           metin: _pm.strateji, ar:238, ag:255, ab:245, sr:20,  sg:130, sb:70  },
-              { baslik: _isAylik ? 'GELECEK AY PLANI' : 'ÖNÜMÜZDEKİ HAFTA İÇİN',   metin: _pm.gelecek,  ar:255, ag:248, ab:235, sr:170, sg:80,  sb:0   },
+              { baslik: 'KOÇLUK STRATEJİSİ',                                          metin: _pm.strateji, ar:238, ag:255, ab:245, sr:20,  sg:130, sb:70  },
+              { baslik: _isAylik ? 'GELECEK AY PLANI' : 'ÖNÜMÜZDEKİ HAFTA İÇİN',  metin: _pm.gelecek,  ar:255, ag:248, ab:235, sr:170, sg:80,  sb:0   },
             ];
 
             // Bütüncül köprü: önce toplam yüksekliği hesapla

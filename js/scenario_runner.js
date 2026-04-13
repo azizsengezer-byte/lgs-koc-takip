@@ -1,4 +1,27 @@
 // scenario_runner.js — LGSKoç Senaryo Eşleştirme Motoru v3
+
+// ── BRANS ADI ENJEKSİYONU ────────────────────────────────
+// Senaryo metinlerindeki {{ZAYIF_BRANS}} ve eski placeholder'ları
+// gerçek branş adıyla değiştirir.
+function _injectBrans(text, bransAdi) {
+  if (!text || !bransAdi) return text;
+  return text
+    .replace(/\{\{ZAYIF_BRANS\}\}/g, bransAdi)
+    .replace(/Belirli bir branş/g, bransAdi)
+    .replace(/İlgili branş/g, bransAdi)
+    .replace(/ilgili branş/g, bransAdi);
+}
+function _injectBransIns(ins, bransAdi) {
+  if (!bransAdi) return ins;
+  return {
+    ...ins,
+    teshis:   _injectBrans(ins.teshis,   bransAdi),
+    aksiyon:  _injectBrans(ins.aksiyon,  bransAdi),
+    analiz:   _injectBrans(ins.analiz,   bransAdi),
+    strateji: _injectBrans(ins.strateji, bransAdi),
+  };
+}
+
 // ── HİYERARŞİK KARAR MOTORU ─────────────────────────────
 // Periyoda göre doğru teşhis dilini seçer
 // Modül 5 kritikse Modül 2'yi susturur
@@ -398,7 +421,9 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
 
     // Hiyerarşik mantık + periyot dili seçimi
     const _ciktiNegFrekansli = ciktiNeg.map(s => ({ ...s, frekans: tumNegIdSayac[s.id]||0 }));
-    const insights = _applyHierarchicalLogic('aylik', _ciktiNegFrekansli);
+    const _zayifBransAy = _haftaAy.zayifBrans || null;
+    const insights = _applyHierarchicalLogic('aylik', _ciktiNegFrekansli)
+      .map(ins => _injectBransIns(ins, _zayifBransAy));
     const positives = ciktiPos.map(s => ({
       id: s.id, etiket: s.etiket,
       analiz: s.cikti.analiz || (s.cikti.aylik||{}).teshis || '',
@@ -422,6 +447,7 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
       tetiklenenTumIdler: [...tetIdSet],
       frekansMap: { ...tumNegIdSayac, ...tumPosIdSayac },
       aktifProfil: _aktifProfil,
+      zayifBrans: _zayifBransAy,
     };
 
   // ── HAFTALIK: son 7 günü tara ─────────────────────────
@@ -541,7 +567,9 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
     });
 
     const _hNegFrekansli = ciktiNeg.map(s => ({ ...s, frekans: tumNegIdSayac[s.id]||0 }));
-    const insights = _applyHierarchicalLogic('haftalik', _hNegFrekansli);
+    const _zayifBransH = _haftaH.zayifBrans || null;
+    const insights = _applyHierarchicalLogic('haftalik', _hNegFrekansli)
+      .map(ins => _injectBransIns(ins, _zayifBransH));
     const positives = ciktiPos.map(s => ({
       id: s.id, etiket: s.etiket, analiz: s.cikti.analiz, strateji: s.cikti.strateji,
       aylikEtiket: s.cikti.aylikEtiket, ton: s.cikti.ton, tip: 'pozitif',
@@ -562,6 +590,7 @@ function calistirSenaryolar(gunler, allEntries, bugunDk, mod) {
       sonSkor: Math.round(_sonSkor * 100),
       ilkSkor: Math.round(_ilkSkor * 100),
       aktifProfil: _aktifProfilH,
+      zayifBrans: _zayifBransH,
     };
 
   // ── GÜNLÜK: tek gün snapshot ──────────────────────────
