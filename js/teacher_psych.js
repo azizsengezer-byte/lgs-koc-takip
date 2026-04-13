@@ -41,7 +41,7 @@ async function exportPsychPDF(sName, aiAcik) {
   }
   const sortedDays = Object.keys(days).filter(k=>k>=startKey&&k<=endKey).sort().reverse();
 
-  const moodLabels = { great:'Heyecanlı', good:'İyiyim', ok:'İdare Eder', bad:'Üzgün', sad:'Mutsuzum' };
+  const moodLabels = { excited:'Heyecanlı', good:'İyiyim', focused:'Odaklı', ok:'İdare Eder', tired:'Yorgunum', anxious:'Kaygılı', sad:'Mutsuzum' };
   const moodColors = { excited:[249,202,36], good:[69,183,209], focused:[108,99,255], ok:[162,155,254], tired:[253,121,168], anxious:[255,107,107], sad:[119,140,163] };
 
   const { jsPDF } = window.jspdf;
@@ -488,7 +488,7 @@ async function exportPsychPDF(sName, aiAcik) {
         const bugunNegatif= (bugunW.negatif||'').trim();
         const wellnessVar = bugunKaygi>0||bugunEnerji>0||bugunUyku>0||bugunOdak>0||!!bugunMood;
         const akademikVar = bugunSoru>0;
-        const moodTr = {great:'Heyecanlı',good:'İyiyim',ok:'İdare Eder',bad:'Üzgün',sad:'Mutsuzum'};
+        const moodTr = {excited:'Heyecanlı',good:'İyiyim',focused:'Odaklı',ok:'İdare Eder',tired:'Yorgunum',anxious:'Kaygılı',sad:'Mutsuzum'};
         const bugunMoodTr = bugunMood?(moodTr[bugunMood]||bugunMood):'';
         const negatifMood = ['anxious','tired','sad'].includes(bugunMood);
 
@@ -1071,7 +1071,7 @@ async function exportPsychPDF(sName, aiAcik) {
             // Render: 3 kutu
             // Başlıkları döneme göre uyarla
             const _kutular = [
-              { baslik: _isAylik ? 'AYLIK FOTOĞRAF' : 'BU HAFTANIN ÖZETİ',
+              { baslik: _isAylik ? 'AYLIK FOTOĞRAFIN' : 'BU HAFTANIN ÖZETİ',
                 metin: (!_isAylik && _trendAnlati ? _trendAnlati + ' ' : '') + _pm.foto,
                 ar:242, ag:240, ab:255, sr:70, sg:40, sb:180 },
               { baslik: 'KOÇLUK STRATEJİSİ',                                           metin: _pm.strateji, ar:238, ag:255, ab:245, sr:20,  sg:130, sb:70  },
@@ -1277,6 +1277,17 @@ async function exportPsychPDF(sName, aiAcik) {
     } // end veriGunler
 
     } // end sortedDays
+    else {
+      // Seçili dönemde wellness verisi yok — bilgilendirme sayfası
+      Y = pdfSecHeader(doc, tx('VERİ BULUNAMADI'), Y, 160, 160, 160);
+      doc.setFont(PF, 'normal'); doc.setFontSize(10); doc.setTextColor(120, 120, 140);
+      const noDataMsg = doc.splitTextToSize(
+        tx(sName + ' adlı öğrenci için ' + periodTitle + ' döneminde kayıtlı psikolojik takip verisi bulunmamaktadır.'), 160
+      );
+      doc.text(noDataMsg, 16, Y); Y += noDataMsg.length * 6 + 8;
+      doc.setFontSize(8.5); doc.setTextColor(160, 155, 180);
+      doc.text(tx('Öğrencinin wellness günlüğü doldurması için hatırlatma yapabilirsiniz.'), 16, Y);
+    }
 
   pdfFooter(doc, doc.internal.getNumberOfPages(), tx(sName)+' | Psikolojik Takip');
   doc.save(ts(sName.replace(/\s+/g,'_'))+'_Psikolojik_'+periodLabel+'_'+getDateKey(now)+'.pdf');
