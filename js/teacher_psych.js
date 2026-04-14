@@ -127,41 +127,6 @@ async function exportPsychPDF(sName, aiAcik) {
     Y += 10;
 
     // Psikolojik değerlendirme
-    const wArr = sortedDays.map(k=>({
-      kaygi:parseFloat(days[k]?.kaygi)||0, uyku:parseFloat(days[k]?.uyku)||0,
-      enerji:parseFloat(days[k]?.enerji)||0
-    })).filter(d=>d.kaygi>0||d.uyku>0);
-    const korLines = [];
-    if (wArr.length >= 2) {
-      const avgK=(wArr.filter(d=>d.kaygi>0).reduce((a,d)=>a+d.kaygi,0)/Math.max(wArr.filter(d=>d.kaygi>0).length,1)).toFixed(1);
-      const avgU=(wArr.filter(d=>d.uyku>0).reduce((a,d)=>a+d.uyku,0)/Math.max(wArr.filter(d=>d.uyku>0).length,1)).toFixed(1);
-      const avgE=(wArr.filter(d=>d.enerji>0).reduce((a,d)=>a+d.enerji,0)/Math.max(wArr.filter(d=>d.enerji>0).length,1)).toFixed(1);
-      if(parseFloat(avgK)>=7) korLines.push(tx('Kaygı seviyesi bu dönemde yüksek seyretti (ort. '+avgK+'/10). Sınav öncesi kaygı yönetimi çalışması önerilebilir.'));
-      else if(parseFloat(avgK)<=3) korLines.push(tx('Kaygı seviyesi bu dönemde oldukça düşük kaldı (ort. '+avgK+'/10). Öğrenci sakin ve rahat bir dönem geçirdi.'));
-      if(parseFloat(avgU)<7) korLines.push(tx('Ortalama uyku süresi '+avgU+' saat — yetersiz uyku akademik performansı olumsuz etkileyebilir. Uyku düzeni gözden geçirilmeli.'));
-      else korLines.push(tx('Uyku süresi yeterli düzeyde (ort. '+avgU+' saat). Bu, öğrenme kapasitesini destekler.'));
-      if(parseFloat(avgE)>=7) korLines.push(tx('Enerji seviyesi yüksek seyretti (ort. '+avgE+'/10). Bu motivasyon çalışma verimliliğine yansıyabilir.'));
-      else if(parseFloat(avgE)<=4) korLines.push(tx('Enerji seviyesi düşük kaldı (ort. '+avgE+'/10). Motivasyon desteği ve aktivite planlaması önerilebilir.'));
-      const enTrend = sortedDays.slice().reverse().map(k=>parseFloat(days[k]?.enerji)||0).filter(v=>v>0);
-      if(enTrend.length>=3) {
-        const fh=enTrend.slice(0,Math.floor(enTrend.length/2)), sh=enTrend.slice(Math.floor(enTrend.length/2));
-        const fa=fh.reduce((a,b)=>a+b,0)/fh.length, sa=sh.reduce((a,b)=>a+b,0)/sh.length;
-        if(fa-sa>1) korLines.push(tx('Dönem sonuna doğru enerji düşüşü gözlemlendi. Yorgunluk ve tükenmişlik belirtileri izlenmeli.'));
-        else if(sa-fa>1) korLines.push(tx('Dönem boyunca enerji artışı gözlemlendi. Artan motivasyon akademik çalışmaya yönlendirilebilir.'));
-      }
-    }
-    if (korLines.length > 0) {
-      Y = pdfCheck(doc, Y, 20);
-      Y = pdfSecHeader(doc, tx('PSİKOLOJİK DEĞERLENDİRME'), Y, 108, 99, 255);
-      korLines.forEach(line => {
-        Y = pdfCheck(doc, Y, 18);
-        doc.setFillColor(240,240,255); doc.roundedRect(16,Y,178,14,2,2,'F');
-        doc.setFont(PF,'normal'); doc.setFontSize(8); doc.setTextColor(40,40,80);
-        const ls = doc.splitTextToSize(line, 170);
-        doc.text(ls, 20, Y+5);
-        Y += ls.length*5 + 5;
-      });
-    }
 
     // Günlük tablo
     Y = pdfCheck(doc, Y, 14);
@@ -297,6 +262,27 @@ async function exportPsychPDF(sName, aiAcik) {
 
     // T-0: kronolojik olarak son 2 GÜN (tarih bazlı, wellness VEYA akademik veri olan her gün dahil)
     // Tüm gunler zaten date sorted, son 2'yi al
+    // ── GÜN TİPİ PROFİLLEME MOTORU ─────────────────────────────
+    // İDEAL | AŞIM | KRİZ | SAVUNMA | NADAS | SİS
+    function _profilGun(d) {
+      const wellVar = d.enerji > 0 || d.kaygi > 0 || d.uyku > 0 || d.odak > 0 || !!d.mood;
+      const akVar   = d.soru > 0;
+      if (!wellVar && !akVar) return 'sis';
+      const akutKriz = d.kaygi >= 8 || (d.enerji > 0 && d.enerji <= 2);
+      if (akutKriz && !akVar) return 'kriz';
+      if (akVar && d.kaygi >= 7 && d.odak > 0 && d.odak < 5) return 'savunma';
+      if (akVar && (d.kaygi >= 7 || (d.uyku > 0 && d.uyku < 6.5) || (d.enerji > 0 && d.enerji < 4))) return 'asim';
+      if (!akVar && wellVar) return 'nadas';
+      return 'ideal';
+    }
+    const _tipRenk = {
+      ideal:   { bg:[222,250,232], kenar:[14,128,62],  etiket:'İDEAL',   aciklama:'Psikolojik denge ve akademik üretim aynı anda olumlu.' },
+      asim:    { bg:[255,240,215], kenar:[168,80,0],   etiket:'AŞIM',    aciklama:'Akademik üretim devam etti ancak fizyolojik bedel yüksek.' },
+      kriz:    { bg:[255,210,210], kenar:[180,20,20],  etiket:'KRİZ',    aciklama:'Kritik psikolojik baskı akademik üretime izin vermedi.' },
+      savunma: { bg:[255,232,200], kenar:[150,60,0],   etiket:'SAVUNMA', aciklama:'Yüksek soru hacmi düşük odakla üretildi — mekanik çalışma refleksi.' },
+      nadas:   { bg:[230,242,255], kenar:[30,90,180],  etiket:'NADAS',   aciklama:'Akademik giriş yok, psikolojik tablo stabil — bilinçli dinlenme veya kaçınma.' },
+      sis:     { bg:[240,240,240], kenar:[120,120,130],etiket:'SİS',     aciklama:'Bu güne ait veri girilmedi.' },
+    };
     const gunlerSorted = [...gunler].sort((a,b)=>b.dk.localeCompare(a.dk));
     const son2 = gunlerSorted.slice(0,2);
     const tGecmis = gunlerSorted.slice(2).filter(d=>d.enerji>0||d.kaygi>0||d.uyku>0);
@@ -485,6 +471,9 @@ async function exportPsychPDF(sName, aiAcik) {
         const bugunSosyal = parseFloat(bugunW.ekranSosyal)||parseFloat(bugunW.ekran)||0;
         const bugunOnline = parseFloat(bugunW.ekranOnline)||0;
         const bugunPozitif= (bugunW.pozitif||bugunW.gurur||'').trim();
+        const bugunZorDers  = bugunW.zorDers  || '';
+        const bugunUykuKalite = bugunW.uykuKalite || '';
+        const bugunKelime   = bugunW.kelime   || '';
         const bugunNegatif= (bugunW.negatif||'').trim();
         const wellnessVar = bugunKaygi>0||bugunEnerji>0||bugunUyku>0||bugunOdak>0||!!bugunMood;
         const akademikVar = bugunSoru>0;
@@ -513,6 +502,28 @@ async function exportPsychPDF(sName, aiAcik) {
         Y = pdfCheck(doc, Y, 20);
         Y = pdfSecHeader(doc, 'GÜNLÜK KLİNİK ANALİZ', Y, 220, 50, 100);
 
+        // ═══════════════════════════════════════════════════════
+        // GÜN TİPİ KARTI
+        // ═══════════════════════════════════════════════════════
+        const _bugunProfil = _profilGun({
+          soru: bugunSoru, enerji: bugunEnerji, kaygi: bugunKaygi,
+          uyku: bugunUyku, odak: bugunOdak, mood: bugunMood
+        });
+        const _bpr = _tipRenk[_bugunProfil];
+        Y = pdfCheck(doc, Y, 22);
+        doc.setFillColor(_bpr.bg[0], _bpr.bg[1], _bpr.bg[2]);
+        doc.roundedRect(15, Y, 180, 18, 2, 2, 'F');
+        doc.setFillColor(_bpr.kenar[0], _bpr.kenar[1], _bpr.kenar[2]);
+        doc.roundedRect(15, Y, 5, 18, 1, 1, 'F');
+        doc.setFont(PF, 'bold'); doc.setFontSize(9);
+        doc.setTextColor(_bpr.kenar[0], _bpr.kenar[1], _bpr.kenar[2]);
+        doc.text(tx('GÜN TİPİ: ' + _bpr.etiket), 23, Y + 7);
+        doc.setFont(PF, 'normal'); doc.setFontSize(6.5);
+        doc.setTextColor(50, 45, 70);
+        doc.text(tx(_bpr.aciklama), 23, Y + 13);
+        Y += 23;
+
+
         // AI günlük kutusu kaldırıldı
                 doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(100,90,140);
         doc.text(tx('Bugünün verisi anlık klinik değerlendirme — bakiye riskler sonda'), 16, Y); Y+=8;
@@ -526,7 +537,7 @@ async function exportPsychPDF(sName, aiAcik) {
           doc.setFont(PF,'bold'); doc.setFontSize(9.5); doc.setTextColor(175,0,0);
           doc.text(tx('⚠  ACİL: BİLİŞSEL BLOKAJ — AKADEMİK FELÇ'), 24, Y+9.5);
           Y+=18;
-          kutu('[ID-020] Amigdala Blokajı — Güne Stresli Başlama',
+          kutu('Amigdala Blokajı — Güne Stresli Başlama',
             'Bugün kaygı ' + bugunKaygi.toFixed(1) + '/10 ' + (bugunMoodTr?'('+bugunMoodTr+') ':'') + 'iken hiç akademik çalışma yapılmamış. ' +
             'Bu bir disiplin sorunu değil biyolojik bir savunmadır: prefrontal korteks devre dışı, öğrenci doğrudan donmuştur. ' +
             (bugunSosyal>0?'Sosyal medya '+bugunSosyal.toFixed(1)+' sa — dijital anestezi. ':'') +
@@ -546,7 +557,7 @@ async function exportPsychPDF(sName, aiAcik) {
             [245,243,255],[130,120,200]);
         } else if (bugunUyku>0&&bugunUyku<6&&bugunEnerji>0&&bugunEnerji<4) {
           gunlukAktifler.push('Akut Fizyolojik Çöküş');
-          kutu('[ID-010] Akut Fizyolojik Çöküş — Çift Tehdit',
+          kutu('Akut Fizyolojik Çöküş — Çift Tehdit',
             'Uyku '+bugunUyku.toFixed(1)+' sa + enerji '+bugunEnerji.toFixed(1)+'/10: ikisi birlikte kritik bölgede. ' +
             'Glimfatik sistem dün gece çalışmadı; bugün öğrenilen bilgiler kalıcı belleğe geçemez. ' +
             (akademikVar?'Çözülen '+bugunSoru+' soru "bilişsel borç" statüsünde — temiz zihinle tekrar edilmeli. ':'Akademik üretim beklenmemeli. ') +
@@ -555,7 +566,7 @@ async function exportPsychPDF(sName, aiAcik) {
           gunlukBakiye.push('Bugün çalışılan konular hatalı kodlanma riski taşıyor — düşük enerji testi önerilir');
         } else if (bugunUyku>0&&bugunUyku<6.5) {
           gunlukAktifler.push('Uyku Borcu');
-          kutu('[ID-010] Uyku Borcu — Bellek Konsolidasyonu Riskli',
+          kutu('Uyku Borcu — Bellek Konsolidasyonu Riskli',
             'Bugün '+bugunUyku.toFixed(1)+' sa uyku (ideal 7.5+). ' +
             (bugunEnerji>0?'Enerji '+bugunEnerji.toFixed(1)+'/10. ':'') +
             'REM evresi kısalmış olabilir; dün öğrenilen bilgiler tam konsolide olmamıştır. ' +
@@ -565,7 +576,7 @@ async function exportPsychPDF(sName, aiAcik) {
           gunlukBakiye.push('Uyku borcu devam ederse hafta sonu performans düşüşü kaçınılmaz');
         } else if (bugunUyku>0&&bugunUyku<6.5&&bugunOdak>8) {
           gunlukAktifler.push('Yanılsamalı Hiper-Odak');
-          kutu('[ID-020] Yanılsamalı Hiper-Odak — Adrenalin Maskesi',
+          kutu('Yanılsamalı Hiper-Odak — Adrenalin Maskesi',
             'Uyku '+bugunUyku.toFixed(1)+' sa iken odak '+bugunOdak.toFixed(1)+'/10. ' +
             'Stres hormonu kortizol geçici odak sağlıyor; hata denetim mekanizması (error monitoring) devre dışı. ' +
             (akademikVar?'Bugün çözülen '+bugunSoru+' soruda fark edilmeden geçilen hatalar birikmiş olabilir.':''),
@@ -587,6 +598,31 @@ async function exportPsychPDF(sName, aiAcik) {
             [240,238,255],[100,90,175]);
         }
 
+        // ─── UYKU KALİTE ÇAPRAZLAMASI (uykuKalite × uyku süresi) ─
+        if (bugunUyku > 0 && bugunUykuKalite) {
+          const _uSaatStr = bugunUyku.toFixed(1) + ' sa';
+          const _dYok  = bugunUykuKalite === 'hayir';
+          const _dOrta = bugunUykuKalite === 'orta';
+          const _dEvet = bugunUykuKalite === 'evet';
+          if (_dYok && bugunUyku >= 7) {
+            kutu('Restoratif Olmayan Uyku — Gizli Yorgunluk',
+              _uSaatStr + ' uyku süresi yeterli görünse de sabah dinç uyanılmadı. ' +
+              'REM evresi kısalmış, stres hormonu kortizol gece boyunca yüksek kalmış olabilir. ' +
+              (bugunKaygi >= 6 ? 'Kaygı ' + bugunKaygi.toFixed(1) + '/10 — gece kaygısının uykuyu böldüğü düşünülebilir. ' : '') +
+              'Sayı yeterli ama kalite yetersiz; bilişsel taban gerçekte yorgun.',
+              [255, 232, 215], [158, 70, 0]);
+          } else if (_dYok && bugunUyku < 7) {
+            kutu('Kritik Uyku Açığı — Hem Süre Hem Kalite Yetersiz',
+              _uSaatStr + ' + sabah yorgunluğu. Glimfatik sistem dün gece tam çalışmadı; ' +
+              'önceki günlerin öğrenimleri konsolide edilemedi. ' +
+              'Bugün yeni konu girişi yapmak yerine tekrar önerilir.',
+              [255, 210, 210], [172, 12, 12]);
+          } else if (_dEvet && bugunUyku < 6.5) {
+            dipnot('Kısa (' + _uSaatStr + ') ama verimli uyku — şu an enerji var. ' +
+              'Kısa uyku birikimi ilerleyen saatlerde yorgunluk olarak dönebilir, gün ortasını izle.');
+          }
+        }
+
         // ─── 2. DUYGUSAL DURUM VE BRANŞ KAÇIŞLARI ────────────
         Y = pdfCheck(doc, Y, 16);
         bolumBaslik([150,30,30],'2.  Duygusal Durum ve Branş Analizi','Bugünkü kaygı · mood · branş tercihi çaprazlaması');
@@ -604,7 +640,7 @@ async function exportPsychPDF(sName, aiAcik) {
 
           if (bugunKaygi>=8&&akademikVar&&enCokBrans) {
             gunlukAktifler.push('Akademik Anestezi');
-            kutu('[ID-085] Akademik Anestezi — Konfor Alanına Sığınma',
+            kutu('Akademik Anestezi — Konfor Alanına Sığınma',
               'Kaygı '+bugunKaygi.toFixed(1)+'/10 iken '+enCokBrans.d+' branşında '+enCokBrans.q+' soru çözüldü. ' +
               (sayisalYok&&sozelVar?'Sayısal branşlar hiç çalışılmadı -> Sözel Sığınma refleksi aktif. ':'') +
               'Bu üretim öğrenme odaklı değil; "başarıyorum" illüzyonuyla kaygı anestezisi yapılıyor. ' +
@@ -613,13 +649,13 @@ async function exportPsychPDF(sName, aiAcik) {
             if (sayisalYok) gunlukBakiye.push('Bugün kaçınılan sayısal branşlar: yarın 10 dk "kapı aralama" seansı');
           } else if (bugunKaygi>=8&&!akademikVar&&bugunSosyal>0) {
             // Amigdala blokajı zaten yukarıda işlendi, burada sosyal medya detayı
-            kutu('[ID-035] Dijital Anestezi — Kaçış Kapısı Kullanıldı',
+            kutu('Dijital Anestezi — Kaçış Kapısı Kullanıldı',
               'Akademik giriş yok + sosyal medya '+bugunSosyal.toFixed(1)+' sa. ' +
               'Öğrenci başarısızlık korkusuyla yüzleşmek yerine dijital uyuşturmayı tercih etti. ' +
               'Bu bir dinlenme değil "bilişsel erteleme" — akademik sorun çözülmeden büyüyor.',
               [255,215,215],[170,15,15]);
           } else if (negatifMood&&akademikVar&&sayisalYok&&sozelVar) {
-            kutu('[ID-095] Sözel Sığınma — Bilişsel Konfor Refleksi',
+            kutu('Sözel Sığınma — Bilişsel Konfor Refleksi',
               bugunMoodTr+' hissederken sayısal branşlar bırakılmış, sözel branşlara yönelinmiş. ' +
               'Beyin yorgunluk/kaygı anında bilişsel yükü düşük branşı seçiyor. ' +
               'Bu durum sayısal branşlarda bugün zaman kaybı yaratıyor.',
@@ -659,7 +695,7 @@ async function exportPsychPDF(sName, aiAcik) {
               && !kullanılanOlaylar.has('G_pazar')) {
             kullanılanOlaylar.add('G_pazar');
             gunlukAktifler.push('Pazartesi Sendromu');
-            kutu('[ID-080] Gelecek Kaygısı — Pazartesi Sendromu',
+            kutu('Gelecek Kaygısı — Pazartesi Sendromu',
               'Pazar akşamı: Kaygı ' + bugunKaygi.toFixed(1) + '/10 + Odak ' + bugunOdak.toFixed(1) + '/10. ' +
               'Hafta başına yönelik öngörü stresi günü sabote etti. ' +
               'Öğrenci başlamadan yoruluyor; hafta planlaması ve küçük adım hedefleme bu döngüyü kırabilir.',
@@ -670,6 +706,36 @@ async function exportPsychPDF(sName, aiAcik) {
           kutu('Duygusal Veri Girilmemiş',
             'Bugün kaygı/mood girişi yok. Psikolojik bağlam kurulamıyor.',
             [245,243,255],[130,120,200]);
+        }
+
+        // ─── KELİME + ZOR DERS ÇAPRAZLAMASI ────────────────────
+        if (bugunKelime || bugunZorDers) {
+          const _negKelimeler = ['yorgun','bunaldı','sıkıldı','çaresiz','nefret','bıktı','üzgün','bezgin','kaygılı','gergin','korku','bunaltı','sıkıcı','zor','ağır'];
+          const _pozKelimeler = ['harika','güzel','mutlu','enerjik','güçlü','başardı','iyi','rahat','huzurlu','odaklı','verimli','umutlu','mükemmel'];
+          const kLower = bugunKelime.toLowerCase();
+          const kNeg   = _negKelimeler.some(k => kLower.includes(k));
+          const kPoz   = _pozKelimeler.some(k => kLower.includes(k));
+          let kelimeNotStr = '';
+          if (bugunKelime) {
+            if (kNeg && akademikVar && bugunSoru > 40)
+              kelimeNotStr = '"' + bugunKelime + '" diyen öğrenci ' + bugunSoru + ' soru çözdü — gizli yük altında üretim devam etmiş, ancak bu yükü gözden kaçırmamak gerekir.';
+            else if (kPoz && bugunKaygi >= 7)
+              kelimeNotStr = '"' + bugunKelime + '" ifadesi olumlu ama kaygı ' + bugunKaygi.toFixed(1) + '/10. Duygusal maskeleme ihtimali; "nasılsın?" sorusu yüzeyde kalabilir, derine inmek gerekebilir.';
+            else if (bugunKelime)
+              kelimeNotStr = 'Öğrenci günü tek kelimeyle "' + bugunKelime + '" olarak tanımladı.';
+          }
+          let zorDersNotStr = '';
+          if (bugunZorDers) {
+            const _zDCalistiMi = bugunDersler.includes(bugunZorDers);
+            if (_zDCalistiMi)
+              zorDersNotStr = 'En zor ders olarak ' + bugunZorDers + ' seçilmiş ve bugün o branşta çalışılmış — zorlukla yüzleşme. Koç tescil etmeli.';
+            else if (akademikVar)
+              zorDersNotStr = 'En zor ders: ' + bugunZorDers + ' — ancak bugün o branşta giriş yok. Branş kaçınması olabilir.';
+            else
+              zorDersNotStr = 'En zor ders olarak ' + bugunZorDers + ' bildirildi.';
+          }
+          const _fullNot = [kelimeNotStr, zorDersNotStr].filter(Boolean).join(' | ');
+          if (_fullNot) dipnot(_fullNot);
         }
 
         // ─── 3. AKADEMİK ÜRETIM VE HAFIZA ───────────────────
@@ -694,7 +760,7 @@ async function exportPsychPDF(sName, aiAcik) {
               && !kullanılanOlaylar.has('G_aktivite_kacis')) {
             gunlukAktifler.push('Çalışma Görüntüsüyle Kaçınma');
             kullanılanOlaylar.add('G_aktivite_kacis');
-            kutu('[ID-115] Çalışma Görüntüsüyle Kaçınma — Sahte Verimlilik',
+            kutu('Çalışma Görüntüsüyle Kaçınma — Sahte Verimlilik',
               'Kaygı ' + bugunKaygi.toFixed(1) + '/10 iken bugün ' + bugunSoru + ' soru çözüldü (ort. ' + Math.round(ortSoru) + '). ' +
               'Ancak isabet %' + bugunIsabet + ' — yüksek hacim düşük kalite. ' +
               'Öğrenci kaygıyla yüzleşmek yerine "çalışıyor" maskesi takarak soru sayısını artırıyor. ' +
@@ -721,7 +787,7 @@ async function exportPsychPDF(sName, aiAcik) {
                 && !kullanılanOlaylar.has('G_kriz_savar')) {
               kullanılanOlaylar.add('G_kriz_savar');
               gunlukAktifler.push('Kriz Savar');
-              kutu('[ID-165] Kriz Savar — Yüksek Psikolojik Dayanıklılık',
+              kutu('Kriz Savar — Yüksek Psikolojik Dayanıklılık',
                 'Kriz koşullarına (kaygı/uyku/enerji baskısı) rağmen ' + bugunSoru + ' soru çözüldü, isabet %' + bugunIsabet + '. ' +
                 'Bu, öğrencinin baskı altında dağılmadığının klinik kanıtıdır. ' +
                 'Sınav günü bu dayanıklılık kapasitesi kritik avantaj sağlayacak. Koç teyit etmeli.',
@@ -729,7 +795,7 @@ async function exportPsychPDF(sName, aiAcik) {
               gunlukBakiye.push('Kriz altında kaliteli üretim: sınav günü dayanıklılığının pozitif sinyali');
             }
 
-            kutu('[ID-125] Kriz Altında Çalışma — Hatalı Kodlanma Riski',
+            kutu('Kriz Altında Çalışma — Hatalı Kodlanma Riski',
               bugunSoru+' soru fizyolojik/psikolojik kriz koşullarında çalışıldı. ' +
               (enYuksekHataBrans?'"'+enYuksekHataBrans.d+'" branşında %'+(100-enYuksekHataBrans.pct).toFixed(0)+' isabet — bu konu bugün kalıcı belleğe "hatalı mantık" ile kaydedilmiş olabilir. ':'') +
               'Bu çalışma "tamamlandı" değil "borçlandı" olarak işaretlenmeli; 48-72 saat içinde temiz zihinle Hasar Tespit Testi yapılmalı.',
@@ -753,13 +819,13 @@ async function exportPsychPDF(sName, aiAcik) {
           Y = pdfCheck(doc, Y, 16);
           bolumBaslik([65,35,130],'4.  Ekran Verisi','Sosyal medya ve online ders çaprazlaması');
           if (bugunSosyal>2&&(negatifMood||bugunKaygi>=7)) {
-            kutu('[ID-001] Reaktif Dijital Kaçış — Dijital Yorgunluk',
+            kutu('Reaktif Dijital Kaçış — Dijital Yorgunluk',
               'Sosyal medya '+bugunSosyal.toFixed(1)+' sa + olumsuz durum. ' +
               'Olumsuz hislerle baş edememe -> dijital uyuşturma döngüsü. ' +
               (bugunSosyal>bugunOnline?'Eğlence ekranı akademik ekranı geçti ('+bugunSosyal.toFixed(1)+' sa vs '+bugunOnline.toFixed(1)+' sa).':''),
               [255,218,218],[172,15,15]);
           } else if (bugunOnline>3&&!akademikVar) {
-            kutu('[ID-105] Pasif Öğrenme İllüzyonu — Masa Başında Hayal Kurma',
+            kutu('Pasif Öğrenme İllüzyonu — Masa Başında Hayal Kurma',
               bugunOnline.toFixed(1)+' sa online ders izlendi ama soru çözümü yok. ' +
               'Pasif izleme kalıcı nöral yollar oluşturmaz — "öğrendim" hissi yanıltıcı.',
               [255,238,215],[145,78,0]);
@@ -848,6 +914,140 @@ async function exportPsychPDF(sName, aiAcik) {
       // ═══════════════════════════════════════════════════════════
       } else { // end daily -> start weekly/monthly
         // ── PSİKOLOJİK-AKADEMİK KORELASYON: DİNAMİK SENARYO MOTORU ──
+        // ═══════════════════════════════════════════════════════
+        // GÜN TİPİ DAĞILIMI + SİS ANALİZİ + DİRENÇ SKORU
+        // ═══════════════════════════════════════════════════════
+
+        // Tüm dönem günlerini listele (veri olanlar + olmayanlar)
+        const _tüm = [];
+        { const _sd = new Date(startKey+'T12:00:00'), _ed = new Date(endKey+'T12:00:00');
+          for (let _d=new Date(_sd); _d<=_ed; _d.setDate(_d.getDate()+1))
+            _tüm.push(_d.toISOString().split('T')[0]); }
+        const _sisAnahtarlar = _tüm.filter(k => !days[k]);
+
+        // Gün tipi sayımı
+        const _tipSayim = { ideal:0, asim:0, kriz:0, savunma:0, nadas:0, sis: _sisAnahtarlar.length };
+        gunler.forEach(d => { const t=_profilGun(d); if(_tipSayim[t]!==undefined) _tipSayim[t]++; });
+        const _tipSirali = Object.entries(_tipSayim).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+        const _topGunSayi = _tüm.length;
+
+        // ─── GÜN TİPİ DAĞILIMI ─────────────────────────────────
+        if (_tipSirali.length > 0) {
+          Y = pdfCheck(doc, Y, 16);
+          Y = pdfSecHeader(doc, tx('GÜN TİPİ DAĞILIMI'), Y, 108, 99, 255);
+          _tipSirali.forEach(([tip, sayi]) => {
+            const r = _tipRenk[tip]; if (!r) return;
+            const barW = Math.max(Math.round(sayi / Math.max(_topGunSayi,1) * 140), 4);
+            Y = pdfCheck(doc, Y, 9);
+            doc.setFillColor(r.bg[0],r.bg[1],r.bg[2]); doc.roundedRect(16,Y,barW,7,1,1,'F');
+            doc.setFillColor(r.kenar[0],r.kenar[1],r.kenar[2]);
+            doc.setFont(PF,'bold'); doc.setFontSize(6.2);
+            doc.setTextColor(r.kenar[0],r.kenar[1],r.kenar[2]);
+            doc.text(tx(r.etiket + ': ' + sayi + ' gün'), 18+barW+2, Y+5);
+            Y += 9;
+          });
+          // Baskın ton yorumu
+          const _baskinTip = _tipSirali[0][0];
+          const _baskAcik = {
+            ideal:   'Dönemin baskın tonu: dengeli ve sürdürülebilir. Bu ritim korunmalı.',
+            asim:    'Dönemin baskın tonu: yüksek performans yüksek bedelle üretildi. Sürdürülebilirlik izlenmeli.',
+            kriz:    'Dönemin baskın tonu: kriz. Akademik hedeflerden önce fizyolojik-psikolojik zemin onarılmalı.',
+            savunma: 'Dönemin baskın tonu: mekanik çalışma. Nicelik var ama kalite sorgulanmalı.',
+            nadas:   'Dönemin baskın tonu: kaçınma veya dinlenme. Nedenini anlamak kritik.',
+            sis:     'Bu dönemde veri eksikliği baskın — psikolojik tabloya erişim sınırlı.',
+          }[_baskinTip] || '';
+          if (_baskAcik) { Y+=2; dipnot(_baskAcik); }
+          Y += 4;
+        }
+
+        // ─── SİS GÜNLER — PSİKOLOJİK BAĞLAM ──────────────────
+        if (_sisAnahtarlar.length > 0) {
+          Y = pdfCheck(doc, Y, 16);
+          Y = pdfSecHeader(doc, tx('VERİ GİRİLMEYEN GÜNLER — PSİKOLOJİK BAĞLAM'), Y, 130, 50, 180);
+          doc.setFont(PF,'normal'); doc.setFontSize(6.3); doc.setTextColor(100,80,150);
+          doc.text(tx('Veri eksikliği yok sayılmaz — her boş gün bağlamıyla değerlendirilir'), 16, Y); Y+=6;
+          _sisAnahtarlar.forEach(k => {
+            const kTarih = tx(new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',weekday:'short'}));
+            const kGun = new Date(k+'T12:00:00').getDay(); // 0=Pazar
+            // Önceki günü bul
+            const kOnceki = (() => { const d=new Date(k+'T12:00:00'); d.setDate(d.getDate()-1); return d.toISOString().split('T')[0]; })();
+            const kOncW = days[kOnceki];
+            const kOncKaygi = parseFloat(kOncW?.kaygi)||0;
+            const kOncEnerji = parseFloat(kOncW?.enerji)||0;
+            const kOncMood = kOncW?.mood||'';
+            const negMoodlar = ['anxious','tired','sad'];
+            let baglamStr = ''; let sisR = [245,243,255]; let sisK = [130,120,200];
+            if (kOncKaygi >= 8) {
+              baglamStr = 'Önceki gün kaygı ' + kOncKaygi.toFixed(1) + '/10 idi. Muhtemelen duygusal yorgunluk — sisteme bağlanma enerjisi kalmamış olabilir.';
+              sisR=[255,235,235]; sisK=[170,30,30];
+            } else if (kOncEnerji > 0 && kOncEnerji <= 3) {
+              baglamStr = 'Önceki gün enerji ' + kOncEnerji.toFixed(1) + '/10 idi. Fizyolojik tükenmişlik bu günü de kapsıyor olabilir.';
+              sisR=[255,240,220]; sisK=[160,80,0];
+            } else if (negMoodlar.includes(kOncMood)) {
+              baglamStr = 'Önceki gün duygusal durum olumsuzdu (' + (kOncMood==='anxious'?'Kaygılı':kOncMood==='tired'?'Yorgunum':'Mutsuzum') + '). Veri girişi bu durumun devamı olabilir.';
+              sisR=[255,240,220]; sisK=[155,70,0];
+            } else if (kGun === 6 || kGun === 0) {
+              baglamStr = 'Hafta sonu — hafta içi dinamiklerinden farklı değerlendirilmeli. Veri girilmemesi tek başına risk sinyali değil.';
+            } else {
+              baglamStr = 'Etrafındaki günler normal görünüyor. Büyük ihtimalle unutma; bir sonraki görüşmede kısaca sorulabilir.';
+            }
+            const sisSat = doc.splitTextToSize(tx(baglamStr), 150);
+            const sisH = Math.max(sisSat.length*4.5+12,14);
+            Y = pdfCheck(doc, Y, sisH+4);
+            doc.setFillColor(sisR[0],sisR[1],sisR[2]); doc.roundedRect(15,Y,180,sisH,1.5,1.5,'F');
+            doc.setFillColor(sisK[0],sisK[1],sisK[2]); doc.roundedRect(15,Y,3,sisH,1,1,'F');
+            doc.setFont(PF,'bold'); doc.setFontSize(6.5);
+            doc.setTextColor(sisK[0],sisK[1],sisK[2]);
+            doc.text(kTarih + ' — Veri Girilmedi', 21, Y+5);
+            doc.setFont(PF,'normal'); doc.setFontSize(6.3); doc.setTextColor(50,40,70);
+            doc.text(sisSat, 21, Y+10);
+            Y += sisH+4;
+          });
+          Y += 4;
+        }
+
+        // ─── DİRENÇ SKORU ──────────────────────────────────────
+        const _krizGunlerHf = gunler.filter(d => _profilGun(d) === 'kriz');
+        if (_krizGunlerHf.length > 0) {
+          let _dirY=0;
+          _krizGunlerHf.forEach(kg => {
+            const kgIdx = gunlerSorted.findIndex(d=>d.dk===kg.dk);
+            const son = gunlerSorted[kgIdx-1]; // kronolojik sonraki
+            if (son && (son.soru > 0 || (son.kaygi > 0 && son.kaygi < kg.kaygi))) _dirY++;
+          });
+          const _dirT  = _krizGunlerHf.length;
+          const _dirPct = Math.round(_dirY / _dirT * 100);
+          const _dirLabel = _dirPct>=80?'Yüksek':_dirPct>=50?'Orta':'Düşük';
+          const _dirK = _dirPct>=80?[14,128,62]:_dirPct>=50?[160,100,0]:[172,20,20];
+          const _dirB = _dirPct>=80?[228,255,238]:_dirPct>=50?[255,245,220]:[255,225,225];
+          Y = pdfCheck(doc, Y, 14);
+          doc.setFillColor(_dirB[0],_dirB[1],_dirB[2]); doc.roundedRect(15,Y,180,13,2,2,'F');
+          doc.setFillColor(_dirK[0],_dirK[1],_dirK[2]); doc.roundedRect(15,Y,4,13,1,1,'F');
+          doc.setFont(PF,'bold'); doc.setFontSize(7);
+          doc.setTextColor(_dirK[0],_dirK[1],_dirK[2]);
+          doc.text(tx('Direnç Skoru: ' + _dirLabel + ' (%' + _dirPct + ')'), 22, Y+5.5);
+          doc.setFont(PF,'normal'); doc.setFontSize(6.3); doc.setTextColor(50,40,70);
+          doc.text(tx(_dirT + ' kriz gününün ' + _dirY + ' tanesinin ertesinde sisteme geri döndü'), 22, Y+10.5);
+          Y += 17;
+        }
+
+        // ─── ZORLANDIKLARI DERS DAĞILIMI ──────────────────────
+        const _zdSayim = {};
+        sortedDays.forEach(k => { const zd=days[k]?.zorDers; if(zd) _zdSayim[zd]=(_zdSayim[zd]||0)+1; });
+        const _zdArr = Object.entries(_zdSayim).sort((a,b)=>b[1]-a[1]);
+        if (_zdArr.length > 0) {
+          Y = pdfCheck(doc, Y, 11);
+          const _zdStr = _zdArr.map(([d,s])=>d+' ('+s+' gün)').join(' — ');
+          const _zdSat = doc.splitTextToSize(tx('En çok zorlanan ders(ler): ' + _zdStr), 156);
+          const _zdH = Math.max(_zdSat.length*4.5+10,12);
+          doc.setFillColor(240,235,255); doc.roundedRect(15,Y,180,_zdH,1.5,1.5,'F');
+          doc.setFillColor(100,70,200); doc.roundedRect(15,Y,3,_zdH,1,1,'F');
+          doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(60,40,140);
+          doc.text(_zdSat, 21, Y+5);
+          Y += _zdH+6;
+        }
+
+        // ───────────────────────────────────────────────────────
         if (Y > 180) { Y = pdfNewPage(doc); }
         Y = pdfCheck(doc, Y, 50); // Başlık + kalibrasyon + ilk senaryo için yer aç
         Y = pdfSecHeader(doc, 'PSİKOLOJİK-AKADEMİK KORELASYON ANALİZİ', Y, 220, 50, 100);
@@ -938,7 +1138,7 @@ async function exportPsychPDF(sName, aiAcik) {
               doc.setFont(PF,'bold'); doc.setFontSize(6.5);
               doc.setTextColor(r.sol[0], r.sol[1], r.sol[2]);
               const _freqStr = ins.frekans > 1 ? '  (' + ins.frekans + ' gun)' : '';
-              doc.text(tx(ins.etiket + _freqStr + '  [' + ins.id + ']'), 21, Y + 5.5);
+              doc.text(tx(ins.etiket + _freqStr), 21, Y + 5.5);
               // Analiz
               doc.setFont(PF,'normal'); doc.setFontSize(6.5);
               doc.setTextColor(40, 35, 60);
