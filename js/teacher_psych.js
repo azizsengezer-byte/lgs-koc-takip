@@ -920,8 +920,11 @@ async function exportPsychPDF(sName, aiAcik) {
 
         // Tüm dönem günlerini listele (veri olanlar + olmayanlar)
         const _tüm = [];
-        { const _sd = new Date(startKey+'T12:00:00'), _ed = new Date(endKey+'T12:00:00');
-          for (let _d=new Date(_sd); _d<=_ed; _d.setDate(_d.getDate()+1))
+        { const _bugunIso = now.toISOString().split('T')[0];
+          const _sdX = new Date(startKey+'T12:00:00');
+          const _edXStr = _bugunIso < endKey ? _bugunIso : endKey;
+          const _edX = new Date(_edXStr+'T12:00:00');
+          for (let _d=new Date(_sdX); _d<=_edX; _d.setDate(_d.getDate()+1))
             _tüm.push(_d.toISOString().split('T')[0]); }
         const _sisAnahtarlar = _tüm.filter(k => !days[k]);
 
@@ -929,6 +932,7 @@ async function exportPsychPDF(sName, aiAcik) {
         const _tipSayim = { ideal:0, asim:0, kriz:0, savunma:0, nadas:0, sis: _sisAnahtarlar.length };
         gunler.forEach(d => { const t=_profilGun(d); if(_tipSayim[t]!==undefined) _tipSayim[t]++; });
         const _tipSirali = Object.entries(_tipSayim).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+        const _tipSiraliVeri = _tipSirali.filter(([tip,])=>tip!=='sis');
         const _topGunSayi = _tüm.length;
 
         // ─── GÜN TİPİ DAĞILIMI ─────────────────────────────────
@@ -947,7 +951,7 @@ async function exportPsychPDF(sName, aiAcik) {
             Y += 9;
           });
           // Baskın ton yorumu
-          const _baskinTip = _tipSirali[0][0];
+          const _baskinTip = _tipSiraliVeri.length > 0 ? _tipSiraliVeri[0][0] : null;
           const _baskAcik = {
             ideal:   'Dönemin baskın tonu: dengeli ve sürdürülebilir. Bu ritim korunmalı.',
             asim:    'Dönemin baskın tonu: yüksek performans yüksek bedelle üretildi. Sürdürülebilirlik izlenmeli.',
@@ -956,7 +960,7 @@ async function exportPsychPDF(sName, aiAcik) {
             nadas:   'Dönemin baskın tonu: kaçınma veya dinlenme. Nedenini anlamak kritik.',
             sis:     'Bu dönemde veri eksikliği baskın — psikolojik tabloya erişim sınırlı.',
           }[_baskinTip] || '';
-          if (_baskAcik) { Y+=2; dipnot(_baskAcik); }
+          if (_baskinTip && _baskAcik) { Y+=2; dipnot(_baskAcik); }
           Y += 4;
         }
 
@@ -1008,7 +1012,7 @@ async function exportPsychPDF(sName, aiAcik) {
 
         // ─── DİRENÇ SKORU ──────────────────────────────────────
         const _krizGunlerHf = gunler.filter(d => _profilGun(d) === 'kriz');
-        if (_krizGunlerHf.length > 0) {
+        if (_krizGunlerHf.length >= 2) {
           let _dirY=0;
           _krizGunlerHf.forEach(kg => {
             const kgIdx = gunlerSorted.findIndex(d=>d.dk===kg.dk);
@@ -1031,6 +1035,36 @@ async function exportPsychPDF(sName, aiAcik) {
           Y += 17;
         }
 
+        // ─── İDEAL GÜNLER — TEKRARLANABİLİR KOŞULLAR ──────────
+        const _idealGunlerHf = gunler.filter(d => _profilGun(d) === 'ideal');
+        if (_idealGunlerHf.length > 0) {
+          const _igEnerjiler = _idealGunlerHf.filter(d=>d.enerji>0);
+          const _igKaygiler  = _idealGunlerHf.filter(d=>d.kaygi>0);
+          const _igUykular   = _idealGunlerHf.filter(d=>d.uyku>0);
+          const _igOrtE = _igEnerjiler.length ? (_igEnerjiler.reduce((a,d)=>a+d.enerji,0)/_igEnerjiler.length).toFixed(1) : null;
+          const _igOrtK = _igKaygiler.length  ? (_igKaygiler.reduce((a,d)=>a+d.kaygi,0)/_igKaygiler.length).toFixed(1)   : null;
+          const _igOrtU = _igUykular.length   ? (_igUykular.reduce((a,d)=>a+d.uyku,0)/_igUykular.length).toFixed(1)       : null;
+          const _igTarihler = _idealGunlerHf.map(d=>new Date(d.dk+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'})).join(', ');
+          const _igMetrik = [
+            _igOrtE ? 'enerji ort. ' + _igOrtE + '/10' : null,
+            _igOrtK ? 'kaygı ort. ' + _igOrtK + '/10' : null,
+            _igOrtU ? 'uyku ort. ' + _igOrtU + 'sa'   : null,
+          ].filter(Boolean).join(', ');
+          const _igText = _idealGunlerHf.length === 1
+            ? 'Bu dönemde 1 iyi gün (' + _igTarihler + '): ' + _igMetrik + '. Bu koşullar tekrarlanabilir mi? Koç görüşmesinde sorulabilir.'
+            : _idealGunlerHf.length + ' iyi gün (' + _igTarihler + '). Ortalama: ' + _igMetrik + '. Bu günlerin ortak koşulları öğrenci için bir şablon oluşturabilir.';
+          const _igSat = doc.splitTextToSize(tx(_igText), 156);
+          const _igH = Math.max(_igSat.length*4.5+10, 12);
+          Y = pdfCheck(doc, Y, _igH+5);
+          doc.setFillColor(222,250,232); doc.roundedRect(15,Y,180,_igH,1.5,1.5,'F');
+          doc.setFillColor(14,128,62); doc.roundedRect(15,Y,3,_igH,1,1,'F');
+          doc.setFont(PF,'bold'); doc.setFontSize(6.5); doc.setTextColor(14,128,62);
+          doc.text(tx('İyi Günler — Tekrarlanabilir Koşullar'), 21, Y+5);
+          doc.setFont(PF,'normal'); doc.setFontSize(6.3); doc.setTextColor(20,80,40);
+          doc.text(_igSat, 21, Y+10);
+          Y += _igH+5;
+        }
+
         // ─── ZORLANDIKLARI DERS DAĞILIMI ──────────────────────
         const _zdSayim = {};
         sortedDays.forEach(k => { const zd=days[k]?.zorDers; if(zd) _zdSayim[zd]=(_zdSayim[zd]||0)+1; });
@@ -1045,6 +1079,29 @@ async function exportPsychPDF(sName, aiAcik) {
           doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(60,40,140);
           doc.text(_zdSat, 21, Y+5);
           Y += _zdH+6;
+        }
+
+        // ─── OLUMLU ALANDA NEGATİF İÇERİK TESPİTİ ─────────────
+        const _negOlumluGunler = sortedDays.filter(k => {
+          const poz = (days[k]?.pozitif || days[k]?.gurur || '').trim().toLowerCase();
+          if (!poz) return false;
+          return ['hatırlamıyorum','hatırlamıyor','yok','hiçbir şey','bilmiyorum','aklıma gelmiyor','aklıma gelen'].some(p=>poz.includes(p));
+        });
+        if (_negOlumluGunler.length > 0) {
+          const _noStr = _negOlumluGunler.map(k=>new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short'})).join(', ');
+          const _noSat = doc.splitTextToSize(tx(
+            _noStr + ' tarihinde öğrenci olumlu alan dolduramamış ya da olumlu hiçbir şey görememiş. ' +
+            'Duygusal kapanma sinyali olabilir — koç görüşmesinde bu günler özellikle ele alınmalı.'
+          ), 156);
+          const _noH = Math.max(_noSat.length*4.5+10, 12);
+          Y = pdfCheck(doc, Y, _noH+5);
+          doc.setFillColor(248,222,255); doc.roundedRect(15,Y,180,_noH,1.5,1.5,'F');
+          doc.setFillColor(115,45,180); doc.roundedRect(15,Y,3,_noH,1,1,'F');
+          doc.setFont(PF,'bold'); doc.setFontSize(6.5); doc.setTextColor(115,45,180);
+          doc.text(tx('Duygusal Kapanma Tespiti'), 21, Y+5);
+          doc.setFont(PF,'normal'); doc.setFontSize(6.3); doc.setTextColor(60,20,120);
+          doc.text(_noSat, 21, Y+10);
+          Y += _noH+5;
         }
 
         // ───────────────────────────────────────────────────────
@@ -1277,10 +1334,12 @@ async function exportPsychPDF(sName, aiAcik) {
             // Render: 3 kutu
             // Başlıkları döneme göre uyarla
             // Zayıf branş varsa foto ve strateji metnine ekle
-            const _zayifBransEki = _zayifBrans
-              ? (_isAylik
-                  ? ' ' + _zayifBrans + ' branşı özellikle dikkat gerektiriyor.'
-                  : ' ' + _zayifBrans + ' branşı bu hafta en kritik alan.')
+            const _zdTopBrans = _zdArr.length > 0 ? _zdArr[0][0] : null;
+            const _bransUyumu = !_zdTopBrans || !_zayifBrans || _zdTopBrans === _zayifBrans;
+            const _zayifBransEki = _zayifBrans && _bransUyumu
+              ? (_isAylik ? ' ' + _zayifBrans + ' branşı özellikle dikkat gerektiriyor.' : ' ' + _zayifBrans + ' branşı bu hafta en kritik alan.')
+              : (_zayifBrans && _zdTopBrans && !_bransUyumu)
+              ? ' Performans verisi ' + _zayifBrans + "'i zayıf gösterirken öğrenci " + _zdTopBrans + "'i zor buluyor — iki farklı ama tamamlayıcı sinyal."
               : '';
             const _kutular = [
               { baslik: _isAylik ? 'AYLIK FOTOĞRAF' : 'BU HAFTANIN ÖZETİ',
