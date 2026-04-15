@@ -964,52 +964,125 @@ async function exportPsychPDF(sName, aiAcik) {
           Y += 4;
         }
 
-        // ─── SİS GÜNLER — PSİKOLOJİK BAĞLAM ──────────────────
+        // ─── SİS GÜNLER — PSİKOLOJİK BAĞLAM ──────────
         if (_sisAnahtarlar.length > 0) {
           Y = pdfCheck(doc, Y, 16);
           Y = pdfSecHeader(doc, tx('VERİ GİRİLMEYEN GÜNLER — PSİKOLOJİK BAĞLAM'), Y, 130, 50, 180);
           doc.setFont(PF,'normal'); doc.setFontSize(6.3); doc.setTextColor(100,80,150);
           doc.text(tx('Veri eksikliği yok sayılmaz — her boş gün bağlamıyla değerlendirilir'), 16, Y); Y+=6;
-          _sisAnahtarlar.forEach(k => {
-            const kTarih = tx(new Date(k+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',weekday:'short'}));
-            const kGun = new Date(k+'T12:00:00').getDay(); // 0=Pazar
-            // Önceki günü bul
-            const kOnceki = (() => { const d=new Date(k+'T12:00:00'); d.setDate(d.getDate()-1); return d.toISOString().split('T')[0]; })();
-            const kOncW = days[kOnceki];
-            const kOncKaygi = parseFloat(kOncW?.kaygi)||0;
-            const kOncEnerji = parseFloat(kOncW?.enerji)||0;
-            const kOncMood = kOncW?.mood||'';
-            const negMoodlar = ['anxious','tired','sad'];
-            let baglamStr = ''; let sisR = [245,243,255]; let sisK = [130,120,200];
-            if (kOncKaygi >= 8) {
-              baglamStr = 'Önceki gün kaygı ' + kOncKaygi.toFixed(1) + '/10 idi. Muhtemelen duygusal yorgunluk — sisteme bağlanma enerjisi kalmamış olabilir.';
-              sisR=[255,235,235]; sisK=[170,30,30];
-            } else if (kOncEnerji > 0 && kOncEnerji <= 3) {
-              baglamStr = 'Önceki gün enerji ' + kOncEnerji.toFixed(1) + '/10 idi. Fizyolojik tükenmişlik bu günü de kapsıyor olabilir.';
-              sisR=[255,240,220]; sisK=[160,80,0];
-            } else if (negMoodlar.includes(kOncMood)) {
-              baglamStr = 'Önceki gün duygusal durum olumsuzdu (' + (kOncMood==='anxious'?'Kaygılı':kOncMood==='tired'?'Yorgunum':'Mutsuzum') + '). Veri girişi bu durumun devamı olabilir.';
-              sisR=[255,240,220]; sisK=[155,70,0];
-            } else if (kGun === 6 || kGun === 0) {
-              baglamStr = 'Hafta sonu — hafta içi dinamiklerinden farklı değerlendirilmeli. Veri girilmemesi tek başına risk sinyali değil.';
+
+          // Ardışık grupları tespit et
+          const _sisGruplar = [];
+          let _gGrup = [_sisAnahtarlar[0]];
+          for (let _gi = 1; _gi < _sisAnahtarlar.length; _gi++) {
+            const _prev = new Date(_sisAnahtarlar[_gi-1]+'T12:00:00');
+            const _curr = new Date(_sisAnahtarlar[_gi]+'T12:00:00');
+            const _fark = (_curr - _prev) / 86400000;
+            if (_fark === 1) { _gGrup.push(_sisAnahtarlar[_gi]); }
+            else { _sisGruplar.push([..._gGrup]); _gGrup = [_sisAnahtarlar[_gi]]; }
+          }
+          _sisGruplar.push([..._gGrup]);
+
+          _sisGruplar.forEach(grup => {
+            const ilkK = grup[0], sonK = grup[grup.length-1];
+            const ilkTarih = tx(new Date(ilkK+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',weekday:'short'}));
+            const sonTarih = tx(new Date(sonK+'T12:00:00').toLocaleDateString('tr-TR',{day:'numeric',month:'short',weekday:'short'}));
+            const gunSayisi = grup.length;
+
+            // Önceki gün (ilk günden bir öncesi)
+            const oncekiK = (() => { const d=new Date(ilkK+'T12:00:00'); d.setDate(d.getDate()-1); return d.toISOString().split('T')[0]; })();
+            const oncekiW = days[oncekiK];
+            const oncekiKaygi = parseFloat(oncekiW?.kaygi)||0;
+            const oncekiEnerji = parseFloat(oncekiW?.enerji)||0;
+            const oncekiMood = oncekiW?.mood||'';
+            const negMoodlarS = ['anxious','tired','sad'];
+
+            // Sonraki gün (son günden bir sonrası)
+            const sonrakiK = (() => { const d=new Date(sonK+'T12:00:00'); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
+            const sonrakiVarMi = !!days[sonrakiK];
+
+            // Gruptaki hafta sonu sayısı
+            const haftaSonuSayisi = grup.filter(k => { const g=new Date(k+'T12:00:00').getDay(); return g===0||g===6; }).length;
+            const tamHaftaSonu = haftaSonuSayisi === gunSayisi;
+
+            // Grup başlığı
+            const grupBaslik = gunSayisi === 1
+              ? ilkTarih + ' — Veri Girilmedi'
+              : ilkTarih + ' – ' + sonTarih + ' (' + gunSayisi + ' gün üst üste veri yok)';
+
+            let baglamStr = '';
+            let sisR = [245,243,255]; let sisK = [130,120,200];
+
+            if (gunSayisi >= 7) {
+              // 1 haftadan fazla — sistemden kopuş
+              baglamStr = gunSayisi + ' gün üst üste veri girilmemiş. Bu artık unutma değil, sistemden kopuş sinyali. ' +
+                'Öğrenci uygulamadan veya takip sürecinden uzaklaşmış olabilir. ' +
+                (oncekiKaygi >= 7 ? 'Kopuştan önceki gün kaygı ' + oncekiKaygi.toFixed(1) + '/10 idi — duygusal çekilme ihtimali var. ' : '') +
+                'Koç görüşmesinde bu süreç doğrudan ve yargısızca ele alınmalı.';
+              sisR=[255,220,220]; sisK=[160,20,20];
+            } else if (gunSayisi >= 3) {
+              // 3-6 gün — kısa kopuş
+              if (oncekiKaygi >= 8) {
+                baglamStr = gunSayisi + ' günlük veri boşluğu. Önceki gün kaygı ' + oncekiKaygi.toFixed(1) + '/10 — yüksek kaygı sonrası sisteme bağlanma enerjisi kalmamış olabilir. Duygusal yorgunluk kaynaklı kısa kopuş.';
+                sisR=[255,235,235]; sisK=[170,30,30];
+              } else if (tamHaftaSonu && gunSayisi <= 3) {
+                baglamStr = gunSayisi + ' günlük boşluk hafta sonu kapsıyor. Hafta sonu dinamikleri farklı; bu süre için veri beklentisi düşürülebilir.';
+                sisR=[240,240,252]; sisK=[100,90,200];
+              } else if (oncekiEnerji > 0 && oncekiEnerji <= 3) {
+                baglamStr = gunSayisi + ' günlük veri boşluğu. Önceki gün enerji ' + oncekiEnerji.toFixed(1) + '/10 — fizyolojik tükenmişlik bu günlere de yayılmış olabilir.';
+                sisR=[255,240,220]; sisK=[160,80,0];
+              } else {
+                baglamStr = gunSayisi + ' gün üst üste veri girilmemiş. Kısa kopuş — koç görüşmesinde bu döneme kısaca değinilmeli; baskı uygulanmadan neden sorulabilir.';
+                sisR=[245,243,255]; sisK=[120,110,190];
+              }
+            } else if (gunSayisi === 2) {
+              // 2 gün
+              if (tamHaftaSonu) {
+                baglamStr = 'Hafta sonu — hafta içi dinamiklerinden farklı değerlendirilmeli. Veri girilmemesi tek başına risk sinyali değil.';
+              } else if (oncekiKaygi >= 7) {
+                baglamStr = '2 günlük boşluk. Önceki gün kaygı ' + oncekiKaygi.toFixed(1) + '/10 idi. Muhtemelen duygusal yorgunluk.';
+                sisR=[255,235,235]; sisK=[170,30,30];
+              } else if (negMoodlarS.includes(oncekiMood)) {
+                const moodTrS = {anxious:'Kaygılı',tired:'Yorgunum',sad:'Mutsuzum'};
+                baglamStr = '2 günlük boşluk. Önceki gün ' + (moodTrS[oncekiMood]||'olumsuz') + ' hissediliyordu — veri girişi bu durumun devamı olabilir.';
+                sisR=[255,240,220]; sisK=[155,70,0];
+              } else {
+                baglamStr = '2 günlük boşluk. Etrafındaki günler normal — büyük ihtimalle unutma.';
+              }
             } else {
-              baglamStr = 'Etrafındaki günler normal görünüyor. Büyük ihtimalle unutma; bir sonraki görüşmede kısaca sorulabilir.';
+              // 1 gün
+              const gunHaftaSonu = new Date(ilkK+'T12:00:00').getDay();
+              if (gunHaftaSonu === 6 || gunHaftaSonu === 0) {
+                baglamStr = 'Hafta sonu — veri girilmemesi tek başına risk sinyali değil.';
+              } else if (oncekiKaygi >= 8) {
+                baglamStr = 'Önceki gün kaygı ' + oncekiKaygi.toFixed(1) + '/10 idi. Muhtemelen duygusal yorgunluk — sisteme bağlanma enerjisi kalmamış olabilir.';
+                sisR=[255,235,235]; sisK=[170,30,30];
+              } else if (oncekiEnerji > 0 && oncekiEnerji <= 3) {
+                baglamStr = 'Önceki gün enerji ' + oncekiEnerji.toFixed(1) + '/10 idi. Fizyolojik tükenmişlik bu günü de kapsıyor olabilir.';
+                sisR=[255,240,220]; sisK=[160,80,0];
+              } else if (negMoodlarS.includes(oncekiMood)) {
+                const moodTrS2 = {anxious:'Kaygılı',tired:'Yorgunum',sad:'Mutsuzum'};
+                baglamStr = 'Önceki gün duygusal durum olumsuzdu (' + (moodTrS2[oncekiMood]||'olumsuz') + '). Veri girişi bu durumun devamı olabilir.';
+                sisR=[255,240,220]; sisK=[155,70,0];
+              } else {
+                baglamStr = 'Etrafındaki günler normal görünüyor. Büyük ihtimalle unutma; bir sonraki görüşmede kısaca sorulabilir.';
+              }
             }
+
             const sisSat = doc.splitTextToSize(tx(baglamStr), 150);
-            const sisH = Math.max(sisSat.length*4.5+12,14);
+            const sisH = Math.max(sisSat.length*4.5+12, 14);
             Y = pdfCheck(doc, Y, sisH+4);
             doc.setFillColor(sisR[0],sisR[1],sisR[2]); doc.roundedRect(15,Y,180,sisH,1.5,1.5,'F');
             doc.setFillColor(sisK[0],sisK[1],sisK[2]); doc.roundedRect(15,Y,3,sisH,1,1,'F');
             doc.setFont(PF,'bold'); doc.setFontSize(6.5);
             doc.setTextColor(sisK[0],sisK[1],sisK[2]);
-            doc.text(kTarih + ' — Veri Girilmedi', 21, Y+5);
+            doc.text(tx(grupBaslik), 21, Y+5);
             doc.setFont(PF,'normal'); doc.setFontSize(6.3); doc.setTextColor(50,40,70);
             doc.text(sisSat, 21, Y+10);
             Y += sisH+4;
           });
           Y += 4;
         }
-
         // ─── DİRENÇ SKORU ──────────────────────────────────────
         const _krizGunlerHf = gunler.filter(d => _profilGun(d) === 'kriz');
         if (_krizGunlerHf.length >= 2) {
