@@ -87,7 +87,7 @@ function teacherDashboard() {
   const todayEntries = studyEntries.filter(e=>e.dateKey===todayKey);
   const activeToday = new Set(todayEntries.map(e=>e.studentName)).size;
   return `
-    <div class="page-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg> Ana Panel</div>
+    <div class="page-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg> Ana Panel</div>
     <div class="page-sub">Merhaba ${name}! Bugün ${new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
 
     ${lgsCountdownWidget()}
@@ -112,7 +112,7 @@ function teacherDashboard() {
 
     <div class="grid-2">
       <div class="card">
-        <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Öğrenci Durumları</div>
+        <div class="card-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Öğrenci Durumları</div>
         ${studentCount === 0 ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.88rem">Henüz öğrenci eklenmedi</div>` :
         students.map(s=>{
           const sEntries = studyEntries.filter(e=>e.studentName===s.name);
@@ -139,7 +139,7 @@ function teacherDashboard() {
         }).join('')}
       </div>
       <div class="card">
-        <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Hızlı İşlemler</div>
+        <div class="card-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Hızlı İşlemler</div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
           <button class="btn btn-primary" style="width:100%;padding:12px;text-align:left" onclick="showPage('students')">
             👥 Öğrenci Listesi & Analiz
@@ -162,7 +162,7 @@ function teacherDashboard() {
     </div>
 
     <div class="card">
-      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Son Atanan Görevler</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Son Atanan Görevler</div>
       ${tasks.length===0
         ? `<div style="text-align:center;padding:20px;color:var(--text2);font-size:0.85rem">Henüz görev atanmadı</div>`
         : tasks.slice(0,4).map(t=>`
@@ -265,7 +265,7 @@ function teacherStudents() {
       `).join('');
 
   return `
-    <div class="page-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Öğrencilerim</div>
+    <div class="page-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Öğrencilerim</div>
     <div class="page-sub">Koçluk takibindeki öğrenciler</div>
     <div style="display:flex;gap:10px;margin-bottom:12px">
       <button class="btn btn-primary" onclick="ogrenciEkleModalAc()">+ Öğrenci Ekle</button>
@@ -281,7 +281,7 @@ function teacherStudents() {
       ${studentListHTML}
     </div>
     <div style="margin-top:20px" class="card">
-      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Haftalık Öğrenci Özeti</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Haftalık Öğrenci Özeti</div>
       <div style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:0.78rem">
           <thead>
@@ -757,7 +757,7 @@ function showDayEntries(dk, dateLabel) {
     html += `
       <div style="background:var(--accent4)10;border:1px solid var(--accent4)33;border-radius:10px;padding:10px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <div style="font-weight:800;font-size:0.85rem"><svg style="vertical-align:middle" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> ${g.title}</div>
+          <div style="font-weight:800;font-size:0.85rem"><svg style="vertical-align:middle" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> ${g.title}</div>
           <div style="font-size:0.85rem;font-weight:900;color:var(--accent)">${lgsR.puan}<span style="font-size:0.62rem;color:var(--text2)">/500</span></div>
         </div>
         ${subR.map(s=>`

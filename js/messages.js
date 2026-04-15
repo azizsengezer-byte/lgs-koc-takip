@@ -245,7 +245,7 @@ async function messagesPage(role) {
   }
 
   if (partners.length === 0) {
-    return `<div class="page-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Mesajlar</div>
+    return `<div class="page-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Mesajlar</div>
       <div class="card" style="text-align:center;padding:40px;color:var(--text2)">
         <div style="font-size:3rem">💬</div>
         <div style="font-weight:700;margin-top:12px">${isTeacher ? 'Henüz öğrenci eklenmedi' : 'Koç henüz atanmadı'}</div>
@@ -400,10 +400,10 @@ async function messagesPage(role) {
   return `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
       <div>
-        <div class="page-title" style="margin-bottom:0"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Mesajlar</div>
+        <div class="page-title" style="margin-bottom:0"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Mesajlar</div>
         <div class="page-sub">Birebir iletişim</div>
       </div>
-      ${!isTeacher && hasSchoolMates ? '<button onclick="yeniSohbetModal()" style="background:var(--accent);color:white;border:none;border-radius:10px;padding:7px 14px;font-size:0.82rem;font-weight:700;cursor:pointer;flex-shrink:0"><svg style="vertical-align:middle" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Yeni</button>' : ''}
+      ${!isTeacher && hasSchoolMates ? '<button onclick="yeniSohbetModal()" style="background:var(--accent);color:white;border:none;border-radius:10px;padding:7px 14px;font-size:0.82rem;font-weight:700;cursor:pointer;flex-shrink:0"><svg style="vertical-align:middle" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Yeni</button>' : ''}
     </div>
     <div class="chat-layout">
       <div class="${listCls}" style="border:none;border-radius:0">

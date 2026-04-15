@@ -313,7 +313,7 @@ function studentDetailAnalysis() {
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
       <button onclick="showPage('students')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
-      <div class="page-title" style="margin:0"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> ${sName}</div>
+      <div class="page-title" style="margin:0"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> ${sName}</div>
     </div>
     <div class="page-sub">Bireysel Analiz Raporu</div>
 
@@ -376,7 +376,7 @@ function studentDetailAnalysis() {
     <!-- Son 7 gün trend — tıklanabilir -->
     ${studentAnalysisPeriod!=='daily'?`
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Son 7 Gün — Soru & Net Trendi</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Son 7 Gün — Soru & Net Trendi</div>
       <div style="display:flex;gap:4px;align-items:flex-end;height:100px;padding-bottom:20px;box-sizing:border-box">
         ${trendDays.map(t=>{
           const hQ=t.q>0?Math.max(Math.round((t.q/maxTQ)*60),6):0;
@@ -402,7 +402,7 @@ function studentDetailAnalysis() {
 
     <!-- Ders bazlı detay — konu accordion -->
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Ders Bazlı Detay — ${periodLabel}</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Ders Bazlı Detay — ${periodLabel}</div>
       ${filtered.length===0
         ? `<div style="text-align:center;padding:24px;color:var(--text2)">Bu dönemde veri yok</div>`
         : subStats.map(s=>{
@@ -442,7 +442,7 @@ function studentDetailAnalysis() {
     <!-- Deneme sonuçları son 3 -->
     ${denList.length>0?`
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Son Denemeler</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Son Denemeler</div>
       ${denList.slice(0,3).map((d,di)=>{
         const subR=subjects.map(s=>{ const e=d.entries.find(e=>e.subject===s.name); if(!e) return {name:s.name,cls:s.cls,icon:s.icon,d:0,y:0,net:0,hasData:false}; return {name:s.name,cls:s.cls,icon:s.icon,d:e.correct||0,y:e.wrong||0,net:e.net||0,hasData:true}; });
         const lgsR=calcLGSScore(subR.map(s=>({...s,avgNet:s.net,count:s.net>0?1:0})));
@@ -478,7 +478,7 @@ function studentDetailAnalysis() {
     ${(motorSonuc.insights.length > 0 || motorSonuc.positives.length > 0 || motorSonuc.vaka) ? `
     <div class="card" style="margin-bottom:12px;border:1px solid #6c63ff44;background:linear-gradient(135deg,#6c63ff0a,#fd79a80a)">
       <div class="card-title">
-        <svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         Psikolojik-Akademik Analiz
         ${motorSonuc.kalOzet ? `<span style="font-size:0.7rem;font-weight:400;color:var(--text2);margin-left:8px">Kalibrasyon: ~${motorSonuc.kalOzet.soruOrt} soru/gün</span>` : ''}
       </div>
@@ -525,7 +525,7 @@ function studentDetailAnalysis() {
 
     <!-- Koç Yorumu -->
     <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,var(--accent)10,var(--accent)04);border:1px solid var(--accent)33">
-      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Koç Değerlendirmesi</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Koç Değerlendirmesi</div>
       <div style="font-size:0.86rem;line-height:1.75;color:var(--text)">${comment}</div>
     </div>
   `;

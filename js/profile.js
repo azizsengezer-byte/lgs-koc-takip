@@ -234,7 +234,7 @@ function arkadasProfil(uid, isim, renk, foto, etiket) {
       <!-- Sekmeler -->
       <div style="display:flex;border-bottom:2px solid var(--border);margin-bottom:12px" id="apTabs">
         <button onclick="_apSekme('bilgi')" id="apTab_bilgi" style="flex:1;padding:8px 0;font-size:0.85rem;font-weight:700;border:none;background:transparent;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent);margin-bottom:-2px">📋 Bilgi</button>
-        <button onclick="_apSekme('rozetler')" id="apTab_rozetler" style="flex:1;padding:8px 0;font-size:0.85rem;font-weight:700;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);margin-bottom:-2px"><svg style="vertical-align:middle" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 9a6 6 0 0 0 12 0"/><line x1="12" y1="15" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg> Rozetler</button>
+        <button onclick="_apSekme('rozetler')" id="apTab_rozetler" style="flex:1;padding:8px 0;font-size:0.85rem;font-weight:700;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);margin-bottom:-2px"><svg style="vertical-align:middle" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 9a6 6 0 0 0 12 0"/><line x1="12" y1="15" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg> Rozetler</button>
       </div>
 
       <!-- Bilgi sekmesi -->
@@ -521,7 +521,7 @@ async function profilePage() {
     ? `<img src="${data.photo}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto 12px;display:block">`
     : `<div class="avatar" style="width:72px;height:72px;font-size:1.8rem;margin:0 auto 12px">${name[0].toUpperCase()}</div>`;
   return `
-    <div class="page-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Profilim</div>
+    <div class="page-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Profilim</div>
     <div class="page-sub">Hesap bilgileri ve ayarlar</div>
     ${isTeacher ? `
     <div onclick="showPage('satin-al')" style="display:flex;align-items:center;justify-content:space-between;
@@ -560,7 +560,7 @@ async function profilePage() {
     <div class="card" style="margin-top:16px">
       <div onclick="const p=document.getElementById('bilgiDuzenlePanel');p.style.display=p.style.display==='none'?'block':'none';this.querySelector('.bd-arrow').style.transform=p.style.display==='block'?'rotate(180deg)':'rotate(0deg)'"
         style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none">
-        <div class="card-title" style="margin-bottom:0"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Bilgilerimi Düzenle</div>
+        <div class="card-title" style="margin-bottom:0"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Bilgilerimi Düzenle</div>
         <span class="bd-arrow" style="color:var(--text2);font-size:1.1rem;transition:transform 0.2s">▼</span>
       </div>
       <div id="bilgiDuzenlePanel" style="display:none;margin-top:14px">
@@ -599,7 +599,7 @@ async function profilePage() {
       <div onclick="var p=document.getElementById('okullarPanel');var open=p.style.display!=='none';p.style.display=open?'none':'block';this.querySelector('.okul-arrow').style.transform=open?'':'rotate(180deg)'"
         style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;padding:2px 0">
         <div>
-          <div class="card-title" style="margin-bottom:0"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Çalıştığım Okullar</div>
+          <div class="card-title" style="margin-bottom:0"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Çalıştığım Okullar</div>
           <div style="font-size:0.72rem;color:var(--text2);margin-top:2px">${(data.schools||[]).length} okul kayıtlı</div>
         </div>
         <span class="okul-arrow" style="color:var(--text2);transition:transform 0.2s;font-size:0.8rem">▼</span>
@@ -627,7 +627,7 @@ async function profilePage() {
     <div class="card" style="margin-top:16px" id="emailKarti">
       <div onclick="var p=document.getElementById('emailKartiPanel');var open=p.style.display!=='none';p.style.display=open?'none':'block';this.querySelector('.email-arrow').style.transform=open?'':'rotate(180deg)'"
         style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;user-select:none">
-        <span class="card-title" style="margin-bottom:0"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> E-posta Adresi</span>
+        <span class="card-title" style="margin-bottom:0"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> E-posta Adresi</span>
         <span class="email-arrow" style="color:var(--text2);transition:transform 0.2s;font-size:0.8rem">▼</span>
       </div>
       <div id="emailKartiPanel" style="display:none;margin-top:14px">
@@ -647,7 +647,7 @@ async function profilePage() {
     <div class="card" style="margin-top:16px">
       <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.sifre-arrow').style.transform=this.nextElementSibling.style.display==='block'?'rotate(180deg)':'rotate(0deg)'"
         style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:2px 0;user-select:none">
-        <span class="card-title" style="margin-bottom:0"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Şifre Değiştir</span>
+        <span class="card-title" style="margin-bottom:0"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Şifre Değiştir</span>
         <span class="sifre-arrow" style="color:var(--text2);transition:transform 0.2s;font-size:0.8rem">▼</span>
       </div>
       <div style="display:none">
@@ -691,7 +691,7 @@ async function profilePage() {
       </div>
     </div>
     <div class="card" style="margin-top:16px" id="okul-arkadaslar-kart">
-      <div class="card-title"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Okul Arkadaşlarım</div>
+      <div class="card-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Okul Arkadaşlarım</div>
       <div id="okul-arkadaslar-liste" style="color:var(--text2);font-size:0.85rem">Yükleniyor...</div>
     </div>
     ` : ''}

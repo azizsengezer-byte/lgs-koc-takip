@@ -394,7 +394,7 @@ function marketPage() {
   return `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div>
-        <div class="page-title" style="margin-bottom:0"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Market</div>
+        <div class="page-title" style="margin-bottom:0"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Market</div>
         <div class="page-sub">Altınlarınla özel ürünler al</div>
       </div>
       <div id="marketAltinBadge" style="background:linear-gradient(135deg,#2a2000,#3a3000);border:1.5px solid #f9ca24;color:#f9ca24;font-weight:900;font-size:1rem;padding:8px 16px;border-radius:99px;display:flex;align-items:center;gap:5px;box-shadow:0 2px 12px rgba(249,202,36,0.2)">
