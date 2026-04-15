@@ -394,7 +394,7 @@ function marketPage() {
   return `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <div>
-        <div class="page-title" style="margin-bottom:0">🛒 Market</div>
+        <div class="page-title" style="margin-bottom:0"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Market</div>
         <div class="page-sub">Altınlarınla özel ürünler al</div>
       </div>
       <div id="marketAltinBadge" style="background:linear-gradient(135deg,#2a2000,#3a3000);border:1.5px solid #f9ca24;color:#f9ca24;font-weight:900;font-size:1rem;padding:8px 16px;border-radius:99px;display:flex;align-items:center;gap:5px;box-shadow:0 2px 12px rgba(249,202,36,0.2)">
@@ -474,7 +474,7 @@ function _marketIcerik() {
       || (u.tip === 'efekt' && aktif.efekt === u.deger);
     // isim tipi boost gibi davranmaz — özel render
     if (u.tip === 'isim') {
-      const isimBtn = `<button onclick="marketSatinAl('${id}')" style="width:100%;padding:9px;background:var(--accent-btn);border:none;border-radius:10px;color:white;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">${u.fiyat} 💰 İsim Değiştir</button>`;
+      const isimBtn = `<button onclick="marketSatinAl('${id}')" style="width:100%;padding:9px;background:var(--accent-btn);border:none;border-radius:10px;color:white;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">${u.fiyat} — İsim Değiştir</button>`;
       return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;text-align:center">
         <div style="font-size:2rem;margin-bottom:6px">${u.ikon}</div>
         <div style="font-size:0.82rem;font-weight:700;margin-bottom:2px">${u.ad}</div>
@@ -497,7 +497,7 @@ function _marketIcerik() {
       const style = yetersiz
         ? 'width:100%;padding:9px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:0.78rem;font-weight:700;cursor:not-allowed;font-family:\'Nunito\',sans-serif;opacity:0.6'
         : 'width:100%;padding:9px;background:var(--accent-btn);border:none;border-radius:10px;color:white;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:\'Nunito\',sans-serif';
-      butonHTML = `<button ${yetersiz ? '' : `onclick="marketSatinAl('${id}')"`} style="${style}">${u.fiyat} 💰 ${yetersiz ? '— Yetersiz' : 'Satın Al'}</button>`;
+      butonHTML = `<button ${yetersiz ? '' : `onclick="marketSatinAl('${id}')"`} style="${style}">${u.fiyat} ${yetersiz ? '— Yetersiz' : 'Satın Al'}</button>`;
     }
 
     const cardBorder = aktifMi ? '1.5px solid #1D9E75' : sahipMi ? '1px solid var(--accent)55' : '1px solid var(--border)';

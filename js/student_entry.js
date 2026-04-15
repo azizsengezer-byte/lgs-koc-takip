@@ -48,8 +48,8 @@ function studentDailyEntry() {
         </div>
         <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;margin-left:6px">
           <span style="font-size:0.65rem;color:var(--text2)">${e.time||''}</span>
-          <button onclick="editEntryModal('${eid}',${idx})" style="background:var(--accent)15;border:none;padding:5px 7px;border-radius:6px;cursor:pointer;color:var(--accent);line-height:1">✏️</button>
-          <button onclick="deleteEntry('${eid}',${idx})" style="background:#ff658415;border:none;padding:5px 7px;border-radius:6px;cursor:pointer;color:#ff6584;line-height:1">🗑️</button>
+          <button onclick="editEntryModal('${eid}',${idx})" style="background:var(--accent)15;border:none;padding:5px 7px;border-radius:6px;cursor:pointer;color:var(--accent);line-height:1"><svg style="vertical-align:middle" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          <button onclick="deleteEntry('${eid}',${idx})" style="background:#ff658415;border:none;padding:5px 7px;border-radius:6px;cursor:pointer;color:#ff6584;line-height:1"><svg style="vertical-align:middle" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
         </div>
       </div>`;
   }
@@ -97,8 +97,8 @@ function studentDailyEntry() {
           </div>
           <!-- Düzenle/Sil -->
           <div style="display:flex;gap:8px;margin-top:8px">
-            <button onclick="editDeneme('${examId2}','${grp.title.replace(/'/g,'\\\'')}')" style="flex:1;background:var(--accent)15;border:none;padding:7px;border-radius:8px;cursor:pointer;font-size:0.82rem;color:var(--accent)">✏️ İsim Düzenle</button>
-            <button onclick="deleteDeneme('${examId2}')" style="flex:1;background:#ff658415;border:none;padding:7px;border-radius:8px;cursor:pointer;font-size:0.82rem;color:#ff6584">🗑️ Sil</button>
+            <button onclick="editDeneme('${examId2}','${grp.title.replace(/'/g,'\\\'')}')" style="flex:1;background:var(--accent)15;border:none;padding:7px;border-radius:8px;cursor:pointer;font-size:0.82rem;color:var(--accent)"><svg style="vertical-align:middle" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Düzenle</button>
+            <button onclick="deleteDeneme('${examId2}')" style="flex:1;background:#ff658415;border:none;padding:7px;border-radius:8px;cursor:pointer;font-size:0.82rem;color:#ff6584"><svg style="vertical-align:middle" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Sil</button>
           </div>
         </div>
       </div>`;
@@ -186,7 +186,7 @@ function studentDailyEntry() {
     </div>
 
     <div class="card">
-      <div class="card-title" style="margin-bottom:12px">📋 Bugünkü Girişler
+      <div class="card-title" style="margin-bottom:12px"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Bugünkü Girişler
         ${todayEntries.length>0?`<span style="float:right;font-size:0.75rem;color:var(--text2);font-weight:400">${todayEntries.length} kayıt</span>`:''}
       </div>
       ${todayEntries.length === 0

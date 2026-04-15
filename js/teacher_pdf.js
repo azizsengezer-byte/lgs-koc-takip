@@ -38,7 +38,7 @@ function allDenemelerPage() {
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
       <button onclick="showPage('my-analysis')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
-      <div class="page-title" style="margin:0">🎯 Tüm Denemeler</div>
+      <div class="page-title" style="margin:0"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Tüm Denemeler</div>
     </div>
     <div class="page-sub">Tüm deneme geçmişin — ${allDen.length} deneme</div>
 

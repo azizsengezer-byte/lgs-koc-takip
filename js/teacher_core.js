@@ -757,7 +757,7 @@ function showDayEntries(dk, dateLabel) {
     html += `
       <div style="background:var(--accent4)10;border:1px solid var(--accent4)33;border-radius:10px;padding:10px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <div style="font-weight:800;font-size:0.85rem">🎯 ${g.title}</div>
+          <div style="font-weight:800;font-size:0.85rem"><svg style="vertical-align:middle" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> ${g.title}</div>
           <div style="font-size:0.85rem;font-weight:900;color:var(--accent)">${lgsR.puan}<span style="font-size:0.62rem;color:var(--text2)">/500</span></div>
         </div>
         ${subR.map(s=>`

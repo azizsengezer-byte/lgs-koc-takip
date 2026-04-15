@@ -313,7 +313,7 @@ function studentDetailAnalysis() {
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
       <button onclick="showPage('students')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem">←</button>
-      <div class="page-title" style="margin:0">📊 ${sName}</div>
+      <div class="page-title" style="margin:0"><svg style="vertical-align:middle;margin-right:5px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> ${sName}</div>
     </div>
     <div class="page-sub">Bireysel Analiz Raporu</div>
 
