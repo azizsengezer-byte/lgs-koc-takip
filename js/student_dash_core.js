@@ -115,33 +115,46 @@ function studentDashboard() {
 
       const streakBadge = streak>=2 ? `<span style="font-size:0.68rem;background:#ff6b0012;border:1px solid #ff6b0030;color:#cc4400;border-radius:99px;padding:2px 9px;font-weight:800;white-space:nowrap">🔥 ${streak} gün</span>` : '';
 
-      const moods = [{e:'😣',v:'bad'},{e:'😕',v:'hard'},{e:'😐',v:'ok'},{e:'😊',v:'good'},{e:'😄',v:'great'}];
-      const moodBtns = moods.map(m=>`
-        <button onclick="_dashMoodSec('${m.v}',this)"
-          style="flex:1;padding:7px 2px;border-radius:10px;border:2px solid ${today.mood===m.v?'#6c63ff':'var(--border)'};background:${today.mood===m.v?'#6c63ff18':'transparent'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:.15s">
-          <span style="font-size:1.3rem">${m.e}</span>
-        </button>`).join('');
+      return `<div class="wellness-banner-wrap" onclick="showPage('wellness')" style="cursor:pointer">
+        <div class="wellness-banner-inner" style="flex-direction:column;align-items:stretch;gap:0;padding:13px 15px">
 
-      const doneRow = hasMood ? `<div style="font-size:0.68rem;color:#43b89c;font-weight:700;margin-top:6px;text-align:center">✓ Kaydedildi — <button onclick="showPage('wellness')" style="background:none;border:none;color:var(--accent);font-size:0.68rem;font-weight:700;cursor:pointer;font-family:inherit">Günlüğü aç →</button></div>` : `<button onclick="showPage('wellness')" style="width:100%;margin-top:8px;padding:7px;border:1.5px solid var(--accent)44;border-radius:9px;background:transparent;color:var(--accent);font-size:0.73rem;font-weight:700;cursor:pointer;font-family:inherit">📖 Günlüğü Aç →</button>`;
-
-      return `<div class="wellness-banner-wrap">
-        <div class="wellness-banner-inner" style="flex-direction:column;align-items:stretch;gap:0;padding:12px 14px">
-          <div onclick="showPage('wellness')" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:pointer">
+          <!-- Başlık -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <div>
-              <div style="font-size:0.88rem;font-weight:800;color:var(--text)"><span class="wellness-journal-icon">📖</span> Günlüğüm</div>
-              <div style="font-size:0.7rem;color:var(--text2);margin-top:1px">Bugünü hızlıca kaydet</div>
+              <div style="font-size:1rem;font-weight:900;color:var(--text);letter-spacing:-0.01em">📖 Günlüğüm</div>
+              <div style="font-size:0.72rem;color:var(--text2);margin-top:2px">Bugün nasıl hissediyorsun? Hızlıca kaydet</div>
             </div>
             ${streakBadge}
           </div>
-          <div style="display:flex;gap:5px">${moodBtns}</div>
-          <div onclick="showPage('wellness')" style="cursor:pointer;margin-top:2px">
-            ${hasMood
-              ? `<div style="font-size:0.68rem;color:#43b89c;font-weight:700;margin-top:6px;text-align:center">✓ Kaydedildi — <span style="color:var(--accent)">Günlüğü aç →</span></div>`
-              : `<div style="width:100%;margin-top:8px;padding:7px;border:1.5px solid var(--accent)44;border-radius:9px;text-align:center;color:var(--accent);font-size:0.73rem;font-weight:700">📖 Günlüğü Aç →</div>`
-            }
+
+          <!-- EKG -->
+          <div style="width:100%;height:34px;margin-bottom:10px;overflow:hidden">
+            <svg viewBox="0 0 300 34" preserveAspectRatio="none" style="width:100%;height:100%">
+              <polyline fill="none" stroke="#6c63ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                points="0,17 45,17 60,17 70,3 80,31 90,7 100,17 150,17 165,17 175,3 185,31 195,7 205,17 255,17 265,3 275,31 285,7 300,17">
+                <animate attributeName="stroke-dasharray" from="0,800" to="800,0" dur="2s" repeatCount="indefinite"/>
+              </polyline>
+            </svg>
           </div>
+
+          <!-- Nefes halkası -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <div style="width:58px;height:58px;border-radius:50%;border:2.5px solid #6c63ff;display:flex;align-items:center;justify-content:center;animation:_wBreath 3s ease-in-out infinite">
+              <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6c63ff22,#6c63ff44);display:flex;align-items:center;justify-content:center;animation:_wBreath 3s ease-in-out infinite reverse">
+                ${hasMood
+                  ? '<span style="font-size:0.55rem;font-weight:800;color:#43b89c;text-align:center;line-height:1.3">✓<br>kayıtlı</span>'
+                  : '<span style="font-size:0.52rem;font-weight:800;color:#6c63ff;text-align:center;line-height:1.3">bugünü<br>kaydet</span>'
+                }
+              </div>
+            </div>
+            <div style="font-size:0.72rem;font-weight:700;color:var(--accent)">
+              ${hasMood ? 'Kaydedildi — Günlüğü aç →' : 'Dokunarak aç ↓'}
+            </div>
+          </div>
+
         </div>
-      </div>`;
+      </div>
+      <style>@keyframes _wBreath{0%,100%{transform:scale(1);opacity:.75}50%{transform:scale(1.13);opacity:1}}</style>`;
     })()}
 
     <div class="grid-3">
