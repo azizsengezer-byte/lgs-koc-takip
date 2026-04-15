@@ -1130,34 +1130,13 @@ async function exportPsychPDF(sName, aiAcik) {
 
           // Kalibrasyon özeti
           if (_kal) {
-            const _kalSat = tx('Kalibrasyon: ' + _kal.soruOrt + ' soru/gun ort. | Kaygi esigi: ' + _kal.kaygiEsik + ' | Uyku ort: ' + _kal.uyku + ' sa');
+            const _kalSat = tx('Analiz kapsamı: ' + _kal.soruOrt + ' soru/gün ort. | Dönem kaygı ort: ' + _kal.kaygiEsik + '/10 | Uyku ort: ' + _kal.uyku + ' sa');
             Y = pdfCheck(doc, Y, 10);
             doc.setFont(PF,'italic'); doc.setFontSize(6.2); doc.setTextColor(140,120,180);
             doc.text(_kalSat, 16, Y); Y += 7;
           }
 
-          // ── VAKA KOMBİNASYONU ──────────────────────────────────
-          if (_vaka) {
-            const _vAnaSat  = doc.splitTextToSize(tx(_vaka.analiz), 152);
-            const _vStrSat  = doc.splitTextToSize(tx('Koçluk aksiyonu: ' + _vaka.strateji), 152);
-            const _vH = _vAnaSat.length * 4.8 + _vStrSat.length * 4.5 + 22;
-            Y = pdfCheck(doc, Y, _vH + 5);
-            doc.setFillColor(255, 232, 245);
-            doc.roundedRect(15, Y, 180, _vH, 2, 2, 'F');
-            doc.setFillColor(200, 40, 110);
-            doc.roundedRect(15, Y, 3.5, _vH, 1, 1, 'F');
-            doc.setFont(PF,'bold'); doc.setFontSize(7);
-            doc.setTextColor(170, 20, 90);
-            doc.text(tx('⚡ KOMBİNE VAKA — ' + _vaka.ad.toUpperCase()), 21, Y + 6);
-            doc.setFont(PF,'normal'); doc.setFontSize(6.6);
-            doc.setTextColor(70, 20, 50);
-            doc.text(_vAnaSat, 21, Y + 12);
-            doc.setTextColor(160, 30, 80); doc.setFont(PF,'bold');
-            doc.text(_vStrSat, 21, Y + 12 + _vAnaSat.length * 4.8 + 3);
-            Y += _vH + 6;
-          }
-
-          // ── NEGATİF SENARYOLAR ─────────────────────────────────
+          // ── KLİNİK TESPİTLER ─────────────────────────────────
           const _tonRenk = {
             crisis:      { sol:[180,20,20],   arkaR:255, arkaG:245, arkaB:245 },
             urgent:      { sol:[190,90,0],    arkaR:255, arkaG:248, arkaB:235 },
@@ -1170,9 +1149,10 @@ async function exportPsychPDF(sName, aiAcik) {
             validating:  { sol:[60,80,160],   arkaR:243, arkaG:246, arkaB:255 },
           };
 
-          if (_ins.length > 0) {
+          const _insGoster = _ins.slice(0, 5);
+          if (_insGoster.length > 0) {
             // Başlık + ilk kart birlikte sığmazsa yeni sayfa
-            const _ilkIns = _ins[0] || {};
+            const _ilkIns = _insGoster[0] || {};
             const _ilkAnaSat = doc.splitTextToSize(tx(_ilkIns.teshis || _ilkIns.analiz || ''), 151);
             const _ilkStrSat = doc.splitTextToSize(tx('Strateji: ' + (_ilkIns.aksiyon || _ilkIns.strateji || '')), 151);
             const _ilkKartH = _ilkAnaSat.length * 4.6 + _ilkStrSat.length * 4.5 + 20;
@@ -1181,7 +1161,7 @@ async function exportPsychPDF(sName, aiAcik) {
             doc.setTextColor(100, 30, 30);
             doc.text(tx('Risk & Müdahale Alanları'), 16, Y); Y += 6;
 
-            _ins.forEach(ins => {
+            _insGoster.forEach(ins => {
               const r = _tonRenk[ins.ton] || _tonRenk.informative;
               const _anaSat = doc.splitTextToSize(tx(ins.teshis || ins.analiz || ''), 151);
               const _strSat = doc.splitTextToSize(tx('Strateji: ' + (ins.aksiyon || ins.strateji || '')), 151);
@@ -1194,7 +1174,7 @@ async function exportPsychPDF(sName, aiAcik) {
               // Etiket
               doc.setFont(PF,'bold'); doc.setFontSize(6.5);
               doc.setTextColor(r.sol[0], r.sol[1], r.sol[2]);
-              const _freqStr = ins.frekans > 1 ? '  (' + ins.frekans + ' gun)' : '';
+              const _freqStr = ins.frekans > 1 ? '  (' + ins.frekans + ' gün)' : '';
               doc.text(tx(ins.etiket + _freqStr), 21, Y + 5.5);
               // Analiz
               doc.setFont(PF,'normal'); doc.setFontSize(6.5);
@@ -1238,7 +1218,7 @@ async function exportPsychPDF(sName, aiAcik) {
           }
 
           // ── BÜTÜNCÜL ANALİZ KÖPRÜSÜ (veri-anlatı) ────────────
-          if (_ins.length > 0 || _pos.length > 0) {
+          if (_insGoster.length > 0 || _pos.length > 0) {
             const _isAylik  = period === 'monthly';
             const _isLbl    = _isAylik ? 'AYLIK FOTOĞRAF' : 'BU HAFTANIN ÖZETİ';
             const _glLbl    = _isAylik ? 'GELECEK AY PLANI' : 'ÖNÜMÜZDEKİ HAFTA İÇİN';
@@ -1256,25 +1236,25 @@ async function exportPsychPDF(sName, aiAcik) {
 
             // ── ÖZET — trendin + en kritik 2 tespitin sentezi ──
             let _ozetMetin = _trendAnlati ? _trendAnlati + ' ' : '';
-            if (_ins.length > 0) {
-              const _kritikEtiket = _ins[0].etiket;
+            if (_insGoster.length > 0) {
+              const _kritikEtiket = _insGoster[0].etiket;
               _ozetMetin += 'Bu ' + (_isAylik ? 'ayın' : 'haftanın') + ' öne çıkan klinik tablosu: ' + _kritikEtiket + '.';
-              if (_ins.length > 1) _ozetMetin += ' Buna ek olarak ' + _ins[1].etiket + ' örüntüsü de gözlemlendi.';
+              if (_insGoster.length > 1) _ozetMetin += ' Buna ek olarak ' + _insGoster[1].etiket + ' örüntüsü de gözlemlendi.';
             }
             if (_pos.length > 0) _ozetMetin += ' Güçlü yan: ' + _pos[0].etiket + '.';
             _ozetMetin += _bransEki;
 
             // ── STRATEJİ — en yüksek öncelikli tespitin aksiyonu ──
-            const _stratejiMetin = _ins.length > 0
-              ? _ins[0].aksiyon
+            const _stratejiMetin = _insGoster.length > 0
+              ? _insGoster[0].aksiyon
               : (_pos.length > 0
                   ? 'Mevcut güçlü örüntüyü koruyun; bir zayıf alanda küçük ama somut kazanım hedefleyin.'
                   : 'Veri birikimi artınca daha net strateji oluşturulabilecek.');
 
             // ── GELECEK — öncelikli soruna tek somut adım ──
             let _gelecekMetin = '';
-            if (_ins.length > 0) {
-              const _g1 = _ins[0].etiket.split('—')[0].trim();
+            if (_insGoster.length > 0) {
+              const _g1 = _insGoster[0].etiket.split('—')[0].trim();
               _gelecekMetin = _gelecekPfx + ' için tek somut adım: ' + _g1 + ' konusunu çözmeye odaklan.';
               _gelecekMetin += ' Birden fazla alana aynı anda girmek motivasyonu kırabilir.';
             } else {
@@ -1325,7 +1305,7 @@ async function exportPsychPDF(sName, aiAcik) {
             Y = pdfCheck(doc, Y, 14);
             doc.setFont(PF,'normal'); doc.setFontSize(7);
             doc.setTextColor(140, 130, 160);
-            doc.text(tx('Bu dönem için senaryo eşleşmesi yapılamadı — wellness veri girişi yetersiz.'), 16, Y); Y += 10;
+            doc.text(tx('Bu dönem için analiz yapılamadı — en az 3 günlük wellness verisi gerekli.'), 16, Y); Y += 10;
           }
 
         } else {
