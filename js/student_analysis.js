@@ -557,7 +557,7 @@ function wellnessPage() {
 
     <!-- BÖLÜM 4: Beden -->
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title">Bedenine ne yaptın? 💤</div>
+      <div class="card-title">Gün nasıl aktı? ⏳</div>
       <div style="margin-bottom:10px">
         <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">🛌 Uyku (saat)</div>
         <input type="number" min="2" max="12" step="0.5" id="wellnessUyku" placeholder="0"
