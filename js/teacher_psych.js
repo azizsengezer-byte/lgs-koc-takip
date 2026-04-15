@@ -1111,7 +1111,7 @@ async function exportPsychPDF(sName, aiAcik) {
         doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(100,90,140);
         doc.text(tx(period==='weekly'
           ? 'Haftalık psikolojik-akademik örüntü analizi — dinamik senaryo motoru'
-          : 'Aylık bütüncül teşhis — 5 modül, ' + (window.SENARYOLAR ? window.SENARYOLAR.length : 0) + ' senaryo, kalibre eşikler'), 16, Y); Y+=8;
+          : 'Aylık bütüncül teşhis — veri-anlatı motoru, 8 klinik modül'), 16, Y); Y+=8;
 
         // Motor çıktısı
         // Motor güvenlik kontrolü — typeof ile güvenli kontrol
@@ -1237,145 +1237,82 @@ async function exportPsychPDF(sName, aiAcik) {
             });
           }
 
-          // ── BÜTÜNCÜL ANALİZ KÖPRÜSÜ ───────────────────────────
-          if (_ins.length > 0 || _pos.length > 0 || _vaka) {
-            const _tetIdler = _m.tetiklenenTumIdler || [];
-            const _frek = _m.frekansMap || {};
+          // ── BÜTÜNCÜL ANALİZ KÖPRÜSÜ (veri-anlatı) ────────────
+          if (_ins.length > 0 || _pos.length > 0) {
+            const _isAylik  = period === 'monthly';
+            const _isLbl    = _isAylik ? 'AYLIK FOTOĞRAF' : 'BU HAFTANIN ÖZETİ';
+            const _glLbl    = _isAylik ? 'GELECEK AY PLANI' : 'ÖNÜMÜZDEKİ HAFTA İÇİN';
+            const _gelecekPfx = _isAylik ? 'Gelecek ay' : 'Önümüzdeki hafta';
 
-            // Modül ağırlık skorları (frekans bazlı)
-            const _skor = {
-              bilissel: _ins.filter(s => s.modul === 1).reduce((a,s) => a + (s.frekans||1), 0),
-              brans:    _ins.filter(s => s.modul === 2).reduce((a,s) => a + (s.frekans||1), 0),
-              ozyet:    _ins.filter(s => s.modul === 3).reduce((a,s) => a + (s.frekans||1), 0),
-              dijital:  _ins.filter(s => s.modul === 4).reduce((a,s) => a + (s.frekans||1), 0),
-              fizyoloj: _ins.filter(s => s.modul === 5).reduce((a,s) => a + (s.frekans||1), 0),
-              pozitif:  _pos.reduce((a,p) => a + (p.frekans||1), 0),
-            };
-            const _toplamNeg = _skor.bilissel + _skor.brans + _skor.ozyet + _skor.dijital + _skor.fizyoloj;
-            // Yeni senaryo IDlerine göre profil tespiti
-            const _kritikBlok = _tetIdler.some(id => ['DYN-04','DYN-95','DYN-134'].includes(id));
-            const _tukenmis   = _tetIdler.some(id => ['DYN-134','DYN-126','DYN-127','DYN-128','DYN-130','DYN-03','DYN-08'].includes(id));
-            const _yuksekFon  = _tetIdler.some(id => ['DYN-76','DYN-80','DYN-83'].includes(id));
-            const _kacinan    = _tetIdler.some(id => ['DYN-41','DYN-46','DYN-48','DYN-50','DYN-65','DYN-68'].includes(id));
-            const _dijital    = _tetIdler.some(id => ['DYN-106','DYN-108','DYN-110','DYN-112','DYN-113'].includes(id));
-
-            // Profil tipi — baskın modüle göre
-            // Runner'dan gelen profil kodunu köprü profil ismine çevir
-            const _pKodMap = {
-              P01:'bloke', P02:'tukenmis', P03:'yuksekFonKaygi', P04:'tukenmis',
-              P05:'yuksekFonKaygi', P06:'tukenmis', P07:'tukenmis',
-              P08:'kacinan', P09:'kacinan', P10:'kacinan',
-              P11:'bloke', P12:'yuksekFonKaygi', P13:'karisik',
-              P14:'dijitalGolgeli', P15:'dijitalGolgeli', P16:'dijitalGolgeli',
-              P17:'karisik', P18:'karisik', P19:'karisik',
-              P20:'yuksekFonKaygi', P21:'tukenmis', P22:'karisik',
-              P23:'dengeli', P24:'dengeli', P25:'karisik',
-            };
-            let _profil = _motorProfil ? (_pKodMap[_motorProfil] || 'karisik') : 'dengeli';
-            // Runner profil yoksa eski mantığa düş
-            if (!_motorProfil) {
-              if (_kritikBlok) _profil = 'bloke';
-              else if (_tukenmis) _profil = 'tukenmis';
-              else if (_yuksekFon) _profil = 'yuksekFonKaygi';
-              else if (_kacinan) _profil = 'kacinan';
-              else if (_dijital) _profil = 'dijitalGolgeli';
-              else if (_toplamNeg <= 2 && _skor.pozitif >= 1) _profil = 'dengeli';
-              else _profil = 'karisik';
-            }
-            // Trend-profil çelişkisi düzelt:
-            // Düşüş trendi tespit edilmişken profil "dengeli" diyorsa çelişki var → "karisik"
-            if (_trend === 'dusus' && _profil === 'dengeli') _profil = 'karisik';
-
-            // Zayıf branş adı — runner'dan gelir, köprü metninde kullanılır
+            // Zayıf branş + zorDers çaprazlaması
             const _zayifBrans = _m.zayifBrans || null;
-
-            // Profil metin havuzu — döneme göre uyarlanmış
-            const _isAylik = period === 'monthly';
-            const _donem = _isAylik ? 'bu dönem' : 'bu hafta';
-            const _gelecek = _isAylik ? 'Gelecek ay' : 'Önümüzdeki hafta';
-            const _pm = {
-              bloke: {
-                foto:     'Öğrenci ' + _donem + ' yüksek kaygının üretimi tamamen durdurduğu bir blokaj yaşamıştır. Sistem veri girişi yapılmasına rağmen akademik eylem gerçekleşmemiş; bu durum psikolojik bir engelin varlığına işaret etmektedir.',
-                strateji: 'Koç görüşmesi rakamlar üzerinden değil, öğrencinin neden başlayamadığı üzerine kurgulanmalıdır. Tek bir soru, tek bir sayfa gibi mikro hedeflerle yeniden başlatma sağlanmalıdır.',
-                gelecek:  '' + _gelecek + ' önceliği akademik hedef değil, sisteme dönme ritmini oturtmaktır. Baskı değil, güven inşa edilmeli.'
-              },
-              tukenmis: {
-                foto:     'Öğrenci ' + _donem + ' biyolojik rezervlerini zorlayarak performansını sürdürmeye çalışmıştır. Uyku borcu, enerji düşüklüğü ve motivasyon kaybı aynı anda etkili olmuş; tükenmişlik eşiği yaklaşmaktadır.',
-                strateji: 'Soru sayısı hedefi ikincil plana alınmalı; uyku düzeni ve enerji yönetimi öncelik olmalıdır. "Daha çok çalış" mesajından kesinlikle kaçınılmalıdır.',
-                gelecek:  '' + _gelecek + (_isAylik ? ' ilk haftası Restorasyon Haftası ilan edilmeli; yük yüzde otuz düşürülmeli.' : ' onarım günleri planlanmalı; uyku rutini stabilize edilmeden yeni hedef eklenmemeli.')
-              },
-              yuksekFonKaygi: {
-                foto:     'Öğrenci ' + _donem + ' üretimini sürdürürken yoğun iç baskı altında olduğu gözlemlenmiştir. Başarı öğrenciyi rahatlatmamakta; aksine korku ve baskıyı artırmaktadır.',
-                strateji: 'Başarı somut verilerle tescil edilmeli ve öğrenciye geri yansıtılmalıdır. Koç iletişimi performans değil, öğrencinin süreçle barışması üzerine kurgulanmalıdır.',
-                gelecek:  '' + _gelecek + ' hedefi niceliksel değil, başarıyı fark etme ve içselleştirme kapasitesi olmalıdır.'
-              },
-              kacinan: {
-                foto:     'Öğrenci ' + _donem + ' güçlü hissettiği branşlara yoğunlaşmış; zayıf derslerle temas sistematik biçimde azalmıştır. Bu durum kısa vadede iyi hissettirse de LGS dengesi açısından kritik risk taşımaktadır.',
-                strateji: 'Koç zayıf branşa zorla giriş yerine günün en yüksek enerjisine denk 15 dakikalık minimal temas protokolü önermelidir. Her küçük başarı anında tescil edilmelidir.',
-                gelecek:  '' + _gelecek + ' zayıf branş için ' + (_isAylik ? 'haftalık' : 'günlük') + ' minimum soru kotası belirlenmeli; düşük tutulup kademeli artırılmalıdır.'
-              },
-              dijitalGolgeli: {
-                foto:     '' + _donem.charAt(0).toUpperCase() + _donem.slice(1) + 'de dijital kullanım ile akademik üretim arasında belirgin bir ters ilişki gözlemlenmiştir. Ekran süresi yüksek olan günlerin ertesinde odak ve verim düşmektedir.',
-                strateji: 'Dijital kısıtlama ceza olarak değil, performans aracı olarak sunulmalıdır. Somut veri (ekran süresi yüksek gün vs düşük gün verimi karşılaştırması) en etkili ikna yöntemidir.',
-                gelecek:  '' + _gelecek + ' için günlük ekran üst limiti belirlenmeli; çalışma öncesi 15 dakika ekransız başlangıç rutini denenmeli.'
-              },
-              dengeli: {
-                foto:     'Öğrenci ' + _donem + 'de dengeli ve sürdürülebilir bir performans sergilemiştir. Akademik üretim, fizyolojik durum ve duygusal denge aynı anda olumlu seyretmiştir.',
-                strateji: 'Mevcut ritim korunmalı ve onaylanmalıdır. Bu istikrarı bozmadan hedef hafifçe yukarı çekilebilir; zayıf branşta küçük bir zorluk eşiği eklenebilir.',
-                gelecek:  '' + _gelecek + ' hedefi mevcut dengeyi korurken bir zayıf alanda somut kazanım elde etmek olmalıdır.'
-              },
-              karisik: {
-                foto:     '' + _donem.charAt(0).toUpperCase() + _donem.slice(1) + ' farklı günlerde farklı tetikleyicilerin devreye girdiği karma bir tablo gözlemlenmiştir. Tek bir baskın örüntü yerine birden fazla alanda eş zamanlı güçlük yaşanmaktadır.',
-                strateji: 'En yüksek öncelikli senaryoya odaklanılmalı; tüm sorunları aynı anda çözmeye çalışmak yerine tek bir somut değişiklik hedeflenmeli.',
-                gelecek:  '' + _gelecek + ' için tek somut adım belirlenmeli; birden fazla alanı aynı anda düzeltmeye çalışmak motivasyonu kırabilir.'
-              }
-            }[_profil] || { foto:'', strateji:'', gelecek:'' };
-
-            // Render: 3 kutu
-            // Başlıkları döneme göre uyarla
-            // Zayıf branş varsa foto ve strateji metnine ekle
             const _zdTopBrans = _zdArr.length > 0 ? _zdArr[0][0] : null;
             const _bransUyumu = !_zdTopBrans || !_zayifBrans || _zdTopBrans === _zayifBrans;
-            const _zayifBransEki = _zayifBrans && _bransUyumu
-              ? (_isAylik ? ' ' + _zayifBrans + ' branşı özellikle dikkat gerektiriyor.' : ' ' + _zayifBrans + ' branşı bu hafta en kritik alan.')
+            const _bransEki   = _zayifBrans && _bransUyumu
+              ? ' ' + _zayifBrans + (_isAylik ? ' branşı özellikle dikkat gerektiriyor.' : ' branşı bu hafta en kritik alan.')
               : (_zayifBrans && _zdTopBrans && !_bransUyumu)
-              ? ' Performans verisi ' + _zayifBrans + "'i zayıf gösterirken öğrenci " + _zdTopBrans + "'i zor buluyor — iki farklı ama tamamlayıcı sinyal."
-              : '';
-            const _kutular = [
-              { baslik: _isAylik ? 'AYLIK FOTOĞRAF' : 'BU HAFTANIN ÖZETİ',
-                metin: (!_isAylik && _trendAnlati ? _trendAnlati + ' ' : '') + _pm.foto + _zayifBransEki,
-                ar:242, ag:240, ab:255, sr:70, sg:40, sb:180 },
-              { baslik: 'KOÇLUK STRATEJİSİ',                                          metin: _pm.strateji, ar:238, ag:255, ab:245, sr:20,  sg:130, sb:70  },
-              { baslik: _isAylik ? 'GELECEK AY PLANI' : 'ÖNÜMÜZDEKİ HAFTA İÇİN',  metin: _pm.gelecek,  ar:255, ag:248, ab:235, sr:170, sg:80,  sb:0   },
-            ];
+              ? ' Performans verisi ' + _zayifBrans + "'i zayıf gösterirken öğrenci " + _zdTopBrans + "'i zor buluyor — iki tamamlayıcı sinyal."
+              : (_zayifBrans ? ' ' + _zayifBrans + ' branşı dikkat gerektiriyor.' : '');
 
-            // Bütüncül köprü: önce toplam yüksekliği hesapla
+            // ── ÖZET — trendin + en kritik 2 tespitin sentezi ──
+            let _ozetMetin = _trendAnlati ? _trendAnlati + ' ' : '';
+            if (_ins.length > 0) {
+              const _kritikEtiket = _ins[0].etiket;
+              _ozetMetin += 'Bu ' + (_isAylik ? 'ayın' : 'haftanın') + ' öne çıkan klinik tablosu: ' + _kritikEtiket + '.';
+              if (_ins.length > 1) _ozetMetin += ' Buna ek olarak ' + _ins[1].etiket + ' örüntüsü de gözlemlendi.';
+            }
+            if (_pos.length > 0) _ozetMetin += ' Güçlü yan: ' + _pos[0].etiket + '.';
+            _ozetMetin += _bransEki;
+
+            // ── STRATEJİ — en yüksek öncelikli tespitin aksiyonu ──
+            const _stratejiMetin = _ins.length > 0
+              ? _ins[0].aksiyon
+              : (_pos.length > 0
+                  ? 'Mevcut güçlü örüntüyü koruyun; bir zayıf alanda küçük ama somut kazanım hedefleyin.'
+                  : 'Veri birikimi artınca daha net strateji oluşturulabilecek.');
+
+            // ── GELECEK — öncelikli soruna tek somut adım ──
+            let _gelecekMetin = '';
+            if (_ins.length > 0) {
+              const _g1 = _ins[0].etiket.split('—')[0].trim();
+              _gelecekMetin = _gelecekPfx + ' için tek somut adım: ' + _g1 + ' konusunu çözmeye odaklan.';
+              _gelecekMetin += ' Birden fazla alana aynı anda girmek motivasyonu kırabilir.';
+            } else {
+              _gelecekMetin = _gelecekPfx + ' hedefi mevcut dengeyi korurken bir zayıf alanda küçük kazanım elde etmek.';
+            }
+            if (_zayifBrans && _zdTopBrans !== _zayifBrans) {
+              _gelecekMetin += ' ' + _zayifBrans + ' için günlük minimum çalışma kotası belirle.';
+            }
+
+            // ── RENDER ─────────────────────────────────────────────
+            const _kop_kutular = [
+              { baslik: _isLbl,          metin: _ozetMetin,    ar:242,ag:240,ab:255, sr:70, sg:40, sb:180 },
+              { baslik: 'KOÇLUK STRATEJİSİ', metin: _stratejiMetin, ar:238,ag:255,ab:245, sr:20,sg:130,sb:70 },
+              { baslik: _glLbl,          metin: _gelecekMetin, ar:255,ag:248,ab:235, sr:170,sg:80, sb:0  },
+            ];
             const _bridgeH = 12;
-            const _kutularMetin = _kutular.map(k => {
+            const _kopMetin = _kop_kutular.map(k => {
               if (!k.metin) return { ...k, sat: [], h: 0 };
               const sat = doc.splitTextToSize(tx(k.metin), 152);
               return { ...k, sat, h: sat.length * 4.8 + 18 };
             }).filter(k => k.h > 0);
-            const _ilkKutuH = _kutularMetin.length > 0 ? _kutularMetin[0].h : 30;
-            // Başlık + ilk kutu birlikte sığmazsa yeni sayfa
-            Y = pdfCheck(doc, Y, _bridgeH + 10 + _ilkKutuH + 5);
+            const _ilkH = _kopMetin.length > 0 ? _kopMetin[0].h : 30;
+            Y = pdfCheck(doc, Y, _bridgeH + 10 + _ilkH + 5);
             doc.setFillColor(40, 30, 100);
             doc.roundedRect(15, Y, 180, _bridgeH, 2, 2, 'F');
             doc.setFont(PF, 'bold'); doc.setFontSize(8.5); doc.setTextColor(255, 255, 255);
             doc.text(tx('BÜTÜNCÜL ANALİZ KÖPRÜSÜ'), 105, Y + 8, { align: 'center' });
             Y += _bridgeH + 6;
-
-            _kutularMetin.forEach(k => {
-              // Her kutu kendi içinde sayfa taşması kontrolü
+            _kopMetin.forEach(k => {
               Y = pdfCheck(doc, Y, k.h + 5);
               doc.setFillColor(k.ar, k.ag, k.ab);
               doc.roundedRect(15, Y, 180, k.h, 1.5, 1.5, 'F');
               doc.setFillColor(k.sr, k.sg, k.sb);
               doc.roundedRect(15, Y, 3.5, k.h, 1, 1, 'F');
-              doc.setFont(PF,'bold'); doc.setFontSize(7);
+              doc.setFont(PF, 'bold'); doc.setFontSize(7);
               doc.setTextColor(k.sr, k.sg, k.sb);
               doc.text(tx(k.baslik), 21, Y + 6);
-              doc.setFont(PF,'normal'); doc.setFontSize(6.6);
+              doc.setFont(PF, 'normal'); doc.setFontSize(6.6);
               doc.setTextColor(40, 35, 60);
               doc.text(k.sat, 21, Y + 12);
               Y += k.h + 5;
