@@ -388,7 +388,10 @@
   // MODÜL 7 — DUYGUSAL ÖRÜNTÜ
   // ════════════════════════════════════════════════════════════
   function _modDuygu(gunler, kron, insights, positives, donem) {
-    const negMoodlar = ['anxious', 'tired', 'sad'];
+    // Mood tipleri — student_analysis.js moodOptions.tip ile senkron
+    const negMoodlar = ['sad', 'anxious', 'tired'];
+    const ntrMoodlar = ['ok'];
+    const pozMoodlar = ['good', 'great'];
     const moodGun    = gunler.filter(d => !!d.mood);
     if (moodGun.length < 3) return;
 

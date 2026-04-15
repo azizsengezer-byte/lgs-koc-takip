@@ -41,8 +41,8 @@ async function exportPsychPDF(sName, aiAcik) {
   }
   const sortedDays = Object.keys(days).filter(k=>k>=startKey&&k<=endKey).sort().reverse();
 
-  const moodLabels = { excited:'Heyecanlı', good:'İyiyim', focused:'Odaklı', ok:'İdare Eder', tired:'Yorgunum', anxious:'Kaygılı', sad:'Mutsuzum' };
-  const moodColors = { excited:[249,202,36], good:[69,183,209], focused:[108,99,255], ok:[162,155,254], tired:[253,121,168], anxious:[255,107,107], sad:[119,140,163] };
+  const moodLabels = { sad:'Mutsuzum', anxious:'Kaygılı', tired:'Yorgunum', ok:'İdare Eder', good:'İyiyim', great:'Harika' };
+  const moodColors = { sad:[119,140,163], anxious:[255,107,107], tired:[253,121,168], ok:[162,155,254], good:[69,183,209], great:[108,99,255] };
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'p', unit:'mm', format:'a4' });
@@ -479,7 +479,7 @@ async function exportPsychPDF(sName, aiAcik) {
         const akademikVar = bugunSoru>0;
         const moodTr = {excited:'Heyecanlı',good:'İyiyim',focused:'Odaklı',ok:'İdare Eder',tired:'Yorgunum',anxious:'Kaygılı',sad:'Mutsuzum'};
         const bugunMoodTr = bugunMood?(moodTr[bugunMood]||bugunMood):'';
-        const negatifMood = ['anxious','tired','sad'].includes(bugunMood);
+        const negatifMood = ['sad','anxious','tired'].includes(bugunMood);
 
         // Dün verisi
         const dunKey = (()=>{ const d=new Date(bugunKey+'T12:00:00'); d.setDate(d.getDate()-1); return d.toISOString().split('T')[0]; })();
@@ -995,7 +995,7 @@ async function exportPsychPDF(sName, aiAcik) {
             const oncekiKaygi = parseFloat(oncekiW?.kaygi)||0;
             const oncekiEnerji = parseFloat(oncekiW?.enerji)||0;
             const oncekiMood = oncekiW?.mood||'';
-            const negMoodlarS = ['anxious','tired','sad'];
+            const negMoodlarS = ['sad','anxious','tired'];
 
             // Sonraki gün (son günden bir sonrası)
             const sonrakiK = (() => { const d=new Date(sonK+'T12:00:00'); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
@@ -1043,7 +1043,7 @@ async function exportPsychPDF(sName, aiAcik) {
                 baglamStr = '2 günlük boşluk. Önceki gün kaygı ' + oncekiKaygi.toFixed(1) + '/10 idi. Muhtemelen duygusal yorgunluk.';
                 sisR=[255,235,235]; sisK=[170,30,30];
               } else if (negMoodlarS.includes(oncekiMood)) {
-                const moodTrS = {anxious:'Kaygılı',tired:'Yorgunum',sad:'Mutsuzum'};
+                const moodTrS = {sad:'Mutsuzum',anxious:'Kaygılı',tired:'Yorgunum',ok:'İdare Eder',good:'İyiyim',great:'Harika'};
                 baglamStr = '2 günlük boşluk. Önceki gün ' + (moodTrS[oncekiMood]||'olumsuz') + ' hissediliyordu — veri girişi bu durumun devamı olabilir.';
                 sisR=[255,240,220]; sisK=[155,70,0];
               } else {
@@ -1061,7 +1061,7 @@ async function exportPsychPDF(sName, aiAcik) {
                 baglamStr = 'Önceki gün enerji ' + oncekiEnerji.toFixed(1) + '/10 idi. Fizyolojik tükenmişlik bu günü de kapsıyor olabilir.';
                 sisR=[255,240,220]; sisK=[160,80,0];
               } else if (negMoodlarS.includes(oncekiMood)) {
-                const moodTrS2 = {anxious:'Kaygılı',tired:'Yorgunum',sad:'Mutsuzum'};
+                const moodTrS2 = {sad:'Mutsuzum',anxious:'Kaygılı',tired:'Yorgunum',ok:'İdare Eder',good:'İyiyim',great:'Harika'};
                 baglamStr = 'Önceki gün duygusal durum olumsuzdu (' + (moodTrS2[oncekiMood]||'olumsuz') + '). Veri girişi bu durumun devamı olabilir.';
                 sisR=[255,240,220]; sisK=[155,70,0];
               } else {

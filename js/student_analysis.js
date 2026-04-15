@@ -316,11 +316,12 @@ function showDagilimDetail(ders) {
 // ============================================================
 
 const moodOptions = [
-  { emoji:'😢', label:'Mutsuz',   value:'sad',   color:'#9b59b6' },
-  { emoji:'😣', label:'Kötü',     value:'bad',   color:'#ff6584' },
-  { emoji:'😐', label:'İdare Eder', value:'ok',  color:'#888' },
-  { emoji:'😊', label:'İyi',      value:'good',  color:'#43b89c' },
-  { emoji:'😄', label:'Harika',   value:'great', color:'#6c63ff' },
+  { emoji:'😢', label:'Mutsuz',   value:'sad',     color:'#9b59b6', tip:'neg' },
+  { emoji:'😰', label:'Kaygılı',  value:'anxious', color:'#ff6b6b', tip:'neg' },
+  { emoji:'😴', label:'Yorgunum', value:'tired',   color:'#f39c12', tip:'neg' },
+  { emoji:'😐', label:'İdare Eder', value:'ok',   color:'#888',    tip:'ntr' },
+  { emoji:'😊', label:'İyi',      value:'good',   color:'#43b89c', tip:'poz' },
+  { emoji:'😄', label:'Harika',   value:'great',  color:'#6c63ff', tip:'poz' },
 ];
 
 // ── CÜMLE HAVUZU ─────────────────────────────────────────────
@@ -480,7 +481,7 @@ function wellnessPage() {
 
     <!-- BÖLÜM 1: Duygu & Enerji -->
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title">Nasıl hissediyorsun?</div>
+      <div class="card-title">Bugün nasıl bir rüzgar var? 🌤️</div>
       <div style="display:flex;gap:4px;margin-bottom:8px">
         ${moodOptions.map(m=>`
           <button onclick="saveWellnessDay('mood','${m.value}',this)"
@@ -506,7 +507,7 @@ function wellnessPage() {
 
     <!-- BÖLÜM 2: Akademik -->
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title">Akademik</div>
+      <div class="card-title">Çalışma masasında ne var? 📚</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:7px">En çok zorlandığın ders?</div>
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
@@ -533,7 +534,7 @@ function wellnessPage() {
 
     <!-- BÖLÜM 3: İç dünya -->
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title">İç dünya</div>
+      <div class="card-title">Zihnindeki ses 🧠</div>
 
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Kaygı seviyesi (1–10)</div>
       <div style="display:flex;align-items:center;gap:12px">
@@ -556,7 +557,7 @@ function wellnessPage() {
 
     <!-- BÖLÜM 4: Beden -->
     <div class="card" style="margin-bottom:12px">
-      <div class="card-title">Beden</div>
+      <div class="card-title">Bedenine ne yaptın? 💤</div>
       <div style="margin-bottom:10px">
         <div style="font-size:0.7rem;font-weight:700;color:var(--text2);margin-bottom:5px">🛌 Uyku (saat)</div>
         <input type="number" min="2" max="12" step="0.5" id="wellnessUyku" placeholder="0"

@@ -186,7 +186,7 @@ async function psychReportPage() {
   const moodLabels = { excited:'Heyecanlı', good:'İyiyim', focused:'Odaklı', ok:'İdare Eder', tired:'Yorgunum', anxious:'Kaygılı', sad:'Mutsuzum' };
   const moodEmojis = { excited:'🔥', good:'😊', focused:'🎯', ok:'😐', tired:'😔', anxious:'😰', sad:'😢' };
   const moodColors = { excited:'#f9ca24', good:'#45b7d1', focused:'#6c63ff', ok:'#a29bfe', tired:'#fd79a8', anxious:'#ff6b6b', sad:'#778ca3' };
-  const alertMoods = ['tired','anxious','sad'];
+  const alertMoods = ['sad','anxious','tired'];
 
   // İstatistikler (dönem)
   const validDays = sortedDays.filter(k=>days[k]);
