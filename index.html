@@ -37,60 +37,31 @@
 <body>
 
 <!-- SPLASH EKRANI -->
-<div id="splashScreen" style="position:fixed;inset:0;z-index:99999;background:#0d0d1a;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;">
-
-  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,#1a1040 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,#0a2040 0%,transparent 60%);pointer-events:none"></div>
-  <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(108,99,255,0.015) 2px,rgba(108,99,255,0.015) 4px);pointer-events:none"></div>
-  <div id="sp-stars" style="position:absolute;inset:0;pointer-events:none"></div>
-  <div style="position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(108,99,255,0.06) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);animation:sp-float 6s ease-in-out infinite"></div>
-
-  <div style="display:flex;flex-direction:column;align-items:center;gap:32px;position:relative;z-index:2;">
-    <div id="sp-logo-wrap" style="position:relative;width:140px;height:140px;display:flex;align-items:center;justify-content:center;opacity:0;">
-      <div class="sp-ripple" style="animation-delay:0s"></div>
-      <div class="sp-ripple" style="animation-delay:0.4s"></div>
-      <div class="sp-ripple" style="animation-delay:0.8s"></div>
-      <div id="sp-orbit" style="position:absolute;width:140px;height:140px;border-radius:50%;border:1px solid rgba(108,99,255,0.15);opacity:0;"></div>
-      <div id="sp-logo-box" style="width:90px;height:90px;border-radius:24px;background:linear-gradient(135deg,#6c63ff,#4cc9f0);display:flex;align-items:center;justify-content:center;box-shadow:0 20px 60px rgba(108,99,255,0.4);">
-        <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
-          <rect x="4" y="18" width="6" height="10" rx="2" fill="rgba(255,255,255,0.45)"/>
-          <rect x="13" y="12" width="6" height="16" rx="2" fill="rgba(255,255,255,0.7)"/>
-          <rect x="22" y="6" width="6" height="22" rx="2" fill="white"/>
-          <path d="M26 4L29 1M29 1H26M29 1V4" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-    </div>
-
-    <div id="sp-text" style="text-align:center;opacity:0;">
-      <div style="font-size:36px;font-weight:900;background:linear-gradient(135deg,#fff 30%,#a78bff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-1px;margin-bottom:6px;">LGSKo&#x00E7;</div>
-      <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:0.2em;text-transform:uppercase;">&#x00D6;&#x011F;renci Takip</div>
-    </div>
-
-    <div id="sp-bar" style="width:180px;opacity:0;">
-      <div style="height:3px;border-radius:99px;background:rgba(255,255,255,0.08);overflow:hidden;">
-        <div id="sp-bar-fill" style="height:100%;border-radius:99px;background:linear-gradient(90deg,#6c63ff,#4cc9f0);width:0%;box-shadow:0 0 12px rgba(108,99,255,0.8);transition:width 1.8s cubic-bezier(0.4,0,0.2,1);"></div>
-      </div>
-      <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,0.25);font-weight:700;letter-spacing:0.1em;text-align:center;">Haz&#x0131;rlan&#x0131;yor...</div>
-    </div>
+<div id="splashScreen" style="position:fixed;inset:0;z-index:99999;background:#0d0d1a;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+  <div id="sp-logo-box" style="width:80px;height:80px;border-radius:22px;background:linear-gradient(135deg,#6c63ff,#4cc9f0);display:flex;align-items:center;justify-content:center;box-shadow:0 16px 48px rgba(108,99,255,0.45);margin-bottom:24px;animation:sp-logo-in .5s cubic-bezier(.175,.885,.32,1.275) forwards;">
+    <svg width="44" height="44" viewBox="0 0 32 32" fill="none">
+      <rect x="4" y="18" width="6" height="10" rx="2" fill="rgba(255,255,255,0.45)"/>
+      <rect x="13" y="12" width="6" height="16" rx="2" fill="rgba(255,255,255,0.7)"/>
+      <rect x="22" y="6" width="6" height="22" rx="2" fill="white"/>
+      <path d="M26 4L29 1M29 1H26M29 1V4" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
   </div>
-
-  <div id="sp-version" style="position:absolute;bottom:24px;font-size:10px;color:rgba(255,255,255,0.15);font-weight:700;letter-spacing:0.15em;opacity:0;">v2.4.1</div>
+  <div style="font-size:32px;font-weight:900;color:#fff;letter-spacing:-1px;margin-bottom:6px;animation:sp-fade-up .4s .2s both;"><span style="color:#a78bff">LGS</span>Koç</div>
+  <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:.18em;text-transform:uppercase;animation:sp-fade-up .4s .3s both;">Öğrenci Takip</div>
+  <div style="margin-top:32px;width:48px;display:flex;gap:6px;animation:sp-fade-up .4s .4s both;">
+    <div style="width:8px;height:8px;border-radius:50%;background:#6c63ff;animation:sp-dot 1.2s .0s ease-in-out infinite"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:#8b5cf6;animation:sp-dot 1.2s .15s ease-in-out infinite"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:#4cc9f0;animation:sp-dot 1.2s .3s ease-in-out infinite"></div>
+  </div>
 </div>
 
 <style>
-#splashScreen { transition:opacity 0.5s ease,visibility 0.5s ease; }
+#splashScreen { transition:opacity .35s ease,visibility .35s ease; }
 #splashScreen.sp-hidden { opacity:0; visibility:hidden; pointer-events:none; }
-@keyframes sp-twinkle { 0%,100%{opacity:.2;transform:scale(1)} 50%{opacity:1;transform:scale(1.4)} }
-@keyframes sp-orbit-anim { from{transform:rotate(0deg) translateX(54px)} to{transform:rotate(360deg) translateX(54px)} }
-@keyframes sp-ripple { 0%{transform:scale(.6);opacity:.8} 100%{transform:scale(2.8);opacity:0} }
-@keyframes sp-float { 0%,100%{transform:translate(-50%,-50%) translateY(0)} 50%{transform:translate(-50%,-50%) translateY(-8px)} }
-@keyframes sp-wrap-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-@keyframes sp-logo-in { 0%{opacity:0;transform:translateY(-60px) scale(.7)} 60%{transform:translateY(6px) scale(1.04)} 100%{opacity:1;transform:translateY(0) scale(1)} }
-@keyframes sp-fade-up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-@keyframes sp-pulse { 0%,100%{box-shadow:0 20px 60px rgba(108,99,255,.4),0 0 0 0 rgba(108,99,255,.3)} 50%{box-shadow:0 20px 60px rgba(108,99,255,.4),0 0 0 16px rgba(108,99,255,0)} }
+@keyframes sp-logo-in { from{opacity:0;transform:scale(.7)} to{opacity:1;transform:scale(1)} }
+@keyframes sp-fade-up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
 @keyframes sp-dot { 0%,80%,100%{transform:scale(.6);opacity:.4} 40%{transform:scale(1.2);opacity:1} }
-@keyframes sp-spin { to{transform:rotate(360deg)} }
-.sp-ripple { position:absolute;width:140px;height:140px;border-radius:50%;border:1px solid rgba(108,99,255,.3);animation:sp-ripple 2.4s ease-out infinite; }
-.sp-particle { position:absolute;top:50%;left:50%;width:5px;height:5px;border-radius:50%;margin:-2.5px 0 0 -2.5px;animation:sp-orbit-anim linear infinite; }
+@keyframes sp-pulse { 0%,100%{box-shadow:0 16px 48px rgba(108,99,255,.45)} 50%{box-shadow:0 16px 48px rgba(108,99,255,.7)} }
 .page-loading { display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:20px; }
 .page-loading-logo { width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#6c63ff,#4cc9f0);display:flex;align-items:center;justify-content:center;animation:sp-pulse 1.5s ease-in-out infinite;box-shadow:0 0 24px rgba(108,99,255,.4); }
 .page-loading-dots { display:flex;gap:7px; }
@@ -100,64 +71,13 @@
 </style>
 
 <script>
-(function() {
-  var stars = document.getElementById('sp-stars');
-  var colors = ['#4cc9f0','#6c63ff','#43e97b','#fff'];
-  for (var i = 0; i < 28; i++) {
-    var s = document.createElement('div');
-    var sz = Math.random() * 2.5 + 1;
-    s.style.cssText = 'position:absolute;border-radius:50%;left:' + (Math.random()*100) + '%;top:' + (Math.random()*100) + '%;width:' + sz + 'px;height:' + sz + 'px;background:' + colors[i%4] + ';animation:sp-twinkle ' + (Math.random()*2+2) + 's ' + (Math.random()*3) + 's ease-in-out infinite;';
-    stars.appendChild(s);
-  }
-  var orbit = document.getElementById('sp-orbit');
-  var pColors = ['#6c63ff','#4cc9f0','#43e97b'];
-  for (var j = 0; j < 6; j++) {
-    var p = document.createElement('div');
-    p.className = 'sp-particle';
-    var pc = pColors[j%3];
-    p.style.cssText = 'background:' + pc + ';box-shadow:0 0 6px ' + pc + ';animation-duration:' + (3 + j*0.3) + 's;animation-delay:' + (j*0.08) + 's;';
-    orbit.appendChild(p);
-  }
-  var wrap = document.getElementById('sp-logo-wrap');
-  var logo = document.getElementById('sp-logo-box');
-  var orb  = document.getElementById('sp-orbit');
-  var text = document.getElementById('sp-text');
-  var bar  = document.getElementById('sp-bar');
-  var fill = document.getElementById('sp-bar-fill');
-  var ver  = document.getElementById('sp-version');
-
-  setTimeout(function() {
-    wrap.style.opacity = '1';
-    wrap.style.animation = 'sp-wrap-float 4s 0.5s ease-in-out infinite';
-    logo.style.animation = 'sp-logo-in 0.7s cubic-bezier(0.175,0.885,0.32,1.275) forwards, sp-pulse 2.5s 1.5s ease infinite';
-  }, 400);
-
-  setTimeout(function() {
-    orb.style.opacity = '1';
-  }, 1000);
-
-  setTimeout(function() {
-    text.style.animation = 'sp-fade-up 0.6s ease-out forwards';
-    text.style.opacity = '1';
-    bar.style.animation = 'sp-fade-up 0.6s 0.2s ease-out both';
-    bar.style.opacity = '1';
-    ver.style.animation = 'sp-fade-up 0.5s 0.4s ease-out both';
-    ver.style.opacity = '1';
-    // Bar dolumu — 100% hedefle, CSS transition ile
-    setTimeout(function() { fill.style.width = '100%'; }, 300);
-  }, 1600);
-
-  // Güvenlik: 8 saniyede kapanmazsa zorla kapat
-  setTimeout(function() {
-    window._hideSplash();
-  }, 8000);
-})();
-
+// Güvenlik: 6 saniyede kapanmazsa zorla kapat
+setTimeout(function() { window._hideSplash && window._hideSplash(); }, 6000);
 window._hideSplash = function() {
   var sp = document.getElementById('splashScreen');
   if (sp && !sp.classList.contains('sp-hidden')) {
     sp.classList.add('sp-hidden');
-    setTimeout(function() { if(sp.parentNode) sp.remove(); }, 500);
+    setTimeout(function() { if(sp.parentNode) sp.remove(); }, 380);
   }
 };
 </script>
