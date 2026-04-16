@@ -5,27 +5,15 @@ function selectRole(r) {
 }
 
 function showRegister() {
-  // Formu tamamen sıfırla
   ['regName','regEmail','regPass','regPass2','regSchool'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
+    const el = document.getElementById(id); if (el) el.value = '';
   });
-  document.getElementById('regRole').value = 'student';
-  document.getElementById('regBranch').value = '';
-  document.getElementById('regBranchLabel').textContent = '— Branş seçin —';
-  document.getElementById('regClass').value = '8';
-  document.getElementById('regClassLabel').textContent = '8. Sınıf';
+  const _rb = document.getElementById('regBranch'); if (_rb) _rb.value = '';
+  const _rbl = document.getElementById('regBranchLabel'); if (_rbl) _rbl.textContent = '— Branş seçin —';
   const errEl = document.getElementById('regError');
   if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
-  const msg = document.getElementById('sifreUyumMsg');
-  if (msg) msg.style.display = 'none';
-  // Şifre alanlarını gizli yap
-  ['regPass','regPass2'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.type = 'password';
-  });
-  // Rol butonlarını sıfırla — öğrenci varsayılan
-  secRolKart('student');
+  const msg = document.getElementById('sifreUyumMsg'); if (msg) msg.style.display = 'none';
+  ['regPass','regPass2'].forEach(id => { const el = document.getElementById(id); if (el) el.type = 'password'; });
   openModal('registerModal');
 }
 
@@ -259,6 +247,7 @@ function secRolKart(v) {
   // Buton stillerini güncelle
   const sBtn = document.getElementById('rolBtn_student');
   const tBtn = document.getElementById('rolBtn_teacher');
+  if (!sBtn || !tBtn) { toggleRegFields(); return; }
   if (v === 'student') {
     sBtn.style.border = '2px solid var(--accent)';
     sBtn.style.background = 'var(--accent)12';
