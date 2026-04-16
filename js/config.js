@@ -384,6 +384,8 @@ auth.onAuthStateChanged(async (user) => {
       document.getElementById('menuName') && (document.getElementById('menuName').textContent = data.name || user.email);
       const roleLabel = currentRole==='teacher'
         ? `Koç Öğretmen${data.branch?' • '+data.branch:''}`
+        : currentRole==='solo_student'
+        ? `${data.sinif||'8'}. Sınıf • Koçsuz Takip`
         : `${data.classroom||''} • ${data.school||'Öğrenci'}`;
       document.getElementById('menuRole') && (document.getElementById('menuRole').textContent = roleLabel);
       if (data.photo) {
@@ -459,7 +461,7 @@ auth.onAuthStateChanged(async (user) => {
         } catch(e) { console.log('Görev çekme hatası:', e.message); tasks = []; }
       }
 
-      if (currentRole === 'student') {
+      if (currentRole === 'student' || currentRole === 'solo_student') {
         // Kendi girişlerini çek
         try {
           const eSnap = await db.collection('studyEntries')
@@ -472,40 +474,54 @@ auth.onAuthStateChanged(async (user) => {
           studyEntries.sort((a,b)=>(b.dateKey||'').localeCompare(a.dateKey||''));
         } catch(e) { console.log('Giriş çekme hatası:', e.message); studyEntries = []; }
 
-        // Kendine atanan görevleri çek - UID üzerinden (güvenli)
-        try {
-          const tSnap = await db.collection('tasks')
-            .where('studentUid','==',user.uid).get();
+        if (currentRole === 'student') {
+          // Koçtan atanan görevleri çek
+          try {
+            const tSnap = await db.collection('tasks')
+              .where('studentUid','==',user.uid).get();
+            tasks = [];
+            tSnap.forEach(d => tasks.push({ ...d.data(), id: d.id }));
+            if (tasks.length === 0) {
+              const tSnapOld = await db.collection('tasks')
+                .where('studentName','==',data.name)
+                .where('teacherId','==',data.teacherId||'').get();
+              tSnapOld.forEach(d => tasks.push({ ...d.data(), id: d.id }));
+            }
+          } catch(e) { console.log('Görev çekme hatası:', e.message); tasks = []; }
+        } else {
           tasks = [];
-          tSnap.forEach(d => tasks.push({ ...d.data(), id: d.id }));
-          // Eski kayıtlar için fallback: studentName ile de dene
-          if (tasks.length === 0) {
-            const tSnapOld = await db.collection('tasks')
-              .where('studentName','==',data.name)
-              .where('teacherId','==',data.teacherId||'').get();
-            tSnapOld.forEach(d => tasks.push({ ...d.data(), id: d.id }));
-          }
-        } catch(e) { console.log('Görev çekme hatası:', e.message); tasks = []; }
+        }
 
         // Wellness verisini Firestore'dan yükle
         loadWellnessFromFirestore();
+
+        // Solo öğrenci trial kontrolü
+        if (currentRole === 'solo_student' && typeof soloTrialBitti === 'function' && soloTrialBitti(data)) {
+          document.getElementById('app').style.display = 'none';
+          document.getElementById('loginScreen').style.display = 'none';
+          const trialEl = document.getElementById('soloTrialBittiEkrani');
+          if (trialEl) trialEl.style.display = 'flex';
+          if (window._hideSplash) window._hideSplash();
+          return;
+        }
       }
 
       renderSidebar();
       // Rozet menü butonunu göster/gizle
+      const _isSt = currentRole==='student' || currentRole==='solo_student';
       const _bmb = document.getElementById('badgeMenuBtn');
-      if (_bmb) _bmb.style.display = currentRole==='student' ? 'flex' : 'none';
+      if (_bmb) _bmb.style.display = _isSt ? 'flex' : 'none';
       const _oab = document.getElementById('okulArkadasBtn');
-      if (_oab) _oab.style.display = currentRole==='student' ? 'flex' : 'none';
+      if (_oab) _oab.style.display = currentRole==='student' ? 'flex' : 'none'; // solo'da okul arkadaşı yok
       const _prb = document.getElementById('programimBtn');
-      if (_prb) _prb.style.display = currentRole==='student' ? 'flex' : 'none';
+      if (_prb) _prb.style.display = currentRole==='student' ? 'flex' : 'none'; // solo'da koç programı yok
       if (currentRole==='student') {
         const badge = document.getElementById('planBadge');
         if (badge) badge.style.display = _haftalikPlanYeni && _haftalikPlanYeni() ? 'block' : 'none';
       }
       const _sab = document.getElementById('satinAlMenuBtn');
       if (_sab) _sab.style.display = currentRole==='teacher' ? 'flex' : 'none';      // Çerçeveyi uygula — önce Firestore'dan oku
-      if (currentRole === 'student') {
+      if (currentRole === 'student' || currentRole === 'solo_student') {
         if (db) {
           db.collection('users').doc(user.uid).get().then(snap=>{
             if (snap.exists && snap.data().activeFrame) {

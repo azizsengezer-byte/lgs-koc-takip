@@ -143,7 +143,16 @@ function renderSidebar() {
     { id:'messages',     icon:ICONS.msg,    label:'Koçumla Mesaj' },
     { id:'notifs',       icon:ICONS.bell,   label:'Bildirimler' },
   ];
-  const nav = currentRole==='teacher' ? teacherNav : studentNav;
+  const soloStudentNav = [
+    { id:'dashboard',    icon:ICONS.home,   label:'Ana Sayfa' },
+    { id:'daily-entry',  icon:ICONS.pencil, label:'Günlük Giriş' },
+    { id:'my-analysis',  icon:ICONS.trend,  label:'Analizlerim' },
+    { id:'kazanimlar',   icon:ICONS.target, label:'Kazanımlarım' },
+    { id:'wellness',     icon:ICONS.heart,  label:'Nasıl Hissediyorum' },
+    { id:'lgs-dagilim',  icon:ICONS.pie,    label:'LGS Soru Dağılımı' },
+    { id:'notifs',       icon:ICONS.bell,   label:'Bildirimler' },
+  ];
+  const nav = currentRole==='teacher' ? teacherNav : currentRole==='solo_student' ? soloStudentNav : studentNav;
   sb.innerHTML = nav.map(n => `
     <button class="nav-item ${currentPage===n.id?'active':''}" onclick="showPage('${n.id}')">
       <span class="nav-icon">${n.icon}</span>${n.label}

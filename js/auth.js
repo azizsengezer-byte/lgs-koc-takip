@@ -333,3 +333,108 @@ async function saveClassSetup() {
   }
 }
 
+
+// ── SOLO ÖĞRENCİ KAYIT ───────────────────────────────────────
+function showRegisterSolo() {
+  ['soloName','soloEmail','soloPass','soloPass2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const errEl = document.getElementById('soloError');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  const msg = document.getElementById('soloSifreMsg');
+  if (msg) msg.style.display = 'none';
+  document.getElementById('soloClass').value = '8';
+  document.getElementById('soloHedefPuan').value = '';
+  document.getElementById('soloHedefOkul').value = '';
+  openModal('soloRegisterModal');
+}
+
+async function doRegisterSolo() {
+  const name  = document.getElementById('soloName').value.trim();
+  const email = document.getElementById('soloEmail').value.trim();
+  const pass  = document.getElementById('soloPass').value;
+  const pass2 = document.getElementById('soloPass2').value;
+  const sinif = document.getElementById('soloClass').value;
+  const hedefPuan = document.getElementById('soloHedefPuan').value.trim();
+  const hedefOkul = document.getElementById('soloHedefOkul').value.trim();
+  const errEl = document.getElementById('soloError');
+  errEl.style.display = 'none';
+
+  if (!name || !email || !pass) { errEl.textContent = 'Ad, e-posta ve şifre zorunludur.'; errEl.style.display='block'; return; }
+  if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
+  if (pass !== pass2) { errEl.textContent = 'Şifreler uyuşmuyor.'; errEl.style.display='block'; return; }
+
+  const btn = document.getElementById('soloBtnKayit');
+  if (btn) { btn.textContent = 'Kaydediliyor...'; btn.disabled = true; }
+
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    const uid  = cred.user.uid;
+    const now  = new Date();
+    const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+    const profileData = {
+      name, email,
+      role: 'solo_student',
+      sinif,
+      hedefPuan: hedefPuan || '',
+      hedefOkul: hedefOkul || '',
+      trial: {
+        startedAt: now,
+        endsAt: trialEnd,
+        expired: false,
+      },
+      subscription: { plan: 'none', status: 'trial' },
+      createdAt: now,
+    };
+
+    await db.collection('pendingRegistrations').doc(uid).set(profileData);
+    await cred.user.sendEmailVerification({ url: window.location.origin + window.location.pathname });
+    await auth.signOut();
+    closeModal('soloRegisterModal');
+
+    setTimeout(() => {
+      const el = document.getElementById('dogrulamaEkrani');
+      if (el) {
+        el.style.display = 'flex';
+        const emailEl = document.getElementById('dogrulamaEmailGoster');
+        if (emailEl) emailEl.textContent = email;
+        window._dogrulamaEmail = email;
+        window._dogrulamaPass  = pass;
+      }
+    }, 300);
+
+  } catch(e) {
+    errEl.textContent = _trHata(e.code);
+    errEl.style.display = 'block';
+  } finally {
+    if (btn) { btn.textContent = 'Hesap Oluştur →'; btn.disabled = false; }
+  }
+}
+
+function soloSifreMesaj() {
+  const p1 = document.getElementById('soloPass')?.value || '';
+  const p2 = document.getElementById('soloPass2')?.value || '';
+  const msg = document.getElementById('soloSifreMsg');
+  if (!msg || !p2) { if (msg) msg.style.display='none'; return; }
+  if (p1 === p2) {
+    msg.textContent = '✓ Şifreler uyuşuyor';
+    msg.style.color = '#2d9e5a';
+    msg.style.display = 'block';
+  } else {
+    msg.textContent = '✗ Şifreler uyuşmuyor';
+    msg.style.color = '#cc3355';
+    msg.style.display = 'block';
+  }
+}
+
+// Trial süre kontrolü — süresi dolmuşsa true döner
+function soloTrialBitti(userData) {
+  if (!userData || userData.role !== 'solo_student') return false;
+  if (userData.subscription?.status === 'active') return false;
+  const endsAt = userData.trial?.endsAt;
+  if (!endsAt) return false;
+  const bitis = endsAt.toDate ? endsAt.toDate() : new Date(endsAt);
+  return new Date() > bitis;
+}
