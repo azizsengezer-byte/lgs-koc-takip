@@ -190,8 +190,14 @@ window._hideSplash = function() {
       </button>
     </div>
     <div style="margin-top:10px;text-align:center">
-      <span style="font-size:0.82rem;color:var(--text2)">Hesabın yok mu? </span>
-      <button onclick="showRegister()" style="background:none;border:none;color:var(--accent);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">Kayıt Ol</button>
+      <span style="font-size:0.82rem;color:var(--text2)">Koç hesabın yok mu? </span>
+      <button onclick="showRegister()" style="background:none;border:none;color:var(--accent);font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Koç Kaydı</button>
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);text-align:center">
+      <div style="font-size:0.75rem;color:var(--text2);margin-bottom:8px">Koçsuz kendi başına takip etmek ister misin?</div>
+      <button onclick="showRegisterSolo()" style="width:100%;padding:11px;border:1.5px solid var(--accent);border-radius:12px;background:transparent;color:var(--accent);font-size:0.88rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">
+        Koçsuz Devam Et →
+      </button>
     </div>
   </div>
 </div>
@@ -298,6 +304,101 @@ window._hideSplash = function() {
 </div>
 
 <!-- REGISTER MODAL -->
+<!-- SOLO ÖĞRENCİ KAYIT MODAL -->
+<div id="soloRegisterModal" style="display:none;position:fixed;inset:0;z-index:500;background:#f5f6fa;flex-direction:column;overflow:hidden">
+  <div style="background:#fff;border-bottom:0.5px solid #e8eaf0;padding:14px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0">
+    <button onclick="closeModal('soloRegisterModal')" style="width:34px;height:34px;border-radius:10px;background:#f5f6fa;border:0.5px solid #e0e2eb;cursor:pointer;display:flex;align-items:center;justify-content:center">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7L9 12" stroke="#1a1a2e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div style="flex:1;text-align:center">
+      <div style="font-size:15px;font-weight:700;color:#1a1a2e">Koçsuz Hesap Oluştur</div>
+      <div style="font-size:11px;color:#aaa;margin-top:1px">14 gün ücretsiz deneme</div>
+    </div>
+    <div style="width:34px"></div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:20px 20px 8px">
+    <!-- Trial bilgi kutusu -->
+    <div style="background:#6c63ff12;border:1px solid #6c63ff30;border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6c63ff" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div style="font-size:12px;color:#5a52cc;line-height:1.5">
+        <strong>14 gün ücretsiz</strong> — Kayıttan sonra tüm özellikler kullanılabilir. Deneme süresi sonunda uygulama ücretli olacak.
+      </div>
+    </div>
+    <div style="display:grid;gap:10px;margin-bottom:10px">
+      <div>
+        <label class="form-label">Ad Soyad</label>
+        <input class="form-input" type="text" id="soloName" placeholder="Adın Soyadın">
+      </div>
+      <div>
+        <label class="form-label">E-posta</label>
+        <input class="form-input" type="email" id="soloEmail" placeholder="ornek@gmail.com" autocapitalize="none">
+      </div>
+      <div>
+        <label class="form-label">Şifre</label>
+        <div style="position:relative">
+          <input class="form-input" type="password" id="soloPass" placeholder="En az 6 karakter" style="padding-right:42px">
+          <button type="button" onclick="sifreGoster('soloPass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;color:#aaa">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+          </button>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Şifre Tekrar</label>
+        <div style="position:relative">
+          <input class="form-input" type="password" id="soloPass2" placeholder="Şifreyi tekrar girin" style="padding-right:42px" oninput="soloSifreMesaj()">
+          <button type="button" onclick="sifreGoster('soloPass2',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:4px;color:#aaa">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+          </button>
+        </div>
+        <div id="soloSifreMsg" style="font-size:0.72rem;margin-top:3px;display:none"></div>
+      </div>
+    </div>
+    <div style="height:0.5px;background:#e8eaf0;margin-bottom:12px"></div>
+    <div style="font-size:10px;font-weight:700;color:#aaa;letter-spacing:0.06em;margin-bottom:10px">SINIF BİLGİSİ</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <label class="form-label">Sınıf</label>
+        <select class="form-select" id="soloClass">
+          <option value="8" selected>8. Sınıf</option>
+          <option value="7">7. Sınıf — erken başlangıç</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Hedef Puan</label>
+        <input class="form-input" type="number" id="soloHedefPuan" placeholder="ör. 480" min="100" max="500">
+      </div>
+    </div>
+    <div>
+      <label class="form-label">Hedef Okul <span style="font-weight:400;color:#aaa">(opsiyonel)</span></label>
+      <input class="form-input" type="text" id="soloHedefOkul" placeholder="ör. Batman Fen Lisesi">
+    </div>
+    <div id="soloError" style="display:none;font-size:0.78rem;margin-top:12px;background:#ff658410;border-radius:8px;padding:8px 10px;border:0.5px solid #ff658440;color:#cc3355"></div>
+  </div>
+  <div style="background:#fff;border-top:0.5px solid #e8eaf0;padding:14px 20px 28px;flex-shrink:0">
+    <button onclick="doRegisterSolo()" id="soloBtnKayit" style="width:100%;padding:14px;background:var(--accent);border:none;border-radius:14px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">
+      Hesap Oluştur →
+    </button>
+  </div>
+</div>
+
+<!-- SOLO TRIAL BİTTİ EKRANI -->
+<div id="soloTrialBittiEkrani" style="display:none;position:fixed;inset:0;z-index:800;background:#f5f6fa;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center">
+  <div style="width:64px;height:64px;border-radius:20px;background:#6c63ff14;border:1px solid #6c63ff22;display:flex;align-items:center;justify-content:center;margin-bottom:20px">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6c63ff" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  </div>
+  <div style="font-size:22px;font-weight:900;color:#1a1a2e;margin-bottom:8px">Deneme Süresi Doldu</div>
+  <div style="font-size:14px;color:#888;line-height:1.6;margin-bottom:24px;max-width:320px">
+    14 günlük ücretsiz deneme süren tamamlandı. Yakında uygulama mağazasından ücretli planla devam edebileceksin.
+  </div>
+  <div style="background:#fff;border-radius:16px;border:1px solid #e8eaf0;padding:20px;max-width:320px;width:100%;margin-bottom:20px">
+    <div style="font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:6px">Verilerini koruduk</div>
+    <div style="font-size:12px;color:#888;line-height:1.5">Tüm çalışma geçmişin ve wellness verilen kayıtlıdır. Ücretli plana geçtiğinde kaldığın yerden devam edersin.</div>
+  </div>
+  <button onclick="auth.signOut().then(()=>{document.getElementById('soloTrialBittiEkrani').style.display='none';document.getElementById('loginScreen').style.display='flex';})" style="width:100%;max-width:320px;padding:13px;border:1.5px solid var(--border);border-radius:12px;background:#fff;color:var(--text2);font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">
+    Çıkış Yap
+  </button>
+</div>
+
 <div id="registerModal" style="display:none;position:fixed;inset:0;z-index:500;background:#f5f6fa;flex-direction:column;overflow:hidden">
   <!-- Üst bar -->
   <div style="background:#fff;border-bottom:0.5px solid #e8eaf0;padding:14px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0">
