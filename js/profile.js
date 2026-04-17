@@ -516,7 +516,8 @@ async function profilePage() {
   const name = document.getElementById('menuName')?.textContent;
   const data = window.currentUserData || {};
   const isTeacher = currentRole === 'teacher';
-  const roleLabel = isTeacher ? 'Koç Öğretmen' : '8. Sınıf Öğrencisi';
+  const isSolo = currentRole === 'solo_student';
+  const roleLabel = isTeacher ? 'Koç Öğretmen' : isSolo ? 'Koçsuz Öğrenci' : '8. Sınıf Öğrencisi';
   const photoHTML = data.photo
     ? `<img src="${data.photo}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto 12px;display:block">`
     : `<div class="avatar" style="width:72px;height:72px;font-size:1.8rem;margin:0 auto 12px">${name[0].toUpperCase()}</div>`;
@@ -576,6 +577,23 @@ async function profilePage() {
         </select>
       </div>
 
+      ` : isSolo ? `
+      <div class="form-group">
+        <label class="form-label">Sınıf Kademesi</label>
+        <button type="button" onclick="openKademePicker()" style="width:100%;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);text-align:left;cursor:pointer;font-size:0.92rem;display:flex;align-items:center;justify-content:space-between">
+          <span id="kademeLabel">${(()=>{const c=data.sinif||'8';const n=String(c).match(/\d+/)?.[0]||'8';return n+'. Sınıf';})()}</span>
+          <span style="color:var(--text2)">▼</span>
+        </button>
+        <input type="hidden" id="profileClass" value="${String(data.sinif||'8').match(/\d+/)?.[0]||'8'}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hedef Puan <span style="font-size:0.75rem;color:var(--text2)">(LGS /500)</span></label>
+        <input class="form-input" type="number" id="soloHedefPuanProfile" min="100" max="500" placeholder="ör. 480" value="${data.hedefPuan||''}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hedef Okul</label>
+        <input class="form-input" type="text" id="soloHedefOkulProfile" placeholder="ör. Batman Fen Lisesi" value="${data.hedefOkul||''}">
+      </div>
       ` : `
       <div class="form-group">
         <label class="form-label">Okul</label>
@@ -670,7 +688,7 @@ async function profilePage() {
       </div>
     </div>
 
-    ${!isTeacher ? `
+    ${!isTeacher && !isSolo ? `
     <div class="card" style="margin-top:16px">
       <button class="btn btn-primary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px"
         onclick="showBadgesPage()">
@@ -693,6 +711,36 @@ async function profilePage() {
     <div class="card" style="margin-top:16px" id="okul-arkadaslar-kart">
       <div class="card-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Okul Arkadaşlarım</div>
       <div id="okul-arkadaslar-liste" style="color:var(--text2);font-size:0.85rem">Yükleniyor...</div>
+    </div>
+    ` : ''}
+    ${isSolo ? `
+    <div class="card" style="margin-top:16px;background:linear-gradient(135deg,var(--accent4)10,var(--accent4)05);border:1px solid var(--accent4)33">
+      <div class="card-title" style="margin-bottom:10px">📊 Çalışma Özeti</div>
+      ${(()=>{
+        const allE = window.studyEntries || [];
+        const totalQ = allE.reduce((a,e)=>a+(e.questions||0),0);
+        const totalDur = allE.reduce((a,e)=>a+(e.duration||0),0);
+        const aktifGun = new Set(allE.map(e=>e.dateKey)).size;
+        const denemeSayisi = new Set(allE.filter(e=>e.type==='deneme').map(e=>e.examId||e.dateKey)).size;
+        return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="text-align:center;padding:12px;background:var(--surface2);border-radius:10px">
+            <div style="font-size:1.5rem;font-weight:900;color:var(--accent)">${totalQ}</div>
+            <div style="font-size:0.72rem;color:var(--text2)">Toplam Soru</div>
+          </div>
+          <div style="text-align:center;padding:12px;background:var(--surface2);border-radius:10px">
+            <div style="font-size:1.5rem;font-weight:900;color:var(--accent3)">${(totalDur/60).toFixed(1)}</div>
+            <div style="font-size:0.72rem;color:var(--text2)">Toplam Saat</div>
+          </div>
+          <div style="text-align:center;padding:12px;background:var(--surface2);border-radius:10px">
+            <div style="font-size:1.5rem;font-weight:900;color:var(--accent4)">${aktifGun}</div>
+            <div style="font-size:0.72rem;color:var(--text2)">Aktif Gün</div>
+          </div>
+          <div style="text-align:center;padding:12px;background:var(--surface2);border-radius:10px">
+            <div style="font-size:1.5rem;font-weight:900;color:var(--accent2)">${denemeSayisi}</div>
+            <div style="font-size:0.72rem;color:var(--text2)">Deneme</div>
+          </div>
+        </div>`;
+      })()}
     </div>
     ` : ''}
   `;
@@ -765,9 +813,13 @@ async function saveProfile() {
     const updates = { name };
     if (currentRole === 'teacher') {
       updates.branch = document.getElementById('profileBranch').value;
-      // school: Çalıştığım Okullar kartından ayrıca yönetiliyor
-      // schools array yoksa başlat
       if (!window.currentUserData?.schools) updates.schools = [];
+    } else if (currentRole === 'solo_student') {
+      updates.sinif = document.getElementById('profileClass').value;
+      const hp = document.getElementById('soloHedefPuanProfile')?.value.trim();
+      const ho = document.getElementById('soloHedefOkulProfile')?.value.trim();
+      if (hp !== undefined) updates.hedefPuan = hp;
+      if (ho !== undefined) updates.hedefOkul = ho;
     } else {
       updates.classroom = document.getElementById('profileClass').value + '. Sınıf';
     }
@@ -777,6 +829,8 @@ async function saveProfile() {
     document.getElementById('headerAvatar').textContent = (window.currentUserData.photo) ? '' : name[0].toUpperCase();
     const roleLabel = currentRole==='teacher'
       ? `Koç Öğretmen${updates.branch?' • '+updates.branch:''}`
+      : currentRole==='solo_student'
+      ? `${updates.sinif||data.sinif||'8'}. Sınıf • Koçsuz Takip`
       : `${updates.classroom||''} • ${window.currentUserData.school||''}`;
     document.getElementById('menuRole') && (document.getElementById('menuRole').textContent = roleLabel);
     showToast('✅', 'Profil güncellendi!');
