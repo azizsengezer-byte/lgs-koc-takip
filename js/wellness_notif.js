@@ -138,7 +138,7 @@ function checkAllWellnessNotifications(studentUid, data, todayKey) {
   // 3B. 3 Gün Üst Üste Olumsuz Duygu
   if (consecutive3Neg && !consecutive3LowEnerji) {
     notifications.push({
-      msg: `💙 Son birkaç gündür zorlu bir süreç geçiriyorsun. Bu hisler geçici — sen bu süreçten daha güçlü çıkacaksın. Koçunla konuşmak ister misin?`,
+      msg: `💙 Son birkaç gündür zorlu bir süreç geçiriyorsun. Bu hisler geçici — sen bu süreçten daha güçlü çıkacaksın. ${currentRole === 'solo_student' ? 'Güvendiğin biriyle konuşmak iyi gelebilir.' : 'Koçunla konuşmak ister misin?'}`,
       type: 'mood_consecutive', priority: 1, color: '#778ca3', icon: '💙',
       koç: `⚠️ ${name} son 3 gündür olumsuz duygu bildiriyor. Görüşme planlanması önerilir.`
     });

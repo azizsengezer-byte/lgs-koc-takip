@@ -255,22 +255,17 @@ function generateAnalysisComment(filtered, subjectStats, totalDur, totalQ, total
   if (bestSub) comments.push(`En güçlü dersin <b>${bestSub.name}</b> (%${bestSub.netPct} isabet) — tebrikler! 🎯`);
   if (worstSub && worstSub.name !== bestSub?.name) comments.push(`<b>${worstSub.name}</b> dersine biraz daha odaklanabilirsin (%${worstSub.netPct} isabet). 💡`);
 
-  // Deneme özeti
-  // Öğrenciye ait tüm deneme girişleri
-  // selectedStudentName global — öğretmen tarafında seçili öğrenci
-  // Öğrenci kendi raporunu alıyorsa filtered içindeki studentName'i kullan
-  // Öğrenci adını belirle — studentNameParam öncelikli
-  const _sName = studentNameParam
-    || (typeof selectedStudentName !== 'undefined' && selectedStudentName)
-    || filtered.find(e=>e.studentName)?.studentName
-    || null;
-  // Deneme girişlerini filtrele — studentName veya userId eşleşmesi
+  // Deneme özeti — sadece kendi userId'sine göre filtrele (teacher-side global'lerden bağımsız)
   const _currentUid = (window.currentUserData||{}).uid || null;
-  const _dAll = studyEntries.filter(e=>{
+  const _isStudentSide = currentRole === 'student' || currentRole === 'solo_student';
+  const _dAll = studyEntries.filter(e => {
     if (e.type !== 'deneme') return false;
-    if (!_sName && !_currentUid) return true; // filtre yoksa hepsini al
-    if (_currentUid && e.userId === _currentUid) return true;
-    if (_sName && e.studentName === _sName) return true;
+    // Öğrenci kendi analizini görüyorsa: sadece kendi uid'i
+    if (_isStudentSide && _currentUid) return e.userId === _currentUid;
+    // Öğretmen tarafı: studentNameParam veya selectedStudentName ile filtrele
+    const _sName = studentNameParam
+      || (typeof selectedStudentName !== 'undefined' ? selectedStudentName : null);
+    if (_sName) return e.studentName === _sName;
     return false;
   });
   const _dUse = _dAll;

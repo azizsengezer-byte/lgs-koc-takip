@@ -346,7 +346,7 @@ const WP = {
   kaygi: {
     low:  ['Kaygın düşük. Zihninle barışık bir gün.','Sakin bir zihin en büyük güçtür.','Bu huzuru hissedebilmek güzel bir şey.','İçin sakin, bu geçici değil korunabilir.','Sakin kalmak bir beceri, her gün biraz daha gelişiyor.','Bu hali yakalayan az insan var, koru onu.'],
     mid:  ['Biraz kaygı var ama bu seni durdurmaz.','Orta kaygı aslında dikkatli olmak demek bazen.','Kaygın seni uyarıyor, ama karar sen veriyorsun.','Bu his geçecek, kendin için burada olmaya devam et.','Kaygıyla yaşamak değil, ona rağmen yürümek.','Zihnini meşgul eden şeyi yazmak hafifletebilir.','Nefes al. Gerçekten sadece derin bir nefes.'],
-    high: ['Kaygın biraz yüksek. Kendine nazik davranmayı unutma.','Bu his çok güçlü hissettiriyor ama geçici.','Bugün kendine ekstra şefkat göster.','Bu hissi birine anlatmak ister misin? Koçun dinler.','Büyük resmi şu an görmen gerekmiyor. Sadece bugün.','Kaygıyla mücadele etmek yerine kabul etmek bazen daha hafif.'],
+    high: ['Kaygın biraz yüksek. Kendine nazik davranmayı unutma.','Bu his çok güçlü hissettiriyor ama geçici.','Bugün kendine ekstra şefkat göster.','Bu hissi güvendiğin birine anlatmak ister misin? Bazen söylemek hafifletir.','Büyük resmi şu an görmen gerekmiyor. Sadece bugün.','Kaygıyla mücadele etmek yerine kabul etmek bazen daha hafif.'],
     vhigh:['Kaygın çok yoğun hissettiriyor. Yalnız taşımak zorunda değilsin.','Bu hissi içinde tutmak ağır. Güvendiğin birine anlat.','Şu an her şey büyük görünüyor, ama bu his gerçeği değiştirmiyor.','Yardım istemek cesaret gerektirir, ve sen cesursun.','Bugün tek yapman gereken nefes almak olabilir. Yeterli.'],
   },
   ders: {
@@ -608,7 +608,7 @@ function wellnessPage() {
         <div class="card-title" style="margin:0">Bugün ne düşündüm?</div>
       </div>
       <div style="font-size:0.72rem;color:var(--text2);margin-bottom:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;line-height:1.5">
-        🔒 Bu alan tamamen sana özel — koçun dahil kimse okuyamaz. PIN ile korunuyor.
+        🔒 Bu alan tamamen sana özel — kimse okuyamaz. PIN ile korunuyor.
       </div>
       ${todayNot ? `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#43b89c12;border:1px solid #43b89c33;border-radius:10px">

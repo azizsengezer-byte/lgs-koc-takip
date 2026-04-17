@@ -1,35 +1,57 @@
 // ── YARDIM & DESTEK SAYFASI ───────────────────────────────────
 function yardimPage() {
   const isTeacher = currentRole === 'teacher';
+  const isSolo = currentRole === 'solo_student';
 
   const sssOgrenci = [
     { s: 'Şifremi unuttum, ne yapmalıyım?',
-      c: 'Giriş ekranındaki <strong>"Şifremi unuttum"</strong> bağlantısına tıkla. E-postana sıfırlama maili gönderilecek. Henüz e-posta eklemediysen önce <strong>Profil → E-posta Adresi</strong> bölümünden ekle.' },
+      c: 'Giriş ekranındaki <strong>\"Şifremi unuttum\"</strong> bağlantısına tıkla. E-postana sıfırlama maili gönderilecek. Henüz e-posta eklemediysen önce <strong>Profil → E-posta Adresi</strong> bölümünden ekle.' },
     { s: 'Kullanıcı adımı nasıl değiştirebilirim?',
       c: 'Kullanıcı adın koçun tarafından oluşturulmuştur ve değiştirilemez. Adını değiştirmek için <strong>Profil → Bilgilerimi Düzenle</strong> bölümünü kullan.' },
     { s: 'Günlük çalışmamı nereye gireceğim?',
-      c: 'Alt menüdeki <strong>"Günlük Giriş"</strong> sekmesinden çalıştığın ders, konu ve doğru/yanlış sayılarını girebilirsin.' },
+      c: 'Alt menüdeki <strong>\"Günlük Giriş\"</strong> sekmesinden çalıştığın ders, konu ve doğru/yanlış sayılarını girebilirsin.' },
     { s: 'Rozet nasıl kazanırım?',
       c: 'Düzenli çalışma girişi yap, günlük hedeflerini tamamla ve wellness takibini düzenli doldur. Rozetler koşullar sağlandığında otomatik kazanılır.' },
     { s: 'Koçuma nasıl mesaj gönderebilirim?',
-      c: 'Alt menüdeki <strong>"Mesajlar"</strong> sekmesinden koçunla doğrudan mesajlaşabilirsin.' },
+      c: 'Alt menüdeki <strong>\"Mesajlar\"</strong> sekmesinden koçunla doğrudan mesajlaşabilirsin.' },
     { s: 'Deneme sınavı sonuçlarımı nereye gireceğim?',
-      c: '<strong>"Günlük Giriş"</strong> sayfasında tür olarak <strong>"Deneme Sınavı"</strong> seçerek her ders için doğru/yanlış/boş sayılarını girebilirsin.' },
+      c: '<strong>\"Günlük Giriş\"</strong> sayfasında tür olarak <strong>\"Deneme Sınavı\"</strong> seçerek her ders için doğru/yanlış/boş sayılarını girebilirsin.' },
     { s: 'Uygulama verilerimi başka cihazda görebilir miyim?',
       c: 'Evet! Tüm veriler bulutta güvenli şekilde saklanır. Aynı hesapla farklı telefon veya bilgisayardan giriş yaparak erişebilirsin.' },
     { s: 'Bildirimler çalışmıyor, ne yapmalıyım?',
       c: 'Telefon ayarlarından uygulama bildirimine izin verildiğini kontrol et. Tarayıcı kullanıyorsan site izinlerinde bildirimlere izin ver.' },
   ];
 
+  const sssSolo = [
+    { s: 'Şifremi unuttum, ne yapmalıyım?',
+      c: 'Giriş ekranındaki <strong>\"Şifremi unuttum\"</strong> bağlantısına tıkla. Kayıt sırasında kullandığın e-posta adresine sıfırlama maili gönderilecek.' },
+    { s: 'Günlük çalışmamı nereye gireceğim?',
+      c: 'Alt menüdeki <strong>\"Giriş Yap\"</strong> sekmesinden çalıştığın ders, konu ve doğru/yanlış sayılarını girebilirsin. Deneme sınavı sonuçlarını da buradan ekleyebilirsin.' },
+    { s: 'Deneme sınavı sonuçlarımı nasıl gireceğim?',
+      c: '<strong>\"Giriş Yap\"</strong> sayfasındaki <strong>\"Deneme Sınavı Ekle\"</strong> butonuna tıkla. Her ders için doğru ve yanlış sayılarını gir — tahmini LGS puanın otomatik hesaplanır.' },
+    { s: 'Analizlerim sayfasında neler görüyorum?',
+      c: 'Günlük, haftalık ve aylık çalışma istatistiklerini, ders bazlı doğru/yanlış oranlarını, deneme sınavı geçmişini ve otomatik performans yorumunu görebilirsin.' },
+    { s: 'Wellness (Günlük) sayfası ne işe yarıyor?',
+      c: 'Her gün duygu durumunu, enerji seviyeni, kaygı durumunu ve uyku saatini kaydedebilirsin. Bu veriler sağlıklı bir çalışma ritmi sürdürmene yardımcı olur ve sadece sana aittir.' },
+    { s: 'Hedef puan ve okul nasıl ayarlarım?',
+      c: '<strong>Profil → Bilgilerimi Düzenle</strong> bölümünden hedef LGS puanını ve hedef okulunu girebilirsin. Ana sayfanda motivasyon kartı olarak görünür.' },
+    { s: 'Verilerim güvende mi?',
+      c: 'Tüm çalışma verilerin Firebase\'de güvenli şekilde saklanır. Özel günlük notların ise sadece senin cihazında tutulur, kimse erişemez.' },
+    { s: 'Uygulama verilerimi başka cihazda görebilir miyim?',
+      c: 'Evet! Aynı hesapla farklı telefon veya bilgisayardan giriş yaparak tüm çalışma verilerine erişebilirsin.' },
+    { s: 'İleride bir koça bağlanabilir miyim?',
+      c: 'Şu an bu özellik geliştirme aşamasında. Koçun sana bir hesap kodu verirse yeni hesap açarak bağlanabilirsin.' },
+  ];
+
   const sssKoc = [
     { s: 'Öğrenci nasıl eklerim?',
-      c: '<strong>Öğrencilerim</strong> sekmesinde sağ üstteki <strong>"+ Öğrenci Ekle"</strong> butonuna tıkla. Kullanıcı adı ve şifre belirleyerek öğrenci hesabı oluşturabilirsin.' },
+      c: '<strong>Öğrencilerim</strong> sekmesinde sağ üstteki <strong>\"+ Öğrenci Ekle\"</strong> butonuna tıkla. Kullanıcı adı ve şifre belirleyerek öğrenci hesabı oluşturabilirsin.' },
     { s: 'Öğrencinin şifresini nasıl değiştiririm?',
-      c: 'Öğrenci detay sayfasında <strong>"Şifre Değiştir"</strong> seçeneğini kullan. Öğrenci henüz giriş yapmamışsa yeni şifre belirleyebilirsin.' },
+      c: 'Öğrenci detay sayfasında <strong>\"Şifre Değiştir\"</strong> seçeneğini kullan. Öğrenci henüz giriş yapmamışsa yeni şifre belirleyebilirsin.' },
     { s: 'Hangi okullar listede görünür?',
       c: '<strong>Profil → Çalıştığım Okullar</strong> bölümünden okullarını yönetebilirsin. Öğrenci eklerken bu listeden seçim yapılır.' },
     { s: 'Psikolojik rapor nasıl oluşturulur?',
-      c: 'Öğrenci detay sayfasında <strong>"Psikolojik Rapor"</strong> butonuna tıkla. Öğrencinin wellness verileri analiz edilerek PDF rapor oluşturulur.' },
+      c: 'Öğrenci detay sayfasında <strong>\"Psikolojik Rapor\"</strong> butonuna tıkla. Öğrencinin wellness verileri analiz edilerek PDF rapor oluşturulur.' },
     { s: 'Öğrenciye ödev nasıl atarım?',
       c: '<strong>Ödevler</strong> sekmesinden yeni ödev oluşturabilir, istediğin öğrenciye atayabilirsin. Öğrenciye otomatik bildirim gider.' },
     { s: 'Öğrenciye mesaj gönderebilir miyim?',
@@ -37,10 +59,10 @@ function yardimPage() {
     { s: 'Uygulama verilerimi başka cihazda görebilir miyim?',
       c: 'Evet! Tüm veriler Firebase\'de güvenli şekilde saklanır. Aynı hesapla farklı cihazdan giriş yaparak erişebilirsin.' },
     { s: 'Şifremi unuttum, ne yapmalıyım?',
-      c: 'Giriş ekranındaki <strong>"Şifremi unuttum"</strong> bağlantısına tıkla. Kayıtlı e-posta adresine sıfırlama maili gönderilecek.' },
+      c: 'Giriş ekranındaki <strong>\"Şifremi unuttum\"</strong> bağlantısına tıkla. Kayıtlı e-posta adresine sıfırlama maili gönderilecek.' },
   ];
 
-  const sss = isTeacher ? sssKoc : sssOgrenci;
+  const sss = isTeacher ? sssKoc : isSolo ? sssSolo : sssOgrenci;
 
   return `
     <div class="page-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Yardım &amp; Destek</div>
@@ -52,13 +74,13 @@ function yardimPage() {
         style="padding:14px 10px;background:var(--surface);border:1px solid var(--border);border-radius:14px;cursor:pointer;font-family:inherit;text-align:center">
         <div style="font-size:1.4rem;margin-bottom:4px">👤</div>
         <div style="font-size:0.78rem;font-weight:700;color:var(--text)">Profilim</div>
-        <div style="font-size:0.68rem;color:var(--text2)">${isTeacher ? 'Bilgiler & okullar' : 'E-posta & şifre'}</div>
+        <div style="font-size:0.68rem;color:var(--text2)">${isTeacher ? 'Bilgiler & okullar' : 'Bilgiler & hedefler'}</div>
       </button>
-      <button onclick="showPage('messages')"
+      <button onclick="showPage('my-analysis')"
         style="padding:14px 10px;background:var(--surface);border:1px solid var(--border);border-radius:14px;cursor:pointer;font-family:inherit;text-align:center">
-        <div style="font-size:1.4rem;margin-bottom:4px">💬</div>
-        <div style="font-size:0.78rem;font-weight:700;color:var(--text)">Mesajlar</div>
-        <div style="font-size:0.68rem;color:var(--text2)">${isTeacher ? 'Öğrencilerine yaz' : 'Koçuna yaz'}</div>
+        <div style="font-size:1.4rem;margin-bottom:4px">${isTeacher ? '📊' : '📈'}</div>
+        <div style="font-size:0.78rem;font-weight:700;color:var(--text)">${isTeacher ? 'Analiz' : 'Analizlerim'}</div>
+        <div style="font-size:0.68rem;color:var(--text2)">${isTeacher ? 'Öğrenci istatistikleri' : isSolo ? 'Performans & denemeler' : 'Kendi istatistiklerin'}</div>
       </button>
     </div>
 
@@ -93,14 +115,14 @@ function yardimPage() {
         </div>
         <span style="margin-left:auto;color:var(--text2);font-size:0.8rem">›</span>
       </a>
-      ${isTeacher ? '' : `<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);cursor:pointer" onclick="showPage('messages')">
+      ${!isTeacher && !isSolo ? `<div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);cursor:pointer" onclick="showPage('messages')">
         <div style="width:40px;height:40px;border-radius:11px;background:var(--accent)18;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0">👨‍🏫</div>
         <div>
           <div style="font-size:0.88rem;font-weight:700;color:var(--text)">Koçuna Yaz</div>
           <div style="font-size:0.75rem;color:var(--text2);margin-top:1px">Mesajlar sekmesinden ulaş</div>
         </div>
         <span style="margin-left:auto;color:var(--text2);font-size:0.8rem">›</span>
-      </div>`}
+      </div>` : ''}
     </div>
 
     <!-- Uygulama bilgisi -->
