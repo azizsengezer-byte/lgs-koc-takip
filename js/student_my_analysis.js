@@ -195,7 +195,6 @@ function studentAnalysis() {
     ${isSolo ? (()=>{
       const myUid = (window.currentUserData||{}).uid || 'local';
       const hedefKey = 'solo_gunluk_hedef_' + myUid;
-      const hataNeden = 'solo_hata_neden_' + myUid + '_' + todayKey;
 
       // Bugünkü çözülen soru
       const bugunQ = studyEntries.filter(e=>e.dateKey===todayKey&&e.type!=='deneme').reduce((a,e)=>a+(e.questions||0),0);
@@ -203,10 +202,31 @@ function studentAnalysis() {
       const pct = Math.min(100, Math.round(bugunQ/mevcutHedef*100));
       const pctRenk = pct>=100?'var(--accent3)':pct>=60?'var(--accent)':'var(--accent4)';
 
-      // Hata nedeni kayıtları (son 7 gün)
-      const hataNedenler = ['Bilgi Eksikliği','Dikkat Hatası','Zaman Yönetimi'];
-      const nedenRenkler = ['#ff6584','#f9ca24','#45b7d1'];
-      const nedenIkon = ['📚','👁️','⏰'];
+      // Otomatik hata analizi — tüm çalışma girişlerinden hesapla
+      // Her ders için: toplam soru, yanlış, net oranı
+      const hataAnaliz = (() => {
+        const dersVerisi = {};
+        const soruEntries = studyEntries.filter(e=>e.type!=='deneme'&&e.questions>0);
+        soruEntries.forEach(e=>{
+          if(!dersVerisi[e.subject]) dersVerisi[e.subject]={q:0,d:0,y:0,net:0,sessions:0};
+          dersVerisi[e.subject].q += (e.questions||0);
+          dersVerisi[e.subject].d += (e.correct||0);
+          dersVerisi[e.subject].y += (e.wrong||0);
+          dersVerisi[e.subject].net += (e.net||0);
+          dersVerisi[e.subject].sessions++;
+        });
+        return Object.entries(dersVerisi)
+          .map(([ders,v])=>({
+            ders,
+            q: v.q, y: v.y, d: v.d,
+            yanlisPct: v.q>0 ? Math.round(v.y/v.q*100) : 0,
+            netOran: v.q>0 ? Math.round(v.d/v.q*100) : 0,
+            sessions: v.sessions,
+          }))
+          .filter(d=>d.q>=5)
+          .sort((a,b)=>b.yanlisPct-a.yanlisPct);
+      })();
+      const maxYanlisPct = Math.max(...hataAnaliz.map(d=>d.yanlisPct), 1);
 
       // Net grafiği — son 14 gün, ders bazlı
       const netGrafikDersler = ['Türkçe','Matematik','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce'];
@@ -302,36 +322,33 @@ function studentAnalysis() {
         </div>
       </div>
 
-      <!-- Hata Analiz Çizelgesi -->
+      <!-- Hata Analiz Çizelgesi — Otomatik -->
       <div class="card" style="margin-bottom:16px">
-        <div class="card-title">🔍 Hata Analizi — Bugün</div>
-        <div style="font-size:0.75rem;color:var(--text2);margin-bottom:10px">Yaptığın yanlışların nedenini işaretle</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          ${hataNedenler.map((neden,i)=>{
-            const mevcut = (() => { try { return JSON.parse(localStorage.getItem(hataNeden)||'[]'); } catch(e){ return []; } })();
-            const secili = mevcut.includes(neden);
-            const id = '_hataNeden_'+i;
-            return `<button id="${id}" onclick="(function(el,neden){
-                const k='${hataNeden}';
-                let arr=[]; try{arr=JSON.parse(localStorage.getItem(k)||'[]');}catch(e){}
-                const idx=arr.indexOf(neden);
-                if(idx===-1){arr.push(neden);}else{arr.splice(idx,1);}
-                localStorage.setItem(k,JSON.stringify(arr));
-                const secili=arr.includes(neden);
-                el.style.background=secili?'${nedenRenkler[i]}22':'transparent';
-                el.style.borderColor=secili?'${nedenRenkler[i]}':'var(--border)';
-                el.style.color=secili?'${nedenRenkler[i]}':'var(--text2)';
-              })(this,'${neden}')"
-              style="padding:9px 14px;border-radius:11px;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:inherit;
-                border:2px solid ${secili?nedenRenkler[i]:'var(--border)'};
-                background:${secili?nedenRenkler[i]+'22':'transparent'};
-                color:${secili?nedenRenkler[i]:'var(--text2)'};
-                display:flex;align-items:center;gap:6px;transition:.15s">
-              ${nedenIkon[i]} ${neden}
-            </button>`;
-          }).join('')}
-        </div>
-        <div style="font-size:0.68rem;color:var(--text2);margin-top:8px">Seçimler bugüne ait — yarın sıfırlanır</div>
+        <div class="card-title">🔍 Ders Bazlı Hata Analizi</div>
+        ${hataAnaliz.length === 0
+          ? `<div style="text-align:center;padding:16px;color:var(--text2);font-size:0.82rem">Yeterli veri yok. Çalışma girişlerinde doğru/yanlış sayısı girdikçe analiz oluşacak.</div>`
+          : `<div style="font-size:0.75rem;color:var(--text2);margin-bottom:12px">Tüm çalışma girişlerinden hesaplandı — yanlış oranı en yüksekten en düşüğe</div>
+          ${hataAnaliz.map(d=>{
+            const barPct = Math.round(d.yanlisPct/maxYanlisPct*100);
+            const renk = d.yanlisPct>=40?'var(--accent2)':d.yanlisPct>=20?'var(--accent4)':'var(--accent3)';
+            const etiket = d.yanlisPct>=40?'⚠️ Öncelikli':d.yanlisPct>=20?'📌 Takipte':'✅ İyi';
+            const subObj = (typeof subjects!=='undefined'?subjects:[]).find(s=>s.name===d.ders);
+            const dRenk = subObj?'var(--'+subObj.cls+')':'var(--accent)';
+            return '<div style="margin-bottom:12px">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+                '<span style="font-weight:700;font-size:0.85rem;color:'+dRenk+'">'+(subObj?.icon||'📚')+' '+d.ders+'</span>' +
+                '<div style="display:flex;align-items:center;gap:8px">' +
+                  '<span style="font-size:0.68rem;padding:2px 8px;border-radius:99px;background:'+renk+'18;color:'+renk+';font-weight:700">'+etiket+'</span>' +
+                  '<span style="font-size:0.78rem;color:var(--text2)">%'+d.yanlisPct+' yanlış</span>' +
+                '</div>' +
+              '</div>' +
+              '<div style="height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-bottom:3px">' +
+                '<div style="height:100%;width:'+barPct+'%;background:'+renk+';border-radius:99px;transition:.4s"></div>' +
+              '</div>' +
+              '<div style="font-size:0.7rem;color:var(--text2)">'+d.q+' soru · ✅'+d.d+' doğru · ❌'+d.y+' yanlış · %'+d.netOran+' isabet</div>' +
+            '</div>';
+          }).join('')}`
+        }
       </div>
 
       <!-- Net Grafiği -->
