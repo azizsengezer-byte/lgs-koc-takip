@@ -316,24 +316,18 @@ function studentAnalysis() {
       <!-- Günlük Soru Hedefi -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-title">🎯 Günlük Soru Hedefi</div>
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
-          <div style="flex:1">
-            <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:5px">
-              <span style="font-weight:700;color:${pctRenk}">${bugunQ} soru çözüldü</span>
-              <span style="color:var(--text2)">Hedef: <b id="_soloHedefGoster">${mevcutHedef}</b></span>
-            </div>
-            <div style="height:10px;background:var(--surface2);border-radius:99px;overflow:hidden">
-              <div style="height:100%;width:${pct}%;background:${pctRenk};border-radius:99px;transition:.4s"></div>
-            </div>
-            <div style="font-size:0.72rem;color:var(--text2);margin-top:4px">${pct>=100?'✅ Hedef tamamlandı!':pct>=60?`%${pct} tamamlandı — devam et!`:`%${pct} — daha ${mevcutHedef-bugunQ} soru kaldı`}</div>
-          </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:6px">
+          <span style="font-weight:700;color:${pctRenk}">${bugunQ} soru çözüldü</span>
+          <span style="color:var(--text2)">Hedef: <b>${mevcutHedef||'—'}</b></span>
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <input type="number" id="_soloHedefInput" min="10" max="500" value="${mevcutHedef}"
-            style="width:80px;padding:7px 10px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.88rem;text-align:center">
-          <button onclick="(function(){const v=parseInt(document.getElementById('_soloHedefInput').value)||100;localStorage.setItem('${hedefKey}',v);document.getElementById('_soloHedefGoster').textContent=v;showToast('✅','Günlük hedef '+v+' soru olarak kaydedildi!');})()"
-            style="padding:7px 16px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit">Kaydet</button>
-          <span style="font-size:0.75rem;color:var(--text2)">günlük hedef soru sayısı</span>
+        <div style="height:10px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-bottom:6px">
+          <div style="height:100%;width:${pct}%;background:${pctRenk};border-radius:99px;transition:.4s"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:0.72rem;color:var(--text2)">${mevcutHedef>0?(pct>=100?'✅ Hedef tamamlandı!':pct>=60?`%${pct} tamamlandı — devam et!`:`%${pct} — ${mevcutHedef-bugunQ} soru kaldı`):'Henüz hedef belirlenmedi'}</div>
+          <button onclick="_soloHedefModalAc()" style="padding:6px 14px;border-radius:9px;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit">
+            ${mevcutHedef>0?'Düzenle':'Hedef Belirle'}
+          </button>
         </div>
       </div>
 

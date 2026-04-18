@@ -129,11 +129,18 @@ function studentDailyEntry() {
       </div>`;
   }).join('');
 
+  // Günlük hedef sayacı
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  const hedefKey = 'solo_gunluk_hedef_' + myUid;
+  const mevcutHedef = parseInt(localStorage.getItem(hedefKey)||'0');
+  const hedefPct = mevcutHedef > 0 ? Math.min(100, Math.round(totalQ/mevcutHedef*100)) : 0;
+  const hedefRenk = hedefPct>=100 ? 'var(--accent3)' : hedefPct>=60 ? 'var(--accent)' : 'var(--accent4)';
+
   return `
     <div class="page-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Günlük Çalışma Girişi</div>
     <div class="page-sub">${todayStr}</div>
 
-    <div class="grid-3" style="margin-bottom:20px">
+    <div class="grid-4" style="margin-bottom:20px">
       <div class="stat-card">
         <div class="stat-label">Toplam Süre</div>
         <div class="stat-value" style="color:var(--accent)">${totalDur}<span style="font-size:0.9rem">dk</span></div>
@@ -145,6 +152,20 @@ function studentDailyEntry() {
       <div class="stat-card">
         <div class="stat-label">D / Y</div>
         <div class="stat-value" style="font-size:1.2rem"><span style="color:var(--accent3)">${totalCorrect}</span><span style="color:var(--text2);font-size:0.9rem"> / </span><span style="color:var(--accent2)">${totalWrong}</span></div>
+      </div>
+      <!-- 4. Kart: Günlük Hedef Sayacı -->
+      <div class="stat-card" onclick="_soloHedefModalAc()" style="cursor:pointer;position:relative;overflow:hidden">
+        ${mevcutHedef > 0 ? `
+        <div style="position:absolute;bottom:0;left:0;height:3px;width:100%;background:var(--surface2)">
+          <div style="height:100%;width:${hedefPct}%;background:${hedefRenk};transition:.4s;border-radius:0 2px 2px 0"></div>
+        </div>` : ''}
+        <div class="stat-label">🎯 Hedef</div>
+        <div class="stat-value" style="color:${hedefRenk};font-size:${mevcutHedef>0?'1.1rem':'1.4rem'}">
+          ${mevcutHedef > 0 ? `${totalQ}<span style="font-size:0.7rem;color:var(--text2)">/${mevcutHedef}</span>` : '<span style="font-size:0.9rem">Belirle</span>'}
+        </div>
+        <div class="stat-change" style="color:${hedefRenk}">
+          ${mevcutHedef > 0 ? (hedefPct>=100 ? '✅ Tamam!' : `%${hedefPct}`) : 'Tıkla →'}
+        </div>
       </div>
     </div>
 
@@ -198,3 +219,114 @@ function studentDailyEntry() {
 
 let analysisPeriod = 'weekly'; // 'daily' | 'weekly' | 'monthly'
 
+// ── Günlük Hedef Modal ──────────────────────────────────────
+function _soloHedefModalAc() {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  const hedefKey = 'solo_gunluk_hedef_' + myUid;
+  const mevcut = parseInt(localStorage.getItem(hedefKey)||'0');
+
+  const existing = document.getElementById('_soloHedefModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = '_soloHedefModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = `
+    <div onclick="event.stopPropagation()" style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:22px 20px 36px">
+      <div style="width:32px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 18px"></div>
+      <div style="font-size:1rem;font-weight:800;margin-bottom:4px">🎯 Günlük Soru Hedefi</div>
+      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:18px">Bugün kaç soru çözmek istiyorsun?</div>
+
+      <!-- Hızlı seçenekler -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+        ${[50,100,150,200,300].map(v => `
+          <button onclick="document.getElementById('_hedefInput').value=${v}"
+            style="padding:8px 16px;border-radius:10px;border:1.5px solid ${mevcut===v?'var(--accent)':'var(--border)'};
+                   background:${mevcut===v?'var(--accent)15':'transparent'};
+                   color:${mevcut===v?'var(--accent)':'var(--text2)'};
+                   font-size:0.85rem;font-weight:700;cursor:pointer;font-family:inherit">${v}</button>
+        `).join('')}
+      </div>
+
+      <!-- Manuel giriş -->
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px">
+        <input id="_hedefInput" type="number" min="10" max="999" value="${mevcut||''}"
+          placeholder="Özel sayı gir..."
+          style="flex:1;padding:12px 14px;border-radius:12px;border:1.5px solid var(--border);
+                 background:var(--surface2);color:var(--text);font-size:1rem;text-align:center;outline:none">
+        <span style="font-size:0.85rem;color:var(--text2)">soru</span>
+      </div>
+
+      <!-- Önizleme -->
+      <div id="_hedefOnizleme" style="margin-bottom:20px;display:${mevcut>0?'block':'none'}">
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:6px">
+          <span style="color:var(--text2)">Bugünkü ilerleme</span>
+          <span style="font-weight:700" id="_hedefOnizlemePct"></span>
+        </div>
+        <div style="height:10px;background:var(--surface2);border-radius:99px;overflow:hidden">
+          <div id="_hedefOnizlemeBar" style="height:100%;border-radius:99px;transition:.3s"></div>
+        </div>
+        <div style="font-size:0.72rem;color:var(--text2);margin-top:4px" id="_hedefOnizlemeTxt"></div>
+      </div>
+
+      <button onclick="_soloHedefKaydet()"
+        style="width:100%;padding:14px;border-radius:14px;border:none;background:var(--accent);
+               color:#fff;font-size:0.95rem;font-weight:800;cursor:pointer;font-family:inherit">
+        Kaydet ✓
+      </button>
+      ${mevcut>0 ? `<button onclick="_soloHedefSil()"
+        style="width:100%;margin-top:10px;padding:10px;border-radius:12px;border:1.5px solid var(--border);
+               background:transparent;color:var(--text2);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">
+        Hedefi Kaldır
+      </button>` : ''}
+    </div>`;
+
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+  document.body.appendChild(modal);
+
+  // Input değişince önizlemeyi güncelle
+  const todayQ = (window.studyEntries||[])
+    .filter(e=>(e.isToday||e.dateKey===getTodayKey())&&e.type!=='deneme')
+    .reduce((a,e)=>a+(e.questions||0),0);
+
+  const input = document.getElementById('_hedefInput');
+  const updateOnizleme = () => {
+    const v = parseInt(input.value)||0;
+    const onizDiv = document.getElementById('_hedefOnizleme');
+    const bar = document.getElementById('_hedefOnizlemeBar');
+    const pctEl = document.getElementById('_hedefOnizlemePct');
+    const txtEl = document.getElementById('_hedefOnizlemeTxt');
+    if (!v || v < 1) { onizDiv.style.display='none'; return; }
+    onizDiv.style.display = 'block';
+    const pct = Math.min(100, Math.round(todayQ/v*100));
+    const renk = pct>=100?'var(--accent3)':pct>=60?'var(--accent)':'var(--accent4)';
+    bar.style.width = pct+'%';
+    bar.style.background = renk;
+    pctEl.textContent = '%'+pct;
+    pctEl.style.color = renk;
+    txtEl.textContent = pct>=100
+      ? '✅ Hedef tamamlandı!'
+      : `${todayQ} / ${v} soru — ${v-todayQ} soru kaldı`;
+  };
+  input.addEventListener('input', updateOnizleme);
+  updateOnizleme();
+  setTimeout(()=>input.focus(), 100);
+}
+
+function _soloHedefKaydet() {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  const hedefKey = 'solo_gunluk_hedef_' + myUid;
+  const v = parseInt(document.getElementById('_hedefInput')?.value)||0;
+  if (v < 1) { showToast('⚠️','Geçerli bir sayı gir'); return; }
+  localStorage.setItem(hedefKey, v);
+  document.getElementById('_soloHedefModal')?.remove();
+  showToast('✅', `Günlük hedef ${v} soru olarak ayarlandı`);
+  showPage('daily-entry');
+}
+
+function _soloHedefSil() {
+  const myUid = (window.currentUserData||{}).uid || 'local';
+  localStorage.removeItem('solo_gunluk_hedef_' + myUid);
+  document.getElementById('_soloHedefModal')?.remove();
+  showPage('daily-entry');
+}
