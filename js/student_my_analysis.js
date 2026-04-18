@@ -203,17 +203,24 @@ function studentAnalysis() {
       const pctRenk = pct>=100?'var(--accent3)':pct>=60?'var(--accent)':'var(--accent4)';
 
       // Otomatik hata analizi — tüm çalışma girişlerinden hesapla
-      // Her ders için: toplam soru, yanlış, net oranı
+      // Her ders + konu için: toplam soru, yanlış, net oranı
       const hataAnaliz = (() => {
         const dersVerisi = {};
         const soruEntries = studyEntries.filter(e=>e.type!=='deneme'&&e.questions>0);
         soruEntries.forEach(e=>{
-          if(!dersVerisi[e.subject]) dersVerisi[e.subject]={q:0,d:0,y:0,net:0,sessions:0};
-          dersVerisi[e.subject].q += (e.questions||0);
-          dersVerisi[e.subject].d += (e.correct||0);
-          dersVerisi[e.subject].y += (e.wrong||0);
-          dersVerisi[e.subject].net += (e.net||0);
-          dersVerisi[e.subject].sessions++;
+          const ders = e.subject;
+          const konu = (e.topic||'Genel').trim();
+          if(!dersVerisi[ders]) dersVerisi[ders]={q:0,d:0,y:0,net:0,sessions:0,konular:{}};
+          dersVerisi[ders].q += (e.questions||0);
+          dersVerisi[ders].d += (e.correct||0);
+          dersVerisi[ders].y += (e.wrong||0);
+          dersVerisi[ders].net += (e.net||0);
+          dersVerisi[ders].sessions++;
+          // Konu bazlı
+          if(!dersVerisi[ders].konular[konu]) dersVerisi[ders].konular[konu]={q:0,d:0,y:0};
+          dersVerisi[ders].konular[konu].q += (e.questions||0);
+          dersVerisi[ders].konular[konu].d += (e.correct||0);
+          dersVerisi[ders].konular[konu].y += (e.wrong||0);
         });
         return Object.entries(dersVerisi)
           .map(([ders,v])=>({
@@ -222,6 +229,14 @@ function studentAnalysis() {
             yanlisPct: v.q>0 ? Math.round(v.y/v.q*100) : 0,
             netOran: v.q>0 ? Math.round(v.d/v.q*100) : 0,
             sessions: v.sessions,
+            konular: Object.entries(v.konular)
+              .map(([konu,kv])=>({
+                konu,
+                q:kv.q, d:kv.d, y:kv.y,
+                yanlisPct: kv.q>0 ? Math.round(kv.y/kv.q*100) : 0,
+              }))
+              .filter(k=>k.y>0)
+              .sort((a,b)=>b.yanlisPct-a.yanlisPct),
           }))
           .filter(d=>d.q>=5)
           .sort((a,b)=>b.yanlisPct-a.yanlisPct);
@@ -322,35 +337,61 @@ function studentAnalysis() {
         </div>
       </div>
 
-      <!-- Hata Analiz Çizelgesi — Otomatik -->
+      <!-- Hata Analiz Çizelgesi — Otomatik + Konu Detayı -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-title">🔍 Ders Bazlı Hata Analizi</div>
         ${hataAnaliz.length === 0
           ? `<div style="text-align:center;padding:16px;color:var(--text2);font-size:0.82rem">Yeterli veri yok. Çalışma girişlerinde doğru/yanlış sayısı girdikçe analiz oluşacak.</div>`
-          : `<div style="font-size:0.75rem;color:var(--text2);margin-bottom:12px">Tüm çalışma girişlerinden hesaplandı — yanlış oranı en yüksekten en düşüğe</div>
-          ${hataAnaliz.map(d=>{
-            const barPct = Math.round(d.yanlisPct/maxYanlisPct*100);
-            const renk = d.yanlisPct>=40?'var(--accent2)':d.yanlisPct>=20?'var(--accent4)':'var(--accent3)';
-            const etiket = d.yanlisPct>=40?'⚠️ Öncelikli':d.yanlisPct>=20?'📌 Takipte':'✅ İyi';
-            const subObj = (typeof subjects!=='undefined'?subjects:[]).find(s=>s.name===d.ders);
-            const dRenk = subObj?'var(--'+subObj.cls+')':'var(--accent)';
-            return '<div style="margin-bottom:12px">' +
-              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
-                '<span style="font-weight:700;font-size:0.85rem;color:'+dRenk+'">'+(subObj?.icon||'📚')+' '+d.ders+'</span>' +
-                '<div style="display:flex;align-items:center;gap:8px">' +
-                  '<span style="font-size:0.68rem;padding:2px 8px;border-radius:99px;background:'+renk+'18;color:'+renk+';font-weight:700">'+etiket+'</span>' +
-                  '<span style="font-size:0.78rem;color:var(--text2)">%'+d.yanlisPct+' yanlış</span>' +
-                '</div>' +
-              '</div>' +
-              '<div style="height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-bottom:3px">' +
-                '<div style="height:100%;width:'+barPct+'%;background:'+renk+';border-radius:99px;transition:.4s"></div>' +
-              '</div>' +
-              '<div style="font-size:0.7rem;color:var(--text2)">'+d.q+' soru · ✅'+d.d+' doğru · ❌'+d.y+' yanlış · %'+d.netOran+' isabet</div>' +
-            '</div>';
-          }).join('')}`
+          : `<div style="font-size:0.75rem;color:var(--text2);margin-bottom:12px">Yanlış oranı en yüksekten en düşüğe · <b>Derse tıkla</b> → konu detayı</div>
+            ${hataAnaliz.map((d,di) => {
+              const barPct = Math.round(d.yanlisPct/maxYanlisPct*100);
+              const renk = d.yanlisPct>=40 ? 'var(--accent2)' : d.yanlisPct>=20 ? 'var(--accent4)' : 'var(--accent3)';
+              const etiket = d.yanlisPct>=40 ? '⚠️ Öncelikli' : d.yanlisPct>=20 ? '📌 Takipte' : '✅ İyi';
+              const subObj = (typeof subjects!=='undefined'?subjects:[]).find(s=>s.name===d.ders);
+              const dRenk = subObj ? 'var(--'+subObj.cls+')' : 'var(--accent)';
+              const accId = '_hataAcc_'+di;
+              const hasKonu = d.konular && d.konular.length > 0;
+              const konuHTML = hasKonu
+                ? d.konular.slice(0,8).map(k => {
+                    const kRenk = k.yanlisPct>=50 ? 'var(--accent2)' : k.yanlisPct>=25 ? 'var(--accent4)' : 'var(--accent)';
+                    const kBarPct = Math.min(100, k.yanlisPct);
+                    return `<div style="padding:7px 0;border-bottom:1px solid var(--border)">
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+                        <span style="font-size:0.78rem;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k.konu}</span>
+                        <span style="font-size:0.72rem;color:${kRenk};font-weight:800;margin-left:8px;flex-shrink:0">${k.y} yanlış · %${k.yanlisPct}</span>
+                      </div>
+                      <div style="height:5px;background:var(--surface2);border-radius:99px;overflow:hidden">
+                        <div style="height:100%;width:${kBarPct}%;background:${kRenk};border-radius:99px"></div>
+                      </div>
+                    </div>`;
+                  }).join('')
+                : `<div style="font-size:0.75rem;color:var(--text2);padding:8px 0">Konu bazlı yanlış verisi yok — giriş yaparken konu seçmeyi unutma.</div>`;
+              return `<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:12px;overflow:hidden">
+                <div onclick="(function(id){var p=document.getElementById(id);var a=document.getElementById(id+'_arr');var open=p.style.display!=='none';p.style.display=open?'none':'block';a.textContent=open?'▼':'▲';})('${accId}')"
+                  style="display:flex;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;background:var(--surface2);user-select:none">
+                  <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                      <span style="font-weight:700;font-size:0.88rem;color:${dRenk}">${subObj?.icon||'📚'} ${d.ders}</span>
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <span style="font-size:0.65rem;padding:2px 7px;border-radius:99px;background:${renk}18;color:${renk};font-weight:700">${etiket}</span>
+                        <span style="font-size:0.72rem;color:var(--text2)">%${d.yanlisPct} yanlış</span>
+                      </div>
+                    </div>
+                    <div style="height:7px;background:var(--border);border-radius:99px;overflow:hidden">
+                      <div style="height:100%;width:${barPct}%;background:${renk};border-radius:99px;transition:.4s"></div>
+                    </div>
+                    <div style="font-size:0.68rem;color:var(--text2);margin-top:3px">${d.q} soru · ✅${d.d} · ❌${d.y} · %${d.netOran} isabet</div>
+                  </div>
+                  <span id="${accId}_arr" style="color:var(--text2);font-size:0.75rem;flex-shrink:0">▼</span>
+                </div>
+                <div id="${accId}" style="display:none;padding:4px 13px 8px;background:var(--surface)">
+                  <div style="font-size:0.7rem;font-weight:800;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;padding:8px 0 4px">Konu Kırılımı</div>
+                  ${konuHTML}
+                </div>
+              </div>`;
+            }).join('')}`
         }
       </div>
-
       <!-- Net Grafiği -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-title">📈 Net Grafiği — Son 14 Gün</div>
