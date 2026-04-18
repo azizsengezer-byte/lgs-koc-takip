@@ -603,58 +603,138 @@ function maceraPage() {
   const level = data.level || 1;
   const xpProg = getXpProgress(data.xp, level);
   const levelInfo = getColonyLevelInfo(level);
-  const activeModules = getActiveModules(level);
-  const nextMod = getNextModule(level);
   const chapters = getUnlockedChapters(level);
   const today = getTodayKey();
   const alreadyEntered = data.lastEntryDate === today;
-  const recentChapters = chapters.slice().reverse().slice(0, 4);
-  const newestId = recentChapters[0]?.id;
   const lockedHints = COLONY_CHAPTERS.filter(c => c.level > level).slice(0, 2);
-  const streakText = data.currentStreak > 0 ? data.currentStreak + ' gün seri' : '';
+
+  // ── Gerçek veri hesapları ─────────────────────────────
+  const myUid = (window.currentUserData || {}).uid || 'local';
+
+  // Bugünkü soru sayısı (reaktör)
+  const bugunQ = (window.studyEntries || [])
+    .filter(e => (e.isToday || e.dateKey === today) && e.type !== 'deneme')
+    .reduce((a, e) => a + (e.questions || 0), 0);
+
+  // Bu haftaki net ortalaması (lab)
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+  const weekKey = weekAgo.toISOString().split('T')[0];
+  const weekE = (window.studyEntries || []).filter(e => e.dateKey >= weekKey && e.type !== 'deneme' && e.questions > 0);
+  const weekNetOrt = weekE.length > 0
+    ? (weekE.reduce((a, e) => a + (e.net || 0), 0) / weekE.length).toFixed(1)
+    : null;
+
+  // Wellness streak (sera)
+  let wellnessStreak = 0;
+  try {
+    const wdata = JSON.parse(localStorage.getItem('wellness_' + myUid) || '{}');
+    const d2 = new Date();
+    while (wellnessStreak < 365) {
+      const k = d2.toISOString().slice(0, 10).replace(/-/g, '');
+      if (wdata.days?.[k] && Object.keys(wdata.days[k]).length > 0) {
+        wellnessStreak++; d2.setDate(d2.getDate() - 1);
+      } else break;
+    }
+  } catch(e) {}
+
+  // Bugünkü çalışma süresi (enerji santrali)
+  const bugunDur = (window.studyEntries || [])
+    .filter(e => (e.isToday || e.dateKey === today))
+    .reduce((a, e) => a + (e.duration || 0), 0);
+
+  // Son deneme puanı (gözlemevi)
+  let sonDenemePuan = null;
+  try {
+    const denemeler = (window.studyEntries || []).filter(e => e.type === 'deneme');
+    const dMap = {};
+    denemeler.forEach(e => {
+      const k = e.examId || e.dateKey;
+      if (!dMap[k]) dMap[k] = { net: 0, date: e.dateKey };
+      dMap[k].net += (e.net || 0);
+    });
+    const sorted = Object.values(dMap).sort((a, b) => b.date.localeCompare(a.date));
+    if (sorted.length > 0) {
+      sonDenemePuan = Math.min(500, Math.max(100, Math.round(100 + sorted[0].net * 4.444)));
+    }
+  } catch(e) {}
+
+  // Reaktör yüzdesi (0–100, günde hedef 100 soru)
+  const reaktorPct = Math.min(100, Math.round(bugunQ));
+  // Sera büyüme halkası (streak → renk)
+  const seraRenk = wellnessStreak >= 14 ? '#43e97b' : wellnessStreak >= 7 ? '#97C459' : wellnessStreak >= 3 ? '#c8ff8c' : '#5DCAA5';
+  // Enerji panel sayısı (0-5)
+  const enerjiPanel = Math.min(5, Math.floor(bugunDur / 30));
+
+  // Bölüm yeni mi?
+  const lastChapter = chapters[chapters.length - 1];
+  const prevChaptersRead = data.chaptersRead || [];
+  const hasNewChapter = lastChapter && !prevChaptersRead.includes(lastChapter.id);
+
+  // Görev sistemi — bugünkü 3 görev
+  const gorevler = [
+    { id: 'soru', label: 'En az 50 soru çöz', done: bugunQ >= 50, value: bugunQ, target: 50, icon: '📝' },
+    { id: 'sure', label: 'En az 60 dk çalış', done: bugunDur >= 60, value: bugunDur, target: 60, icon: '⏱️' },
+    { id: 'wellness', label: 'Günlüğünü doldur', done: alreadyEntered, value: alreadyEntered ? 1 : 0, target: 1, icon: '📖' },
+  ];
+  const gorevTamamlanan = gorevler.filter(g => g.done).length;
+  const gorevXP = gorevTamamlanan * 15;
 
   return `
     <div class="colony-wrap">
+
+      <!-- ── CANVAS ──────────────────────────────── -->
       <div style="position:relative;background:#000;border-radius:16px 16px 0 0;overflow:hidden">
         <canvas id="colonyCanvas" width="800" height="420" style="display:block;width:100%;height:auto"></canvas>
 
+        <!-- Sol üst: isim + seviye + rozetler -->
         <div style="position:absolute;top:0;left:0;right:0;pointer-events:none">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 13px 0">
             <div>
               <div style="font-size:17px;font-weight:700;color:#fff;text-shadow:0 0 18px rgba(80,160,255,0.9)">Seviye ${level}</div>
-              <div style="font-size:9px;color:rgba(150,200,255,0.45);letter-spacing:1.2px;margin-top:2px">${(data.colonyName||'ARCADIA').toUpperCase()} KOLONİSİ</div>
+              <div style="font-size:9px;color:rgba(150,200,255,0.45);letter-spacing:1.2px;margin-top:2px">${(data.colonyName || 'ARCADIA').toUpperCase()} KOLONİSİ</div>
               <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
-                ${streakText ? `<span style="font-size:9px;padding:2px 7px;border-radius:9px;background:rgba(29,158,117,0.25);color:#5DCAA5;border:.5px solid rgba(93,202,165,0.3)">${streakText}</span>` : ''}
-                ${data.honestyShield ? '<span style="font-size:9px;padding:2px 7px;border-radius:9px;background:rgba(55,138,221,0.2);color:#85B7EB;border:.5px solid rgba(133,183,235,0.3)">dürüstlük kalkanı</span>' : ''}
+                ${data.currentStreak >= 2 ? `<span style="font-size:9px;padding:2px 7px;border-radius:9px;background:rgba(29,158,117,0.25);color:#5DCAA5;border:.5px solid rgba(93,202,165,0.3)">${data.currentStreak} gün seri</span>` : ''}
+                ${data.honestyShield ? '<span style="font-size:9px;padding:2px 7px;border-radius:9px;background:rgba(55,138,221,0.2);color:#85B7EB;border:.5px solid rgba(133,183,235,0.3)">🛡️ dürüstlük</span>' : ''}
               </div>
             </div>
             <div style="text-align:right;color:rgba(255,255,255,0.3);font-size:9px;line-height:1.6">
-              <div>Gün ${data.totalDays||0}</div>
+              <div>Gün ${data.totalDays || 0}</div>
               <div style="font-size:8px;margin-top:2px;color:rgba(255,255,255,0.18)">${levelInfo.title}</div>
             </div>
           </div>
         </div>
 
-        <div style="position:absolute;bottom:10px;right:10px;display:flex;gap:5px;pointer-events:none">
-          <div style="text-align:center;padding:5px 7px;background:rgba(0,0,0,0.45);border-radius:7px;border:.5px solid rgba(255,255,255,0.1);backdrop-filter:blur(4px)">
-            <div style="font-size:14px;font-weight:800;color:#fff">${data.currentStreak||0}</div>
-            <div style="font-size:8px;color:rgba(255,255,255,0.35)">seri</div>
+        <!-- Sağ alt: canlı veri bubbleları -->
+        <div style="position:absolute;bottom:10px;left:10px;display:flex;flex-direction:column;gap:5px;pointer-events:none">
+          <!-- Reaktör -->
+          <div style="display:flex;align-items:center;gap:6px;padding:5px 9px;background:rgba(0,0,0,0.5);border-radius:8px;border:.5px solid #7BC8FF44;backdrop-filter:blur(4px)">
+            <div style="width:28px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;overflow:hidden">
+              <div style="height:100%;width:${Math.min(100,bugunQ)}%;background:#7BC8FF;border-radius:2px;transition:.5s"></div>
+            </div>
+            <span style="font-size:9px;color:#7BC8FF;font-weight:700">${bugunQ} soru</span>
           </div>
-          <div style="text-align:center;padding:5px 7px;background:rgba(0,0,0,0.45);border-radius:7px;border:.5px solid rgba(255,255,255,0.1);backdrop-filter:blur(4px)">
-            <div style="font-size:14px;font-weight:800;color:#fff">${activeModules.length}</div>
-            <div style="font-size:8px;color:rgba(255,255,255,0.35)">modül</div>
-          </div>
-          <div style="text-align:center;padding:5px 7px;background:rgba(0,0,0,0.45);border-radius:7px;border:.5px solid rgba(255,255,255,0.1);backdrop-filter:blur(4px)">
-            <div style="font-size:14px;font-weight:800;color:#fff">${chapters.length}</div>
-            <div style="font-size:8px;color:rgba(255,255,255,0.35)">bölüm</div>
-          </div>
-          <div style="text-align:center;padding:5px 7px;background:rgba(0,0,0,0.45);border-radius:7px;border:.5px solid rgba(255,255,255,0.1);backdrop-filter:blur(4px)">
-            <div style="font-size:14px;font-weight:800;color:#fff">${data.totalDays||0}</div>
-            <div style="font-size:8px;color:rgba(255,255,255,0.35)">gün</div>
-          </div>
+          <!-- Sera -->
+          ${level >= 7 ? `<div style="display:flex;align-items:center;gap:6px;padding:5px 9px;background:rgba(0,0,0,0.5);border-radius:8px;border:.5px solid ${seraRenk}44;backdrop-filter:blur(4px)">
+            <span style="font-size:10px">${wellnessStreak >= 3 ? '🌱' : '🌿'}</span>
+            <span style="font-size:9px;color:${seraRenk};font-weight:700">${wellnessStreak} gün seri</span>
+          </div>` : ''}
+          <!-- Lab -->
+          ${level >= 4 && weekNetOrt ? `<div style="display:flex;align-items:center;gap:6px;padding:5px 9px;background:rgba(0,0,0,0.5);border-radius:8px;border:.5px solid #FAC77544;backdrop-filter:blur(4px)">
+            <span style="font-size:10px">⚗️</span>
+            <span style="font-size:9px;color:#FAC775;font-weight:700">${weekNetOrt} net ort.</span>
+          </div>` : ''}
+          <!-- Gözlemevi -->
+          ${level >= 10 && sonDenemePuan ? `<div style="display:flex;align-items:center;gap:6px;padding:5px 9px;background:rgba(0,0,0,0.5);border-radius:8px;border:.5px solid #a5b4fc44;backdrop-filter:blur(4px)">
+            <span style="font-size:10px">🔭</span>
+            <span style="font-size:9px;color:#a5b4fc;font-weight:700">${sonDenemePuan}/500</span>
+          </div>` : ''}
         </div>
+
+        <!-- Yeni bölüm uyarısı -->
+        ${hasNewChapter ? `<div style="position:absolute;top:10px;right:10px;padding:5px 10px;background:rgba(55,138,221,0.9);border-radius:8px;font-size:9px;font-weight:700;color:#fff;animation:_coloniBlink 1.5s ease-in-out infinite">📡 Yeni bölüm!</div>` : ''}
       </div>
 
+      <!-- ── XP BAR ──────────────────────────────── -->
       <div style="display:flex;align-items:center;gap:7px;padding:8px 13px;background:var(--surface);border-bottom:1px solid var(--border)">
         <span style="font-size:10px;font-weight:700;color:var(--text2);min-width:32px">Sv.${level}</span>
         <div style="flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">
@@ -663,64 +743,111 @@ function maceraPage() {
         <span style="font-size:10px;color:var(--text2);min-width:68px;text-align:right">${xpProg.current} / ${xpProg.needed} XP</span>
       </div>
 
-      ${alreadyEntered ? `
-        <div style="margin:10px 12px;padding:11px 14px;background:rgba(29,158,117,0.08);border:1px solid rgba(29,158,117,0.2);border-radius:12px;text-align:center">
-          <span style="font-size:13px;color:var(--accent3);font-weight:700">✓ Bugünkü giriş tamamlandı — +${COLONY_XP_RULES.wellnessEntry} XP</span>
-          <div style="font-size:11px;color:var(--text2);margin-top:3px">Yarın tekrar gel — kolonin seni bekliyor</div>
+      <div style="padding:4px 12px 20px">
+
+        <!-- ── GÜNLÜK GÖREVLER ──────────────────── -->
+        <div style="margin:12px 0;padding:13px 14px;background:linear-gradient(135deg,rgba(24,95,165,0.08),rgba(55,138,221,0.06));border:1px solid rgba(55,138,221,0.18);border-radius:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:800;color:var(--text)">📋 Günlük Görevler</div>
+            <div style="font-size:11px;color:var(--accent);font-weight:700">${gorevTamamlanan}/3 tamamlandı · +${gorevXP} XP</div>
+          </div>
+          ${gorevler.map(g => {
+            const barPct = g.target > 1 ? Math.min(100, Math.round(g.value / g.target * 100)) : (g.done ? 100 : 0);
+            return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <span style="font-size:1rem;flex-shrink:0">${g.done ? '✅' : g.icon}</span>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11px;font-weight:700;color:${g.done ? 'var(--accent3)' : 'var(--text)'};margin-bottom:3px">${g.label}</div>
+                <div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden">
+                  <div style="height:100%;width:${barPct}%;background:${g.done ? 'var(--accent3)' : 'var(--accent)'};border-radius:2px;transition:.4s"></div>
+                </div>
+              </div>
+              <span style="font-size:10px;color:var(--text2);flex-shrink:0">${g.target > 1 ? `${g.value}/${g.target}` : (g.done ? '✓' : '—')}</span>
+            </div>`;
+          }).join('')}
+          ${gorevTamamlanan === 3 ? `
+          <div style="margin-top:8px;padding:8px 12px;background:rgba(67,233,123,0.1);border:1px solid rgba(67,233,123,0.25);border-radius:9px;text-align:center;font-size:11px;font-weight:700;color:var(--accent3)">
+            🎉 Tüm görevler tamamlandı! Koloni bugün tam güçte.
+          </div>` : ''}
+          ${!alreadyEntered ? `
+          <button onclick="showPage('wellness')" style="width:100%;margin-top:10px;padding:9px;border-radius:10px;border:none;background:rgba(55,138,221,0.15);color:#378ADD;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
+            ✏️ Günlüğü doldur → +30 XP
+          </button>` : ''}
         </div>
-      ` : `
-        <div style="margin:10px 12px;padding:13px;background:linear-gradient(135deg,rgba(24,95,165,0.08),rgba(55,138,221,0.08));border:1px solid rgba(55,138,221,0.2);border-radius:12px;cursor:pointer" onclick="showPage('wellness')">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#185FA5,#378ADD);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px">✏️</div>
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:700;color:var(--text)">Bugün nasıl hissediyorsun?</div>
-              <div style="font-size:11px;color:var(--text2);margin-top:2px">Nasıl hissediyorum? → <span style="color:#378ADD;font-weight:700">+${COLONY_XP_RULES.wellnessEntry} XP</span> kazan</div>
+
+        <!-- ── KOMUTa RAPORU ────────────────────── -->
+        <div style="margin-bottom:14px;padding:13px 14px;background:var(--surface2);border-radius:14px;border:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:800;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">📡 Komuta Raporu — Bugün</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div style="padding:9px 11px;background:rgba(123,200,255,0.08);border-radius:10px;border:.5px solid rgba(123,200,255,0.2)">
+              <div style="font-size:9px;color:#7BC8FF;font-weight:700;margin-bottom:3px">⚡ REAKTÖR</div>
+              <div style="font-size:16px;font-weight:900;color:#fff">${bugunQ}</div>
+              <div style="font-size:9px;color:rgba(255,255,255,0.4)">bugünkü soru</div>
+              <div style="margin-top:5px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden">
+                <div style="height:100%;width:${Math.min(100,bugunQ)}%;background:#7BC8FF;border-radius:2px"></div>
+              </div>
             </div>
-            <span style="color:var(--accent);font-size:1.1rem">→</span>
+            <div style="padding:9px 11px;background:rgba(93,202,165,0.08);border-radius:10px;border:.5px solid rgba(93,202,165,0.2)">
+              <div style="font-size:9px;color:#5DCAA5;font-weight:700;margin-bottom:3px">🌱 SERA</div>
+              <div style="font-size:16px;font-weight:900;color:#fff">${wellnessStreak}<span style="font-size:10px;color:rgba(255,255,255,0.5)"> gün</span></div>
+              <div style="font-size:9px;color:rgba(255,255,255,0.4)">wellness serisi</div>
+            </div>
+            ${level >= 4 ? `<div style="padding:9px 11px;background:rgba(250,199,117,0.08);border-radius:10px;border:.5px solid rgba(250,199,117,0.2)">
+              <div style="font-size:9px;color:#FAC775;font-weight:700;margin-bottom:3px">⚗️ LABORATUVAR</div>
+              <div style="font-size:16px;font-weight:900;color:#fff">${weekNetOrt || '—'}</div>
+              <div style="font-size:9px;color:rgba(255,255,255,0.4)">haftalık net ort.</div>
+            </div>` : ''}
+            ${level >= 14 ? `<div style="padding:9px 11px;background:rgba(253,224,71,0.08);border-radius:10px;border:.5px solid rgba(253,224,71,0.2)">
+              <div style="font-size:9px;color:#fde047;font-weight:700;margin-bottom:3px">⚡ ENERJİ</div>
+              <div style="font-size:16px;font-weight:900;color:#fff">${bugunDur}<span style="font-size:10px;color:rgba(255,255,255,0.5)"> dk</span></div>
+              <div style="font-size:9px;color:rgba(255,255,255,0.4)">bugünkü süre</div>
+            </div>` : ''}
+            ${level >= 10 ? `<div style="padding:9px 11px;background:rgba(165,180,252,0.08);border-radius:10px;border:.5px solid rgba(165,180,252,0.2)">
+              <div style="font-size:9px;color:#a5b4fc;font-weight:700;margin-bottom:3px">🔭 GÖZLEMEVİ</div>
+              <div style="font-size:16px;font-weight:900;color:#fff">${sonDenemePuan ? sonDenemePuan + '<span style="font-size:10px;color:rgba(255,255,255,0.5)">/500</span>' : '<span style="font-size:12px">—</span>'}</div>
+              <div style="font-size:9px;color:rgba(255,255,255,0.4)">son deneme puanı</div>
+            </div>` : ''}
           </div>
         </div>
-      `}
 
-      <div style="padding:4px 12px 16px">
+        <!-- ── SONRAKI BÖLÜM → PROGRESS ─────────── -->
+        ${lockedHints.length > 0 ? `
+        <div style="margin-bottom:14px;padding:12px 14px;background:var(--surface);border:1px dashed var(--border);border-radius:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-size:12px;font-weight:700">🔒 Sonraki: "${lockedHints[0].title}"</div>
+            <div style="font-size:11px;color:var(--accent);font-weight:700">Sv.${lockedHints[0].level}</div>
+          </div>
+          <div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-bottom:5px">
+            <div style="height:100%;width:${xpProg.percent}%;background:linear-gradient(90deg,#185FA5,#5BBFFF);border-radius:3px;transition:.8s"></div>
+          </div>
+          <div style="font-size:10px;color:var(--text2)">${xpProg.needed - xpProg.current} XP daha kazan → bölüm açılıyor</div>
+          <div style="font-size:10px;color:var(--text2);margin-top:3px;font-style:italic;opacity:0.7">${lockedHints[0].nextHint || 'İpucu yakında...'}</div>
+        </div>` : ''}
+
+        <!-- ── BÖLÜMLER ─────────────────────────── -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
           <span style="font-size:13px;font-weight:700;color:var(--text2)">Koloni Günlükleri</span>
           <span style="font-size:11px;color:var(--text2)">${chapters.length} / ${COLONY_CHAPTERS.length} bölüm</span>
         </div>
 
-        ${recentChapters.map(ch => `
-          <div class="colony-entry" onclick="_colonyToggleChapter(this)" data-id="${ch.id}">
-            ${ch.id === newestId ? '<span style="position:absolute;top:10px;right:10px;font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(55,138,221,0.15);color:#378ADD;font-weight:700">Yeni</span>' : ''}
-            <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Bölüm ${ch.level} — ${getColonyLevelInfo(ch.level)?.title||''}</div>
+        ${chapters.slice().reverse().slice(0, 4).map((ch, i) => {
+          const isNew = hasNewChapter && i === 0;
+          const isRead = (data.chaptersRead || []).includes(ch.id);
+          return `<div class="colony-entry" onclick="_colonyToggleChapter(this)" data-id="${ch.id}" style="${isNew ? 'border-left:3px solid #378ADD;background:rgba(55,138,221,0.07)' : ''}">
+            ${isNew ? '<span style="position:absolute;top:10px;right:10px;font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(55,138,221,0.2);color:#378ADD;font-weight:700;animation:_coloniBlink 1.5s ease-in-out infinite">📡 Yeni</span>' : ''}
+            ${!isRead && !isNew ? '<span style="position:absolute;top:10px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--accent);display:block"></span>' : ''}
+            <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Bölüm ${ch.level} · ${getColonyLevelInfo(ch.level)?.title || ''}</div>
             <div style="font-size:14px;font-weight:700;margin-bottom:4px">${ch.title}</div>
-            <div class="colony-chapter-text" style="max-height:${ch.id===newestId?'300':'0'}px;overflow:hidden;transition:max-height 0.35s ease">
-              <div style="font-size:12px;color:var(--text2);line-height:1.7;padding-top:4px">${ch.text}</div>
+            <div class="colony-chapter-text" style="max-height:${isNew ? '400' : '0'}px;overflow:hidden;transition:max-height 0.4s ease">
+              <div id="colony-typewriter-${ch.id}" style="font-size:12px;color:var(--text2);line-height:1.7;padding-top:4px">${isNew ? '' : ch.text}</div>
               ${ch.nextHint ? `<div style="font-size:11px;color:var(--accent);margin-top:8px;font-style:italic">→ ${ch.nextHint}</div>` : ''}
             </div>
-          </div>
-        `).join('')}
+          </div>`;
+        }).join('')}
 
         ${chapters.length > 4 ? `
-          <button onclick="_colonyShowAllChapters()" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;font-family:'Nunito',sans-serif">
-            Tüm bölümleri gör (${chapters.length})
-          </button>
-        ` : ''}
-
-        ${lockedHints.map(ch => `
-          <div style="padding:12px 14px;background:var(--surface2);border-radius:10px;margin-bottom:6px;opacity:0.5;border:1px dashed var(--border)">
-            <div style="font-size:10px;color:var(--text2)">Bölüm ${ch.level} — Seviye ${ch.level}'de açılacak</div>
-            <div style="font-size:13px;font-weight:700;color:var(--text2)">${ch.title.startsWith('???')?'???':ch.title}</div>
-          </div>
-        `).join('')}
-
-        ${nextMod ? `
-          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-top:8px">
-            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#185FA5,#0F6E56);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px">🔧</div>
-            <div>
-              <div style="font-size:12px;font-weight:700">${nextMod.name} yaklaşıyor</div>
-              <div style="font-size:11px;color:var(--text2)">Seviye ${nextMod.unlockLevel}'de yeni modül + özel hikaye açılacak</div>
-            </div>
-          </div>
-        ` : ''}
+        <button onclick="_colonyShowAllChapters()" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;font-family:'Nunito',sans-serif">
+          Tüm bölümleri gör (${chapters.length})
+        </button>` : ''}
       </div>
     </div>
 
@@ -728,9 +855,11 @@ function maceraPage() {
       .colony-wrap{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden}
       .colony-entry{padding:14px;background:var(--surface2);border-radius:12px;margin-bottom:8px;cursor:pointer;transition:background 0.15s;border-left:3px solid var(--accent);position:relative}
       .colony-entry:active{background:var(--border)}
+      @keyframes _coloniBlink{0%,100%{opacity:1}50%{opacity:0.5}}
     </style>
   `;
 }
+
 
 function _colonyPostRender() {
   _cvStop();
@@ -745,11 +874,153 @@ function _colonyPostRender() {
       setTimeout(() => { bar.style.width = prog.percent + '%'; }, 150);
     }
     _cvStart(level);
+
+    // Yeni bölüm typewriter animasyonu
+    const chapters = getUnlockedChapters(level);
+    const lastCh = chapters[chapters.length - 1];
+    if (lastCh) {
+      const chaptersRead = data.chaptersRead || [];
+      if (!chaptersRead.includes(lastCh.id)) {
+        // Tam ekran sinyal sahnesi göster
+        setTimeout(() => _colonySignalScene(lastCh), 800);
+      } else {
+        // Sadece typewriter — yeni değil ama açık
+        setTimeout(() => _colonyTypewriter('colony-typewriter-' + lastCh.id, lastCh.text), 300);
+      }
+    }
   }, 50);
 }
 
-// Market tema uyumluluğu — _cvGetTheme() her frame'de okur, otomatik çalışır
-function _colonyApplyTheme() {}
+// ── Tam ekran sinyal + bölüm açılış sahnesi ─────────────
+function _colonySignalScene(chapter) {
+  const existing = document.getElementById('_colonySignalOverlay');
+  if (existing) existing.remove();
+
+  const levelInfo = getColonyLevelInfo(chapter.level);
+  const unlocks = levelInfo?.unlocks || null;
+
+  const overlay = document.createElement('div');
+  overlay.id = '_colonySignalOverlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:10000;background:#000;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:24px;overflow:hidden;
+  `;
+
+  overlay.innerHTML = `
+    <!-- Tarama çizgileri efekti -->
+    <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,200,255,0.03) 2px,rgba(0,200,255,0.03) 4px);pointer-events:none;animation:_scanlines 8s linear infinite"></div>
+
+    <!-- Terminal ekranı -->
+    <div style="width:100%;max-width:440px;position:relative;z-index:1">
+
+      <!-- Üst bar -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <div id="_sigDot" style="width:8px;height:8px;border-radius:50%;background:#378ADD;animation:_sigPulse .6s ease-in-out infinite"></div>
+        <div style="font-size:10px;font-weight:700;color:#378ADD;letter-spacing:.15em;text-transform:uppercase" id="_sigStatus">SİNYAL ALINIYOR...</div>
+        <div style="flex:1;height:1px;background:rgba(55,138,221,0.3)"></div>
+      </div>
+
+      <!-- Gürültü çubukları -->
+      <div id="_sigNoise" style="margin-bottom:20px">
+        ${Array.from({length:6},(_,i)=>`<div class="_noiseBar" style="height:3px;margin-bottom:4px;background:rgba(55,138,221,0.15);border-radius:2px;overflow:hidden">
+          <div style="height:100%;background:#378ADD;border-radius:2px;animation:_noiseAnim ${0.3+i*0.07}s ease-in-out infinite alternate;width:${20+i*12}%"></div>
+        </div>`).join('')}
+      </div>
+
+      <!-- Bölüm başlık kartı -->
+      <div id="_sigCard" style="opacity:0;transition:opacity .6s;background:rgba(0,20,40,0.9);border:1px solid rgba(55,138,221,0.4);border-radius:14px;padding:20px 18px;margin-bottom:18px;backdrop-filter:blur(8px)">
+        <div style="font-size:9px;color:#378ADD;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px">Bölüm ${chapter.level} · ${levelInfo?.title || ''}</div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:14px;line-height:1.3">${chapter.title}</div>
+        ${unlocks ? `<div style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;background:rgba(67,233,123,0.12);border:1px solid rgba(67,233,123,0.3);border-radius:8px;font-size:10px;font-weight:700;color:#43e97b;margin-bottom:14px">🔓 ${unlocks}</div><br>` : ''}
+        <div id="_sigText" style="font-size:12px;color:rgba(200,220,255,0.85);line-height:1.75;min-height:60px"></div>
+        ${chapter.nextHint ? `<div id="_sigHint" style="display:none;margin-top:12px;font-size:11px;color:#378ADD;font-style:italic">→ ${chapter.nextHint}</div>` : ''}
+      </div>
+
+      <!-- Devam butonu -->
+      <button id="_sigBtn" onclick="_colonySignalClose('${chapter.id}')" style="display:none;width:100%;padding:13px;border-radius:12px;border:1px solid rgba(55,138,221,0.5);background:rgba(55,138,221,0.15);color:#5BBFFF;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;letter-spacing:.03em">
+        Devam →
+      </button>
+    </div>
+
+    <style>
+      @keyframes _scanlines{from{background-position:0 0}to{background-position:0 100%}}
+      @keyframes _sigPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
+      @keyframes _noiseAnim{from{opacity:.4}to{opacity:1;width:90%}}
+    </style>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Sahne sekansı
+  setTimeout(() => {
+    // 1. Gürültü temizleniyor
+    const statusEl = document.getElementById('_sigStatus');
+    const noiseEl  = document.getElementById('_sigNoise');
+    const cardEl   = document.getElementById('_sigCard');
+    const dotEl    = document.getElementById('_sigDot');
+    if (statusEl) statusEl.textContent = 'BÖLÜM ALINDI';
+    if (dotEl) dotEl.style.background = '#43e97b';
+    if (noiseEl) { noiseEl.style.transition = 'opacity .5s'; noiseEl.style.opacity = '0'; }
+
+    // 2. Kart görünüyor
+    setTimeout(() => {
+      if (cardEl) cardEl.style.opacity = '1';
+      // 3. Typewriter başlıyor
+      setTimeout(() => {
+        _colonyTypewriterEl(document.getElementById('_sigText'), chapter.text, 18, () => {
+          // 4. Hint + buton çıkıyor
+          const hint = document.getElementById('_sigHint');
+          const btn  = document.getElementById('_sigBtn');
+          if (hint) hint.style.display = 'block';
+          if (btn)  btn.style.display = 'block';
+        });
+      }, 400);
+    }, 600);
+  }, 1200);
+}
+
+function _colonySignalClose(chapterId) {
+  // Oku olarak işaretle
+  const data = loadColonyData();
+  if (!data.chaptersRead) data.chaptersRead = [];
+  if (!data.chaptersRead.includes(chapterId)) {
+    data.chaptersRead.push(chapterId);
+    saveColonyData(data);
+  }
+  // Overlay kapat
+  const overlay = document.getElementById('_colonySignalOverlay');
+  if (overlay) {
+    overlay.style.transition = 'opacity .4s';
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 400);
+  }
+  // Sayfayı yenile
+  setTimeout(() => showPage('macera'), 450);
+}
+
+// ── Typewriter yardımcıları ──────────────────────────────
+function _colonyTypewriterEl(el, text, speed, onDone) {
+  if (!el) { if (onDone) onDone(); return; }
+  el.textContent = '';
+  let i = 0;
+  const timer = setInterval(() => {
+    el.textContent += text[i];
+    i++;
+    if (i >= text.length) {
+      clearInterval(timer);
+      if (onDone) onDone();
+    }
+  }, speed || 22);
+}
+
+function _colonyTypewriter(elId, text) {
+  const el = document.getElementById(elId);
+  if (!el || el.textContent.length > 5) return; // zaten dolu
+  _colonyTypewriterEl(el, text, 12, null);
+}
+
+
 
 function _colonyToggleChapter(el) {
   const text = el.querySelector('.colony-chapter-text');
