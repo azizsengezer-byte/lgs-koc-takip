@@ -61,14 +61,44 @@ function studentAnalysis() {
   }
   const maxTQ = Math.max(...trendData.map(t=>t.q),1);
 
+  const isSolo = currentRole === 'solo_student';
+
+  // Solo'da günlük sekme anlamsız — weekly'e düşür
+  if (isSolo && analysisPeriod === 'daily') analysisPeriod = 'weekly';
+
+  // Solo için haftalık+aylık otomatik yorum
+  let soloExtraComment = '';
+  if (isSolo && analysisPeriod !== 'daily') {
+    const digerPeriod = analysisPeriod === 'weekly' ? 'monthly' : 'weekly';
+    const digerLabel = digerPeriod === 'weekly' ? 'Bu Hafta' : 'Bu Ay';
+    let digerFiltered = [];
+    if (digerPeriod === 'weekly') {
+      const mon = new Date(now); mon.setDate(now.getDate()-(now.getDay()===0?6:now.getDay()-1));
+      digerFiltered = studyEntries.filter(e=>e.dateKey>=mon.toISOString().split('T')[0]);
+    } else {
+      digerFiltered = studyEntries.filter(e=>e.dateKey>=todayKey.substring(0,7)+'-01');
+    }
+    const digerQ    = digerFiltered.reduce((a,e)=>a+(e.questions||0),0);
+    const digerDur  = digerFiltered.reduce((a,e)=>a+(e.duration||0),0);
+    const digerNet  = digerFiltered.reduce((a,e)=>a+(e.net||0),0);
+    const digerGun  = new Set(digerFiltered.map(e=>e.dateKey)).size;
+    const digerSubs = subjects.map(s=>{ const se=digerFiltered.filter(e=>e.subject===s.name); const q=se.reduce((a,e)=>a+(e.questions||0),0),d=se.reduce((a,e)=>a+(e.correct||0),0),y=se.reduce((a,e)=>a+(e.wrong||0),0),net=se.reduce((a,e)=>a+(e.net||0),0),dur=se.reduce((a,e)=>a+(e.duration||0),0),netPct=q>0?Math.round(d/q*100):0; return {...s,q,d,y,net,dur,netPct}; });
+    const digerYorum = generateAnalysisComment(digerFiltered, digerSubs, digerDur, digerQ, digerNet, digerGun, digerPeriod);
+    soloExtraComment = `
+      <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,var(--accent3)10,var(--accent3)05);border:1px solid var(--accent3)33">
+        <div class="card-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${digerLabel} Performans Yorumu</div>
+        <div style="font-size:0.88rem;line-height:1.7;color:var(--text)">${digerYorum}</div>
+      </div>`;
+  }
+
   return `
     <div class="page-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> Analizlerim</div>
     <div class="page-sub">Kişisel performans takibi</div>
 
     <!-- Dönem seçici -->
     <div style="display:flex;gap:8px;margin-bottom:20px;background:var(--surface2);border-radius:12px;padding:4px">
-      ${['daily','weekly','monthly'].map((p,i)=>{
-        const lbl = ['Günlük','Haftalık','Aylık'][i];
+      ${(isSolo ? ['weekly','monthly'] : ['daily','weekly','monthly']).map((p,i)=>{
+        const lbl = isSolo ? ['Haftalık','Aylık'][i] : ['Günlük','Haftalık','Aylık'][i];
         return `<button onclick="analysisPeriod='${p}';showPage('my-analysis')"
           style="flex:1;padding:8px;border:none;border-radius:10px;cursor:pointer;font-weight:700;font-size:0.85rem;
             background:${analysisPeriod===p?'var(--accent)':'transparent'};
@@ -153,11 +183,13 @@ function studentAnalysis() {
       </div>
     </div>` : ''}
 
-    <!-- Koç Yorumu -->
+    <!-- Performans Yorumu -->
     <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,var(--accent)12,var(--accent)05);border:1px solid var(--accent)33">
       <div class="card-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="1" y1="9" x2="4" y2="9"/></svg> Performans Yorumu</div>
       <div style="font-size:0.88rem;line-height:1.7;color:var(--text)">${comment}</div>
     </div>
+
+    ${isSolo ? soloExtraComment : ''}
 
     <!-- Deneme Sınavları -->
     ${(()=>{
@@ -209,10 +241,11 @@ function studentAnalysis() {
       </div>`;
     })()}
 
+    ${!isSolo ? `
     <!-- PDF -->
     <div class="pdf-actions">
       <button class="pdf-btn" onclick="exportStudentPDF()">📄 PDF Raporu İndir</button>
-    </div>
+    </div>` : ''}
   `;
 }
 
