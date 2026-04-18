@@ -191,6 +191,181 @@ function studentAnalysis() {
 
     ${isSolo ? soloExtraComment : ''}
 
+    <!-- Solo: Akıllı Soru Takip & Hedefleme -->
+    ${isSolo ? (()=>{
+      const myUid = (window.currentUserData||{}).uid || 'local';
+      const hedefKey = 'solo_gunluk_hedef_' + myUid;
+      const hataNeden = 'solo_hata_neden_' + myUid + '_' + todayKey;
+
+      // Bugünkü çözülen soru
+      const bugunQ = studyEntries.filter(e=>e.dateKey===todayKey&&e.type!=='deneme').reduce((a,e)=>a+(e.questions||0),0);
+      const mevcutHedef = parseInt(localStorage.getItem(hedefKey)||'100');
+      const pct = Math.min(100, Math.round(bugunQ/mevcutHedef*100));
+      const pctRenk = pct>=100?'var(--accent3)':pct>=60?'var(--accent)':'var(--accent4)';
+
+      // Hata nedeni kayıtları (son 7 gün)
+      const hataNedenler = ['Bilgi Eksikliği','Dikkat Hatası','Zaman Yönetimi'];
+      const nedenRenkler = ['#ff6584','#f9ca24','#45b7d1'];
+      const nedenIkon = ['📚','👁️','⏰'];
+
+      // Net grafiği — son 14 gün, ders bazlı
+      const netGrafikDersler = ['Türkçe','Matematik','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce'];
+      const netGrafikRenkler = ['#ff6b6b','#4ecdc4','#45b7d1','#f9ca24','#a8edea','#fd79a8'];
+      const son14 = [];
+      for(let i=13;i>=0;i--){ const d=new Date(now); d.setDate(d.getDate()-i); son14.push(d.toISOString().split('T')[0]); }
+
+      // Her ders için günlük net dizisi
+      const dersNetleri = netGrafikDersler.map((ders,di)=>{
+        const noktalar = son14.map(dk=>{
+          const gunEntries = studyEntries.filter(e=>e.dateKey===dk&&e.subject===ders&&e.type!=='deneme');
+          const net = gunEntries.reduce((a,e)=>a+(e.net||0),0);
+          return gunEntries.length>0 ? net : null;
+        });
+        return { ders, noktalar, renk: netGrafikRenkler[di] };
+      }).filter(d=>d.noktalar.some(n=>n!==null));
+
+      // Grafik SVG — mini sparkline per ders
+      const svgGrafik = dersNetleri.length === 0 ? `<div style="text-align:center;padding:16px;color:var(--text2);font-size:0.82rem">Henüz yeterli veri yok. Çalışma girişi ekledikçe grafik oluşacak.</div>` : (() => {
+        const W=300, H=80, padL=28, padR=8, padT=8, padB=18;
+        const iW=W-padL-padR, iH=H-padT-padB;
+        const allNets = dersNetleri.flatMap(d=>d.noktalar.filter(n=>n!==null));
+        const maxNet = Math.max(...allNets, 1);
+        const lines = dersNetleri.map(d=>{
+          const pts = d.noktalar.map((n,i)=>{
+            if(n===null) return null;
+            const x = padL + i/(son14.length-1)*iW;
+            const y = padT + iH - (n/maxNet)*iH;
+            return [x,y];
+          }).filter(Boolean);
+          if(pts.length<2) return `<circle cx="${pts[0]?.[0]||0}" cy="${pts[0]?.[1]||0}" r="3" fill="${d.renk}"/>`;
+          const path = pts.map((p,i)=>i===0?`M${p[0].toFixed(1)},${p[1].toFixed(1)}`:`L${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+          return `<path d="${path}" fill="none" stroke="${d.renk}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+                  ${pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.5" fill="${d.renk}"/>`).join('')}`;
+        }).join('');
+        // Y eksen etiketleri
+        const yLabels = [0, Math.round(maxNet/2), Math.round(maxNet)].map((v,i)=>{
+          const y = padT + iH - (v/maxNet)*iH;
+          return `<text x="${padL-4}" y="${y+4}" font-size="7" fill="var(--text2)" text-anchor="end">${v}</text><line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="var(--border)" stroke-width="0.5"/>`;
+        }).join('');
+        // X eksen — sadece hafta başları
+        const xLabels = son14.map((dk,i)=>{
+          const d=new Date(dk+'T12:00:00');
+          if(d.getDay()!==1&&i!==0&&i!==son14.length-1) return '';
+          const x=padL+i/(son14.length-1)*iW;
+          return `<text x="${x}" y="${H-2}" font-size="7" fill="var(--text2)" text-anchor="middle">${d.getDate()}/${d.getMonth()+1}</text>`;
+        }).join('');
+        return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:80px">${yLabels}${lines}${xLabels}</svg>`;
+      })();
+
+      // Konu analizi — denemelerden sürekli kaçırılan konular
+      const konuHatalari = {};
+      studyEntries.filter(e=>e.type==='deneme'&&e.wrong>0).forEach(e=>{
+        if(!e.topic||e.topic==='Genel') return;
+        const k = e.subject+':::'+e.topic;
+        if(!konuHatalari[k]) konuHatalari[k]={subject:e.subject,topic:e.topic,yanlis:0,gorulme:0};
+        konuHatalari[k].yanlis += (e.wrong||0);
+        konuHatalari[k].gorulme++;
+      });
+      const tekrarListesi = Object.values(konuHatalari)
+        .filter(k=>k.gorulme>=2)
+        .sort((a,b)=>b.yanlis-a.yanlis)
+        .slice(0,6);
+
+      // Ders rengi bul
+      const dersRenk = (sub) => {
+        const s = (typeof subjects!=='undefined'?subjects:[]).find(s=>s.name===sub);
+        return s ? `var(--${s.cls})` : 'var(--accent)';
+      };
+
+      return `
+      <!-- Günlük Soru Hedefi -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">🎯 Günlük Soru Hedefi</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:5px">
+              <span style="font-weight:700;color:${pctRenk}">${bugunQ} soru çözüldü</span>
+              <span style="color:var(--text2)">Hedef: <b id="_soloHedefGoster">${mevcutHedef}</b></span>
+            </div>
+            <div style="height:10px;background:var(--surface2);border-radius:99px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:${pctRenk};border-radius:99px;transition:.4s"></div>
+            </div>
+            <div style="font-size:0.72rem;color:var(--text2);margin-top:4px">${pct>=100?'✅ Hedef tamamlandı!':pct>=60?`%${pct} tamamlandı — devam et!`:`%${pct} — daha ${mevcutHedef-bugunQ} soru kaldı`}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="_soloHedefInput" min="10" max="500" value="${mevcutHedef}"
+            style="width:80px;padding:7px 10px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:0.88rem;text-align:center">
+          <button onclick="(function(){const v=parseInt(document.getElementById('_soloHedefInput').value)||100;localStorage.setItem('${hedefKey}',v);document.getElementById('_soloHedefGoster').textContent=v;showToast('✅','Günlük hedef '+v+' soru olarak kaydedildi!');})()"
+            style="padding:7px 16px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit">Kaydet</button>
+          <span style="font-size:0.75rem;color:var(--text2)">günlük hedef soru sayısı</span>
+        </div>
+      </div>
+
+      <!-- Hata Analiz Çizelgesi -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">🔍 Hata Analizi — Bugün</div>
+        <div style="font-size:0.75rem;color:var(--text2);margin-bottom:10px">Yaptığın yanlışların nedenini işaretle</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${hataNedenler.map((neden,i)=>{
+            const mevcut = (() => { try { return JSON.parse(localStorage.getItem(hataNeden)||'[]'); } catch(e){ return []; } })();
+            const secili = mevcut.includes(neden);
+            const id = '_hataNeden_'+i;
+            return `<button id="${id}" onclick="(function(el,neden){
+                const k='${hataNeden}';
+                let arr=[]; try{arr=JSON.parse(localStorage.getItem(k)||'[]');}catch(e){}
+                const idx=arr.indexOf(neden);
+                if(idx===-1){arr.push(neden);}else{arr.splice(idx,1);}
+                localStorage.setItem(k,JSON.stringify(arr));
+                const secili=arr.includes(neden);
+                el.style.background=secili?'${nedenRenkler[i]}22':'transparent';
+                el.style.borderColor=secili?'${nedenRenkler[i]}':'var(--border)';
+                el.style.color=secili?'${nedenRenkler[i]}':'var(--text2)';
+              })(this,'${neden}')"
+              style="padding:9px 14px;border-radius:11px;font-size:0.8rem;font-weight:700;cursor:pointer;font-family:inherit;
+                border:2px solid ${secili?nedenRenkler[i]:'var(--border)'};
+                background:${secili?nedenRenkler[i]+'22':'transparent'};
+                color:${secili?nedenRenkler[i]:'var(--text2)'};
+                display:flex;align-items:center;gap:6px;transition:.15s">
+              ${nedenIkon[i]} ${neden}
+            </button>`;
+          }).join('')}
+        </div>
+        <div style="font-size:0.68rem;color:var(--text2);margin-top:8px">Seçimler bugüne ait — yarın sıfırlanır</div>
+      </div>
+
+      <!-- Net Grafiği -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">📈 Net Grafiği — Son 14 Gün</div>
+        ${svgGrafik}
+        ${dersNetleri.length>0?`<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+          ${dersNetleri.map(d=>`<div style="display:flex;align-items:center;gap:4px;font-size:0.68rem;color:var(--text2)">
+            <div style="width:10px;height:10px;border-radius:50%;background:${d.renk}"></div>${d.ders}
+          </div>`).join('')}
+        </div>`:''}
+      </div>
+
+      <!-- Konu Analizi: Tekrar Etmelisin -->
+      ${tekrarListesi.length>0?`
+      <div class="card" style="margin-bottom:16px;border:1.5px solid var(--accent2)44;background:linear-gradient(135deg,#ff658408,#ff658402)">
+        <div class="card-title" style="color:var(--accent2)">⚠️ Tekrar Etmelisin</div>
+        <div style="font-size:0.75rem;color:var(--text2);margin-bottom:10px">Denemelerinde en çok yanlış yaptığın konular</div>
+        ${tekrarListesi.map(k=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+            <div style="width:6px;height:36px;border-radius:4px;background:${dersRenk(k.subject)};flex-shrink:0"></div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${k.topic}</div>
+              <div style="font-size:0.72rem;color:${dersRenk(k.subject)}">${k.subject}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:0.85rem;font-weight:800;color:var(--accent2)">${k.yanlis} yanlış</div>
+              <div style="font-size:0.68rem;color:var(--text2)">${k.gorulme} denemede</div>
+            </div>
+          </div>`).join('')}
+      </div>` : ''}
+      `;
+    })() : ''}
+
     <!-- Deneme Sınavları -->
     ${(()=>{
       const allD = studyEntries.filter(e=>e.type==='deneme');

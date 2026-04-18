@@ -746,7 +746,7 @@ function computeBadgeStats(uid) {
 // ── Rozet kazanım kontrolü ──────────────────────────────────
 async function checkBadges() {
   const user=auth.currentUser;
-  if(!user||currentRole!=='student') return;
+  if(!user||(currentRole!=='student'&&currentRole!=='solo_student')) return;
   const uid=user.uid;
   const stats=computeBadgeStats(uid);
   const key='badges_'+uid;
