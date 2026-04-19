@@ -84,6 +84,7 @@ function renderMobileNav() {
     cart:   _m('<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>'),
     trend:  _m('<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>'),
     heart:  _m('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'),
+    game:   _m('<line x1="6" y1="11" x2="10" y2="11"/><line x1="8" y1="9" x2="8" y2="13"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="18" y1="10" x2="18.01" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258A4 4 0 0 0 17.32 5z"/>'),
   };
   const teacherNav = [
     {id:'dashboard',     icon:MI.grid,  label:'Panel'},
@@ -94,7 +95,7 @@ function renderMobileNav() {
   const studentNavAll = [
     {id:'dashboard',   icon:MI.home,   label:'Ana Sayfa'},
     {id:'daily-entry', icon:MI.pencil, label:'Giriş Yap'},
-    ...(window.RC_MACERA_AKTIF !== false ? [{id:'macera', icon:MI.rocket, label:'Koloni'}] : []),
+    ...(window.RC_MACERA_AKTIF !== false ? [{id:'oyun', icon:MI.game, label:'Oyun'}] : []),
     {id:'my-tasks',    icon:MI.check,  label:'Ödevler'},
     ...(window.RC_MARKET_AKTIF !== false ? [{id:'market', icon:MI.cart, label:'Market'}] : []),
   ];
@@ -102,6 +103,7 @@ function renderMobileNav() {
     {id:'dashboard',    icon:MI.home,   label:'Ana Sayfa'},
     {id:'daily-entry',  icon:MI.pencil, label:'Giriş Yap'},
     {id:'my-analysis',  icon:MI.trend,  label:'Analizlerim'},
+    {id:'oyun',         icon:MI.game,   label:'Oyun'},
     {id:'wellness',     icon:MI.heart,  label:'Günlük'},
   ];
   const studentNav = studentNavAll;
@@ -163,7 +165,7 @@ function _initSwipeNav() {
 
     const navItems = currentRole === 'teacher'
       ? ['dashboard','students','tasks-teacher','messages']
-      : ['dashboard','daily-entry','macera','my-tasks','market'];
+      : ['dashboard','daily-entry','oyun','my-tasks','market'];
     const idx = navItems.indexOf(currentPage);
     if (idx === -1) return;
 
@@ -558,7 +560,7 @@ auth.onAuthStateChanged(async (user) => {
       const _urlStudent = _urlParams.get('s');
       const _safePages = ['dashboard','students','student-detail','tasks-teacher','messages','notifs',
         'daily-entry','my-analysis','kazanimlar','my-tasks','wellness','lgs-dagilim','psych-report','macera',
-        'market','profile','badges','rozet'];
+        'oyun','market','profile','badges','rozet'];
       const _startPage = _safePages.includes(_urlPage) ? _urlPage : 'dashboard';
       if (_urlStudent) selectedStudentName = decodeURIComponent(_urlStudent);
       showPage(_startPage);

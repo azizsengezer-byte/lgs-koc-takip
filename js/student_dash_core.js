@@ -1,7 +1,7 @@
 function renderStudentPage(id, el) {
   // Solo öğrenci erişim koruması — sadece izin verilen sayfalar
   if (currentRole === 'solo_student') {
-    const soloIzinli = ['dashboard','daily-entry','my-analysis','wellness','profile','notifs','yardim','lgs-dagilim','all-denemeler'];
+    const soloIzinli = ['dashboard','daily-entry','my-analysis','wellness','profile','notifs','yardim','lgs-dagilim','all-denemeler','oyun'];
     if (!soloIzinli.includes(id)) {
       el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text2)">
         <div style="font-size:2.5rem;margin-bottom:12px">🔒</div>
@@ -28,6 +28,9 @@ function renderStudentPage(id, el) {
   else if(id==='macera') {
     if (window.RC_MACERA_AKTIF === false) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">Bu özellik şu an kullanılamıyor.</div>'; return; }
     el.innerHTML = maceraPage(); _colonyPostRender();
+  }
+  else if(id==='oyun') {
+    el.innerHTML = oyunPage();
   }
   else if(id==='market') {
     if (window.RC_MARKET_AKTIF === false) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">Bu özellik şu an kullanılamıyor.</div>'; return; }

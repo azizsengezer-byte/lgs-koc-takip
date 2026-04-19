@@ -123,6 +123,7 @@ function renderSidebar() {
     target:  _s('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>'),
     heart:   _s('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>'),
     pie:     _s('<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>'),
+    game:    _s('<line x1="6" y1="11" x2="10" y2="11"/><line x1="8" y1="9" x2="8" y2="13"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="18" y1="10" x2="18.01" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258A4 4 0 0 0 17.32 5z"/>'),
   };
   const teacherNav = [
     { id:'dashboard',     icon:ICONS.grid,   label:'Ana Panel' },
@@ -139,6 +140,7 @@ function renderSidebar() {
     { id:'kazanimlar',   icon:ICONS.target, label:'Kazanımlarım' },
     { id:'my-tasks',     icon:ICONS.check,  label:'Ödevlerim' },
     { id:'wellness',     icon:ICONS.heart,  label:'Nasıl Hissediyorum' },
+    { id:'oyun',         icon:ICONS.game,   label:'Mini Oyunlar' },
     { id:'lgs-dagilim',  icon:ICONS.pie,    label:'LGS Soru Dağılımı' },
     { id:'messages',     icon:ICONS.msg,    label:'Koçumla Mesaj' },
     { id:'notifs',       icon:ICONS.bell,   label:'Bildirimler' },
@@ -149,6 +151,7 @@ function renderSidebar() {
     { id:'my-analysis',  icon:ICONS.trend,  label:'Analizlerim' },
     { id:'kazanimlar',   icon:ICONS.target, label:'Kazanımlarım' },
     { id:'wellness',     icon:ICONS.heart,  label:'Nasıl Hissediyorum' },
+    { id:'oyun',         icon:ICONS.game,   label:'Mini Oyunlar' },
     { id:'lgs-dagilim',  icon:ICONS.pie,    label:'LGS Soru Dağılımı' },
     { id:'notifs',       icon:ICONS.bell,   label:'Bildirimler' },
   ];
