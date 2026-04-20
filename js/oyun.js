@@ -1135,13 +1135,6 @@ function _bulmacaKlavyeBas(tus) {
       _bulmacaMesajGoster('Tüm harfleri doldur', '#d4a838');
       return;
     }
-    // Sözlük kontrolü — kelime listede var mı?
-    if (!_BULMACA_KELIMELER.includes(_bulmacaState.aktifTahmin)) {
-      _bulmacaMesajGoster('Sözlükte yok', '#ff6584');
-      // Satırı salla (shake animasyonu)
-      _bulmacaSatirSalla();
-      return;
-    }
     _bulmacaTahminGonder();
     return;
   } else {
@@ -1152,7 +1145,7 @@ function _bulmacaKlavyeBas(tus) {
   _bulmacaGridCiz();
 }
 
-// Geçersiz tahmin girildiğinde aktif satırı salla
+// Geçersiz tahmin girildiğinde aktif satırı salla (artık kullanılmıyor ama kalabilir)
 function _bulmacaSatirSalla() {
   const grid = document.getElementById('_bulmacaGrid');
   if (!grid) return;
