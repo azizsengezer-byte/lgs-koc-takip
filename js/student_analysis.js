@@ -457,6 +457,9 @@ function wellnessPage() {
 
   const streakTelkin = streak>=2 ? telkinHtml(wpStreak(streak), 'good') : '';
 
+  // Aktif sekme (varsayılan: bugun)
+  const aktifSekme = window._wellnessAktifSekme || 'bugun';
+
   return `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
       <button onclick="showPage('dashboard')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:1.2rem;padding:0">←</button>
@@ -464,6 +467,7 @@ function wellnessPage() {
     </div>
     <div class="page-sub">Bugünü kaydet — sadece senin için</div>
 
+    <!-- Selamlama kartı (her sekmede görünür) -->
     <div style="background:linear-gradient(135deg,#6c63ff,#4cc9f0);border-radius:18px;padding:16px;margin:12px 0">
       <div style="font-size:0.68rem;color:rgba(255,255,255,0.8);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">${now.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}</div>
       <div style="font-size:1.05rem;font-weight:800;color:#fff">${selamlama}${userName?' '+userName:''} 👋</div>
@@ -471,6 +475,21 @@ function wellnessPage() {
       ${streakHtml}
     </div>
 
+    <!-- SEKMELER -->
+    <div style="display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:12px;margin-bottom:14px">
+      <button onclick="_wellnessSekme('bugun')" style="flex:1;padding:10px 6px;border-radius:9px;border:none;background:${aktifSekme==='bugun'?'var(--surface)':'transparent'};color:${aktifSekme==='bugun'?'var(--text)':'var(--text2)'};font-size:0.82rem;font-weight:${aktifSekme==='bugun'?'800':'600'};cursor:pointer;font-family:inherit;box-shadow:${aktifSekme==='bugun'?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:.15s">
+        🌤️ Bugün
+      </button>
+      <button onclick="_wellnessSekme('gunluk')" style="flex:1;padding:10px 6px;border-radius:9px;border:none;background:${aktifSekme==='gunluk'?'var(--surface)':'transparent'};color:${aktifSekme==='gunluk'?'var(--text)':'var(--text2)'};font-size:0.82rem;font-weight:${aktifSekme==='gunluk'?'800':'600'};cursor:pointer;font-family:inherit;box-shadow:${aktifSekme==='gunluk'?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:.15s">
+        📖 Günlük
+      </button>
+      <button onclick="_wellnessSekme('egzersiz')" style="flex:1;padding:10px 6px;border-radius:9px;border:none;background:${aktifSekme==='egzersiz'?'var(--surface)':'transparent'};color:${aktifSekme==='egzersiz'?'var(--text)':'var(--text2)'};font-size:0.82rem;font-weight:${aktifSekme==='egzersiz'?'800':'600'};cursor:pointer;font-family:inherit;box-shadow:${aktifSekme==='egzersiz'?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:.15s">
+        🫁 Egzersiz
+      </button>
+    </div>
+
+    ${aktifSekme === 'bugun' ? `
+    <!-- ══════════════ SEKME: BUGÜN ══════════════ -->
     <div style="display:flex;gap:4px;margin-bottom:14px">
       ${last7.map(d=>`
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
@@ -596,16 +615,13 @@ function wellnessPage() {
       style="width:100%;padding:14px;border-radius:14px;background:var(--accent);color:#fff;border:none;font-weight:800;font-size:0.95rem;cursor:pointer;margin-bottom:28px">
       ✓ Günlüğü Kaydet
     </button>
+    ` : ''}
 
-    <!-- ÖZEL GÜNLÜK — görsel ayraç ile ayrılmış -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      <div style="flex:1;height:1px;background:var(--border)"></div>
-      <div style="font-size:0.65rem;font-weight:800;color:var(--text2);letter-spacing:.1em;white-space:nowrap">🔒 ÖZEL GÜNLÜK</div>
-      <div style="flex:1;height:1px;background:var(--border)"></div>
-    </div>
+    ${aktifSekme === 'gunluk' ? `
+    <!-- ══════════════ SEKME: GÜNLÜK ══════════════ -->
     <div class="card" style="margin-bottom:12px;border:1.5px solid var(--border)" id="gunlukNotKart">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <div class="card-title" style="margin:0">Bugün ne düşündüm?</div>
+        <div class="card-title" style="margin:0">🔒 Bugün ne düşündüm?</div>
       </div>
       <div style="font-size:0.72rem;color:var(--text2);margin-bottom:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;line-height:1.5">
         🔒 Bu alan tamamen sana özel — ${currentRole === 'solo_student' ? 'kimse okuyamaz' : 'koçun dahil kimse okuyamaz'}. PIN ile korunuyor.
@@ -619,23 +635,62 @@ function wellnessPage() {
         <button onclick="_gunlukDuzenlePin()" style="padding:4px 10px;border-radius:8px;border:1px solid #43b89c55;background:transparent;color:#085041;font-size:0.72rem;font-weight:700;cursor:pointer;font-family:inherit">Düzenle</button>
       </div>
       ` : `
-      <textarea rows="4" style="width:100%;padding:9px 11px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:0.88rem;resize:none;outline:none;box-sizing:border-box;margin-bottom:8px"></textarea>
+      <textarea rows="6" placeholder="Bugün neler yaşadın? İstediğin gibi yaz..." style="width:100%;padding:11px 13px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Nunito',sans-serif;font-size:0.9rem;resize:none;outline:none;box-sizing:border-box;margin-bottom:10px"></textarea>
       <button onclick="_gunlukNotKaydet(this)"
-        style="width:100%;padding:11px;border-radius:11px;background:#444;color:#fff;border:none;font-weight:800;font-size:0.85rem;cursor:pointer;font-family:inherit">
+        style="width:100%;padding:12px;border-radius:11px;background:#444;color:#fff;border:none;font-weight:800;font-size:0.88rem;cursor:pointer;font-family:inherit">
         🔒 Kaydet &amp; Gizle
       </button>
       `}
     </div>
 
-    <!-- Geçmiş günlükler — PIN korumalı -->
     <div class="card" style="margin-bottom:24px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
         <div class="card-title" style="margin:0">🔒 Geçmiş Günlükler</div>
         <button onclick="_gunlukArsivAc()" style="padding:6px 14px;border-radius:99px;border:none;background:var(--accent);color:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;font-family:inherit">Aç →</button>
       </div>
-      <div style="font-size:0.72rem;color:var(--text2)">Özel notların PIN ile korunuyor.</div>
+      <div style="font-size:0.72rem;color:var(--text2);line-height:1.5">Özel notların PIN ile korunuyor. Geçmiş günlerde yazdığın her şey burada arşivlenir — istediğin zaman geri okuyabilirsin.</div>
     </div>
+    ` : ''}
+
+    ${aktifSekme === 'egzersiz' ? `
+    <!-- ══════════════ SEKME: EGZERSİZ ══════════════ -->
+    <div style="margin-bottom:14px;padding:13px 14px;background:rgba(91,191,255,0.08);border:1px solid rgba(91,191,255,0.25);border-radius:12px">
+      <div style="font-size:0.82rem;color:var(--text);line-height:1.6">
+        <b>Egzersizler</b> sınırsız — istediğin zaman, istediğin kadar yapabilirsin. Skor yok, ödül yok; amaç sadece kendine iyi gelmek.
+      </div>
+    </div>
+
+    <!-- Nefes Egzersizi -->
+    <div class="card" style="margin-bottom:12px;padding:18px;cursor:pointer" onclick="nefesEgzersiziAc()">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+        <div style="font-size:2.6rem;flex-shrink:0">🫁</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:1rem;margin-bottom:3px">Nefes Egzersizi</div>
+          <div style="font-size:0.75rem;color:var(--accent);font-weight:700;letter-spacing:.03em">4-7-8 Tekniği</div>
+        </div>
+      </div>
+      <div style="font-size:0.8rem;color:var(--text2);line-height:1.6;margin-bottom:12px">
+        Sınav kaygısını azaltır, kalp atışını yavaşlatır, sinir sistemini sakinleştirir. Özellikle sınav öncesi ya da yoğun stresli anlarda işe yarar — 2-3 döngü bile fark yaratır.
+      </div>
+      <button onclick="event.stopPropagation();nefesEgzersiziAc()" style="width:100%;padding:12px;border-radius:11px;border:none;background:linear-gradient(135deg,#5BBFFF,#185FA5);color:#fff;font-size:0.9rem;font-weight:800;cursor:pointer;font-family:inherit">
+        ▶ Egzersize Başla
+      </button>
+    </div>
+
+    <!-- Gelecek egzersizler için placeholder -->
+    <div style="margin:20px 0 24px;padding:16px;background:var(--surface2);border:1.5px dashed var(--border);border-radius:12px;text-align:center">
+      <div style="font-size:1.6rem;margin-bottom:6px;opacity:0.5">✨</div>
+      <div style="font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:4px">Yakında yeni egzersizler</div>
+      <div style="font-size:0.72rem;color:var(--text2);line-height:1.5">Kas gevşetme, görselleştirme, şükran pratiği gibi yeni egzersizler ekleyeceğiz.</div>
+    </div>
+    ` : ''}
   `;
+}
+
+// Sekme değiştirme
+function _wellnessSekme(sekme) {
+  window._wellnessAktifSekme = sekme;
+  showPage('wellness');
 }
 
 

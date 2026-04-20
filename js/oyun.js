@@ -38,12 +38,10 @@ function _oyunEnYuksekSkor(oyunId) {
 // ── Ana sayfa ───────────────────────────────────────────
 function oyunPage() {
   const wellnessVar = _oyunWellnessVarMi();
-  const nefesOynandi = _oyunOynandiMi('nefes');
   const bulmacaOynandi = _oyunOynandiMi('bulmaca');
   const nbackOynandi = _oyunOynandiMi('nback');
   const stroopOynandi = _oyunOynandiMi('stroop');
   const matrisOynandi = _oyunOynandiMi('matris');
-  const nefesBest = _oyunEnYuksekSkor('nefes');
   const bulmacaBest = _oyunEnYuksekSkor('bulmaca');
   const nbackBest = _oyunEnYuksekSkor('nback');
   const stroopBest = _oyunEnYuksekSkor('stroop');
@@ -68,11 +66,13 @@ function oyunPage() {
       <div class="card" style="margin-top:14px">
         <div class="card-title">Bugün Oynanabilir Olanlar</div>
         <div style="opacity:0.5;pointer-events:none">
-          ${_oyunKartHTML('nefes', '🫁', 'Nefes Egzersizi', 'Sınav kaygısını azaltan 4-7-8 tekniği.', false, 0, true)}
           ${_oyunKartHTML('bulmaca', '🧩', 'Kelime Bulmacası', '5 harfli gizli kelimeyi 6 denemede bul.', false, 0, true)}
           ${_oyunKartHTML('nback', '🧠', 'N-Back: Çalışan Bellek', 'Çalışan bellek antrenmanı.', false, 0, true)}
           ${_oyunKartHTML('stroop', '🎨', 'Stroop: Çeldiriciye Karşı', 'Yazıyı değil rengi seç.', false, 0, true)}
           ${_oyunKartHTML('matris', '🔲', 'Görsel Matris', 'Yanıp sönen kareleri sırayla bul.', false, 0, true)}
+        </div>
+        <div style="margin-top:10px;padding:10px 13px;background:rgba(91,191,255,0.08);border-radius:10px;font-size:0.75rem;color:var(--text2)">
+          💡 <b>Nefes egzersizi</b> kilit dışı — istediğin zaman günlük sayfasından açabilirsin.
         </div>
       </div>
     `;
@@ -87,11 +87,19 @@ function oyunPage() {
       <span style="font-size:0.82rem;color:var(--accent3);font-weight:700">Günlüğünü doldurdun — oyunlar açık!</span>
     </div>
 
-    ${_oyunKartHTML('nefes', '🫁', 'Nefes Egzersizi', 'Sınav kaygısını azaltan 4-7-8 tekniği. 2 dakikalık nefes ritmini takip et.', nefesOynandi, nefesBest, false)}
     ${_oyunKartHTML('bulmaca', '🧩', 'Kelime Bulmacası', '5 harfli gizli kelimeyi 6 denemede bul. Her gün farklı kelime.', bulmacaOynandi, bulmacaBest, false)}
     ${_oyunKartHTML('nback', '🧠', 'N-Back: Çalışan Bellek', 'Ekrandaki harfin 2 önceki ile aynı olup olmadığını bul. Yeni nesil sorularda veriyi kaybetmemek için.', nbackOynandi, nbackBest, false)}
     ${_oyunKartHTML('stroop', '🎨', 'Stroop: Çeldiriciye Karşı', 'Yazıyı değil, rengini seç. Soru tuzaklarına direnç kazandırır.', stroopOynandi, stroopBest, false)}
     ${_oyunKartHTML('matris', '🔲', 'Görsel Matris', 'Yanıp sönen kareleri sırayla bul. Geometri ve şekil sorularına hazırlık.', matrisOynandi, matrisBest, false)}
+
+    <div style="margin-top:14px;padding:14px 16px;background:rgba(91,191,255,0.08);border:1px solid rgba(91,191,255,0.25);border-radius:14px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:1.8rem">🫁</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.85rem;font-weight:700;margin-bottom:2px">Nefes egzersizi mi yapmak istiyorsun?</div>
+        <div style="font-size:0.72rem;color:var(--text2)">Günlük sayfasında her an açabilirsin — sınırsız.</div>
+      </div>
+      <button onclick="showPage('wellness')" style="padding:8px 14px;border-radius:10px;border:none;background:rgba(91,191,255,0.2);color:var(--accent);font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0">Git →</button>
+    </div>
 
     <div style="font-size:0.72rem;color:var(--text2);text-align:center;margin-top:14px;line-height:1.5">
       Her oyun günde 1 kez oynanabilir. Yarın yeni oyun hakkın olacak.
@@ -128,18 +136,22 @@ function oyunBaslat(oyunId) {
     showToast('✅', 'Bu oyunu bugün oynadın — yarın tekrar gel');
     return;
   }
-  if (oyunId === 'nefes') _nefesOyunuAc();
-  else if (oyunId === 'bulmaca') _bulmacaOyunuAc();
+  if (oyunId === 'bulmaca') _bulmacaOyunuAc();
   else if (oyunId === 'nback') _nbackOyunuAc();
   else if (oyunId === 'stroop') _stroopOyunuAc();
   else if (oyunId === 'matris') _matrisOyunuAc();
 }
 
 // ═══════════════════════════════════════════════════════════
-// NEFES EGZERSİZİ
+// NEFES EGZERSİZİ (WELLNESS içinde kullanılır — SINIRSIZ)
 // ═══════════════════════════════════════════════════════════
-// 4-7-8 Tekniği: 4sn al, 7sn tut, 8sn ver — sınav kaygısı için bilimsel.
-// 4 döngü = ~80 saniye + hazırlık. Her döngü skoru ritimle uyumuna göre 0-25.
+// 4-7-8 Tekniği: 4sn al, 7sn tut, 8sn ver.
+// Oyun değil, gerçek bir rahatlama aracı. Skor yok, günlük limit yok.
+// Kaç döngü yapıldığı sayılır (motivasyon için).
+
+function nefesEgzersiziAc() {
+  _nefesOyunuAc();
+}
 
 function _nefesOyunuAc() {
   const existing = document.getElementById('_nefesOyunModal');
@@ -160,58 +172,51 @@ function _nefesOyunuAc() {
     <div id="_nefesIntro" style="text-align:center;color:#fff;max-width:340px">
       <div style="font-size:3rem;margin-bottom:14px">🫁</div>
       <div style="font-size:1.3rem;font-weight:800;margin-bottom:10px">Nefes Egzersizi</div>
-      <div style="font-size:0.88rem;color:rgba(255,255,255,0.7);line-height:1.7;margin-bottom:24px">
-        4-7-8 tekniği — sınav kaygısını azaltan bilimsel bir nefes egzersizi.
+      <div style="font-size:0.88rem;color:rgba(255,255,255,0.7);line-height:1.7;margin-bottom:20px">
+        4-7-8 tekniği — sınav kaygısını azaltan, sinir sistemini yatıştıran bilimsel bir nefes egzersizi.
         <br><br>
         <b style="color:#5BBFFF">4 saniye</b> nefes al →
         <b style="color:#FAC775">7 saniye</b> tut →
         <b style="color:#5DCAA5">8 saniye</b> nefes ver
         <br><br>
-        Daire büyüdüğünde nefes al, küçüldüğünde ver. Ritmi tuttuğun sürece skor artar.
+        <span style="font-size:0.8rem;color:rgba(255,255,255,0.5)">Ne zaman ihtiyacın olursa aç — sınırsız, skor yok.</span>
       </div>
       <button onclick="_nefesBasla()" style="padding:14px 36px;border-radius:14px;border:none;background:linear-gradient(135deg,#5BBFFF,#185FA5);color:#fff;font-size:1rem;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px rgba(91,191,255,0.4)">
         Başla →
       </button>
     </div>
 
-    <!-- Oyun ekranı -->
+    <!-- Egzersiz ekranı -->
     <div id="_nefesGame" style="display:none;text-align:center;color:#fff;width:100%;max-width:380px">
-      <div id="_nefesDongu" style="font-size:0.78rem;letter-spacing:.15em;color:rgba(255,255,255,0.5);font-weight:700;margin-bottom:12px">DÖNGÜ 1 / 4</div>
+      <div id="_nefesDongu" style="font-size:0.78rem;letter-spacing:.15em;color:rgba(255,255,255,0.5);font-weight:700;margin-bottom:12px">DÖNGÜ 1</div>
 
       <!-- Daire -->
       <div style="position:relative;width:240px;height:240px;margin:0 auto 30px;display:flex;align-items:center;justify-content:center">
-        <!-- Dış halka -->
         <div id="_nefesRing" style="position:absolute;width:240px;height:240px;border-radius:50%;border:3px solid rgba(91,191,255,0.3);transition:all 0.5s"></div>
-        <!-- İç daire -->
         <div id="_nefesCore" style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#5BBFFF,#185FA5);transition:all 4s cubic-bezier(0.4,0,0.6,1);box-shadow:0 0 60px rgba(91,191,255,0.6)"></div>
       </div>
 
       <div id="_nefesFaz" style="font-size:1.6rem;font-weight:800;margin-bottom:6px">HAZIR OL</div>
       <div id="_nefesSayac" style="font-size:0.9rem;color:rgba(255,255,255,0.6);margin-bottom:18px">3</div>
 
-      <div style="display:flex;justify-content:center;gap:18px;margin-bottom:14px">
-        <div>
-          <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);font-weight:700;letter-spacing:.05em">SKOR</div>
-          <div id="_nefesSkor" style="font-size:1.4rem;font-weight:900;color:#5BBFFF">0</div>
-        </div>
-      </div>
+      <button onclick="_nefesBitirManuel()" style="padding:10px 24px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.7);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit">
+        Yeterli — Bitir
+      </button>
     </div>
 
     <!-- Bitiş ekranı -->
     <div id="_nefesBitis" style="display:none;text-align:center;color:#fff;max-width:340px">
       <div style="font-size:3rem;margin-bottom:10px">✨</div>
-      <div style="font-size:1.3rem;font-weight:800;margin-bottom:6px">Tamamlandı!</div>
-      <div style="font-size:0.85rem;color:rgba(255,255,255,0.65);margin-bottom:20px;line-height:1.6">
-        4 nefes döngüsünü tamamladın. Kalp atışın yavaşladı, sinir sistemin sakinleşti.
+      <div style="font-size:1.3rem;font-weight:800;margin-bottom:6px">Güzel gidiyor</div>
+      <div id="_nefesBitisAlt" style="font-size:0.9rem;color:rgba(255,255,255,0.65);margin-bottom:20px;line-height:1.6"></div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button onclick="_nefesKapat()" style="padding:12px 24px;border-radius:12px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.8);font-size:0.88rem;font-weight:700;cursor:pointer;font-family:inherit">
+          Tamam
+        </button>
+        <button onclick="_nefesTekrar()" style="padding:12px 24px;border-radius:12px;border:none;background:rgba(91,191,255,0.2);color:#5BBFFF;font-size:0.88rem;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(91,191,255,0.4)">
+          🫁 Tekrar Başla
+        </button>
       </div>
-      <div style="background:rgba(255,255,255,0.06);border-radius:14px;padding:18px;margin-bottom:20px">
-        <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);font-weight:700;letter-spacing:.1em;margin-bottom:5px">SKORUN</div>
-        <div id="_nefesSonSkor" style="font-size:2.2rem;font-weight:900;color:#5BBFFF">0</div>
-        <div id="_nefesSonMesaj" style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:5px"></div>
-      </div>
-      <button onclick="_nefesKapat()" style="padding:12px 32px;border-radius:12px;border:none;background:rgba(91,191,255,0.2);color:#5BBFFF;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid rgba(91,191,255,0.4)">
-        Tamam
-      </button>
     </div>
   `;
 
@@ -223,12 +228,13 @@ let _nefesState = null;
 function _nefesBasla() {
   document.getElementById('_nefesIntro').style.display = 'none';
   document.getElementById('_nefesGame').style.display = 'block';
+  const bitisEl = document.getElementById('_nefesBitis');
+  if (bitisEl) bitisEl.style.display = 'none';
 
   _nefesState = {
     dongu: 0,
-    toplamDongu: 4,
-    faz: 'hazir',
-    skor: 0,
+    timer: null,
+    aktif: true,
   };
 
   _nefesGeriSayim(3, () => _nefesDonguBasla());
@@ -237,41 +243,35 @@ function _nefesBasla() {
 function _nefesGeriSayim(saniye, onDone) {
   const fazEl = document.getElementById('_nefesFaz');
   const sayacEl = document.getElementById('_nefesSayac');
-  if (fazEl) fazEl.textContent = 'HAZIR OL';
+  if (fazEl) { fazEl.textContent = 'HAZIR OL'; fazEl.style.color = '#fff'; }
   let kalan = saniye;
   if (sayacEl) sayacEl.textContent = String(kalan);
   const timer = setInterval(() => {
+    if (!_nefesState || !_nefesState.aktif) { clearInterval(timer); return; }
     kalan--;
     if (sayacEl) sayacEl.textContent = String(kalan);
-    if (kalan <= 0) {
-      clearInterval(timer);
-      onDone();
-    }
+    if (kalan <= 0) { clearInterval(timer); onDone(); }
   }, 1000);
+  if (_nefesState) _nefesState.timer = timer;
 }
 
 function _nefesDonguBasla() {
-  if (!_nefesState) return;
+  if (!_nefesState || !_nefesState.aktif) return;
   _nefesState.dongu++;
   const donguEl = document.getElementById('_nefesDongu');
-  if (donguEl) donguEl.textContent = `DÖNGÜ ${_nefesState.dongu} / ${_nefesState.toplamDongu}`;
+  if (donguEl) donguEl.textContent = `DÖNGÜ ${_nefesState.dongu}`;
 
   // Faz 1: Nefes al (4 sn)
   _nefesFaz('AL', '#5BBFFF', 4, 220, () => {
+    if (!_nefesState || !_nefesState.aktif) return;
     // Faz 2: Tut (7 sn)
     _nefesFaz('TUT', '#FAC775', 7, 220, () => {
+      if (!_nefesState || !_nefesState.aktif) return;
       // Faz 3: Ver (8 sn)
       _nefesFaz('VER', '#5DCAA5', 8, 60, () => {
-        // Skor ekle (her tamamlanan döngü = 25 puan)
-        _nefesState.skor += 25;
-        const skorEl = document.getElementById('_nefesSkor');
-        if (skorEl) skorEl.textContent = String(_nefesState.skor);
-        // Sonraki döngü ya da bitiş
-        if (_nefesState.dongu >= _nefesState.toplamDongu) {
-          _nefesBitir();
-        } else {
-          setTimeout(() => _nefesDonguBasla(), 800);
-        }
+        if (!_nefesState || !_nefesState.aktif) return;
+        // Kısa ara sonra bir sonraki döngü
+        setTimeout(() => _nefesDonguBasla(), 800);
       });
     });
   });
@@ -283,10 +283,7 @@ function _nefesFaz(label, renk, saniye, hedefBoyut, onDone) {
   const coreEl = document.getElementById('_nefesCore');
   const ringEl = document.getElementById('_nefesRing');
 
-  if (fazEl) {
-    fazEl.textContent = 'NEFES ' + label;
-    fazEl.style.color = renk;
-  }
+  if (fazEl) { fazEl.textContent = 'NEFES ' + label; fazEl.style.color = renk; }
   if (coreEl) {
     coreEl.style.transition = `all ${saniye}s cubic-bezier(0.4,0,0.6,1)`;
     coreEl.style.width = hedefBoyut + 'px';
@@ -294,45 +291,60 @@ function _nefesFaz(label, renk, saniye, hedefBoyut, onDone) {
     coreEl.style.background = `linear-gradient(135deg,${renk},${renk}88)`;
     coreEl.style.boxShadow = `0 0 80px ${renk}99`;
   }
-  if (ringEl) {
-    ringEl.style.borderColor = renk + '66';
-  }
+  if (ringEl) ringEl.style.borderColor = renk + '66';
 
   let kalan = saniye;
   if (sayacEl) sayacEl.textContent = String(kalan);
   const timer = setInterval(() => {
+    if (!_nefesState || !_nefesState.aktif) { clearInterval(timer); return; }
     kalan--;
     if (sayacEl) sayacEl.textContent = String(Math.max(0, kalan));
-    if (kalan <= 0) {
-      clearInterval(timer);
-      onDone();
-    }
+    if (kalan <= 0) { clearInterval(timer); onDone(); }
   }, 1000);
+  if (_nefesState) _nefesState.timer = timer;
 }
 
-function _nefesBitir() {
-  const skor = _nefesState ? _nefesState.skor : 0;
+function _nefesBitirManuel() {
+  if (!_nefesState) return;
+  _nefesState.aktif = false;
+  if (_nefesState.timer) clearInterval(_nefesState.timer);
+
+  const tamamlanan = _nefesState.dongu > 0 ? _nefesState.dongu - 1 : 0;
   document.getElementById('_nefesGame').style.display = 'none';
-  document.getElementById('_nefesBitis').style.display = 'block';
-  document.getElementById('_nefesSonSkor').textContent = String(skor);
+  const bitisEl = document.getElementById('_nefesBitis');
+  bitisEl.style.display = 'block';
 
+  const altEl = document.getElementById('_nefesBitisAlt');
   let mesaj = '';
-  if (skor >= 100) mesaj = '🌟 Mükemmel! Tüm döngüleri tamamladın.';
-  else if (skor >= 75) mesaj = '👍 Çok iyi gittin!';
-  else if (skor >= 50) mesaj = '🙂 Güzel bir başlangıç.';
-  else mesaj = '💙 Pratik yaptıkça daha kolaylaşacak.';
-  document.getElementById('_nefesSonMesaj').textContent = mesaj;
+  if (tamamlanan >= 4) mesaj = `${tamamlanan} tam döngü tamamladın — sinir sistemin yavaşladı.`;
+  else if (tamamlanan >= 2) mesaj = `${tamamlanan} döngü yaptın. Az bile olsa etki eder.`;
+  else if (tamamlanan === 1) mesaj = '1 döngü yaptın — her başlangıç değerli.';
+  else mesaj = 'İlk döngünü başlatmıştın, istersen tekrar dene.';
+  if (altEl) altEl.textContent = mesaj;
+}
 
-  _oyunOynanmisOlarakKaydet('nefes', skor);
+function _nefesTekrar() {
   _nefesState = null;
+  document.getElementById('_nefesBitis').style.display = 'none';
+  document.getElementById('_nefesIntro').style.display = 'block';
+  const coreEl = document.getElementById('_nefesCore');
+  if (coreEl) {
+    coreEl.style.transition = 'all 0.3s';
+    coreEl.style.width = '60px';
+    coreEl.style.height = '60px';
+    coreEl.style.background = 'linear-gradient(135deg,#5BBFFF,#185FA5)';
+    coreEl.style.boxShadow = '0 0 60px rgba(91,191,255,0.6)';
+  }
 }
 
 function _nefesKapat() {
+  if (_nefesState) {
+    _nefesState.aktif = false;
+    if (_nefesState.timer) clearInterval(_nefesState.timer);
+  }
   const modal = document.getElementById('_nefesOyunModal');
   if (modal) modal.remove();
   _nefesState = null;
-  // Sayfayı yenile
-  if (typeof showPage === 'function') showPage('oyun');
 }
 
 // ═══════════════════════════════════════════════════════════
