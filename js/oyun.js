@@ -910,17 +910,47 @@ function _kasGevsetmeKapat() {
 // Yeşil: doğru harf doğru yer. Sarı: doğru harf yanlış yer. Gri: yok.
 
 const _BULMACA_KELIMELER = [
-  // 100 gerçek 5 harfli Türkçe kelime
-  'KALEM','KİTAP','SINIF','SINAV','HEDEF','BİLGİ','NOKTA','SAYFA','CÜMLE','ŞEKİL',
-  'ÇİZİM','OKUMA','YAZMA','ANLAT','ÇÖZÜM','DİKEY','YATAY','TOPLA','SORUN','MATEM',
-  'SAYGI','SEVGİ','BARIŞ','MERAK','ANLAM','DEĞER','ERDEM','HUZUR','MUTLU','KARAR',
-  'İRADE','GÜVEN','CESUR','SAKİN','RAHAT','TEMİZ','HAYAL','SABIR','KAYGI','VEFAT',
-  'ORMAN','DENİZ','BULUT','GÜNEŞ','TARLA','BAHÇE','ÇİÇEK','TOHUM','FİDAN','MEYVE',
-  'SEBZE','DAMLA','DALGA','BUZUL','KEKİK','DİKEN','ÇİLEK','LİMON','ELMAS','BİBER',
-  'YEŞİL','SİYAH','BEYAZ','PEMBE','GÜZEL','ACILI','TATLI','TUZLU','KÜÇÜK','BÜYÜK',
-  'ZORLU','KOLAY','SICAK','SOĞUK','YAVAŞ','HIZLI','GENİŞ','DERİN','KESİN','SADIK',
-  'ARABA','YEMEK','MÜZİK','RESİM','ŞARKI','DOSYA','POSTA','MASAL','KİRAZ','SALON',
-  'PERDE','DUVAR','TAVAN','BAHAR','TAŞIT','KIŞIN','YAZIN','KİMYA','FİZİK','RİTİM',
+  'BAVUL','ZAMAN','KAVGA','FENER','GÜNEŞ','HÜCRE','ILGIN','JOKER','KABAK','LAMBA',
+  'MEYVE','NOKTA','ORMAN','ÖRDEK','PAKET','RADAR','SABUN','ŞEHİR','TABLO','UYARI',
+  'VERGİ','YALAN','ZARAR','AKORT','BÖLGE','CEKET','ÇANTA','DAİRE','ESNEK','FİGÜR',
+  'GÖZCÜ','HIRKA','IRMAK','JİLET','KEMER','LİMON','MADEN','NAMUS','OTLAK','ÖVÜNÇ',
+  'PASTA','RAKET','SINAV','ŞEKER','TAVAN','UZMAN','ÜCRET','VİŞNE','YOSUN','ZEMİN',
+  'ARŞİV','BETON','CEVİZ','ÇİZGİ','EVRAK','FİRMA','GALİP','HUKUK','ISLAK','JETON',
+  'KİLİT','LİDER','MASAL','NEFES','ONLAR','ÖLÇÜM','PAZAR','ROBOT','SEÇİM','ŞERİT',
+  'TURŞU','ÜTÜCÜ','VAGON','YEMEK','ATLAS','BİBER','CÜMLE','ÇEKİÇ','DOLAR','FULAR',
+  'GÖVDE','HAYAT','JAPON','KAYIK','LİSTE','METAL','NİSAN','ORTAK','ÖNDER','PİLOT',
+  'RADYO','SİYAH','TARAK','UYGUN','ÜSTÜN','YÜZEY','ABİYE','BALIK','CASUS','ÇİÇEK',
+  'DUVAR','ERKEN','FOSİL','GİTAR','HEDEF','ISRAR','KÖPEK','MÜZİK','NİYET','SAYGI',
+  'ŞARKI','VATAN','YARIN','ZALİM','ADRES','BANDO','CİHAZ','ÇORAP','DOLAP','ELMAS',
+  'HASTA','ISLIK','KULAK','LOKUM','NAKİT','POLİS','ŞAPKA','TAVUK','VİRAJ','YAZAR',
+  'AMPUL','BİLET','CESUR','ÇOCUK','DENİZ','EYLEM','FIRÇA','GARAJ','HABER','KİTAP',
+  'LEVHA','NÖBET','PARKA','REÇEL','SEVGİ','YATAK','ZAYIF','AHŞAP','BULUT','CAMCI',
+  'ÇABUK','DAVUL','ENGEL','GAZOZ','HALAT','KAĞIT','LİMAN','PİLAV','ÇORBA','AYRAN',
+  'KAHVE','HELVA','SALÇA','NOHUT','HURMA','BÖREK','SİMİT','ÇİLEK','KAYSI','YUFKA',
+  'TABAK','KAŞIK','BIÇAK','KAPAK','AVİZE','ASTAR','PERDE','KİLİM','HAVLU','SÜRME',
+  'ASKER','MEMUR','ÇIRAK','ŞOFÖR','BAKAN','HAKİM','AKTÖR','YEŞİL','BEYAZ','PEMBE',
+  'KÜÇÜK','BÜYÜK','HAFİF','SICAK','SOĞUK','YAVAŞ','HIZLI','DERİN','GENİŞ','GÜZEL',
+  'TATLI','TUZLU','ÇİMEN','SABAH','AKŞAM','HAFTA','BUGÜN','DUDAK','DAMAK','YANAK',
+  'TEYZE','KUZEN','GELDİ','GİTTİ','VERDİ','SORDU','BAKTI','BEKLE','ASLAN','TİLKİ',
+  'ZEBRA','HOROZ','GEYİK','AKREP','SİNEK','KOYUN','ARMUT','KAVUN','İNCİR','MISIR',
+  'SOĞAN','HAVUÇ','METRO','MOTOR','VAPUR','TAKSİ','TENİS','VOLEY','SAHİL','GÖLET',
+  'SOKAK','CADDE','ÜZGÜN','KORKU','PANİK','HÜZÜN','MORAL','NAZİK','YARIŞ','SAVAŞ',
+  'PARTİ','DÜĞÜN','TATİL','İŞLEM','YEMİN','EYLÜL','KASIM','MAYIS','BANYO','BİLGE',
+  'DURUM','HÂDİS','SÖYLE','DUYGU','KONUM','DENGE','KOŞTU','UÇTUK','BATTI','ÇIKTI',
+  'YATTI','YEDİK','İÇTİK','TUTTU','KESER','YAZDI','OKUDU','SATAN','VURDU','KABLO',
+  'PANEL','EKRAN','TUŞLU','MODEM','MODEL','MARKA','KUPON','GÖREV','YETKİ','GÜÇLÜ',
+  'TEKİL','ÇİFTE','TOPLU','GENEL','KAZAK','PALTO','KOLYE','YÜZÜK','KEMAN','ÇALAR',
+  'ALBÜM','BESTE','ROMAN','METİN','DERGİ','PİYES','KURAK','BORAN','YAĞIŞ','KARGA',
+  'ŞAHİN','SİLGİ','DÜNYA','VENÜS','ALÇAK','YASSI','BOZUK','BAYAT','CANLI','SAHTE',
+  'SİNİR','COŞKU','KEDER','ASABİ','BİNDİ','DÖNDÜ','KIRDI','YIKTI','YAPTI','ETTİK',
+  'KALDI','SATAR','BAKAR','KOYAR','TACİR','CAHİL','MÜDÜR','SİRKE','ACIMA','KİBİR',
+  'YALIN','BEŞER','YİRMİ','ÇAYIR','BAYIR','YOKUŞ','DAMAR','YAMAÇ','BATAK','BORSA',
+  'KREDİ','HESAP','BEDEL','FİYAT','DENEY','PROJE','SUNUŞ','YAZIM','SÜREÇ','SONUÇ',
+  'BAŞAR','PARKE','PANDA','KOALA','KUMRU','GEÇER','DURUR','TÜKET','GÖRÜŞ','FİKİR',
+  'İNANÇ','KANAT','TAHİN','KAŞAR','EZİNE','ZURNA','TERZİ','ÇOMAK','ZIMBA','KENAR',
+  'TOPAL','DEMİR','BAKIR','ÇELİK','ALTIN','GÜMÜŞ','KALAY','NİKEL','TUNCA','ÇİNKO',
+  'KIRAÇ','MORUK','KÜRSÜ','TEKİR','YUVAK','KISIR','KASIK','MAKAS','KORSE','MADEM',
+  'YEĞEN','DAMAT','GELİN','KIZAN',
 ];
 
 // Türkçe karakter normalizasyonu
@@ -992,6 +1022,15 @@ function _bulmacaOyunuAc() {
 
     <!-- Klavye -->
     <div id="_bulmacaKlavye" style="margin-top:auto;padding-bottom:8px"></div>
+    <style>
+      @keyframes _bulmacaSalla {
+        0%,100%{transform:translateX(0)}
+        20%{transform:translateX(-8px)}
+        40%{transform:translateX(8px)}
+        60%{transform:translateX(-6px)}
+        80%{transform:translateX(6px)}
+      }
+    </style>
   `;
 
   document.body.appendChild(modal);
@@ -1096,6 +1135,13 @@ function _bulmacaKlavyeBas(tus) {
       _bulmacaMesajGoster('Tüm harfleri doldur', '#d4a838');
       return;
     }
+    // Sözlük kontrolü — kelime listede var mı?
+    if (!_BULMACA_KELIMELER.includes(_bulmacaState.aktifTahmin)) {
+      _bulmacaMesajGoster('Sözlükte yok', '#ff6584');
+      // Satırı salla (shake animasyonu)
+      _bulmacaSatirSalla();
+      return;
+    }
     _bulmacaTahminGonder();
     return;
   } else {
@@ -1104,6 +1150,19 @@ function _bulmacaKlavyeBas(tus) {
     }
   }
   _bulmacaGridCiz();
+}
+
+// Geçersiz tahmin girildiğinde aktif satırı salla
+function _bulmacaSatirSalla() {
+  const grid = document.getElementById('_bulmacaGrid');
+  if (!grid) return;
+  const aktifIdx = _bulmacaState.tahminler.length;
+  const satirlar = grid.children;
+  if (satirlar[aktifIdx]) {
+    const satir = satirlar[aktifIdx];
+    satir.style.animation = '_bulmacaSalla 0.4s';
+    setTimeout(() => { satir.style.animation = ''; }, 400);
+  }
 }
 
 function _bulmacaTahminGonder() {
