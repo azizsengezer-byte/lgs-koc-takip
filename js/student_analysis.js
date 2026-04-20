@@ -694,11 +694,28 @@ function wellnessPage() {
       </button>
     </div>
 
+    <!-- Progresif Kas Gevşetme Egzersizi -->
+    <div class="card" style="margin-bottom:12px;padding:18px;cursor:pointer" onclick="kasGevsetmeEgzersiziAc()">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+        <div style="font-size:2.6rem;flex-shrink:0">💪</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:1rem;margin-bottom:3px">Kas Gevşetme</div>
+          <div style="font-size:0.75rem;color:#e67e22;font-weight:700;letter-spacing:.03em">Jacobson Tekniği</div>
+        </div>
+      </div>
+      <div style="font-size:0.8rem;color:var(--text2);line-height:1.6;margin-bottom:12px">
+        Kaygılıyken beden farkında olmadan kasılır — eller, omuzlar, çene. Kasları sırayla gerip bıraktığında beden "güvendesin" sinyali alır. Sınavda kalem tutarken eli titreyen, omzu ağrıyan öğrenci için birebir.
+      </div>
+      <button onclick="event.stopPropagation();kasGevsetmeEgzersiziAc()" style="width:100%;padding:12px;border-radius:11px;border:none;background:linear-gradient(135deg,#e67e22,#c0542a);color:#fff;font-size:0.9rem;font-weight:800;cursor:pointer;font-family:inherit">
+        ▶ Egzersize Başla
+      </button>
+    </div>
+
     <!-- Gelecek egzersizler için placeholder -->
     <div style="margin:20px 0 24px;padding:16px;background:var(--surface2);border:1.5px dashed var(--border);border-radius:12px;text-align:center">
       <div style="font-size:1.6rem;margin-bottom:6px;opacity:0.5">✨</div>
       <div style="font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:4px">Yakında yeni egzersizler</div>
-      <div style="font-size:0.72rem;color:var(--text2);line-height:1.5">Kas gevşetme, görselleştirme gibi yeni egzersizler ekleyeceğiz.</div>
+      <div style="font-size:0.72rem;color:var(--text2);line-height:1.5">Görselleştirme gibi yeni egzersizler ekleyeceğiz.</div>
     </div>
     ` : ''}
   `;
