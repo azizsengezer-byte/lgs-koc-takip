@@ -118,15 +118,38 @@ function _oyunKartHTML(id, ikon, baslik, aciklama, oynandi, best, kilit) {
       ? `<button disabled style="padding:10px 22px;border-radius:11px;border:none;background:var(--surface2);color:var(--text2);font-size:0.85rem;font-weight:700;cursor:not-allowed;font-family:inherit">✅ Bugün Oynandı</button>`
       : `<button onclick="oyunBaslat('${id}')" style="padding:10px 22px;border-radius:11px;border:none;background:var(--accent);color:#fff;font-size:0.85rem;font-weight:800;cursor:pointer;font-family:inherit">▶ Oyna</button>`;
 
+  // Sayı Avı'nın skoru "süre"dir, diğerleri normal skor
+  let bestMetin = '';
+  if (best > 0) {
+    if (id === 'sayiavi') {
+      // En yüksek puan → en iyi süre (düşük daha iyi)
+      const myUid = (window.currentUserData || {}).uid || 'local';
+      const bestTimeMs = parseInt(localStorage.getItem('oyun_sayiavi_besttime_' + myUid) || '0');
+      if (bestTimeMs > 0) {
+        bestMetin = `⚡ En iyi süren: <b>${(bestTimeMs/1000).toFixed(1)}s</b>`;
+      } else {
+        bestMetin = `🏆 En yüksek skorun: <b>${best}</b>`;
+      }
+    } else {
+      bestMetin = `🏆 En yüksek skorun: <b>${best}</b>`;
+    }
+  } else {
+    bestMetin = `<span style="color:var(--text2);opacity:0.6">Henüz oynamadın</span>`;
+  }
+
   return `
-    <div class="card" style="margin-bottom:12px;display:flex;align-items:center;gap:14px;padding:16px">
-      <div style="font-size:2.4rem;flex-shrink:0;width:60px;text-align:center">${ikon}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:800;font-size:0.98rem;margin-bottom:3px">${baslik}</div>
-        <div style="font-size:0.78rem;color:var(--text2);line-height:1.5;margin-bottom:8px">${aciklama}</div>
-        ${best > 0 ? `<div style="font-size:0.72rem;color:var(--accent);font-weight:700">🏆 En yüksek skorun: ${best}</div>` : ''}
+    <div class="card" style="margin-bottom:12px;padding:0;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:14px;padding:16px 16px 14px">
+        <div style="font-size:2.4rem;flex-shrink:0;width:60px;text-align:center">${ikon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:0.98rem;margin-bottom:3px">${baslik}</div>
+          <div style="font-size:0.78rem;color:var(--text2);line-height:1.5">${aciklama}</div>
+        </div>
+        <div style="flex-shrink:0">${buton}</div>
       </div>
-      <div style="flex-shrink:0">${buton}</div>
+      <div style="padding:8px 16px;background:${best > 0 ? 'rgba(91,191,255,0.06)' : 'var(--surface2)'};border-top:1px solid ${best > 0 ? 'rgba(91,191,255,0.15)' : 'var(--border)'};font-size:0.76rem;color:${best > 0 ? 'var(--accent)' : 'var(--text2)'};font-weight:600">
+        ${bestMetin}
+      </div>
     </div>
   `;
 }
@@ -887,17 +910,17 @@ function _kasGevsetmeKapat() {
 // Yeşil: doğru harf doğru yer. Sarı: doğru harf yanlış yer. Gri: yok.
 
 const _BULMACA_KELIMELER = [
-  // Okul / çalışma
-  'KALEM','MASA','KİTAP','DEFTER','SINIF','DERSE','KÂĞIT','SİLGİ','ETÜT','ÖDEV',
-  'BİLGİ','OKUMA','YAZMA','BAŞAR','ÇABA','EMEK','HEDEF','PLAN','NOTUN','SINAV',
-  // Doğa
-  'ORMAN','DENİZ','GÖLGE','BULUT','RÜZGÂR','GÜNEŞ','AYDIN','YILDI','GEZGİ','ATLAS',
-  'TARLA','BAHÇE','ÇİÇEK','TOHUM','FİDAN','MEYVE','SEBZE','SUYUN','TOPRA','HAVAA',
-  // Duygu
-  'HUZUR','SEVİN','UMUT','GÜLÜM','MUTLU','HEYE','SABRI','KARAR','İRADE','GÜVEN',
-  'CESUR','UYANI','DİKKA','ODAKL','SAKİN','RAHAT','TEMİZ','ARAYİ','AÇIKL','DOSTU',
-  // Genel
-  'ARABA','EVLER','YEMEK','SUYUM','OYUNA','MÜZİK','RESİM','ŞARKI','DOSYA','POSTA',
+  // 100 gerçek 5 harfli Türkçe kelime
+  'KALEM','KİTAP','SINIF','SINAV','HEDEF','BİLGİ','NOKTA','SAYFA','CÜMLE','ŞEKİL',
+  'ÇİZİM','OKUMA','YAZMA','ANLAT','ÇÖZÜM','DİKEY','YATAY','TOPLA','SORUN','MATEM',
+  'SAYGI','SEVGİ','BARIŞ','MERAK','ANLAM','DEĞER','ERDEM','HUZUR','MUTLU','KARAR',
+  'İRADE','GÜVEN','CESUR','SAKİN','RAHAT','TEMİZ','HAYAL','SABIR','KAYGI','VEFAT',
+  'ORMAN','DENİZ','BULUT','GÜNEŞ','TARLA','BAHÇE','ÇİÇEK','TOHUM','FİDAN','MEYVE',
+  'SEBZE','DAMLA','DALGA','BUZUL','KEKİK','DİKEN','ÇİLEK','LİMON','ELMAS','BİBER',
+  'YEŞİL','SİYAH','BEYAZ','PEMBE','GÜZEL','ACILI','TATLI','TUZLU','KÜÇÜK','BÜYÜK',
+  'ZORLU','KOLAY','SICAK','SOĞUK','YAVAŞ','HIZLI','GENİŞ','DERİN','KESİN','SADIK',
+  'ARABA','YEMEK','MÜZİK','RESİM','ŞARKI','DOSYA','POSTA','MASAL','KİRAZ','SALON',
+  'PERDE','DUVAR','TAVAN','BAHAR','TAŞIT','KIŞIN','YAZIN','KİMYA','FİZİK','RİTİM',
 ];
 
 // Türkçe karakter normalizasyonu
@@ -910,10 +933,17 @@ function _bulmacaNormalize(harf) {
 
 function _bulmacaGununKelime() {
   // Tarihten deterministik seed üret — herkes aynı kelimeyi alır
+  // djb2-like hash ile daha iyi dağılım
   const today = getTodayKey();
-  let hash = 0;
-  for (let i = 0; i < today.length; i++) hash = ((hash << 5) - hash) + today.charCodeAt(i);
-  const idx = Math.abs(hash) % _BULMACA_KELIMELER.length;
+  let hash = 5381;
+  for (let i = 0; i < today.length; i++) {
+    hash = ((hash * 33) ^ today.charCodeAt(i)) >>> 0;
+  }
+  // Gün numarasını da ek bir çarpan olarak kullan (daha iyi dağılım için)
+  const day = parseInt(today.slice(6, 8)) || 1;
+  const month = parseInt(today.slice(4, 6)) || 1;
+  hash = (hash + day * 2654435761 + month * 40503) >>> 0;
+  const idx = hash % _BULMACA_KELIMELER.length;
   return _BULMACA_KELIMELER[idx];
 }
 
@@ -941,7 +971,7 @@ function _bulmacaOyunuAc() {
   modal.style.cssText = `
     position:fixed;inset:0;z-index:10000;background:#0d1421;
     display:flex;flex-direction:column;
-    padding:18px 16px;overflow:hidden;color:#fff;
+    padding:14px 10px;overflow:hidden;color:#fff;
   `;
 
   modal.innerHTML = `
@@ -999,7 +1029,7 @@ function _bulmacaGridCiz() {
         }
       }
 
-      html += `<div style="width:50px;height:50px;display:flex;align-items:center;justify-content:center;background:${bg};border:${border};border-radius:6px;font-size:1.4rem;font-weight:800;color:${renk};font-family:'Inter',sans-serif">${harf}</div>`;
+      html += `<div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:${bg};border:${border};border-radius:6px;font-size:1.3rem;font-weight:800;color:${renk};font-family:'Inter',sans-serif">${harf}</div>`;
     }
     html += '</div>';
   }
@@ -1009,9 +1039,11 @@ function _bulmacaGridCiz() {
 function _bulmacaKlavyeCiz() {
   const kEl = document.getElementById('_bulmacaKlavye');
   if (!kEl) return;
+
+  // Türkçe mobil QWERTY - her satır 10 tuş, 3. sırada ENTER/DEL geniş
   const sira1 = ['E','R','T','Y','U','I','O','P','Ğ','Ü'];
   const sira2 = ['A','S','D','F','G','H','J','K','L','Ş','İ'];
-  const sira3 = ['SİL','Z','C','V','B','N','M','Ö','Ç','ENT'];
+  const sira3 = ['Z','C','V','B','N','M','Ö','Ç'];
 
   // Her harf için renk durumu
   const harfDurum = {};
@@ -1019,29 +1051,38 @@ function _bulmacaKlavyeCiz() {
     t.harfler.forEach((h, i) => {
       const mevcut = harfDurum[h];
       const yeni = t.sonuclar[i];
-      // Öncelik: green > yellow > gray
       if (yeni === 'green') harfDurum[h] = 'green';
       else if (yeni === 'yellow' && mevcut !== 'green') harfDurum[h] = 'yellow';
       else if (yeni === 'gray' && !mevcut) harfDurum[h] = 'gray';
     });
   });
 
-  function renderHarf(h) {
-    const durum = harfDurum[h];
-    let bg = 'rgba(255,255,255,0.1)', renk = '#fff';
-    if (durum === 'green') { bg = '#43b55a'; }
-    else if (durum === 'yellow') { bg = '#d4a838'; }
-    else if (durum === 'gray') { bg = '#2a2a2c'; renk = 'rgba(255,255,255,0.5)'; }
+  function harfStyle(durum) {
+    if (durum === 'green')  return 'background:#43b55a;color:#fff';
+    if (durum === 'yellow') return 'background:#d4a838;color:#fff';
+    if (durum === 'gray')   return 'background:#2a2a2c;color:rgba(255,255,255,0.4)';
+    return 'background:rgba(255,255,255,0.14);color:#fff';
+  }
 
-    if (h === 'SİL') return `<button onclick="_bulmacaKlavyeBas('SİL')" style="flex:1.5;height:42px;background:rgba(255,255,255,0.1);border:none;border-radius:7px;color:#fff;font-size:0.7rem;font-weight:800;cursor:pointer;font-family:inherit">⌫</button>`;
-    if (h === 'ENT') return `<button onclick="_bulmacaKlavyeBas('ENT')" style="flex:1.5;height:42px;background:rgba(91,191,255,0.3);border:none;border-radius:7px;color:#5BBFFF;font-size:0.65rem;font-weight:800;cursor:pointer;font-family:inherit">TAMAM</button>`;
-    return `<button onclick="_bulmacaKlavyeBas('${h}')" style="flex:1;height:42px;background:${bg};border:none;border-radius:7px;color:${renk};font-size:0.85rem;font-weight:800;cursor:pointer;font-family:inherit">${h}</button>`;
+  const tusBase = 'flex:1;min-width:0;height:52px;border:none;border-radius:8px;font-size:1rem;font-weight:800;cursor:pointer;font-family:inherit;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent';
+  const ozelBase = 'height:52px;border:none;border-radius:8px;font-size:0.72rem;font-weight:800;cursor:pointer;font-family:inherit;padding:0 10px;background:rgba(255,255,255,0.2);color:#fff;touch-action:manipulation;-webkit-tap-highlight-color:transparent';
+
+  function renderHarf(h) {
+    return `<button ontouchstart="" onclick="_bulmacaKlavyeBas('${h}')" style="${tusBase};${harfStyle(harfDurum[h])}">${h}</button>`;
   }
 
   kEl.innerHTML = `
-    <div style="display:flex;gap:4px;margin-bottom:5px;justify-content:center">${sira1.map(renderHarf).join('')}</div>
-    <div style="display:flex;gap:4px;margin-bottom:5px;justify-content:center">${sira2.map(renderHarf).join('')}</div>
-    <div style="display:flex;gap:4px;justify-content:center">${sira3.map(renderHarf).join('')}</div>
+    <div style="display:flex;gap:4px;margin-bottom:5px;width:100%">
+      ${sira1.map(renderHarf).join('')}
+    </div>
+    <div style="display:flex;gap:4px;margin-bottom:5px;width:100%">
+      ${sira2.map(renderHarf).join('')}
+    </div>
+    <div style="display:flex;gap:4px;width:100%">
+      <button ontouchstart="" onclick="_bulmacaKlavyeBas('ENT')" style="${ozelBase};flex:1.4;background:rgba(91,191,255,0.35);color:#5BBFFF">TAMAM</button>
+      ${sira3.map(renderHarf).join('')}
+      <button ontouchstart="" onclick="_bulmacaKlavyeBas('SİL')" style="${ozelBase};flex:1.4;font-size:1.1rem">⌫</button>
+    </div>
   `;
 }
 
