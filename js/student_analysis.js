@@ -60,8 +60,18 @@ function saveWellnessAll(btn) {
   if (!data.days[todayKey]) data.days[todayKey] = {};
 
   // Tüm input değerlerini topla
-  const fields = ['wellnessEnerji','wellnessKaygi','wellnessOdak','wellnessUyku','wellnessEkranOnline','wellnessEkranSosyal'];
-  fields.forEach(id => {
+  // Slider'lar (range): sadece data-touched="1" olanlar kaydedilir (kullanıcı gerçekten etkileşim kurdu mu?)
+  const sliderFields = ['wellnessEnerji','wellnessKaygi','wellnessOdak'];
+  sliderFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.value !== '' && el.getAttribute('data-touched') === '1') {
+      const fieldName = id.replace('wellness','').toLowerCase();
+      data.days[todayKey][fieldName] = el.value;
+    }
+  });
+  // Sayı inputları (doldurulduysa kaydet)
+  const numberFields = ['wellnessUyku','wellnessEkranOnline','wellnessEkranSosyal'];
+  numberFields.forEach(id => {
     const el = document.getElementById(id);
     if (el && el.value !== '') {
       const fieldName = id.replace('wellness','').toLowerCase();
@@ -327,47 +337,178 @@ const moodOptions = [
 // ── CÜMLE HAVUZU ─────────────────────────────────────────────
 const WP = {
   mood: {
-    bad:   ['Bugün ağır bir gün. Burada olman bile başlı başına cesaret.','Her gün güneşli olmak zorunda değil, bulutlu günler de senindir.','Kendine iyi bak bugün. Bazen en iyi yapabileceğin bu.','Zor hissediyorsun ama bu his geçici. Hep geçiyor.','En karanlık gecelerin de sabahı olur.','Bazen sadece nefes almak yeterli.','Yorgunluk güçsüzlük değil. Çok şey taşıyorsun.','Bugün olmadı, yarın yeni bir sayfa.','Hissetmek sorun değil. Hissetmemek asıl zordu.','Kendine biraz nazik ol bugün.'],
-    hard:  ['Böyle günler de geçer. Küçük adımlar bile yeterli.','Her şey mükemmel olmak zorunda değil.','Bugün biraz yorgunsun, bu normal.','İçinden geçmek zorunda olduğun günler bunlar.','Kendine karşı sabırlı ol, herkes böyle günler yaşar.','Zor hissettiriyorsa, gerçekten çalışıyorsun demek.','Bugün küçük kalmak tamam. Yarın büyük düşünürsün.','Bir şeylerin zor olması başarısız olduğun anlamına gelmiyor.','Mücadele etmek zaten önemli bir şey.','Bu da geçecek, söz.'],
-    ok:    ['Sıradan günler de birikimin bir parçası.','Bugün sakin, yarın belki daha enerjik.','Normal günler de değerli. Hepsi birikerek büyüyor.','Dalgalanmalar olmasa zaten düz bir çizgi olurdu.','Her gün harika olmak zorunda değil, tutarlı olmak yeter.','Sakin bir gün de bir kazanım.','Düzenli olmak bazen coşkudan daha değerlidir.','Normal hissetmek, iyi hissetmektir aslında.'],
-    good:  ['Bu enerjiyi iyi kullan, nadir bir şey.','İyi hissetmek de bir başarı. Sahip çık buna.','Böyle günlerde ne yaptığını hatırla.','Bu hal bulaşıcı, devam et.','Bugün kendini ödüllendirmeyi hak ediyorsun.','Bu his geçici ama iz bırakıyor. Güzel bir iz.','İyi günlerin tadını çıkar.','Bu enerjiyi nasıl koruyabileceğini düşün.','Güzel bir gün seni bekliyor gibi görünüyor.','Bu hissin nereden geldiğini fark etmeye çalış.'],
-    great: ['Bu enerjiyi besle, büyüt.','Harika günler harika anların birikim sonucudur.','Tam gaz! Bu hal seninle kalsın.','Bugün dünya biraz daha iyi bir yer.','Bu hissi hatırla, zor günlerde işine yarayacak.','Seni bu kadar neyin mutlu ettiğini biliyor musun?','Bu enerjiyle nelere ulaşabileceğini düşün.','Harika günler öyle gelmiyor, sen getiriyorsun.','Bugün her şey mümkün hissettiriyor.','Böyle hissetmek için emek verdin.'],
+    bad:   [
+      'Bugün ağır bir gün. Burada olman bile bir şey.',
+      'Zor hissediyorsun, bu his kalıcı değil.',
+      'Kendine biraz zaman tanı — mecbur değilsin her şeye şu an.',
+      'Bazen sadece nefes almak yeterlidir.',
+      'Bugün küçük bir şey yapman da yeterli.',
+      'Hissettiklerin gerçek ama geçici.',
+      'Kendine karşı nazik ol, hak ediyorsun.',
+    ],
+    hard:  [
+      'Böyle günler olur, geçer.',
+      'Zorlandığın için başarısız değilsin, çabalıyorsun demek.',
+      'Küçük adım da ilerlemedir.',
+      'Kendine karşı sabırlı ol.',
+      'Mükemmel olmak zorunda değil — devam etmek yeter.',
+      'Bugün fazla kendinden bekleme.',
+    ],
+    ok:    [
+      'Sakin günler de birikimin bir parçası.',
+      'Normal hissetmek aslında iyi hissetmektir.',
+      'Düzenli olmak coşkulu olmaktan daha değerlidir.',
+      'Her gün harika olmak zorunda değil.',
+      'Sıradan günler de sayılır.',
+    ],
+    good:  [
+      'İyi hissetmek de bir başarı.',
+      'Bu enerjiyi iyi kullan.',
+      'Güzel bir gün, tadını çıkar.',
+      'Bu hali neyin yarattığını fark et, yarın da işine yarar.',
+      'Bugün kendini ödüllendirebilirsin.',
+    ],
+    great: [
+      'Harika bir gün — bu hissi hatırla.',
+      'Bu enerjiyle çok şey yapabilirsin.',
+      'Böyle günler emeğin karşılığıdır.',
+      'Bu hissi hatırlamak, zor günlerde gücün olur.',
+      'Tam gaz — keyfini çıkar.',
+    ],
   },
   enerji: {
-    low:  ['Enerjin düşük ama buraya yazdın. Bu da bir şey.','Düşük enerjili günlerde mola vermek zayıflık değil.','Bedenin bugün dinlenmeye ihtiyaç duyuyor olabilir.','Az enerjiyle küçük adımlar atmak da değerlidir.','Bazen pilimiz bitiyor. Bu insani.','Bugün kendine izin ver, yarın yeniden şarj olursun.','Yorgunluk bir mesajdır, dinle onu.'],
-    mid:  ['Orta enerji, kararlılıkla çok şey yapar.','Ne tam dolu ne tam boş. Dengeli bir gün.','Bu enerjiyle neler yapabileceğini dene.','Yeterli enerji var, yeter ki doğru yönlendir.','Sabit tempoda devam et.','Ortalama günler de birikime katkı sağlar.','Sürdürülebilir tempo bu olabilir.'],
-    high: ['Bu enerji nadir bir hediye, iyi kullan.','Dolu pillerin var, harika bir gün seni bekliyor.','Bu enerjini nasıl değerlendireceğine sen karar ver.','Bugün kendini durdurmak zor olacak, bırak akışı.','Böyle hissetmek için emek verdin, hak ettin.','Bu hali mümkün olduğunca uzat.','Yüksek enerji + niyet = güçlü bir gün.'],
+    low:  [
+      'Enerjin düşük, bu bir uyarı — dinlen.',
+      'Bedenin mola istiyor olabilir.',
+      'Az enerjiyle küçük adımlar yeterli bugün.',
+      'Yorgunluk zayıflık değil, bir mesaj.',
+      'Kendine dinlenme izni ver.',
+    ],
+    mid:  [
+      'Orta enerji, dengeli bir gün.',
+      'Sürdürülebilir tempoda devam et.',
+      'Sabit hızda ilerlemek de değerli.',
+    ],
+    high: [
+      'Enerjin yüksek — bugün fırsat günü.',
+      'Bu enerjiyi nasıl kullanacağına sen karar ver.',
+      'Akışı bozma, devam et.',
+    ],
   },
   odak: {
-    low:  ['Odaklanmak bugün zor, bu bazen öyle oluyor.','Dağınık zihin dinlenmeye ihtiyaç duyuyor olabilir.','Odaklanamıyorsan ortamını değiştirmeyi dene.','Dikkat dağıldığında kendini suçlama, tekrar başla.','Her dağınık günün ardından toplanmış günler geliyor.','Küçük bloklar halinde çalışmak bugün daha iyi olabilir.','5 dakika odaklanmayı dene, sonra karar ver.'],
-    mid:  ['Orta odak, doğru konuyla buluşunca yeterli olur.','Tam konsantre olmasan da devam etmek değerli.','Bugün en önemli bir şeyi tamamlamak yeterli.','Odak bir kas, her gün biraz güçleniyor.','Mükemmel odak beklemeden başlamak çok daha iyi.','Hayatın her günü keskin olmak zorunda değilsin.'],
-    high: ['Zihnin keskin bugün, iyi fırsatla bu.','Bu odak seviyesi seni çok ileri götürür.','Tam konsantrasyon harika bir hal, tadını çıkar.','Bugün akış halindeysen durma.','Bu hali besleyen neydi, fark ettiysen koru onu.','Keskin zihin + iyi niyet = güçlü gün.'],
+    low:  [
+      'Odaklanmak bugün zor, bu normal.',
+      'Dağınıksan ortamını değiştirmeyi dene.',
+      'Kısa bloklar halinde çalışmak daha kolay olabilir.',
+      'Küçük bir şeyi tamamlamak yeter bugün.',
+    ],
+    mid:  [
+      'Orta odak, doğru işle yeterli olur.',
+      'Mükemmel odak beklemeden başla.',
+      'Bugün en önemli şeyi bitir, gerisi bonus.',
+    ],
+    high: [
+      'Zihnin keskin — değerlendir.',
+      'Akıştaysan durma.',
+      'Bu odağı yakalamak nadirdir.',
+    ],
   },
   kaygi: {
-    low:  ['Kaygın düşük. Zihninle barışık bir gün.','Sakin bir zihin en büyük güçtür.','Bu huzuru hissedebilmek güzel bir şey.','İçin sakin, bu geçici değil korunabilir.','Sakin kalmak bir beceri, her gün biraz daha gelişiyor.','Bu hali yakalayan az insan var, koru onu.'],
-    mid:  ['Biraz kaygı var ama bu seni durdurmaz.','Orta kaygı aslında dikkatli olmak demek bazen.','Kaygın seni uyarıyor, ama karar sen veriyorsun.','Bu his geçecek, kendin için burada olmaya devam et.','Kaygıyla yaşamak değil, ona rağmen yürümek.','Zihnini meşgul eden şeyi yazmak hafifletebilir.','Nefes al. Gerçekten sadece derin bir nefes.'],
-    high: ['Kaygın biraz yüksek. Kendine nazik davranmayı unutma.','Bu his çok güçlü hissettiriyor ama geçici.','Bugün kendine ekstra şefkat göster.','Bu hissi birine anlatmak ister misin? Koçun dinler.','Büyük resmi şu an görmen gerekmiyor. Sadece bugün.','Kaygıyla mücadele etmek yerine kabul etmek bazen daha hafif.'],
-    vhigh:['Kaygın çok yoğun hissettiriyor. Yalnız taşımak zorunda değilsin.','Bu hissi içinde tutmak ağır. Güvendiğin birine anlat.','Şu an her şey büyük görünüyor, ama bu his gerçeği değiştirmiyor.','Yardım istemek cesaret gerektirir, ve sen cesursun.','Bugün tek yapman gereken nefes almak olabilir. Yeterli.'],
+    low:  [
+      'Zihnin sakin, iyi bir hal.',
+      'Bu huzuru korumaya çalış.',
+      'Sakin kalabilmek bir beceridir.',
+    ],
+    mid:  [
+      'Biraz kaygı var — seni durdurmaz.',
+      'Nefes almaya zaman ayır.',
+      'Kaygıyı yazmak hafifletebilir.',
+      'Kaygıya rağmen yürümek cesarettir.',
+    ],
+    high: [
+      'Kaygın yüksek — kendine şefkat göster.',
+      'Bu his geçici, sen kalıcısın.',
+      'Büyük resmi bugün görmene gerek yok, sadece bugünü geçir.',
+      'Bu hissi birine anlatmak hafifletir.',
+    ],
+    vhigh:[
+      'Kaygın çok yoğun — yalnız taşıma.',
+      'Güvendiğin birine anlat, taşıması daha hafif olur.',
+      'Şu an büyük görünüyor ama his gerçeği değiştirmiyor.',
+      'Bugün sadece nefes alman bile yeterli.',
+    ],
   },
   ders: {
-    'Matematik':       ['Matematik sabır ister, acele etme.','Bir problemi çözemesen de çözmeye çalıştın. Bu önemli.','Matematikte zorlanmak zeka eksikliği değil, alıştırma eksikliği.','Her yanlış çözüm seni doğruya biraz daha yaklaştırıyor.','Bugün zorlandığın konu yarın daha tanıdık gelecek.','Matematik direniyor ama sen ısrar ediyorsun.'],
-    'Türkçe':          ['Türkçe bazen soyut hissettiriyor, bu normal.','Anlamadığın bir metin seni küçük düşürmez.','Dil becerileri zaman içinde gelişir, bu bir süreç.','Bugün zor bir parça vardı ama devam ettin.','Türkçeye zaman ayırmak hiç boşa gitmez.','Okumak her şeyin temelidir, sabret.'],
-    'Fen Bilimleri':   ['Fen bilimlerinde kavramlar birbirine bağlıdır, birine hakim olunca diğerleri gelir.','Bugün kafa karıştırıcıydı ama yarın daha net görünecek.','Merak etmek zaten fen bilimidir. Sen merak ediyorsun.','Her kavram bir puzzle parçası, yavaş yavaş oturur.','Zorlandığın konu üzerinde biraz daha durmaya değer.'],
-    'İnkılap Tarihi':  ['Tarih ezber değil, hikaye okumak gibi düşün.','Olaylar arasındaki bağı görmek zaman alır.','Bugün zorlandıysan bir kez daha okumak fark yaratır.','Her seferinde biraz daha netleşiyor.','Tarihi anlamak için bağlamına bakmak gerekiyor, sabret.'],
-    'Din Kültürü':     ['Bugün zorlu bir konuyla karşılaştın, bu geçecek.','Kavramları kendi kelimenle ifade etmek anlamayı kolaylaştırır.','Zorlandığın yeri not al, tekrar dönersin.','Her ders kendi içinde bir dünya, zamanla açılıyor.'],
-    'İngilizce':       ['Dil öğrenmek zaman ister, acele etme.','Bugün anlamadıkların yarın daha tanıdık gelebilir.','İngilizce bir maraton, sprint değil.','Kelime dağarcığı her gün biraz büyüyor, fark etmesen de.','Hata yapmak dilin bir parçası, korkma.','Bugün zorlandın ama devam ettin.'],
+    'Matematik':       [
+      'Matematik sabır ister, acele etme.',
+      'Zorlanmak zeka eksikliği değil, alıştırma meselesi.',
+      'Her yanlış seni doğruya yaklaştırıyor.',
+      'Bugünkü zor konu yarın tanıdık gelecek.',
+    ],
+    'Türkçe':          [
+      'Anlamadığın metin seni küçük düşürmez.',
+      'Dil becerisi zamanla gelişir.',
+      'Okumaya ayırdığın her dakika işe yarar.',
+    ],
+    'Fen Bilimleri':   [
+      'Kavramlar birbirine bağlıdır — birine hakim olunca diğerleri gelir.',
+      'Bugün kafa karışıksa yarın daha net görünür.',
+      'Merak ettiğin sürece yoldasın.',
+    ],
+    'İnkılap Tarihi':  [
+      'Tarih ezber değil, hikaye.',
+      'Olayların bağlantısını görmek zaman alır, normaldir.',
+      'Tekrar okumak her seferinde biraz daha netleştirir.',
+    ],
+    'Din Kültürü':     [
+      'Kavramları kendi kelimenle ifade etmek kolaylaştırır.',
+      'Zorlandığın yeri not al, sonra dön.',
+    ],
+    'İngilizce':       [
+      'Dil öğrenmek maraton, sprint değil.',
+      'Hata yapmak dilin parçasıdır, korkma.',
+      'Kelime dağarcığın her gün büyüyor, fark etmesen de.',
+    ],
   },
   uyku: {
-    low:  ['Bugün yorgun olabilirsin, kendine nazik ol.','Az uyku zor bir gün getirebilir. Mola almaktan çekinme.','Bu gece erken yatmayı düşün.','Yorgun zihin de çalışır, ama kendine ağır beklenti koyma.','Bugün az enerjiyle devam ediyorsun, bu da cesaret.'],
-    mid:  ['Fena değil ama biraz daha iyi olabilir.','Yeterli olmasa da tamamen yoksun değilsin.','Bu gece biraz daha erken yatabilirsen iyi olur.','Uyku kalitesi kadar düzen de önemlidir.'],
-    good: ['Güzel bir uyku, iyi başlangıç.','İyi uyumuşsun, beynin dinç.','Bu uyku düzenini koru, çok değerli.','Dinlenmiş bir zihin en büyük avantajdır.','Bu ritmi sürdürmeye çalış.'],
+    low:  [
+      'Az uyumuşsun — kendine nazik ol bugün.',
+      'Yorgun zihin de çalışır ama ağır bekleme.',
+      'Bu gece erken yatmayı düşün.',
+    ],
+    mid:  [
+      'Uykun yeterli değil ama tamamen yoksun değilsin.',
+      'Bu gece biraz daha erken yatabilirsen iyi olur.',
+    ],
+    good: [
+      'Güzel uyumuşsun, dinç bir başlangıç.',
+      'Bu uyku düzenini koru.',
+      'Dinlenmiş zihin en büyük avantajdır.',
+    ],
   },
-  gurur: ['Küçük zaferler büyük şeylerin habercisidir.','Bunu hatırla. Zor günlerde işine yarayacak.','Kendini takdir etmek güçtür, ama öğrenebilirsin.','Bugün küçük bir şey yaptın ama bu küçük değil.','Bu his seni beslesin.','Her gün böyle bir an bulmaya çalış.','Gurur duymayı hak ediyorsun.','Bu anı kaydetmen önemli.'],
+  gurur: [
+    'Küçük zaferler büyük şeylerin habercisidir.',
+    'Bu anı hatırla, zor günlerde işine yarar.',
+    'Kendini takdir etmek öğrenilebilir.',
+    'Bugün yaptığın küçük şey aslında küçük değil.',
+  ],
   streak: {
-    s2:  ['İyi başlangıç! Devam et.','Başlamak bazen en zor kısımdır, onu geçtin.','2–3 gün peşpeşe küçük ama değerli.'],
-    s5:  ['Alışkanlık oluşuyor. Bırakma.','Haftanın büyük kısmında buradasın, harika.','Düzenlilik en güçlü alışkanlıktır.','Bu seri seni besliyor.'],
-    s7:  ['Bir hafta üstü! Bu artık bir alışkanlık.','Devam etmek artık daha kolay, hissettiriyor mu?','Çoğu insan buraya kadar gelemez. Sen geldin.','Bu disiplin seni farklı kılıyor.'],
-    s14: ['İki haftadan fazla! Bu bir karakter meselesi artık.','Bunun farkında mısın? Gerçekten farkında mısın?','Bu alışkanlık seni geliştiriyor, fark etsen de etmesen de.','Uzun seriler nadirdir. Sen nadirsindir.','Bu kadar devam etmek kolay değil. Ama sen ettin.'],
+    s2:  [
+      'Güzel bir başlangıç, devam et.',
+      'Başlamak zor kısımdı — onu geçtin.',
+    ],
+    s5:  [
+      'Alışkanlık oluşuyor. Bırakma.',
+      'Haftanın büyük kısmında buradasın, güzel.',
+    ],
+    s7:  [
+      'Bir hafta oldu — bu artık alışkanlık.',
+      'Çoğu kişi buraya gelemez, sen geldin.',
+    ],
+    s14: [
+      'İki hafta üstü — bu karakter demek.',
+      'Uzun seriler nadirdir, sen nadirsin.',
+    ],
   },
 };
 
@@ -513,7 +654,8 @@ function wellnessPage() {
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:12px 0 6px">Enerji seviyesi (1–10)</div>
       <div style="display:flex;align-items:center;gap:12px">
         <input type="range" min="1" max="10" value="${today.enerji||5}" id="wellnessEnerji"
-          oninput="this.nextElementSibling.textContent=this.value"
+          data-touched="${today.enerji ? '1' : '0'}"
+          oninput="this.setAttribute('data-touched','1');this.nextElementSibling.textContent=this.value"
           style="flex:1;accent-color:var(--accent)">
         <span style="font-weight:900;font-size:1.1rem;color:var(--accent);min-width:22px;text-align:center">${today.enerji||5}</span>
       </div>
@@ -540,7 +682,8 @@ function wellnessPage() {
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin:0 0 6px">Odak seviyesi (1–10)</div>
       <div style="display:flex;align-items:center;gap:12px">
         <input type="range" min="1" max="10" value="${today.odak||5}" id="wellnessOdak"
-          oninput="this.nextElementSibling.textContent=this.value"
+          data-touched="${today.odak ? '1' : '0'}"
+          oninput="this.setAttribute('data-touched','1');this.nextElementSibling.textContent=this.value"
           style="flex:1;accent-color:#45b7d1">
         <span style="font-weight:900;font-size:1.1rem;color:#45b7d1;min-width:22px;text-align:center">${today.odak||5}</span>
       </div>
@@ -558,7 +701,8 @@ function wellnessPage() {
       <div style="font-size:0.75rem;font-weight:700;color:var(--text2);margin-bottom:6px">Kaygı seviyesi (1–10)</div>
       <div style="display:flex;align-items:center;gap:12px">
         <input type="range" min="1" max="10" value="${today.kaygi||3}" id="wellnessKaygi"
-          oninput="this.nextElementSibling.textContent=this.value"
+          data-touched="${today.kaygi ? '1' : '0'}"
+          oninput="this.setAttribute('data-touched','1');this.nextElementSibling.textContent=this.value"
           style="flex:1;accent-color:#ff6b6b">
         <span style="font-weight:900;font-size:1.1rem;color:#ff6b6b;min-width:22px;text-align:center">${today.kaygi||3}</span>
       </div>
