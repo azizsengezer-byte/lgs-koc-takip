@@ -1223,7 +1223,7 @@ function exportStudentDetailPDF(sName) {
       Y+=9;
       const dHdr=['Ders','Doğru','Yanlış','Net (D-Y/3)','Katsayı','Ağ.Net'];
       const dW=[48,18,18,36,24,38];
-      const dRows=den.subR.map(s=>{ const det=den.detail?den.detail.find(x=>x.name===s.name):null; return [s.name,s.d,s.y,s.net.toFixed(2),det?det.kat:'—',det?det.agNet:'—']; });
+      const dRows=den.subR.map(s=>{ const det=den.detail?den.detail.find(x=>x.name===s.name):null; return [s.name,s.d,s.y,s.net.toFixed(2),det?det.kat:'—',det?det.puan:'—']; });
       Y=pdfTable(doc,dHdr,dW,dRows,Y,[100,85,220]);
       // Ham + LGS satırı
       Y=pdfCheck(doc,Y,8);

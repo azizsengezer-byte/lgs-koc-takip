@@ -516,7 +516,7 @@ function studentDetailAnalysis() {
         ${motorSonuc.positives.map(p => `
         <div style="padding:9px 12px;background:rgba(0,184,148,0.08);border:1px solid rgba(0,184,148,0.3);border-radius:10px;margin-bottom:6px">
           <div style="font-size:0.7rem;font-weight:700;color:#00b894;margin-bottom:2px">${p.etiket}</div>
-          <div style="font-size:0.81rem;line-height:1.55;color:var(--text)">${p.analiz}</div>
+          <div style="font-size:0.81rem;line-height:1.55;color:var(--text)">${p.teshis}</div>
         </div>`).join('')}
       </div>` : ''}
     </div>` : ''}
