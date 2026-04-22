@@ -505,8 +505,8 @@ function studentDetailAnalysis() {
         return `
         <div style="padding:10px 13px;background:${r.bg};border:1px solid ${r.border};border-radius:11px;margin-bottom:8px">
           <div style="font-size:0.7rem;font-weight:800;color:${r.label};margin-bottom:3px;letter-spacing:.04em">${r.ikon} ${ins.etiket}</div>
-          <div style="font-size:0.82rem;line-height:1.6;color:var(--text);margin-bottom:5px">${ins.analiz}</div>
-          <div style="font-size:0.77rem;color:${r.label};font-weight:600;border-top:1px solid ${r.border};padding-top:5px;margin-top:3px">→ ${ins.strateji}</div>
+          <div style="font-size:0.82rem;line-height:1.6;color:var(--text);margin-bottom:5px">${ins.teshis}</div>
+          <div style="font-size:0.77rem;color:${r.label};font-weight:600;border-top:1px solid ${r.border};padding-top:5px;margin-top:3px">→ ${ins.aksiyon}</div>
         </div>`;
       }).join('')}
 
