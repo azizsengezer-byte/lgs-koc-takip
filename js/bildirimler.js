@@ -36,7 +36,37 @@ async function gorevBildirimiGonder(studentUid, studentName, taskTitle) {
   );
 }
 
-// ── 3. ROZET BİLDİRİMİ ──────────────────────────────────────
+// ── GÖREV HATIRLATMA BİLDİRİMİ ──────────────────────────────
+async function gorevHatirlatGonder(taskId, idx, btn) {
+  const task = tasks[idx];
+  if (!task) return;
+  const sObj = students.find(s => s.name === (task.studentName || task.student || ''));
+  if (!sObj?.uid) { showToast('⚠️', 'Öğrenci bulunamadı.'); return; }
+
+  // Spam koruması — aynı görev için 1 saat içinde tekrar gönderme
+  const cacheKey = '_hatirlatma_' + (taskId || idx);
+  const lastSent = parseInt(localStorage.getItem(cacheKey) || '0');
+  const sinceMin = (Date.now() - lastSent) / 60000;
+  if (sinceMin < 60) {
+    showToast('⏳', `Son hatırlatmadan bu yana ${Math.floor(sinceMin)} dakika geçti. Biraz bekle.`);
+    return;
+  }
+
+  const teacherName = (window.currentUserData?.name || 'Koçun').split(' ')[0];
+  await sendNotif(
+    sObj.uid,
+    `🔔 ${teacherName} seni hatırlattı: "${task.title}" görevi hâlâ bekliyor!`,
+    'task',
+    (window.currentUserData || {}).uid,
+    { actionUrl: '/?p=my-tasks' }
+  );
+
+  localStorage.setItem(cacheKey, Date.now().toString());
+  if (btn) { btn.style.color = '#00b894'; btn.style.background = 'rgba(0,184,148,.15)'; }
+  showToast('🔔', `${sObj.name.split(' ')[0]}'e hatırlatma gönderildi!`);
+}
+
+
 // checkBadges'dan rozet kazanılınca çağrılır
 async function rozetBildirimiGonder(badge) {
   const myUid = (window.currentUserData||{}).uid;
