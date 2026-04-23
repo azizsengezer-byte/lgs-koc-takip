@@ -62,73 +62,121 @@ function _findStudentNameByUid(uid) {
   return s ? s.name : '';
 }
 
+function _notifTarih(createdAt) {
+  if (!createdAt || !createdAt.seconds) return '';
+  const d = new Date(createdAt.seconds * 1000);
+  const now = new Date();
+  const bugun = now.toISOString().slice(0, 10);
+  const dun = new Date(now - 864e5).toISOString().slice(0, 10);
+  const tarih = d.toISOString().slice(0, 10);
+  const saat = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  if (tarih === bugun) return 'Bugun ' + saat;
+  if (tarih === dun)   return 'Dun ' + saat;
+  const farkGun = Math.floor((now - d) / 864e5);
+  if (farkGun < 7)     return farkGun + ' gun once ' + saat;
+  return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }) + ' ' + saat;
+}
+
+async function bildirimleriTemizle() {
+  const myUid = (window.currentUserData||{}).uid || '';
+  if (!myUid) return;
+  const notifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
+  const taskNotifs = notifs.filter(function(n) { return n.type !== 'message'; });
+  if (taskNotifs.length === 0) return;
+  const ok = await appConfirm('Bildirimleri Temizle', 'Tum bildirimler silinecek. Emin misin?', true);
+  if (!ok) return;
+  const batch = db.batch();
+  taskNotifs.filter(function(n) { return n.id; }).forEach(function(n) {
+    batch.delete(db.collection('notifications').doc(n.id));
+  });
+  await batch.commit().catch(function() {});
+  if (currentRole === 'teacher') teacherNotifs = teacherNotifs.filter(function(n) { return n.type === 'message'; });
+  else studentNotifs = studentNotifs.filter(function(n) { return n.type === 'message'; });
+  updateNotifBadge();
+  showPage('notifications');
+}
+
+async function _eskiBildirimleriSil(myUid) {
+  if (!myUid) return;
+  const sinir = new Date(Date.now() - 30 * 864e5);
+  try {
+    const snap = await db.collection('notifications')
+      .where('toUid', '==', myUid)
+      .where('createdAt', '<', sinir)
+      .get();
+    if (snap.empty) return;
+    const batch = db.batch();
+    snap.forEach(function(d) { batch.delete(d.ref); });
+    await batch.commit();
+  } catch(e) {}
+}
+
 function notificationsPage() {
   const notifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
-  const taskNotifs = notifs.filter(n => n.type !== 'message');
-  const myUid = (window.currentUserData||{}).uid||'';
+  const taskNotifs = notifs.filter(function(n) { return n.type !== 'message'; });
+  const myUid = (window.currentUserData||{}).uid || '';
 
-  const html = `
-    <div class="page-title"><svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Bildirimler</div>
-    <div class="page-sub">Görev ve sistem bildirimleri</div>
-    <div class="card" style="padding:0;overflow:hidden">
-      ${taskNotifs.length === 0
-        ? `<div style="text-align:center;padding:40px;color:var(--text2)">
-            <div style="font-size:2.5rem;margin-bottom:12px">🔔</div>
-            <div>Henüz bildirim yok</div>
-           </div>`
-        : taskNotifs.map((n, i) => {
-          const hedef = n.type !== 'none';
-          return `
-          <div class="notif-item ${n.read ? '' : 'unread'}"
-            onclick="_notifTiklandi(${i})"
-            style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)22">
-            <div class="notif-dot ${n.read ? 'read' : ''}"></div>
-            <div style="flex:1">
-              <div class="notif-text">${escHTML(n.text)}</div>
-              <div class="notif-time">${escHTML(n.time||'')}</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-              ${!n.read ? '<span style="font-size:0.65rem;font-weight:800;color:var(--accent);background:var(--accent)22;padding:2px 7px;border-radius:99px">YENİ</span>' : ''}
-              <span style="color:var(--text2);font-size:0.9rem">›</span>
-            </div>
-          </div>`;
-        }).join('')}
-    </div>
-    <div style="text-align:center;margin-top:12px;font-size:0.8rem;color:var(--text2)">
-      💬 Mesaj bildirimleri için <button onclick="showPage('messages')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-weight:700">Mesajlar</button> bölümüne git
-    </div>`;
+  const rows = taskNotifs.map(function(n, i) {
+    var unread = n.read ? '' : 'unread';
+    var dot = n.read ? 'read' : '';
+    var tarih = _notifTarih(n.createdAt);
+    var yeni = n.read ? '' : '<span style="font-size:0.65rem;font-weight:800;color:var(--accent);background:var(--accent)22;padding:2px 7px;border-radius:99px">YENİ</span>';
+    return '<div class="notif-item ' + unread + '" onclick="_notifTiklandi(' + i + ')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)22">'
+      + '<div class="notif-dot ' + dot + '"></div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div class="notif-text">' + escHTML(n.text) + '</div>'
+      + '<div style="font-size:0.72rem;color:var(--text2);margin-top:3px">' + tarih + '</div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">' + yeni
+      + '<span style="color:var(--text2);font-size:0.9rem">></span></div>'
+      + '</div>';
+  }).join('');
 
-  // Tıklama handler — okundu + yönlendirme
+  const temizleBtn = taskNotifs.length > 0
+    ? '<button onclick="bildirimleriTemizle()" style="background:none;border:1px solid #ff658440;color:#ff6584;font-size:0.75rem;font-weight:700;padding:5px 12px;border-radius:20px;cursor:pointer">Temizle</button>'
+    : '';
+
+  const bosEkran = '<div style="text-align:center;padding:40px;color:var(--text2)"><div style="font-size:2.5rem;margin-bottom:12px">🔔</div><div>Henuz bildirim yok</div></div>';
+
+  var html = '<div class="page-title">Bildirimler</div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+    + '<div class="page-sub" style="margin:0">Gorev ve sistem bildirimleri</div>'
+    + temizleBtn + '</div>'
+    + '<div class="card" style="padding:0;overflow:hidden">'
+    + (taskNotifs.length === 0 ? bosEkran : rows)
+    + '</div>'
+    + '<div style="text-align:center;margin-top:12px;font-size:0.8rem;color:var(--text2)">'
+    + 'Mesaj bildirimleri icin <button onclick="showPage(&quot;messages&quot;)" style="background:none;border:none;color:var(--accent);cursor:pointer;font-weight:700">Mesajlar</button> bolumune git</div>';
+
   window._notifTiklandi = function(idx) {
-    const notifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
-    const taskNotifs = notifs.filter(n => n.type !== 'message');
-    const n = taskNotifs[idx];
+    var allNotifs = currentRole === 'teacher' ? teacherNotifs : studentNotifs;
+    var tNotifs = allNotifs.filter(function(n) { return n.type !== 'message'; });
+    var n = tNotifs[idx];
     if (!n) return;
-    // Okundu işaretle
     n.read = true;
-    if (n.id) db.collection('notifications').doc(n.id).update({read:true}).catch(()=>{});
+    if (n.id) db.collection('notifications').doc(n.id).update({read:true}).catch(function(){});
     updateNotifBadge();
-    // Yönlendir
     _notifNavigate(n);
   };
 
-  // 800ms sonra okundu işaretle (kullanıcı görüntülemiş olsun)
-  setTimeout(() => {
-    taskNotifs.forEach(n => { n.read = true; });
+  setTimeout(function() {
+    taskNotifs.forEach(function(n) { n.read = true; });
     if (myUid) {
-      taskNotifs.filter(n=>n.id).forEach(n => {
-        db.collection('notifications').doc(n.id).update({read:true}).catch(()=>{});
+      taskNotifs.filter(function(n) { return n.id; }).forEach(function(n) {
+        db.collection('notifications').doc(n.id).update({read:true}).catch(function(){});
       });
     }
     updateNotifBadge();
-    // YENİ badge'lerini kaldır
-    document.querySelectorAll('.notif-item.unread').forEach(el => {
+    document.querySelectorAll('.notif-item.unread').forEach(function(el) {
       el.classList.remove('unread');
-      el.querySelector('.notif-dot')?.classList.add('read');
-      const badge = el.querySelector('span[style*="YENİ"]');
-      if (badge) badge.remove();
+      var dot = el.querySelector('.notif-dot');
+      if (dot) dot.classList.add('read');
+      var spans = el.querySelectorAll('span');
+      spans.forEach(function(s) { if (s.textContent === 'YENİ') s.remove(); });
     });
   }, 800);
+
+  _eskiBildirimleriSil(myUid);
 
   return html;
 }
