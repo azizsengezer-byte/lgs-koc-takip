@@ -122,9 +122,9 @@ function teacherTasks() {
         <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)">
           <div style="width:34px;height:34px;border-radius:10px;background:${t.done?'rgba(0,200,120,.12)':'rgba(108,99,255,.12)'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${icon}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:0.88rem;${t.done?'text-decoration:line-through;color:var(--text2)':''}">${t.title}</div>
-            <div style="font-size:0.76rem;color:var(--accent);font-weight:600;margin-top:1px">${t.subject||''}${t.unit?' · '+t.unit:''}</div>
-            ${t.desc?`<div style="font-size:0.77rem;color:var(--text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.desc}</div>`:''}
+            <div style="font-weight:700;font-size:0.88rem;${t.done?'text-decoration:line-through;color:var(--text2)':''}">${escHTML(t.title)}</div>
+            <div style="font-size:0.76rem;color:var(--accent);font-weight:600;margin-top:1px">${escHTML(t.subject||'')}${t.unit?' · '+escHTML(t.unit):''}</div>
+            ${t.desc?`<div style="font-size:0.77rem;color:var(--text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHTML(t.desc)}</div>`:''}
             <div style="display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap">
               <span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:20px;${t.done?'background:rgba(0,200,120,.15);color:#00c878':'background:rgba(255,193,7,.15);color:#e6a800'}">${t.done?'✅ Teslim Edildi':'⏳ Bekliyor'}</span>
               ${dueBadge}

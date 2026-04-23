@@ -1,3 +1,16 @@
+// ── Güvenlik: HTML Escape ────────────────────────────────────
+// Kullanıcı verisini innerHTML'e göndermeden önce mutlaka bu fonksiyondan geçirin.
+function escHTML(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/`/g, '&#96;');
+}
+
 
 // Sayfa geçiş loading — sade spinner
 function _loadingHTML(emoji) {

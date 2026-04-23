@@ -84,8 +84,8 @@ function notificationsPage() {
             style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)22">
             <div class="notif-dot ${n.read ? 'read' : ''}"></div>
             <div style="flex:1">
-              <div class="notif-text">${n.text}</div>
-              <div class="notif-time">${n.time||''}</div>
+              <div class="notif-text">${escHTML(n.text)}</div>
+              <div class="notif-time">${escHTML(n.time||'')}</div>
             </div>
             <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
               ${!n.read ? '<span style="font-size:0.65rem;font-weight:800;color:var(--accent);background:var(--accent)22;padding:2px 7px;border-radius:99px">YENİ</span>' : ''}

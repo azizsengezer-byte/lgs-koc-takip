@@ -330,7 +330,7 @@ remoteConfigYukle().then(() => {
     const div = document.createElement('div');
     div.id = 'rc-duyuru';
     div.style.cssText = `position:fixed;top:0;left:0;right:0;z-index:9000;background:${r.bg};border-bottom:1px solid ${r.border};padding:10px 16px;display:flex;align-items:center;gap:10px`;
-    div.innerHTML = `<span style="font-size:1rem">${r.icon}</span><span style="flex:1;font-size:0.82rem;color:${r.text};font-weight:600">${window.RC_DUYURU_METNI}</span><button onclick="document.getElementById('rc-duyuru').remove()" style="background:none;border:none;color:${r.text};cursor:pointer;font-size:1.1rem;padding:2px 6px">✕</button>`;
+    div.innerHTML = `<span style="font-size:1rem">${r.icon}</span><span style="flex:1;font-size:0.82rem;color:${r.text};font-weight:600">${escHTML(window.RC_DUYURU_METNI)}</span><button onclick="document.getElementById('rc-duyuru').remove()" style="background:none;border:none;color:${r.text};cursor:pointer;font-size:1.1rem;padding:2px 6px">✕</button>`;
     document.body.appendChild(div);
   }
 });

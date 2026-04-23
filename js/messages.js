@@ -499,7 +499,7 @@ async function switchChatTo(uid, role) {
         const div = document.createElement('div');
         div.className = 'msg' + (isMine ? ' mine' : ' theirs');
         div.id = 'msg_' + msg.id;
-        div.innerHTML = `<div class="msg-bubble">${msg.text}</div><div class="msg-time">${msg.time || ''}</div>`;
+        div.innerHTML = `<div class="msg-bubble">${escHTML(msg.text)}</div><div class="msg-time">${escHTML(msg.time || '')}</div>`;
         msgEl.appendChild(div);
         msgEl.scrollTop = msgEl.scrollHeight;
 
@@ -523,8 +523,13 @@ function _onTyping() {
 
 async function sendMessage(role) {
   const input = document.getElementById('chatInput');
-  const text = input?.value?.trim();
+  let text = input?.value?.trim();
   if (!text || !activeChat) return;
+
+  // Uzunluk sınırı
+  if (text.length > 1000) { showToast('⚠️', 'Mesaj en fazla 1000 karakter olabilir.'); return; }
+  // Tehlikeli HTML karakterlerini temizle (Firestore'a gitmeden önce)
+  text = text.replace(/</g,'＜').replace(/>/g,'＞');
 
   // Engel kontrolü
   if (_engelliListe().includes(activeChat)) {
@@ -584,7 +589,7 @@ async function sendMessage(role) {
     const div = document.createElement('div');
     div.className = 'msg mine';
     div.id = 'msg_' + msgId;
-    div.innerHTML = `<div class="msg-bubble">${text}</div><div class="msg-time">${time} <span style="font-size:0.65rem;color:rgba(255,255,255,0.5)">✓</span></div>`;
+    div.innerHTML = `<div class="msg-bubble">${escHTML(text)}</div><div class="msg-time">${escHTML(time)} <span style="font-size:0.65rem;color:rgba(255,255,255,0.5)">✓</span></div>`;
     msgEl.appendChild(div);
     msgEl.scrollTop = msgEl.scrollHeight;
   }
