@@ -83,6 +83,36 @@ function sifreMesajGoster() {
   }
 }
 
+// ── Giriş Doğrulama Yardımcıları ────────────────────────────
+function _validatorHata(deger, alan) {
+  // HTML injection karakterleri
+  if (/[<>"'`]/.test(deger)) return `${alan} geçersiz karakter içeriyor.`;
+  return null;
+}
+function _isimKontrol(isim) {
+  if (!isim || isim.length < 2) return 'İsim en az 2 karakter olmalıdır.';
+  if (isim.length > 60) return 'İsim en fazla 60 karakter olabilir.';
+  if (/[<>"'`{}|]/.test(isim)) return 'İsimde geçersiz karakter var.';
+  return null;
+}
+function _alanKontrol(deger, alan, maxLen) {
+  if (!deger) return null; // Zorunlu değilse boş geçebilir
+  if (deger.length > (maxLen || 100)) return `${alan} çok uzun.`;
+  if (/[<>"'`{}|\\^~\[\]]/.test(deger)) return `${alan} geçersiz karakter içeriyor.`;
+  return null;
+}
+function _epostaKontrol(email) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return 'Geçerli bir e-posta adresi girin.';
+  if (email.length > 100) return 'E-posta adresi çok uzun.';
+  return null;
+}
+function _sifreKontrol(pass) {
+  if (pass.length < 6) return 'Şifre en az 6 karakter olmalı.';
+  if (/\s/.test(pass)) return 'Şifrede boşluk kullanılamaz.';
+  if (pass.length > 72) return 'Şifre en fazla 72 karakter olabilir.';
+  return null;
+}
+
 async function doRegister() {
   const name  = document.getElementById('regName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
@@ -92,12 +122,20 @@ async function doRegister() {
   errEl.style.display = 'none';
 
   if (!name || !email || !pass) { errEl.textContent = 'Tüm alanları doldurunuz.'; errEl.style.display='block'; return; }
-  if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
+
+  const isimHata = _isimKontrol(name);
+  if (isimHata) { errEl.textContent = isimHata; errEl.style.display='block'; return; }
+  const epostaHata = _epostaKontrol(email);
+  if (epostaHata) { errEl.textContent = epostaHata; errEl.style.display='block'; return; }
+  const sifreHata = _sifreKontrol(pass);
+  if (sifreHata) { errEl.textContent = sifreHata; errEl.style.display='block'; return; }
   if (pass !== pass2) { errEl.textContent = 'Şifreler uyuşmuyor. Lütfen kontrol edin.'; errEl.style.display='block'; return; }
 
   const branch = document.getElementById('regBranch')?.value || '';
   const school = document.getElementById('regSchool')?.value.trim() || '';
   if (!school) { errEl.textContent = 'Okul adı giriniz.'; errEl.style.display='block'; return; }
+  const okulHata = _alanKontrol(school, 'Okul adı', 80);
+  if (okulHata) { errEl.textContent = okulHata; errEl.style.display='block'; return; }
 
   const btn = document.getElementById('regBtn');
   if (btn) { btn.textContent = 'Kaydediliyor...'; btn.disabled = true; }
@@ -351,8 +389,16 @@ async function doRegisterSolo() {
   errEl.style.display = 'none';
 
   if (!name || !email || !pass) { errEl.textContent = 'Ad, e-posta ve şifre zorunludur.'; errEl.style.display='block'; return; }
-  if (pass.length < 6) { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; errEl.style.display='block'; return; }
+
+  const isimHata2 = _isimKontrol(name);
+  if (isimHata2) { errEl.textContent = isimHata2; errEl.style.display='block'; return; }
+  const epostaHata2 = _epostaKontrol(email);
+  if (epostaHata2) { errEl.textContent = epostaHata2; errEl.style.display='block'; return; }
+  const sifreHata2 = _sifreKontrol(pass);
+  if (sifreHata2) { errEl.textContent = sifreHata2; errEl.style.display='block'; return; }
   if (pass !== pass2) { errEl.textContent = 'Şifreler uyuşmuyor.'; errEl.style.display='block'; return; }
+  const hedefOkulHata = _alanKontrol(hedefOkul, 'Hedef okul', 80);
+  if (hedefOkulHata) { errEl.textContent = hedefOkulHata; errEl.style.display='block'; return; }
 
   const btn = document.getElementById('soloBtnKayit');
   if (btn) { btn.textContent = 'Kaydediliyor...'; btn.disabled = true; }
