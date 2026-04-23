@@ -1649,6 +1649,89 @@ async function psychReportPage() {
       </div>
     </div>` : '';
 
+  // ── Senaryo Motoru (Psikolojik-Akademik Analiz) ──────────
+  const allEntries_psych = studyEntries.filter(e => e.studentId === sUid || e.studentName === sName);
+  const motorGunler = Object.keys(days)
+    .filter(k => k >= startKey && k <= endKey)
+    .sort()
+    .map(dk => {
+      const p = days[dk] || {};
+      const sg = allEntries_psych.filter(e => e.dateKey === dk && e.type === 'soru');
+      const dg = allEntries_psych.filter(e => e.dateKey === dk && e.type === 'deneme');
+      const soru = sg.reduce((a, e) => a + (e.questions || 0), 0);
+      const sure = sg.reduce((a, e) => a + (e.duration || 0), 0);
+      const net  = sg.reduce((a, e) => a + (e.net || 0), 0);
+      const topQ = soru + dg.reduce((a, e) => a + (e.correct || 0) + (e.wrong || 0), 0);
+      const topY = sg.reduce((a, e) => a + (e.wrong || 0), 0) + dg.reduce((a, e) => a + (e.wrong || 0), 0);
+      const dersHata = {};
+      sg.forEach(e => { if(!dersHata[e.subject]) dersHata[e.subject]={q:0,y:0}; dersHata[e.subject].q+=(e.questions||0); dersHata[e.subject].y+=(e.wrong||0); });
+      dg.forEach(e => { if(!dersHata[e.subject]) dersHata[e.subject]={q:0,y:0}; dersHata[e.subject].q+=(e.correct||0)+(e.wrong||0); dersHata[e.subject].y+=(e.wrong||0); });
+      return {
+        dk, soru, sure, net, dersHata,
+        hataOrani: topQ >= 30 ? (topY / topQ * 100) : null,
+        enerji: parseFloat(p.enerji) || 0,
+        odak:   parseFloat(p.odak)   || 0,
+        kaygi:  parseFloat(p.kaygi)  || 0,
+        uyku:   parseFloat(p.uyku)   || 0,
+        sosyal: parseFloat(p.ekranSosyal) || parseFloat(p.ekran) || 0,
+        online: parseFloat(p.ekranOnline) || 0,
+        mood:   p.mood || '',
+        pozitif: p.pozitif || p.gurur || '',
+        negatif: p.negatif || '',
+      };
+    });
+
+  let motorSonuc = { insights: [], positives: [], vaka: null };
+  if (motorGunler.length >= 2 && window.calistirSenaryolar) {
+    motorSonuc = window.calistirSenaryolar(motorGunler, allEntries_psych, todayKey);
+  }
+
+  const motorHtml = (motorSonuc.insights.length > 0 || motorSonuc.positives.length > 0 || motorSonuc.vaka) ? `
+  <div class="card" style="margin-bottom:12px;border:1px solid #6c63ff44;background:linear-gradient(135deg,#6c63ff0a,#fd79a80a)">
+    <div class="card-title">
+      <svg style="vertical-align:middle;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      Psikolojik-Akademik Analiz
+      ${motorSonuc.kalOzet ? `<span style="font-size:0.7rem;font-weight:400;color:var(--text2);margin-left:8px">Kalibrasyon: ~${motorSonuc.kalOzet.soruOrt} soru/gün</span>` : ''}
+    </div>
+
+    ${motorSonuc.vaka ? `
+    <div style="padding:11px 13px;background:linear-gradient(135deg,rgba(253,121,168,0.12),rgba(108,99,255,0.10));border:1.5px solid rgba(253,121,168,0.4);border-radius:12px;margin-bottom:10px">
+      <div style="font-size:0.75rem;font-weight:800;color:#fd79a8;margin-bottom:4px;letter-spacing:.04em">⚡ KOMBİNE VAKA: ${motorSonuc.vaka.ad}</div>
+      <div style="font-size:0.83rem;line-height:1.6;color:var(--text);margin-bottom:6px">${motorSonuc.vaka.analiz}</div>
+      <div style="font-size:0.78rem;color:var(--accent);font-weight:600">→ ${motorSonuc.vaka.strateji}</div>
+    </div>` : ''}
+
+    ${motorSonuc.insights.map(ins => {
+      const renkler = {
+        crisis:    { bg: 'rgba(255,101,84,0.10)', border: 'rgba(255,101,84,0.4)', label: '#ff6554', ikon: '🔴' },
+        urgent:    { bg: 'rgba(255,159,67,0.10)', border: 'rgba(255,159,67,0.4)', label: '#ff9f43', ikon: '🟠' },
+        empathetic:{ bg: 'rgba(108,99,255,0.08)', border: 'rgba(108,99,255,0.3)', label: '#6c63ff', ikon: '💜' },
+        rational:  { bg: 'rgba(9,132,227,0.08)',  border: 'rgba(9,132,227,0.3)',  label: '#0984e3', ikon: '🔵' },
+        coaching:  { bg: 'rgba(0,184,148,0.08)',  border: 'rgba(0,184,148,0.3)',  label: '#00b894', ikon: '🟢' },
+        informative:{ bg:'rgba(108,99,255,0.06)', border: 'rgba(108,99,255,0.2)', label: '#6c63ff', ikon: '📋' },
+        directive: { bg: 'rgba(253,203,110,0.10)',border: 'rgba(253,203,110,0.4)',label: '#e17055', ikon: '🟡' },
+        balanced:  { bg: 'rgba(0,184,148,0.06)',  border: 'rgba(0,184,148,0.2)', label: '#00b894', ikon: '⚖️' },
+      };
+      const r = renkler[ins.ton] || renkler.informative;
+      return `
+      <div style="padding:10px 13px;background:${r.bg};border:1px solid ${r.border};border-radius:11px;margin-bottom:8px">
+        <div style="font-size:0.7rem;font-weight:800;color:${r.label};margin-bottom:3px;letter-spacing:.04em">${r.ikon} ${ins.etiket}</div>
+        <div style="font-size:0.82rem;line-height:1.6;color:var(--text);margin-bottom:5px">${ins.teshis}</div>
+        <div style="font-size:0.77rem;color:${r.label};font-weight:600;border-top:1px solid ${r.border};padding-top:5px;margin-top:3px">→ ${ins.aksiyon}</div>
+      </div>`;
+    }).join('')}
+
+    ${motorSonuc.positives.length > 0 ? `
+    <div style="margin-top:4px">
+      <div style="font-size:0.7rem;font-weight:800;color:#00b894;margin-bottom:6px;letter-spacing:.04em">✅ GÜÇLÜ YANLAR</div>
+      ${motorSonuc.positives.map(p => `
+      <div style="padding:9px 12px;background:rgba(0,184,148,0.08);border:1px solid rgba(0,184,148,0.3);border-radius:10px;margin-bottom:6px">
+        <div style="font-size:0.7rem;font-weight:700;color:#00b894;margin-bottom:2px">${p.etiket}</div>
+        <div style="font-size:0.81rem;line-height:1.55;color:var(--text)">${p.teshis}</div>
+      </div>`).join('')}
+    </div>` : ''}
+  </div>` : '';
+
   // Isı haritası HTML
   const heatMapHtml = `
     <div class="card" style="margin-bottom:14px">
@@ -1744,6 +1827,8 @@ async function psychReportPage() {
           </table>
         </div>
       </div>
+
+      ${motorHtml}
 
       <!-- Rapor Al — Günlük/Haftalık/Aylık -->
       <div style="margin-bottom:14px">
