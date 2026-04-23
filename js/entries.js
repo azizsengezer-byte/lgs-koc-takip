@@ -808,7 +808,7 @@ function openTaskModal(preStudent) {
 async function saveTask() {
   const student = document.getElementById('taskStudent').value;
   if (!student) { showToast('⚠️', 'Lütfen öğrenci seçin!'); return; }
-  const _san = s => String(s||'').replace(/</g,'＜').replace(/>/g,'＞').replace(/"/g,'"').replace(/'/g,''').slice(0,200);
+  const _san = s => String(s||'').replace(/[<>"'`]/g, '').slice(0, 200);
   const title = _san(document.getElementById('taskTitle').value) || 'Yeni Görev';
   const sub = document.getElementById('taskSubject').value;
   const unit = _san(document.getElementById('taskUnit').value);
