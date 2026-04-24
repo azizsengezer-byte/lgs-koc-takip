@@ -377,6 +377,7 @@ function _rcGorunumUygula() {
   const tema = temaRenkler[window.RC_TEMA];
   const root = document.documentElement;
   if (tema) {
+    document.documentElement.dataset.temaAktif = '1';
     root.style.setProperty('--accent',  tema.accent);
     root.style.setProperty('--accent2', tema.accent2);
     // Logo arkaplanlarını güncelle
@@ -391,16 +392,19 @@ function _rcGorunumUygula() {
       el.style.color = tema.sub;
     });
   } else {
-    // Varsayılan tema
+    // Varsayılan tema — sadece daha önce değiştirildiyse sıfırla
     root.style.removeProperty('--accent');
     root.style.removeProperty('--accent2');
-    document.querySelectorAll('[data-lgskoc-logo],[data-lgskoc-logo-sm]').forEach(el => {
-      el.style.background = '';
-      el.style.boxShadow  = '';
-    });
-    document.querySelectorAll('[data-lgskoc-sub]').forEach(el => {
-      el.style.color = '';
-    });
+    if (document.documentElement.dataset.temaAktif) {
+      document.querySelectorAll('[data-lgskoc-logo],[data-lgskoc-logo-sm]').forEach(el => {
+        el.style.background = '';
+        el.style.boxShadow  = '';
+      });
+      document.querySelectorAll('[data-lgskoc-sub]').forEach(el => {
+        el.style.color = '';
+      });
+      delete document.documentElement.dataset.temaAktif;
+    }
   }
 
   // 3. LOGO EMOJİ — header & login logosuna ek emoji
