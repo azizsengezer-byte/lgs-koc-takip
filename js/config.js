@@ -293,9 +293,22 @@ window.RC_WELLNESS_AKTIF   = true;
 window.RC_GUNLUK_HEDEF     = 200;
 window.RC_SERI_BONUS_GUN   = 7;
 window.RC_MAX_OGRENCI      = 30;
+// Duyuru bandı
 window.RC_DUYURU_AKTIF     = false;
 window.RC_DUYURU_METNI     = '';
 window.RC_DUYURU_TIPI      = 'info';
+// Tema & görünüm
+window.RC_TEMA             = '';        // 'yas' | 'bayram' | 'yilbasi' | 'ramazan' | ''
+window.RC_LOGO_EMOJI       = '';        // Header logoya ek emoji, örn: '🎄' '🇹🇷' '🖤'
+window.RC_BAKIM_MODU       = false;     // true → tüm kullanıcılara bakım ekranı
+window.RC_BAKIM_MESAJI     = '';        // Bakım ekranı mesajı
+// Öğrenci motivasyon
+window.RC_GIRIS_MESAJI     = '';        // Giriş ekranında alt motivasyon yazısı
+window.RC_GUNUN_SOZU       = '';        // Dashboard'da günün sözü kartı
+// Özellik kilitleri
+window.RC_DENEME_AKTIF     = true;      // Deneme sınavı girişini açar/kapar
+window.RC_MESAJ_AKTIF      = true;      // Mesajlaşmayı açar/kapar
+window.RC_ROZET_AKTIF      = true;      // Rozet sistemini açar/kapar
 
 // Uygulama açılışında Remote Config'i çek
 async function remoteConfigYukle() {
@@ -313,12 +326,105 @@ async function remoteConfigYukle() {
     window.RC_DUYURU_AKTIF   = RCBool('duyuruAktif');
     window.RC_DUYURU_METNI   = RC('duyuruMetni');
     window.RC_DUYURU_TIPI    = RC('duyuruTipi');
-    console.log('Remote Config yüklendi.');
+    // Tema & görünüm
+    window.RC_TEMA           = RC('tema');
+    window.RC_LOGO_EMOJI     = RC('logoEmoji');
+    window.RC_BAKIM_MODU     = RCBool('bakimModu');
+    window.RC_BAKIM_MESAJI   = RC('bakimMesaji');
+    // Motivasyon
+    window.RC_GIRIS_MESAJI   = RC('girisMesaji');
+    window.RC_GUNUN_SOZU     = RC('gunuSozu');
+    // Özellik kilitleri
+    window.RC_DENEME_AKTIF   = RC('denemelAktif') !== 'false';
+    window.RC_MESAJ_AKTIF    = RC('mesajAktif')   !== 'false';
+    window.RC_ROZET_AKTIF    = RC('rozetAktif')   !== 'false';
+    console.log('Remote Config yuklendi.');
+    // RC uygulandıktan sonra görsel güncellemeleri çalıştır
+    _rcGorunumUygula();
   } catch(e) {
     console.log('Remote Config alınamadı, varsayılan kullanılıyor:', e.message);
   }
 }
+// ── RC Görünüm Uygulayıcı ────────────────────────────────────
+function _rcGorunumUygula() {
+  // 1. BAKIM MODU — tüm ekranı bloke eder
+  if (window.RC_BAKIM_MODU) {
+    let bm = document.getElementById('bakimEkrani');
+    if (!bm) {
+      bm = document.createElement('div');
+      bm.id = 'bakimEkrani';
+      bm.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0f0f1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;text-align:center';
+      document.body.appendChild(bm);
+    }
+    bm.innerHTML = '<div style="font-size:3rem">🔧</div>'
+      + '<div style="font-size:1.3rem;font-weight:800;color:#fff;font-family:Sora,sans-serif">Bakımda</div>'
+      + '<div style="font-size:0.9rem;color:rgba(255,255,255,0.6);max-width:280px;line-height:1.6">'
+      + (window.RC_BAKIM_MESAJI || 'Kısa süreliğine bakım yapılıyor, birazdan geri döneceğiz.') + '</div>'
+      + '<div style="font-size:0.75rem;color:rgba(255,255,255,0.3);margin-top:8px">LGSKoç</div>';
+    return; // Diğer değişiklikleri uygulama
+  } else {
+    const bm = document.getElementById('bakimEkrani');
+    if (bm) bm.remove();
+  }
+
+  // 2. TEMA — CSS değişkenlerini override et
+  const temaRenkler = {
+    yas:     { accent: '#2d2d2d', accent2: '#555', logo1: '#1a1a1a', logo2: '#444', sub: '#888' },
+    bayram:  { accent: '#e63946', accent2: '#f4a261', logo1: '#c1121f', logo2: '#e76f51', sub: '#e63946' },
+    yilbasi: { accent: '#2dc653', accent2: '#c8b653', logo1: '#1a472a', logo2: '#2d6a4f', sub: '#52b788' },
+    ramazan: { accent: '#6a4c93', accent2: '#c9b458', logo1: '#3d1e6e', logo2: '#7b2d8b', sub: '#c9b458' },
+  };
+  const tema = temaRenkler[window.RC_TEMA];
+  const root = document.documentElement;
+  if (tema) {
+    root.style.setProperty('--accent',  tema.accent);
+    root.style.setProperty('--accent2', tema.accent2);
+    // Logo arkaplanlarını güncelle
+    document.querySelectorAll('[data-lgskoc-logo]').forEach(el => {
+      el.style.background = 'linear-gradient(135deg,' + tema.logo1 + ',' + tema.logo2 + ')';
+      el.style.boxShadow  = '0 0 24px ' + tema.logo1 + '66,0 4px 16px ' + tema.logo1 + '44';
+    });
+    document.querySelectorAll('[data-lgskoc-logo-sm]').forEach(el => {
+      el.style.background = 'linear-gradient(135deg,' + tema.logo1 + ',' + tema.logo2 + ')';
+    });
+    document.querySelectorAll('[data-lgskoc-sub]').forEach(el => {
+      el.style.color = tema.sub;
+    });
+  } else {
+    // Varsayılan tema
+    root.style.removeProperty('--accent');
+    root.style.removeProperty('--accent2');
+    document.querySelectorAll('[data-lgskoc-logo],[data-lgskoc-logo-sm]').forEach(el => {
+      el.style.background = '';
+      el.style.boxShadow  = '';
+    });
+    document.querySelectorAll('[data-lgskoc-sub]').forEach(el => {
+      el.style.color = '';
+    });
+  }
+
+  // 3. LOGO EMOJİ — header & login logosuna ek emoji
+  document.querySelectorAll('[data-lgskoc-emoji]').forEach(el => {
+    el.textContent = window.RC_LOGO_EMOJI || '';
+    el.style.display = window.RC_LOGO_EMOJI ? 'inline' : 'none';
+  });
+
+  // 4. GİRİŞ MESAJI
+  document.querySelectorAll('[data-lgskoc-giris-mesaji]').forEach(el => {
+    if (window.RC_GIRIS_MESAJI) {
+      el.textContent = window.RC_GIRIS_MESAJI;
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+}
+
 remoteConfigYukle().then(() => {
+  // Mesaj ikonunu kilitle
+  const msgWrap = document.getElementById('headerMsgWrap');
+  if (msgWrap) msgWrap.style.display = window.RC_MESAJ_AKTIF !== false ? '' : 'none';
+
   // Duyuru varsa göster
   if (window.RC_DUYURU_AKTIF && window.RC_DUYURU_METNI) {
     const renkler = {

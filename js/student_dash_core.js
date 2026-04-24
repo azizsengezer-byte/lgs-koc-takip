@@ -117,6 +117,15 @@ function studentDashboard() {
 
     ${lgsCountdownWidget()}
 
+    ${window.RC_GUNUN_SOZU ? `
+    <div style="margin-bottom:12px;padding:14px 16px;background:linear-gradient(135deg,var(--accent)12,var(--accent2)08);border:1px solid var(--accent)30;border-radius:16px;display:flex;gap:12px;align-items:flex-start">
+      <div style="font-size:1.4rem;flex-shrink:0">💬</div>
+      <div>
+        <div style="font-size:0.65rem;font-weight:800;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">Günün Sözü</div>
+        <div style="font-size:0.85rem;line-height:1.55;color:var(--text);font-style:italic">${escHTML(window.RC_GUNUN_SOZU)}</div>
+      </div>
+    </div>` : ''}
+
     <!-- Günlük Kartı — hızlı mood + streak -->
     ${(()=>{
       const myUid = (window.currentUserData||{}).uid || 'local';
