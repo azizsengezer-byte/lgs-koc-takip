@@ -471,9 +471,13 @@ remoteConfigYukle().then(() => {
     div.appendChild(wrap);
     div.appendChild(kapat);
 
+    // #mainContent'in hemen ÜSTÜNE (header altı, içerik üstü)
+    const mainContent = document.getElementById('mainContent');
     const appHeader = document.querySelector('.app-header');
-    if (appHeader) {
-      appHeader.insertBefore(div, appHeader.firstChild);
+    if (appHeader && appHeader.nextSibling) {
+      appHeader.parentNode.insertBefore(div, appHeader.nextSibling);
+    } else if (mainContent) {
+      mainContent.parentNode.insertBefore(div, mainContent);
     } else {
       document.body.insertBefore(div, document.body.firstChild);
     }
