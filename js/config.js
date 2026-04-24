@@ -428,16 +428,55 @@ remoteConfigYukle().then(() => {
   // Duyuru varsa göster
   if (window.RC_DUYURU_AKTIF && window.RC_DUYURU_METNI) {
     const renkler = {
-      info:    { bg:'#6c63ff18', border:'#6c63ff44', text:'#4340cc', icon:'ℹ️' },
-      warning: { bg:'#f9ca2418', border:'#f9ca2444', text:'#a16207', icon:'⚠️' },
-      success: { bg:'#43e97b18', border:'#43e97b44', text:'#2d9e5a', icon:'✅' },
+      info:    { bg:'#6c63ff', text:'#fff', icon:'ℹ️' },
+      warning: { bg:'#f59e0b', text:'#fff', icon:'⚠️' },
+      success: { bg:'#10b981', text:'#fff', icon:'✅' },
+      error:   { bg:'#ef4444', text:'#fff', icon:'🚨' },
     };
     const r = renkler[window.RC_DUYURU_TIPI] || renkler.info;
+    // Varsa eskisini kaldır
+    const eskiDiv = document.getElementById('rc-duyuru');
+    if (eskiDiv) eskiDiv.remove();
+
+    // Kayan yazı CSS — bir kez ekle
+    if (!document.getElementById('rc-duyuru-css')) {
+      const st = document.createElement('style');
+      st.id = 'rc-duyuru-css';
+      st.textContent = '@keyframes rc-ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}} #rc-duyuru-scroll{display:inline-flex;gap:56px;white-space:nowrap;animation:rc-ticker 18s linear infinite;}';
+      document.head.appendChild(st);
+    }
+
+    const metin = escHTML(window.RC_DUYURU_METNI);
     const div = document.createElement('div');
     div.id = 'rc-duyuru';
-    div.style.cssText = `position:fixed;top:0;left:0;right:0;z-index:9000;background:${r.bg};border-bottom:1px solid ${r.border};padding:10px 16px;display:flex;align-items:center;gap:10px`;
-    div.innerHTML = `<span style="font-size:1rem">${r.icon}</span><span style="flex:1;font-size:0.82rem;color:${r.text};font-weight:600">${escHTML(window.RC_DUYURU_METNI)}</span><button onclick="document.getElementById('rc-duyuru').remove()" style="background:none;border:none;color:${r.text};cursor:pointer;font-size:1.1rem;padding:2px 6px">✕</button>`;
-    document.body.appendChild(div);
+    div.style.cssText = 'width:100%;background:#1a1a2e;overflow:hidden;display:flex;align-items:center;position:relative;box-sizing:border-box';
+
+    // Etiket
+    const etiket = document.createElement('div');
+    etiket.style.cssText = 'flex-shrink:0;background:' + r.bg + ';color:#fff;font-size:0.65rem;font-weight:800;padding:7px 12px 7px 10px;letter-spacing:.06em;white-space:nowrap;z-index:1;display:flex;align-items:center;gap:5px';
+    etiket.innerHTML = '<span>' + r.icon + '</span><span>DUYURU</span>';
+
+    // Kayan alan
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'overflow:hidden;flex:1;padding:6px 0';
+    wrap.innerHTML = '<div id="rc-duyuru-scroll"><span style="color:#ddd;font-size:0.76rem;font-weight:500">' + metin + '</span><span style="color:#ddd;font-size:0.76rem;font-weight:500">' + metin + '</span></div>';
+
+    // Kapat
+    const kapat = document.createElement('button');
+    kapat.style.cssText = 'flex-shrink:0;width:24px;height:24px;margin-right:8px;border-radius:6px;background:rgba(255,255,255,0.1);border:none;color:#aaa;cursor:pointer;font-size:0.7rem;display:flex;align-items:center;justify-content:center';
+    kapat.textContent = '✕';
+    kapat.onclick = function() { var d = document.getElementById('rc-duyuru'); if(d) d.remove(); };
+
+    div.appendChild(etiket);
+    div.appendChild(wrap);
+    div.appendChild(kapat);
+
+    const appHeader = document.querySelector('.app-header');
+    if (appHeader) {
+      appHeader.insertBefore(div, appHeader.firstChild);
+    } else {
+      document.body.insertBefore(div, document.body.firstChild);
+    }
   }
 });
 
