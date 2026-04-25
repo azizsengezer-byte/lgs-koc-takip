@@ -1104,10 +1104,25 @@ function _bulmacaOyunuAc() {
     <div id="_bulmacaGrid" style="display:flex;flex-direction:column;gap:6px;margin:0 auto 16px;align-items:center"></div>
 
     <!-- Mesaj alanı -->
-    <div id="_bulmacaMesaj" style="text-align:center;font-size:0.82rem;color:rgba(255,255,255,0.7);min-height:24px;margin-bottom:10px"></div>
+    <div id="_bulmacaMesaj" style="text-align:center;font-size:0.82rem;color:rgba(255,255,255,0.7);min-height:24px;margin-bottom:12px"></div>
 
-    <!-- Klavye -->
-    <div id="_bulmacaKlavye" style="margin-top:auto;padding-bottom:8px"></div>
+    <!-- Harf durumu göstergesi -->
+    <div id="_bulmacaHarfDurum" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:16px;padding:0 8px"></div>
+
+    <!-- Klavye aç butonu -->
+    <div style="margin-top:auto;padding-bottom:env(safe-area-inset-bottom,12px)">
+      <button onclick="_bulmacaInputFocus()" style="width:100%;padding:14px;border:none;border-radius:14px;background:rgba(91,191,255,0.2);color:#5BBFFF;font-size:0.9rem;font-weight:800;cursor:pointer;letter-spacing:.03em">
+        ⌨️ Yaz  •  Enter ile gönder
+      </button>
+    </div>
+
+    <!-- Gizli input — native klavye -->
+    <input id="_bulmacaInput" type="text"
+      inputmode="text" autocomplete="off" autocorrect="off"
+      autocapitalize="characters" spellcheck="false"
+      maxlength="${_bulmacaState.harfSayisi}"
+      style="position:absolute;opacity:0;width:1px;height:1px;top:50%;left:50%;pointer-events:none">
+
     <style>
       @keyframes _bulmacaSalla {
         0%,100%{transform:translateX(0)}
@@ -1121,7 +1136,9 @@ function _bulmacaOyunuAc() {
 
   document.body.appendChild(modal);
   _bulmacaGridCiz();
-  _bulmacaKlavyeCiz();
+  _bulmacaHarfDurumCiz();
+  _bulmacaInputBagla();
+  setTimeout(function() { _bulmacaInputFocus(); }, 300);
 }
 
 function _bulmacaGridCiz() {
@@ -1161,19 +1178,12 @@ function _bulmacaGridCiz() {
   grid.innerHTML = html;
 }
 
-function _bulmacaKlavyeCiz() {
-  const kEl = document.getElementById('_bulmacaKlavye');
-  if (!kEl) return;
-
-  // Türkçe mobil QWERTY - her satır 10 tuş, 3. sırada ENTER/DEL geniş
-  const sira1 = ['E','R','T','Y','U','I','O','P','Ğ','Ü'];
-  const sira2 = ['A','S','D','F','G','H','J','K','L','Ş','İ'];
-  const sira3 = ['Z','C','V','B','N','M','Ö','Ç'];
-
-  // Her harf için renk durumu
+function _bulmacaHarfDurumCiz() {
+  const el = document.getElementById('_bulmacaHarfDurum');
+  if (!el) return;
   const harfDurum = {};
-  _bulmacaState.tahminler.forEach(t => {
-    t.harfler.forEach((h, i) => {
+  _bulmacaState.tahminler.forEach(function(t) {
+    t.harfler.forEach(function(h, i) {
       const mevcut = harfDurum[h];
       const yeni = t.sonuclar[i];
       if (yeni === 'green') harfDurum[h] = 'green';
@@ -1181,54 +1191,59 @@ function _bulmacaKlavyeCiz() {
       else if (yeni === 'gray' && !mevcut) harfDurum[h] = 'gray';
     });
   });
-
-  function harfStyle(durum) {
-    if (durum === 'green')  return 'background:#43b55a;color:#fff';
-    if (durum === 'yellow') return 'background:#d4a838;color:#fff';
-    if (durum === 'gray')   return 'background:#2a2a2c;color:rgba(255,255,255,0.4)';
-    return 'background:rgba(255,255,255,0.14);color:#fff';
-  }
-
-  const tusBase = 'flex:1;min-width:0;height:52px;border:none;border-radius:8px;font-size:1rem;font-weight:800;cursor:pointer;font-family:inherit;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent';
-  const ozelBase = 'height:52px;border:none;border-radius:8px;font-size:0.72rem;font-weight:800;cursor:pointer;font-family:inherit;padding:0 10px;background:rgba(255,255,255,0.2);color:#fff;touch-action:manipulation;-webkit-tap-highlight-color:transparent';
-
-  function renderHarf(h) {
-    return `<button ontouchstart="" onclick="_bulmacaKlavyeBas('${h}')" style="${tusBase};${harfStyle(harfDurum[h])}">${h}</button>`;
-  }
-
-  kEl.innerHTML = `
-    <div style="display:flex;gap:4px;margin-bottom:5px;width:100%">
-      ${sira1.map(renderHarf).join('')}
-    </div>
-    <div style="display:flex;gap:4px;margin-bottom:5px;width:100%">
-      ${sira2.map(renderHarf).join('')}
-    </div>
-    <div style="display:flex;gap:4px;width:100%">
-      <button ontouchstart="" onclick="_bulmacaKlavyeBas('ENT')" style="${ozelBase};flex:1.4;background:rgba(91,191,255,0.35);color:#5BBFFF">TAMAM</button>
-      ${sira3.map(renderHarf).join('')}
-      <button ontouchstart="" onclick="_bulmacaKlavyeBas('SİL')" style="${ozelBase};flex:1.4;font-size:1.1rem">⌫</button>
-    </div>
-  `;
+  const tumHarfler = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ'.split('');
+  el.innerHTML = tumHarfler.map(function(h) {
+    const d = harfDurum[h];
+    var bg = d === 'green' ? '#43b55a' : d === 'yellow' ? '#d4a838' : d === 'gray' ? '#2a2a2c' : 'rgba(255,255,255,0.1)';
+    var renk = d === 'gray' ? 'rgba(255,255,255,0.3)' : '#fff';
+    var fw = d ? '800' : '500';
+    return '<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:28px;border-radius:5px;background:' + bg + ';color:' + renk + ';font-size:0.72rem;font-weight:' + fw + '">' + h + '</span>';
+  }).join('');
 }
 
-function _bulmacaKlavyeBas(tus) {
-  if (!_bulmacaState || _bulmacaState.bitti) return;
-
-  if (tus === 'SİL') {
-    _bulmacaState.aktifTahmin = _bulmacaState.aktifTahmin.slice(0, -1);
-  } else if (tus === 'ENT') {
-    if (_bulmacaState.aktifTahmin.length !== _bulmacaState.harfSayisi) {
-      _bulmacaMesajGoster('Tüm harfleri doldur', '#d4a838');
-      return;
-    }
-    _bulmacaTahminGonder();
-    return;
-  } else {
-    if (_bulmacaState.aktifTahmin.length < _bulmacaState.harfSayisi) {
-      _bulmacaState.aktifTahmin += tus;
-    }
+function _bulmacaInputFocus() {
+  const inp = document.getElementById('_bulmacaInput');
+  if (inp && !_bulmacaState.bitti) {
+    inp.value = '';
+    inp.focus();
+    inp.click();
   }
-  _bulmacaGridCiz();
+}
+
+function _bulmacaInputBagla() {
+  const inp = document.getElementById('_bulmacaInput');
+  if (!inp) return;
+
+  inp.addEventListener('input', function() {
+    if (_bulmacaState.bitti) { inp.value = ''; return; }
+    // Büyük harfe çevir, sadece Türkçe harf kabul et
+    var val = inp.value.toUpperCase().replace(/[^A-ZÇĞİÖŞÜ]/g, '');
+    if (val.length > _bulmacaState.harfSayisi) val = val.slice(0, _bulmacaState.harfSayisi);
+    inp.value = val;
+    _bulmacaState.aktifTahmin = val;
+    _bulmacaGridCiz();
+  });
+
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (_bulmacaState.aktifTahmin.length !== _bulmacaState.harfSayisi) {
+        _bulmacaMesajGoster('Tüm harfleri doldur', '#d4a838');
+        return;
+      }
+      _bulmacaTahminGonder();
+    }
+  });
+
+  // Blur olunca otomatik tekrar focus yap (oyun bitene kadar)
+  inp.addEventListener('blur', function() {
+    if (!_bulmacaState.bitti) {
+      setTimeout(function() {
+        var stillOpen = document.getElementById('_bulmacaInput');
+        if (stillOpen && !_bulmacaState.bitti) stillOpen.focus();
+      }, 200);
+    }
+  });
 }
 
 // Geçersiz tahmin girildiğinde aktif satırı salla (artık kullanılmıyor ama kalabilir)
@@ -1274,9 +1289,10 @@ function _bulmacaTahminGonder() {
   _bulmacaState.tahminler.push({ harfler, sonuclar });
   _bulmacaState.deneme++;
   _bulmacaState.aktifTahmin = '';
+  var _bInp = document.getElementById("_bulmacaInput"); if (_bInp) _bInp.value = "";
 
   _bulmacaGridCiz();
-  _bulmacaKlavyeCiz();
+  _bulmacaHarfDurumCiz();
 
   // Kazandı mı?
   if (sonuclar.every(s => s === 'green')) {
