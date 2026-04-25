@@ -251,11 +251,20 @@ function openDuyuruModal() {
   const modal = document.createElement('div');
   modal.id = 'teacherDuyuruModal';
   modal.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center';
+  // Öğrenci listesini modal açılırken oluştur
+  const ogrenciSatirlari = students.map(function(s) {
+    return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border)22">'
+      + '<input type="checkbox" class="d-ogr-cb" value="' + s.uid + '" data-name="' + escHTML(s.name) + '" style="width:18px;height:18px;accent-color:var(--accent);flex-shrink:0">'
+      + '<div style="width:28px;height:28px;border-radius:50%;background:' + s.color + '20;color:' + s.color + ';display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.78rem;flex-shrink:0">' + s.name[0] + '</div>'
+      + '<span style="font-size:0.83rem;color:var(--text);font-weight:600">' + escHTML(s.name) + '</span>'
+      + '</label>';
+  }).join('');
+
   modal.innerHTML = `
     <div style="width:100%;max-width:480px;background:var(--bg);border-radius:20px 20px 0 0;padding:20px 16px 32px;box-shadow:0 -8px 32px rgba(0,0,0,0.2)">
       <div style="width:36px;height:4px;background:var(--border);border-radius:99px;margin:0 auto 16px"></div>
       <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:4px">📢 Öğrencilere Duyuru</div>
-      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:16px">Tüm öğrencilerin bildirim kutusuna gönderilir</div>
+      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:16px">Öğrencilerin bildirim kutusuna gönderilir</div>
 
       <!-- Alıcı seçimi -->
       <div style="margin-bottom:12px">
@@ -263,20 +272,15 @@ function openDuyuruModal() {
         <div style="display:flex;gap:8px">
           <button id="dAliciHepsi" onclick="_dAliciSec('hepsi')"
             style="flex:1;padding:8px;border-radius:10px;border:2px solid var(--accent);background:var(--accent);color:#fff;font-weight:700;font-size:0.8rem;cursor:pointer">
-            👥 Tüm Öğrenciler
+            👥 Tüm Öğrenciler (${students.length})
           </button>
-          <button id="dAliciSec" onclick="_dAliciSec('sec')"
+          <button id="dAliciSecBtn" onclick="_dAliciSec('sec')"
             style="flex:1;padding:8px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);color:var(--text2);font-weight:700;font-size:0.8rem;cursor:pointer">
-            🎯 Seç
+            🎯 Seçerek Gönder
           </button>
         </div>
-        <div id="dOgrenciListesi" style="display:none;margin-top:8px;max-height:120px;overflow-y:auto;border:1px solid var(--border);border-radius:10px">
-          ${(window.students||[]).map(s => `
-            <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border)11">
-              <input type="checkbox" value="${s.uid}" data-name="${s.name}" style="accent-color:var(--accent)">
-              <div style="width:28px;height:28px;border-radius:50%;background:${s.color}20;color:${s.color};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.78rem;flex-shrink:0">${s.name[0]}</div>
-              <span style="font-size:0.83rem;color:var(--text);font-weight:600">${s.name}</span>
-            </label>`).join('')}
+        <div id="dOgrenciListesi" style="display:none;margin-top:8px;max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:10px">
+          ${ogrenciSatirlari}
         </div>
       </div>
 
@@ -327,23 +331,15 @@ window._dAliciSec = function(mod) {
   window._dAliciMod = mod;
   const liste = document.getElementById('dOgrenciListesi');
   const btnHepsi = document.getElementById('dAliciHepsi');
-  const btnSec = document.getElementById('dAliciSec');
+  const btnSec = document.getElementById('dAliciSecBtn');
   if (mod === 'hepsi') {
     liste.style.display = 'none';
-    btnHepsi.style.background = 'var(--accent)';
-    btnHepsi.style.color = '#fff';
-    btnHepsi.style.borderColor = 'var(--accent)';
-    btnSec.style.background = 'var(--surface2)';
-    btnSec.style.color = 'var(--text2)';
-    btnSec.style.borderColor = 'var(--border)';
+    btnHepsi.style.cssText += ';background:var(--accent);color:#fff;border-color:var(--accent)';
+    if (btnSec) { btnSec.style.background = 'var(--surface2)'; btnSec.style.color = 'var(--text2)'; btnSec.style.borderColor = 'var(--border)'; }
   } else {
-    liste.style.display = 'block';
-    btnSec.style.background = 'var(--accent)';
-    btnSec.style.color = '#fff';
-    btnSec.style.borderColor = 'var(--accent)';
-    btnHepsi.style.background = 'var(--surface2)';
-    btnHepsi.style.color = 'var(--text2)';
-    btnHepsi.style.borderColor = 'var(--border)';
+    if (liste) liste.style.display = 'block';
+    if (btnSec) { btnSec.style.background = 'var(--accent)'; btnSec.style.color = '#fff'; btnSec.style.borderColor = 'var(--accent)'; }
+    if (btnHepsi) { btnHepsi.style.background = 'var(--surface2)'; btnHepsi.style.color = 'var(--text2)'; btnHepsi.style.borderColor = 'var(--border)'; }
   }
 };
 
@@ -369,15 +365,19 @@ async function teacherDuyuruGonder() {
 
   // Alıcıları belirle
   let alicilar = [];
-  if (window._dAliciMod === 'hepsi') {
-    alicilar = (window.students || []).filter(s => s.uid).map(s => ({ uid: s.uid, name: s.name }));
+  if (window._dAliciMod !== 'sec') {
+    alicilar = students.filter(function(s) { return s.uid; }).map(function(s) { return { uid: s.uid, name: s.name }; });
   } else {
-    document.querySelectorAll('#dOgrenciListesi input:checked').forEach(cb => {
+    document.querySelectorAll('.d-ogr-cb:checked').forEach(function(cb) {
       alicilar.push({ uid: cb.value, name: cb.dataset.name });
     });
   }
 
-  if (alicilar.length === 0) { hataEl.textContent = 'En az bir öğrenci seçilmeli.'; hataEl.style.display = 'block'; return; }
+  if (alicilar.length === 0) {
+    hataEl.textContent = window._dAliciMod === 'sec' ? 'En az bir öğrenci seçin.' : 'Öğrenci bulunamadı.';
+    hataEl.style.display = 'block';
+    return;
+  }
 
   btn.textContent = '⏳ Gönderiliyor...';
   btn.disabled = true;
