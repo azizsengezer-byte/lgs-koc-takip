@@ -153,6 +153,9 @@ function teacherDashboard() {
           <button class="btn btn-outline" style="width:100%;padding:12px;text-align:left" onclick="showPage('messages')">
             💬 Mesajlaş
           </button>
+          <button class="btn btn-outline" style="width:100%;padding:12px;text-align:left;border-color:var(--accent)40;color:var(--accent)" onclick="openDuyuruModal()">
+            📢 Öğrencilere Duyuru
+          </button>
         </div>
         <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:10px">
           <div style="font-size:0.78rem;color:var(--text2);margin-bottom:6px">📅 Bugün Giriş Yapan</div>

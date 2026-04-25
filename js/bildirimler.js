@@ -242,3 +242,175 @@ async function bildirimKontrolleriniCalistir() {
     console.log('Bildirim kontrol hatası:', e.message);
   }
 }
+
+// ── ÖĞRETMEN DUYURU SİSTEMİ ─────────────────────────────────
+function openDuyuruModal() {
+  const mevcut = document.getElementById('teacherDuyuruModal');
+  if (mevcut) mevcut.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'teacherDuyuruModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = `
+    <div style="width:100%;max-width:480px;background:var(--bg);border-radius:20px 20px 0 0;padding:20px 16px 32px;box-shadow:0 -8px 32px rgba(0,0,0,0.2)">
+      <div style="width:36px;height:4px;background:var(--border);border-radius:99px;margin:0 auto 16px"></div>
+      <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:4px">📢 Öğrencilere Duyuru</div>
+      <div style="font-size:0.78rem;color:var(--text2);margin-bottom:16px">Tüm öğrencilerin bildirim kutusuna gönderilir</div>
+
+      <!-- Alıcı seçimi -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:6px">KİME</div>
+        <div style="display:flex;gap:8px">
+          <button id="dAliciHepsi" onclick="_dAliciSec('hepsi')"
+            style="flex:1;padding:8px;border-radius:10px;border:2px solid var(--accent);background:var(--accent);color:#fff;font-weight:700;font-size:0.8rem;cursor:pointer">
+            👥 Tüm Öğrenciler
+          </button>
+          <button id="dAliciSec" onclick="_dAliciSec('sec')"
+            style="flex:1;padding:8px;border-radius:10px;border:2px solid var(--border);background:var(--surface2);color:var(--text2);font-weight:700;font-size:0.8rem;cursor:pointer">
+            🎯 Seç
+          </button>
+        </div>
+        <div id="dOgrenciListesi" style="display:none;margin-top:8px;max-height:120px;overflow-y:auto;border:1px solid var(--border);border-radius:10px">
+          ${(window.students||[]).map(s => `
+            <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border)11">
+              <input type="checkbox" value="${s.uid}" data-name="${s.name}" style="accent-color:var(--accent)">
+              <div style="width:28px;height:28px;border-radius:50%;background:${s.color}20;color:${s.color};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.78rem;flex-shrink:0">${s.name[0]}</div>
+              <span style="font-size:0.83rem;color:var(--text);font-weight:600">${s.name}</span>
+            </label>`).join('')}
+        </div>
+      </div>
+
+      <!-- Emoji -->
+      <div style="margin-bottom:10px">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:6px">EMOJİ</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${['📢','⚠️','🎯','📅','🏆','💪','📝','🔔','❗','✅'].map(e =>
+            `<button onclick="_dEmojiSec(this,'${e}')" style="font-size:1.2rem;padding:6px 8px;border-radius:8px;border:2px solid var(--border);background:var(--surface2);cursor:pointer">${e}</button>`
+          ).join('')}
+        </div>
+      </div>
+
+      <!-- Başlık -->
+      <div style="margin-bottom:10px">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:6px">BAŞLIK</div>
+        <input id="dBaslik" type="text" maxlength="60" placeholder="örn: Yarın deneme sınavı var!"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:10px;font-size:0.85rem;box-sizing:border-box">
+      </div>
+
+      <!-- Mesaj -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:0.72rem;font-weight:700;color:var(--text2);margin-bottom:6px">MESAJ <span style="color:var(--text2);font-weight:400">(isteğe bağlı)</span></div>
+        <textarea id="dMesaj" maxlength="300" rows="3" placeholder="Detayları buraya yaz..."
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:10px;font-size:0.83rem;box-sizing:border-box;resize:none;font-family:inherit"></textarea>
+      </div>
+
+      <div id="dHata" style="display:none;color:#ff6584;font-size:0.78rem;margin-bottom:10px;text-align:center"></div>
+
+      <div style="display:flex;gap:8px">
+        <button onclick="document.getElementById('teacherDuyuruModal').remove()"
+          style="flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-weight:700;cursor:pointer">İptal</button>
+        <button id="dGonderBtn" onclick="teacherDuyuruGonder()"
+          style="flex:2;padding:12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-weight:800;cursor:pointer;font-size:0.9rem">📨 Gönder</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+  // İlk emoji seçili gelsin
+  window._dSeciliEmoji = '📢';
+  window._dAliciMod = 'hepsi';
+  modal.querySelector('button[style*="1.2rem"]').style.borderColor = 'var(--accent)';
+}
+
+window._dAliciSec = function(mod) {
+  window._dAliciMod = mod;
+  const liste = document.getElementById('dOgrenciListesi');
+  const btnHepsi = document.getElementById('dAliciHepsi');
+  const btnSec = document.getElementById('dAliciSec');
+  if (mod === 'hepsi') {
+    liste.style.display = 'none';
+    btnHepsi.style.background = 'var(--accent)';
+    btnHepsi.style.color = '#fff';
+    btnHepsi.style.borderColor = 'var(--accent)';
+    btnSec.style.background = 'var(--surface2)';
+    btnSec.style.color = 'var(--text2)';
+    btnSec.style.borderColor = 'var(--border)';
+  } else {
+    liste.style.display = 'block';
+    btnSec.style.background = 'var(--accent)';
+    btnSec.style.color = '#fff';
+    btnSec.style.borderColor = 'var(--accent)';
+    btnHepsi.style.background = 'var(--surface2)';
+    btnHepsi.style.color = 'var(--text2)';
+    btnHepsi.style.borderColor = 'var(--border)';
+  }
+};
+
+window._dEmojiSec = function(btn, emoji) {
+  window._dSeciliEmoji = emoji;
+  document.querySelectorAll('#teacherDuyuruModal button[style*="1.2rem"]').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background = 'var(--surface2)';
+  });
+  btn.style.borderColor = 'var(--accent)';
+  btn.style.background = 'var(--accent)20';
+};
+
+async function teacherDuyuruGonder() {
+  const baslik = document.getElementById('dBaslik')?.value.trim();
+  const mesaj  = document.getElementById('dMesaj')?.value.trim();
+  const hataEl = document.getElementById('dHata');
+  const btn    = document.getElementById('dGonderBtn');
+  const emoji  = window._dSeciliEmoji || '📢';
+
+  if (!baslik) { hataEl.textContent = 'Başlık zorunludur.'; hataEl.style.display = 'block'; return; }
+  if (baslik.length > 60) { hataEl.textContent = 'Başlık en fazla 60 karakter.'; hataEl.style.display = 'block'; return; }
+
+  // Alıcıları belirle
+  let alicilar = [];
+  if (window._dAliciMod === 'hepsi') {
+    alicilar = (window.students || []).filter(s => s.uid).map(s => ({ uid: s.uid, name: s.name }));
+  } else {
+    document.querySelectorAll('#dOgrenciListesi input:checked').forEach(cb => {
+      alicilar.push({ uid: cb.value, name: cb.dataset.name });
+    });
+  }
+
+  if (alicilar.length === 0) { hataEl.textContent = 'En az bir öğrenci seçilmeli.'; hataEl.style.display = 'block'; return; }
+
+  btn.textContent = '⏳ Gönderiliyor...';
+  btn.disabled = true;
+  hataEl.style.display = 'none';
+
+  const ogretmenAdi = (window.currentUserData?.name || 'Koçun').split(' ')[0];
+  const bildirimMetni = emoji + ' ' + baslik + (mesaj ? '\n' + mesaj : '');
+  const teacherUid = window.currentUserData?.uid || '';
+
+  try {
+    const batch = db.batch();
+    alicilar.forEach(a => {
+      const ref = db.collection('notifications').doc();
+      batch.set(ref, {
+        toUid: a.uid,
+        text: bildirimMetni,
+        type: 'teacher_duyuru',
+        baslik,
+        mesaj: mesaj || '',
+        emoji,
+        ogretmenAdi,
+        fromUid: teacherUid,
+        read: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+    await batch.commit();
+    document.getElementById('teacherDuyuruModal').remove();
+    showToast('📢', `Duyuru ${alicilar.length} öğrenciye gönderildi!`);
+  } catch(e) {
+    btn.textContent = '📨 Gönder';
+    btn.disabled = false;
+    hataEl.textContent = 'Gönderilemedi, tekrar dene.';
+    hataEl.style.display = 'block';
+  }
+}

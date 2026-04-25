@@ -118,9 +118,31 @@ function notificationsPage() {
 
   const rows = taskNotifs.map(function(n, i) {
     var unread = n.read ? '' : 'unread';
-    var dot = n.read ? 'read' : '';
     var tarih = _notifTarih(n.createdAt);
     var yeni = n.read ? '' : '<span style="font-size:0.65rem;font-weight:800;color:var(--accent);background:var(--accent)22;padding:2px 7px;border-radius:99px">YENİ</span>';
+
+    // Öğretmen duyurusu — özel kart
+    if (n.type === 'teacher_duyuru') {
+      var emoji = n.emoji || '📢';
+      var baslik = escHTML(n.baslik || n.text || '');
+      var mesajMetni = n.mesaj ? '<div style="font-size:0.78rem;color:var(--text2);margin-top:4px;line-height:1.45">' + escHTML(n.mesaj) + '</div>' : '';
+      var ogr = n.ogretmenAdi ? '<div style="font-size:0.7rem;color:var(--text2);margin-top:5px">— ' + escHTML(n.ogretmenAdi) + '</div>' : '';
+      return '<div class="notif-item ' + unread + '" onclick="_notifTiklandi(' + i + ')"'
+        + ' style="cursor:pointer;padding:12px 14px;border-bottom:1px solid var(--border)22;border-left:3px solid var(--accent)">'
+        + '<div style="display:flex;align-items:flex-start;gap:10px">'
+        + '<div style="font-size:1.3rem;flex-shrink:0;line-height:1.2">' + emoji + '</div>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'
+        + '<span style="font-size:0.65rem;font-weight:800;color:var(--accent);background:var(--accent)15;padding:2px 7px;border-radius:99px;letter-spacing:.04em">KOÇ DUYURUSU</span>'
+        + yeni + '</div>'
+        + '<div style="font-weight:700;font-size:0.88rem;color:var(--text)">' + baslik + '</div>'
+        + mesajMetni + ogr
+        + '<div style="font-size:0.7rem;color:var(--text2);margin-top:5px">' + tarih + '</div>'
+        + '</div></div></div>';
+    }
+
+    // Normal bildirim
+    var dot = n.read ? 'read' : '';
     return '<div class="notif-item ' + unread + '" onclick="_notifTiklandi(' + i + ')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)22">'
       + '<div class="notif-dot ' + dot + '"></div>'
       + '<div style="flex:1;min-width:0">'
