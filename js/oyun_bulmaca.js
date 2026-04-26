@@ -74,12 +74,12 @@ function _bulmacaOyunuAc() {
       </button>
     </div>
 
-    <!-- Gizli input — native klavye -->
+    <!-- Native klavye input -->
     <input id="_bulmacaInput" type="text"
       inputmode="text" autocomplete="off" autocorrect="off"
       autocapitalize="characters" spellcheck="false"
       maxlength="${_bulmacaState.harfSayisi}"
-      style="position:absolute;opacity:0;width:1px;height:1px;top:50%;left:50%;pointer-events:none">
+      style="position:fixed;left:-9999px;top:50%;opacity:0;width:1px;height:1px;font-size:16px">
 
     <style>
       @keyframes _bulmacaSalla {
@@ -162,9 +162,7 @@ function _bulmacaHarfDurumCiz() {
 function _bulmacaInputFocus() {
   const inp = document.getElementById('_bulmacaInput');
   if (inp && !_bulmacaState.bitti) {
-    inp.value = '';
     inp.focus();
-    inp.click();
   }
 }
 
@@ -193,15 +191,7 @@ function _bulmacaInputBagla() {
     }
   });
 
-  // Blur olunca otomatik tekrar focus yap (oyun bitene kadar)
-  inp.addEventListener('blur', function() {
-    if (!_bulmacaState.bitti) {
-      setTimeout(function() {
-        var stillOpen = document.getElementById('_bulmacaInput');
-        if (stillOpen && !_bulmacaState.bitti) stillOpen.focus();
-      }, 200);
-    }
-  });
+  // Blur — klavye kapanabilsin, "Yaz" butonu ile tekrar açılır
 }
 
 // Geçersiz tahmin girildiğinde aktif satırı salla (artık kullanılmıyor ama kalabilir)
