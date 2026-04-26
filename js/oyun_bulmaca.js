@@ -14,8 +14,7 @@ function _bulmacaGununKelime() {
   const day = parseInt(today.slice(6, 8)) || 1;
   const month = parseInt(today.slice(4, 6)) || 1;
   hash = (hash + day * 2654435761 + month * 40503) >>> 0;
-  const idx = hash % _BULMACA_KELIMELER.length;
-  return _BULMACA_KELIMELER[idx];
+  return _BULMACA_KELIMELER[hash % _BULMACA_KELIMELER.length];
 }
 
 let _bulmacaState = null;
@@ -37,36 +36,28 @@ function _bulmacaOyunuAc() {
 
   const modal = document.createElement('div');
   modal.id = '_bulmacaOyunModal';
-  modal.style.cssText = 'position:fixed;inset:0;z-index:10000;background:#0d1421;display:flex;flex-direction:column;padding:14px 16px 20px;color:#fff;';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:10000;background:#0d1421;display:flex;flex-direction:column;align-items:center;padding:16px 16px 32px;color:#fff;';
 
   modal.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-shrink:0">
+    <div style="width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-shrink:0">
       <div>
         <div style="font-size:1.05rem;font-weight:800">🧩 Kelime Bulmaca</div>
-        <div style="font-size:0.7rem;color:rgba(255,255,255,0.5);margin-top:2px">${_bulmacaState.harfSayisi} harfli · 6 deneme</div>
+        <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);margin-top:2px">${_bulmacaState.harfSayisi} harfli · 6 deneme · Grid'e dokun</div>
       </div>
       <button onclick="_bulmacaKapat()" style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center">×</button>
     </div>
 
-    <div id="_bulmacaGrid" style="display:flex;flex-direction:column;gap:6px;align-items:center;flex-shrink:0"></div>
+    <div id="_bulmacaGrid" onclick="_bulmacaFocus()" style="display:flex;flex-direction:column;gap:6px;align-items:center;cursor:pointer;flex:1"></div>
 
-    <div id="_bulmacaMesaj" style="text-align:center;font-size:0.82rem;color:rgba(255,255,255,0.7);min-height:22px;margin-top:14px;flex-shrink:0"></div>
+    <div id="_bulmacaMesaj" style="text-align:center;font-size:0.82rem;color:rgba(255,255,255,0.7);min-height:22px;margin:12px 0;flex-shrink:0"></div>
 
-    <div style="margin-top:auto;flex-shrink:0">
-      <div style="font-size:0.7rem;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:8px">Kelimeyi yaz, Tamam'a bas</div>
-      <div style="display:flex;gap:8px">
-        <input id="_bulmacaInput" type="text"
-          inputmode="text" autocomplete="off" autocorrect="off"
-          autocapitalize="characters" spellcheck="false"
-          maxlength="${_bulmacaState.harfSayisi}"
-          placeholder="Kelime yaz..."
-          style="flex:1;padding:14px 16px;border-radius:12px;border:2px solid rgba(91,191,255,0.4);background:rgba(91,191,255,0.08);color:#fff;font-size:1.1rem;font-weight:800;letter-spacing:0.15em;text-align:center;outline:none;-webkit-appearance:none;font-family:inherit">
-        <button onclick="_bulmacaGonder()" style="padding:14px 18px;border-radius:12px;border:none;background:#5BBFFF;color:#0d1421;font-size:0.85rem;font-weight:800;cursor:pointer;flex-shrink:0">Tamam</button>
-      </div>
-    </div>
+
+
+    <input id="_bulmacaInput" type="text" inputmode="text"
+      autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+      style="position:fixed;top:-100px;left:0;opacity:0;width:1px;height:1px;font-size:16px;border:none;outline:none">
 
     <style>
-      #_bulmacaInput::placeholder { color: rgba(255,255,255,0.25); font-size:0.85rem; font-weight:400; letter-spacing:normal; }
       @keyframes _bulmacaSalla {
         0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)}
         40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)}
@@ -77,19 +68,39 @@ function _bulmacaOyunuAc() {
   document.body.appendChild(modal);
   _bulmacaGridCiz();
 
+  // Input event — her tuşa basışta güncelle
   const inp = document.getElementById('_bulmacaInput');
   inp.addEventListener('input', function() {
     if (_bulmacaState.bitti) { inp.value = ''; return; }
-    var val = inp.value.toUpperCase().replace(/[^A-ZÇĞİÖŞÜ]/g, '').slice(0, _bulmacaState.harfSayisi);
+    const val = inp.value.toUpperCase().replace(/[^A-ZÇĞİÖŞÜ]/g, '').slice(0, _bulmacaState.harfSayisi);
     inp.value = val;
     _bulmacaState.aktifTahmin = val;
     _bulmacaGridCiz();
   });
   inp.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { e.preventDefault(); _bulmacaGonder(); }
+    if (e.key === 'Backspace') { e.preventDefault(); _bulmacaSil(); }
   });
 
-  setTimeout(function() { inp.focus(); }, 400);
+  setTimeout(function() { _bulmacaFocus(); }, 300);
+}
+
+function _bulmacaFocus() {
+  if (_bulmacaState && !_bulmacaState.bitti) {
+    const inp = document.getElementById('_bulmacaInput');
+    if (inp) inp.focus();
+  }
+}
+
+function _bulmacaSil() {
+  if (!_bulmacaState || _bulmacaState.bitti) return;
+  const inp = document.getElementById('_bulmacaInput');
+  if (_bulmacaState.aktifTahmin.length > 0) {
+    _bulmacaState.aktifTahmin = _bulmacaState.aktifTahmin.slice(0, -1);
+    if (inp) inp.value = _bulmacaState.aktifTahmin;
+    _bulmacaGridCiz();
+  }
+  if (inp) inp.focus();
 }
 
 function _bulmacaGonder() {
@@ -109,21 +120,21 @@ function _bulmacaGridCiz() {
   for (let i = 0; i < _bulmacaState.maksDeneme; i++) {
     html += '<div style="display:flex;gap:5px">';
     for (let j = 0; j < N; j++) {
-      let harf = '', bg = 'rgba(255,255,255,0.05)', border = '2px solid rgba(255,255,255,0.15)', renk = '#fff';
+      let harf = '', bg = 'rgba(255,255,255,0.05)', border = '2px solid rgba(255,255,255,0.12)', renk = '#fff';
       if (i < _bulmacaState.tahminler.length) {
         const t = _bulmacaState.tahminler[i];
         harf = t.harfler[j];
-        if (t.sonuclar[j] === 'green')  { bg = '#43b55a'; border = '2px solid #43b55a'; }
+        if (t.sonuclar[j] === 'green')       { bg = '#43b55a'; border = '2px solid #43b55a'; }
         else if (t.sonuclar[j] === 'yellow') { bg = '#d4a838'; border = '2px solid #d4a838'; }
-        else { bg = '#3a3a3c'; border = '2px solid #3a3a3c'; }
+        else                                  { bg = '#3a3a3c'; border = '2px solid #3a3a3c'; }
       } else if (i === _bulmacaState.tahminler.length) {
         if (j < _bulmacaState.aktifTahmin.length) {
           harf = _bulmacaState.aktifTahmin[j];
-          border = '2px solid rgba(91,191,255,0.6)';
-          bg = 'rgba(91,191,255,0.1)';
+          border = '2px solid rgba(91,191,255,0.7)';
+          bg = 'rgba(91,191,255,0.12)';
         }
       }
-      html += `<div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:${bg};border:${border};border-radius:6px;font-size:1.3rem;font-weight:800;color:${renk};font-family:'Inter',sans-serif">${harf}</div>`;
+      html += `<div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;background:${bg};border:${border};border-radius:8px;font-size:1.4rem;font-weight:800;color:${renk}">${harf}</div>`;
     }
     html += '</div>';
   }
@@ -132,7 +143,7 @@ function _bulmacaGridCiz() {
 
 function _bulmacaTahminGonder() {
   const tahmin = _bulmacaState.aktifTahmin;
-  const dogru = _bulmacaState.kelime;
+  const dogru  = _bulmacaState.kelime;
   const harfler = Array.from(tahmin);
   const dogruHarfler = Array.from(dogru);
   const sonuclar = new Array(harfler.length).fill('gray');
@@ -151,21 +162,18 @@ function _bulmacaTahminGonder() {
   _bulmacaState.deneme++;
   _bulmacaState.aktifTahmin = '';
   const inp = document.getElementById('_bulmacaInput');
-  if (inp) inp.value = '';
+  if (inp) { inp.value = ''; inp.focus(); }
   _bulmacaGridCiz();
 
   if (sonuclar.every(s => s === 'green')) {
     _bulmacaState.bitti = true;
-    const skor = (_bulmacaState.maksDeneme - _bulmacaState.deneme + 1) * 20;
-    setTimeout(() => _bulmacaBitir(true, skor), 600);
+    setTimeout(() => _bulmacaBitir(true, (_bulmacaState.maksDeneme - _bulmacaState.deneme + 1) * 20), 600);
     return;
   }
   if (_bulmacaState.deneme >= _bulmacaState.maksDeneme) {
     _bulmacaState.bitti = true;
     setTimeout(() => _bulmacaBitir(false, 0), 600);
-    return;
   }
-  if (inp) inp.focus();
 }
 
 function _bulmacaMesajGoster(metin, renk) {
@@ -195,9 +203,7 @@ function _bulmacaBitir(kazandi, skor) {
   modal.innerHTML = `
     <div style="margin:auto;text-align:center;color:#fff;max-width:340px;padding:20px">
       ${mesaj}
-      <button onclick="_bulmacaKapat()" style="padding:12px 32px;border-radius:12px;border:1px solid rgba(91,191,255,0.4);background:rgba(91,191,255,0.2);color:#5BBFFF;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:inherit">
-        Tamam
-      </button>
+      <button onclick="_bulmacaKapat()" style="padding:12px 32px;border-radius:12px;border:1px solid rgba(91,191,255,0.4);background:rgba(91,191,255,0.2);color:#5BBFFF;font-size:0.92rem;font-weight:700;cursor:pointer;font-family:inherit">Tamam</button>
     </div>`;
   _oyunOynanmisOlarakKaydet('bulmaca', skor);
 }
