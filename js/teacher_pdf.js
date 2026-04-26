@@ -347,8 +347,12 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
     genelPart += p('düzenliliği oldukça iyi bir seviyede. Süreklilik bakımından olumlu bir tablo sergileniyor.');
   } else if (activeDays >= (period==='weekly'?3:period==='monthly'?12:1)) {
     genelPart += p('orta düzey bir düzenliliği yansıtmaktadır. Çalışma günlerinin artırılması önerilir.');
+  } else if (period === 'weekly' && activeDays === 1) {
+    genelPart += p('bu hafta yalnızca 1 gün çalışma girişi bulunuyor. Hafta geneline yayılan düzenli bir çalışma temposu hedeflenmeli.');
+  } else if (period === 'monthly' && activeDays <= 3) {
+    genelPart += p('bu ay oldukça sınırlı sayıda gün aktif olundu. Düzenli günlük çalışma alışkanlığı kazandırılması öncelikli hedef olmalı.');
   } else {
-    genelPart += p('düzensiz bir çalışma ritmi içinde olduğu görülüyor. Bu konuda ivedi önlem alınmalıdır.');
+    genelPart += p('düzensiz bir çalışma ritmi içinde olduğu görülüyor. Çalışma günlerinin artırılması önerilir.');
   }
   parts.push(genelPart);
 
@@ -402,9 +406,13 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
 
   // 5. STRATEJİK ÖNERİLER
   let stratejik = `${p('Strateji Önerisi:')} `;
-  if (avgDurDay < 90) stratejik += `${p('Günlük çalışma süresi')} ${avgDurDay} ${p('dakika ile yetersiz kalıyor; en az 120-150 dakika hedeflenmeli.')} `;
+  if (avgDurDay < 90) stratejik += `${p('Aktif olunan günlerdeki ortalama çalışma süresi')} ${avgDurDay} ${p('dakika; en az 120-150 dakika hedeflenmeli.')} `;
   if (netRate < 60 && totalQ > 0) stratejik += `${p('Soru sayısından önce kalite önemsenmeli; az ama doğru çözüm netleri artırır.')} `;
-  if (activeDays < (period==='weekly'?5:period==='monthly'?20:1)) stratejik += `${p('Düzenliliğin artırılması en kritik adımdır. Her gün en az bir ders girişinin yapılması hedeflenmeli.')} `;
+  if (period === 'weekly' && activeDays === 1) {
+    stratejik += p('Haftanın geri kalanında da en az birer ders girişi yapılması, sürekliliği başlatmak için kritik ilk adım olacaktır.') + ' ';
+  } else if (activeDays < (period==='weekly'?5:period==='monthly'?20:1)) {
+    stratejik += `${p('Çalışma günlerinin artırılması önerilir. Her gün en az bir ders girişinin yapılması hedeflenmeli.')} `;
+  }
   if (best && withQ.length > 1) stratejik += `${p(best.name)} ${p('dersindeki başarının korunması sağlanırken')} `;
   if (worst) stratejik += `${p(worst.name)} ${p('dersine ek ağırlık verilmeli.')} `;
   parts.push(stratejik);
