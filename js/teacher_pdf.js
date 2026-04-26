@@ -327,7 +327,9 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
   }
 
   const firstName = p(sName.split(' ')[0]);
-  const netRate = totalQ>0 ? Math.round(totalNet/totalQ*100) : 0;
+  // isabet oranı = doğru / toplam soru (PDF başlığıyla aynı metrik)
+  const totalCorrect = filtered.reduce((a,e)=>a+(e.correct||0)+(e.type==='soru'?Math.max(0,(e.net||0)+(e.wrong||0)):0),0);
+  const netRate = totalQ>0 ? Math.round(subStats.filter(s=>s.q>0).reduce((a,s)=>a+(s.d||0),0)/totalQ*100) : 0;
   const withQ = subStats.filter(s=>s.q>0).sort((a,b)=>b.pct-a.pct);
   const best = withQ[0];
   const worst = withQ.length>1 ? [...withQ].sort((a,b)=>a.pct-b.pct)[0] : null;
@@ -364,7 +366,10 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
 
   // 3. DERS BAZLI
   if (best) {
-    parts.push(`${p('Güçlü Alan:')} ${p(best.name)} ${p('dersinde')} %${best.pct} ${p('isabet oranı ile en güçlü performansı sergiliyor. Bu dersteki başarı stratejisi diğer derslere model olabilir.')}`);
+    const bestTxt = withQ.length > 1
+      ? p('isabet oranı ile en güçlü performansı sergiliyor. Bu dersteki başarı stratejisi diğer derslere model olabilir.')
+      : p('isabet oranı ile bu dönemde çalıştığı tek ders.');
+    parts.push(`${p('Güçlü Alan:')} ${p(best.name)} ${p('dersinde')} %${best.pct} ${bestTxt}`);
   }
   if (worst && worst.name !== best?.name) {
     let worstPart = `${p('Geliştirilmesi Gereken Alan:')} ${p(worst.name)} ${p('dersinde')} %${worst.pct} ${p('isabet oranı ile en düşük performans görülüyor. ')}`;
@@ -400,7 +405,7 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
   if (avgDurDay < 90) stratejik += `${p('Günlük çalışma süresi')} ${avgDurDay} ${p('dakika ile yetersiz kalıyor; en az 120-150 dakika hedeflenmeli.')} `;
   if (netRate < 60 && totalQ > 0) stratejik += `${p('Soru sayısından önce kalite önemsenmeli; az ama doğru çözüm netleri artırır.')} `;
   if (activeDays < (period==='weekly'?5:period==='monthly'?20:1)) stratejik += `${p('Düzenliliğin artırılması en kritik adımdır. Her gün en az bir ders girişinin yapılması hedeflenmeli.')} `;
-  if (best) stratejik += `${p(best.name)} ${p('dersindeki başarının korunması sağlanırken')} `;
+  if (best && withQ.length > 1) stratejik += `${p(best.name)} ${p('dersindeki başarının korunması sağlanırken')} `;
   if (worst) stratejik += `${p(worst.name)} ${p('dersine ek ağırlık verilmeli.')} `;
   parts.push(stratejik);
 
