@@ -342,17 +342,20 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
 
   // 1. GENEL PERFORMANS
   const periodLabel = period==='daily'?p('bugün'):period==='weekly'?p('bu hafta'):p('bu ay');
-  let genelPart = `${firstName} ${periodLabel} toplam ${totalDur} ${p('dakika çalışma süresi')}, ${totalQ} ${p('soru çözmesi')} ve ${activeDays} ${p('gün aktif olması')} ile `;
-  if (activeDays >= (period==='weekly'?5:period==='monthly'?20:1)) {
-    genelPart += p('düzenliliği oldukça iyi bir seviyede. Süreklilik bakımından olumlu bir tablo sergileniyor.');
-  } else if (activeDays >= (period==='weekly'?3:period==='monthly'?12:1)) {
-    genelPart += p('orta düzey bir düzenliliği yansıtmaktadır. Çalışma günlerinin artırılması önerilir.');
-  } else if (period === 'weekly' && activeDays === 1) {
-    genelPart += p('bu hafta yalnızca 1 gün çalışma girişi bulunuyor. Hafta geneline yayılan düzenli bir çalışma temposu hedeflenmeli.');
+  let genelPart;
+  if (period === 'weekly' && activeDays === 1) {
+    genelPart = `${firstName} ${p('bu hafta yalnızca 1 gün aktif olarak toplam')} ${totalDur} ${p('dakika çalışma süresi ve')} ${totalQ} ${p('soru çözümüyle sınırlı kaldı. Hafta geneline yayılan düzenli bir çalışma temposu hedeflenmeli.')}`;
   } else if (period === 'monthly' && activeDays <= 3) {
-    genelPart += p('bu ay oldukça sınırlı sayıda gün aktif olundu. Düzenli günlük çalışma alışkanlığı kazandırılması öncelikli hedef olmalı.');
+    genelPart = `${firstName} ${p('bu ay yalnızca')} ${activeDays} ${p('gün aktif olarak toplam')} ${totalDur} ${p('dakika çalışma süresi ve')} ${totalQ} ${p('soru çözümüyle sınırlı kaldı. Düzenli günlük çalışma alışkanlığının kazandırılması öncelikli hedef olmalıdır.')}`;
   } else {
-    genelPart += p('düzensiz bir çalışma ritmi içinde olduğu görülüyor. Çalışma günlerinin artırılması önerilir.');
+    genelPart = `${firstName} ${periodLabel} ${p('toplam')} ${totalDur} ${p('dakika çalışma süresi')}, ${totalQ} ${p('soru çözmesi ve')} ${activeDays} ${p('gün aktif olması ile ')}`;
+    if (activeDays >= (period==='weekly'?5:period==='monthly'?20:1)) {
+      genelPart += p('düzenliliği oldukça iyi bir seviyede. Süreklilik bakımından olumlu bir tablo sergileniyor.');
+    } else if (activeDays >= (period==='weekly'?3:period==='monthly'?12:1)) {
+      genelPart += p('orta düzey bir düzenliliği yansıtmaktadır. Çalışma günlerinin artırılması önerilir.');
+    } else {
+      genelPart += p('düzensiz bir çalışma ritmi içinde olduğu görülüyor. Çalışma günlerinin artırılması önerilir.');
+    }
   }
   parts.push(genelPart);
 
