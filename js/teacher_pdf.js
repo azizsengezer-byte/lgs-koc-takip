@@ -352,7 +352,10 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
 
   // 2. SORU ÇÖZÜMLEFİLİĞİ
   if (totalQ>0) {
-    let qPart = `${p('Soru çözüm verilerine bakıldığında günlük ortalama')} ${avgQDay} ${p('soru ile')} `;
+    const qAciklama = activeDays > 1
+      ? `${p('Soru çözüm verilerine bakıldığında günlük ortalama')} ${avgQDay} ${p('soru ile')} `
+      : `${p('Soru çözüm verilerine bakıldığında toplam')} ${totalQ} ${p('soru ile')} `;
+    let qPart = qAciklama;
     if (netRate>=75) qPart += `%${netRate} ${p('isabet oranı son derece güçlü bir performansın göstergesidir. Anlayarak ve dikkatli okuyarak çözüm yapması bu başarıyı getiriyor.')}`;
     else if (netRate>=55) qPart += `%${netRate} ${p('isabet oranı kabul edilebilir bir seviyede, ancak geliştirilmesi gereken noktalar bulunuyor. Yanlış yapılan soruların analizi yapılmalı.')}`;
     else qPart += `%${netRate} ${p('isabet oranı düşük bir seviyededir. Hız yerine doğru anlayış önceliklendirilmeli.')}`;
@@ -401,12 +404,11 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
   if (worst) stratejik += `${p(worst.name)} ${p('dersine ek ağırlık verilmeli.')} `;
   parts.push(stratejik);
 
-  // 5b. DENEME SINAVI ÖZETİ
+  // 5b. DENEME SINAVI ÖZETİ — sadece seçili dönem içindeki denemeler
   const _sObj = students.find(s=>s.name===sName)||{};
   const _sUid = _sObj.uid||'';
-  const _dEntries = studyEntries.filter(e=>
-    e.type==='deneme' && (e.studentName===sName || (_sUid && e.userId===_sUid))
-  );
+  // filtered zaten dönem filtreli entry listesi — sadece deneme tipini al
+  const _dEntries = filtered.filter(e => e.type === 'deneme');
   if (_dEntries.length >= 1) {
     const _grp={};
     _dEntries.forEach(e=>{
