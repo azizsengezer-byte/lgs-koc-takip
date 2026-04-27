@@ -21,12 +21,50 @@
   }
 
   // ── ANA FONKSİYON (drop-in replacement) ─────────────────────
-  window.calistirSenaryolar = function (gunler, allAcadEntries, endKey, period) {
+  window.calistirSenaryolar = function (gunler, allAcadEntries, endKey, period, startKey) {
 
     if (!gunler || gunler.length < 1) {
       return { insights: [], positives: [], kalOzet: null, trend: 'stabil', trendAnlati: '',
                zayifBrans: null, vaka: null, aktifProfil: null, tetiklenenTumIdler: [], frekansMap: {} };
     }
+
+    // ── DÖNEM TOPLAM GÜN & BOŞ GÜN HESABI ──────────────────────
+    let _totalPeriodDays = gunler.length; // fallback
+    let _bosDays = 0;
+    let _bosSeriler = []; // üst üste boş gün serileri [{baslangic, bitis, uzunluk}]
+    let _sonBosSeri = 0;  // dönem sonundaki boş gün sayısı
+    if (startKey && endKey) {
+      const s = new Date(startKey + 'T12:00:00');
+      const e = new Date(endKey   + 'T12:00:00');
+      _totalPeriodDays = Math.round((e - s) / 86400000) + 1;
+      const veriSet = new Set(gunler.map(d => d.dk));
+      _bosDays = _totalPeriodDays - gunler.length;
+
+      // Üst üste boş gün serilerini bul
+      let seriBaslangic = null;
+      let seriUzunluk = 0;
+      for (let t = new Date(s); t <= e; t.setDate(t.getDate() + 1)) {
+        const key = t.toISOString().split('T')[0];
+        if (!veriSet.has(key)) {
+          if (!seriBaslangic) seriBaslangic = key;
+          seriUzunluk++;
+        } else {
+          if (seriBaslangic && seriUzunluk >= 2) {
+            _bosSeriler.push({ baslangic: seriBaslangic, uzunluk: seriUzunluk });
+          }
+          seriBaslangic = null;
+          seriUzunluk = 0;
+        }
+      }
+      if (seriBaslangic && seriUzunluk >= 2) {
+        _bosSeriler.push({ baslangic: seriBaslangic, uzunluk: seriUzunluk });
+        // Dönem sonundaki boş seri
+        const sonSeri = _bosSeriler[_bosSeriler.length - 1];
+        if (sonSeri.baslangic >= endKey.substring(0, 8) + '15') _sonBosSeri = sonSeri.uzunluk;
+        else _sonBosSeri = sonSeri.uzunluk; // son seri zaten dönem sonu
+      }
+    }
+    const _aktifOran = _totalPeriodDays > 0 ? gunler.length / _totalPeriodDays : 1;
 
     const insights  = [];
     const positives = [];
@@ -91,14 +129,29 @@
     const trendAnlati = _trendAnlatisi(trend, ilkYari, sonYari, isAylik);
 
     // Kalibrasyon özeti
-    const ortSoru   = akadGun.length > 0 ? r0(akadGun.reduce((a, d) => a + d.soru, 0) / akadGun.length) : 0;
+    const _toplamSoru  = akadGun.reduce((a, d) => a + d.soru, 0);
+    // Gerçek günlük ortalama: toplam / dönem günü (boş günler dahil)
+    const ortSoru      = _totalPeriodDays > 0 ? r0(_toplamSoru / _totalPeriodDays) : 0;
+    // Aktif günlerdeki ortalama (referans için)
+    const ortSoruAktif = akadGun.length > 0 ? r0(_toplamSoru / akadGun.length) : 0;
     const ortKaygi  = fnOrt(wellGun, 'kaygi');
     const ortUyku   = fnOrt(wellGun.filter(d => d.uyku > 0), 'uyku');
     const kalOzet   = {
-      soruOrt:   ortSoru || 0,
-      kaygiEsik: ortKaygi !== null ? r1(ortKaygi) : '-',
-      uyku:      ortUyku  !== null ? r1(ortUyku)  : '-',
+      soruOrt:     ortSoru || 0,
+      soruOrtAktif: ortSoruAktif || 0,
+      kaygiEsik:   ortKaygi !== null ? r1(ortKaygi) : '-',
+      uyku:        ortUyku  !== null ? r1(ortUyku)  : '-',
+      // Boş gün bilgisi
+      toplamGun:   _totalPeriodDays,
+      aktifGun:    gunler.length,
+      bosDays:     _bosDays,
+      bosSeriler:  _bosSeriler,
+      sonBosSeri:  _sonBosSeri,
+      aktifOran:   _aktifOran,
     };
+
+    // ── MODÜL 9: SİSTEMDEN KOPUŞ SINYALI ───────────────────────
+    _modKopus(_totalPeriodDays, gunler.length, _bosDays, _bosSeriler, _sonBosSeri, _aktifOran, insights, period);
 
     return {
       insights, positives, kalOzet, trend, trendAnlati, zayifBrans,
@@ -504,6 +557,64 @@
     if (trend === 'dusus')
       return `${donem} boyunca düşen tempo: ilk yarıda ort. ${r0(a)} soru/gün, ikinci yarıda ${r0(b)}.`;
     return `${donem} boyunca stabil tempo: ${r0(a)}-${r0(b)} soru/gün bandında.`;
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // MODÜL 9 — SİSTEMDEN KOPUŞ SİNYALİ
+  // ════════════════════════════════════════════════════════════
+  function _modKopus(toplamGun, aktifGun, bosDays, bosSeriler, sonBosSeri, aktifOran, insights, period) {
+    if (toplamGun <= 1) return; // günlük raporda anlamsız
+
+    const donem = period === 'aylik' ? 'bu ay' : 'bu hafta';
+
+    // 1. Genel aktiflik oranı çok düşük
+    if (aktifOran < 0.33 && bosDays >= 3) {
+      const pct = Math.round(aktifOran * 100);
+      insights.push({
+        id: 'kopus_genel',
+        priority: 95,
+        baslik: `Düşük Katılım — ${toplamGun} Günün ${bosDays}'i Boş`,
+        govde: `${donem.charAt(0).toUpperCase() + donem.slice(1)} ${aktifGun}/${toplamGun} günde veri girildi (%${pct}). Veri girişi yapılmayan günler görünmez risk taşır — o günlerde ne yaşandığı bilinmiyor.`,
+        strateji: 'Koç görüşmesinde önce bu boşluğu ele al. "Girilmeyen günlerde ne oldu?" sorusu, akademik konuların önünde gelmeli.',
+        tur: 'uyari',
+      });
+    }
+
+    // 2. Dönem sonunda uzun kopuş (öğrenci sistemden çekilmiş olabilir)
+    if (sonBosSeri >= 5) {
+      insights.push({
+        id: 'kopus_son_seri',
+        priority: 99,
+        baslik: `Sistemden Kopuş — Son ${sonBosSeri} Gün Veri Yok`,
+        govde: `Dönemin son ${sonBosSeri} günü hiç veri girilmemiş. Bu artık unutma değil, sistemden veya takip sürecinden aktif kopuş sinyalidir.`,
+        strateji: 'Bir sonraki koç görüşmesi bu kopuşu doğrudan ve yargısızca ele almalı. "Son günlerde nasıl hissediyorsun?" ile başla.',
+        tur: 'kirmizi',
+      });
+    } else if (sonBosSeri >= 3) {
+      insights.push({
+        id: 'kopus_son_seri',
+        priority: 90,
+        baslik: `Son ${sonBosSeri} Gün Sessizlik`,
+        govde: `Dönemin son ${sonBosSeri} günü veri girilmemiş. Kısa kopuş — ama yoğun dönemde dikkat gerektiriyor.`,
+        strateji: 'Koç görüşmesinde bu sürece kısaca değin; baskı uygulamadan neden sorulabilir.',
+        tur: 'uyari',
+      });
+    }
+
+    // 3. İçinde uzun seriler var mı (dönem sonu olmasa bile)
+    const uzunSeriler = bosSeriler.filter(s => s.uzunluk >= 4 && s.id !== 'kopus_son_seri');
+    uzunSeriler.forEach(seri => {
+      // Dönem sonu serisiyle çakışmasın
+      if (insights.find(i => i.id === 'kopus_son_seri')) return;
+      insights.push({
+        id: `kopus_seri_${seri.baslangic}`,
+        priority: 80,
+        baslik: `${seri.uzunluk} Günlük Kopuş (${seri.baslangic})`,
+        govde: `${seri.baslangic} tarihinde başlayan ${seri.uzunluk} günlük veri boşluğu. Bu kadar süren kopuş tek başına risk sinyali.`,
+        strateji: 'Koç görüşmesinde bu dönem kısaca sorgulanmalı; öğrenciye ne yaşadığını anlat fırsatı ver.',
+        tur: 'uyari',
+      });
+    });
   }
 
 })();

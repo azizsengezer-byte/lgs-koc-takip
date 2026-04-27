@@ -1192,7 +1192,7 @@ async function exportPsychPDF(sName, aiAcik) {
         const _gunlerYeterli = gunler && gunler.length >= 2;
         if (_motorMevcut && _gunlerYeterli) {
           const _mod = period === 'monthly' ? 'aylik' : period === 'weekly' ? 'haftalik' : 'gunluk';
-          const _m = window.calistirSenaryolar(gunler, allAcadEntries, endKey, _mod);
+          const _m = window.calistirSenaryolar(gunler, allAcadEntries, endKey, _mod, startKey);
           const _ins  = Array.isArray(_m.insights)  ? _m.insights  : [];
           const _pos  = Array.isArray(_m.positives) ? _m.positives : [];
           const _vaka = _m.vaka;
@@ -1203,7 +1203,16 @@ async function exportPsychPDF(sName, aiAcik) {
 
           // Kalibrasyon özeti
           if (_kal) {
-            const _kalSat = tx('Analiz kapsamı: ' + _kal.soruOrt + ' soru/gün ort. | Dönem kaygı ort: ' + _kal.kaygiEsik + '/10 | Uyku ort: ' + _kal.uyku + ' sa');
+            // Aktiflik bilgisini göster — boş günler varsa gerçek ortalamayı da yaz
+            let _kalSatStr = 'Analiz kapsamı: ';
+            if (_kal.toplamGun && _kal.aktifGun && _kal.aktifGun < _kal.toplamGun) {
+              _kalSatStr += _kal.aktifGun + '/' + _kal.toplamGun + ' aktif gün (' + Math.round(_kal.aktifOran*100) + '%) | ';
+              _kalSatStr += _kal.soruOrtAktif + ' soru/gün (aktif) → gerçek ort. ' + _kal.soruOrt + '/gün | ';
+            } else {
+              _kalSatStr += _kal.soruOrt + ' soru/gün ort. | ';
+            }
+            _kalSatStr += 'Dönem kaygı ort: ' + _kal.kaygiEsik + '/10 | Uyku ort: ' + _kal.uyku + ' sa';
+            const _kalSat = tx(_kalSatStr);
             Y = pdfCheck(doc, Y, 10);
             doc.setFont(PF,'italic'); doc.setFontSize(6.2); doc.setTextColor(140,120,180);
             doc.text(_kalSat, 16, Y); Y += 7;
@@ -1483,7 +1492,15 @@ async function exportPsychPDF(sName, aiAcik) {
         Y=pdfCheck(doc,Y,10);
         doc.setFillColor(235,245,255);doc.roundedRect(15,Y,180,9,1.5,1.5,'F');
         doc.setFont(PF,'normal');doc.setFontSize(7.5);doc.setTextColor(40,60,120);
-        doc.text('Dönem: '+toplamSoru+' soru | '+toplamSure+' dk | '+aktifGunler.length+' aktif gün | Ort. '+Math.round(ortSoru)+'/gün (Hedef: '+DAILY_GOAL+') | LGS: '+dLgs+' gün',19,Y+5.5);
+        // Gerçek günlük ortalama (dönem toplam günü üzerinden)
+        const _periodTotalDays = (period==='monthly')
+          ? new Date(now.getFullYear(), now.getMonth()+1, 0).getDate()
+          : (period==='weekly' ? 7 : 1);
+        const _realOrtSoru = Math.round(toplamSoru / _periodTotalDays);
+        const _aktifLabel  = aktifGunler.length < _periodTotalDays
+          ? aktifGunler.length + '/' + _periodTotalDays + ' aktif gün'
+          : aktifGunler.length + ' aktif gün';
+        doc.text('Dönem: '+toplamSoru+' soru | '+toplamSure+' dk | '+_aktifLabel+' | Ort. '+_realOrtSoru+'/gün (Hedef: '+DAILY_GOAL+') | LGS: '+dLgs+' gün',19,Y+5.5);
         Y+=11;
       }
 
