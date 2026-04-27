@@ -1204,17 +1204,17 @@ async function exportPsychPDF(sName, aiAcik) {
           // Kalibrasyon özeti
           if (_kal) {
             // Aktiflik bilgisini göster — boş günler varsa gerçek ortalamayı da yaz
-            let _kalSatStr = 'Analiz kapsamı: ';
+            let _kalSatStr = 'Analiz kapsami: ';
             if (_kal.toplamGun && _kal.aktifGun && _kal.aktifGun < _kal.toplamGun) {
-              _kalSatStr += _kal.aktifGun + '/' + _kal.toplamGun + ' aktif gün (' + Math.round(_kal.aktifOran*100) + '%) | ';
-              _kalSatStr += _kal.soruOrtAktif + ' soru/gun (aktif gun) -> gercek ort. ' + _kal.soruOrt + '/gun | ';
+              _kalSatStr += _kal.aktifGun + '/' + _kal.toplamGun + ' aktif gun (%' + Math.round(_kal.aktifOran*100) + ') | ';
+              _kalSatStr += _kal.soruOrtAktif + ' soru/gun (aktif) -> gercek ort. ' + _kal.soruOrt + '/gun | ';
             } else {
-              _kalSatStr += _kal.soruOrt + ' soru/gün ort. | ';
+              _kalSatStr += _kal.soruOrt + ' soru/gun ort. | ';
             }
-            _kalSatStr += 'Dönem kaygı ort: ' + _kal.kaygiEsik + '/10 | Uyku ort: ' + _kal.uyku + ' sa';
+            _kalSatStr += 'Donem kaygi ort: ' + _kal.kaygiEsik + '/10 | Uyku ort: ' + _kal.uyku + ' sa';
             const _kalSat = tx(_kalSatStr);
             Y = pdfCheck(doc, Y, 10);
-            doc.setFont(PF,'italic'); doc.setFontSize(6.2); doc.setTextColor(140,120,180);
+            doc.setFont(PF,'normal'); doc.setFontSize(6.2); doc.setTextColor(140,120,180);
             doc.text(_kalSat, 16, Y); Y += 7;
           }
 
