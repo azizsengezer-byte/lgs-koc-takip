@@ -560,59 +560,50 @@
   }
 
   // ════════════════════════════════════════════════════════════
-  // MODÜL 9 — SİSTEMDEN KOPUŞ SİNYALİ
+  // MODUL 9 — SISTEMDEN KOPUS SINYALI
   // ════════════════════════════════════════════════════════════
   function _modKopus(toplamGun, aktifGun, bosDays, bosSeriler, sonBosSeri, aktifOran, insights, period) {
-    if (toplamGun <= 1) return; // günlük raporda anlamsız
+    if (toplamGun <= 1) return; // gunluk raporda anlamsiz
 
     const donem = period === 'aylik' ? 'bu ay' : 'bu hafta';
 
-    // 1. Genel aktiflik oranı çok düşük
-    if (aktifOran < 0.33 && bosDays >= 3) {
-      const pct = Math.round(aktifOran * 100);
-      insights.push({
-        id: 'kopus_genel',
-        priority: 95,
-        baslik: `Düşük Katılım — ${toplamGun} Günün ${bosDays}'i Boş`,
-        govde: `${donem.charAt(0).toUpperCase() + donem.slice(1)} ${aktifGun}/${toplamGun} günde veri girildi (%${pct}). Veri girişi yapılmayan günler görünmez risk taşır — o günlerde ne yaşandığı bilinmiyor.`,
-        strateji: 'Koç görüşmesinde önce bu boşluğu ele al. "Girilmeyen günlerde ne oldu?" sorusu, akademik konuların önünde gelmeli.',
-        tur: 'uyari',
-      });
-    }
-
-    // 2. Dönem sonunda uzun kopuş (öğrenci sistemden çekilmiş olabilir)
+    // 1. Donem sonunda uzun kopus — EN YUKSEK ONCELIK
     if (sonBosSeri >= 5) {
       insights.push({
-        id: 'kopus_son_seri',
-        priority: 99,
-        baslik: `Sistemden Kopuş — Son ${sonBosSeri} Gün Veri Yok`,
-        govde: `Dönemin son ${sonBosSeri} günü hiç veri girilmemiş. Bu artık unutma değil, sistemden veya takip sürecinden aktif kopuş sinyalidir.`,
-        strateji: 'Bir sonraki koç görüşmesi bu kopuşu doğrudan ve yargısızca ele almalı. "Son günlerde nasıl hissediyorsun?" ile başla.',
-        tur: 'kirmizi',
+        etiket:  'Sistemden Kopus — Son ' + sonBosSeri + ' Gun Veri Yok',
+        teshis:  'Donemin son ' + sonBosSeri + ' gunu hic veri girilmemis. Bu artik unutma degil, sistemden veya takip surecinden aktif kopus sinyalidir.',
+        aksiyon: 'Bir sonraki koc gorusmesi bu kopusu dogrudan ve yargisizca ele almali. "Son gunlerde nasil hissediyorsun?" ile basla.',
+        ton: 'crisis', priority: 99, frekans: sonBosSeri,
       });
     } else if (sonBosSeri >= 3) {
       insights.push({
-        id: 'kopus_son_seri',
-        priority: 90,
-        baslik: `Son ${sonBosSeri} Gün Sessizlik`,
-        govde: `Dönemin son ${sonBosSeri} günü veri girilmemiş. Kısa kopuş — ama yoğun dönemde dikkat gerektiriyor.`,
-        strateji: 'Koç görüşmesinde bu sürece kısaca değin; baskı uygulamadan neden sorulabilir.',
-        tur: 'uyari',
+        etiket:  'Son ' + sonBosSeri + ' Gun Sessizlik',
+        teshis:  'Donemin son ' + sonBosSeri + ' gunu veri girilmemis. Kisa kopus — ama yogun donemde dikkat gerektiriyor.',
+        aksiyon: 'Koc gorusmesinde bu surece kisaca degin; baski uygulamadan neden sorulabilir.',
+        ton: 'urgent', priority: 90, frekans: sonBosSeri,
       });
     }
 
-    // 3. İçinde uzun seriler var mı (dönem sonu olmasa bile)
-    const uzunSeriler = bosSeriler.filter(s => s.uzunluk >= 4 && s.id !== 'kopus_son_seri');
-    uzunSeriler.forEach(seri => {
-      // Dönem sonu serisiyle çakışmasın
-      if (insights.find(i => i.id === 'kopus_son_seri')) return;
+    // 2. Genel aktiflik orani cok dusuk
+    if (aktifOran < 0.33 && bosDays >= 3) {
+      const pct = Math.round(aktifOran * 100);
       insights.push({
-        id: `kopus_seri_${seri.baslangic}`,
-        priority: 80,
-        baslik: `${seri.uzunluk} Günlük Kopuş (${seri.baslangic})`,
-        govde: `${seri.baslangic} tarihinde başlayan ${seri.uzunluk} günlük veri boşluğu. Bu kadar süren kopuş tek başına risk sinyali.`,
-        strateji: 'Koç görüşmesinde bu dönem kısaca sorgulanmalı; öğrenciye ne yaşadığını anlat fırsatı ver.',
-        tur: 'uyari',
+        etiket:  'Dusuk Katilim — ' + toplamGun + ' Gunun ' + bosDays + "'i Bos",
+        teshis:  donem.charAt(0).toUpperCase() + donem.slice(1) + ' ' + aktifGun + '/' + toplamGun + ' gunde veri girildi (%' + pct + '). Veri girisi yapilmayan gunler gorunmez risk tasir — o gunlerde ne yasandigi bilinmiyor.',
+        aksiyon: 'Koc gorusmesinde once bu boslugu ele al. "Girilmeyen gunlerde ne oldu?" sorusu, akademik konularin onunde gelmeli.',
+        ton: 'urgent', priority: 88, frekans: bosDays,
+      });
+    }
+
+    // 3. Icinde uzun seriler var mi (donem sonu haric)
+    bosSeriler.forEach(function(seri) {
+      if (seri.uzunluk < 4) return;
+      if (sonBosSeri >= 3 && insights.find(function(i) { return i.etiket && i.etiket.indexOf('Sistemden Kopus') >= 0; })) return;
+      insights.push({
+        etiket:  seri.uzunluk + ' Gunluk Veri Boslugu (' + seri.baslangic + ')',
+        teshis:  seri.baslangic + ' tarihinde baslayan ' + seri.uzunluk + ' gunluk veri boslugu. Bu kadar suren kopus tek basina risk sinyali.',
+        aksiyon: 'Koc gorusmesinde bu donem kisaca sorgulanmali; ogrenciye ne yasadigini anlat firsati ver.',
+        ton: 'urgent', priority: 78, frekans: seri.uzunluk,
       });
     });
   }

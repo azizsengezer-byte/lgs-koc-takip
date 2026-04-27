@@ -1207,7 +1207,7 @@ async function exportPsychPDF(sName, aiAcik) {
             let _kalSatStr = 'Analiz kapsamı: ';
             if (_kal.toplamGun && _kal.aktifGun && _kal.aktifGun < _kal.toplamGun) {
               _kalSatStr += _kal.aktifGun + '/' + _kal.toplamGun + ' aktif gün (' + Math.round(_kal.aktifOran*100) + '%) | ';
-              _kalSatStr += _kal.soruOrtAktif + ' soru/gün (aktif) → gerçek ort. ' + _kal.soruOrt + '/gün | ';
+              _kalSatStr += _kal.soruOrtAktif + ' soru/gun (aktif gun) -> gercek ort. ' + _kal.soruOrt + '/gun | ';
             } else {
               _kalSatStr += _kal.soruOrt + ' soru/gün ort. | ';
             }
