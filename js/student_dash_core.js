@@ -26,8 +26,7 @@ function renderStudentPage(id, el) {
     });
   }
   else if(id==='macera') {
-    if (window.RC_MACERA_AKTIF === false) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">Bu özellik şu an kullanılamıyor.</div>'; return; }
-    el.innerHTML = maceraPage(); _colonyPostRender();
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)">Bu özellik şu an kullanılamıyor.</div>';
   }
   else if(id==='oyun') {
     el.innerHTML = oyunPage();
