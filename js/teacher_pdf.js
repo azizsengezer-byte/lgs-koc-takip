@@ -317,7 +317,7 @@ async function preparePdfLinkWithDate(sName, btn) {
   window._pdfDateOverride = null;
 }
 
-function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, totalNet, activeDays, period, forPdf=false) {
+function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, totalNet, activeDays, period, forPdf=false, totalPeriodDays=null) {
   // p() — PDF için ASCII, HTML için Türkçe
   const p = forPdf ? ts : (v=>String(v??''));
 
@@ -335,34 +335,49 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
   const worst = withQ.length>1 ? [...withQ].sort((a,b)=>a.pct-b.pct)[0] : null;
   const lgs = new Date('2026-06-13T09:30:00+03:00');
   const daysLeft = Math.floor((lgs-new Date())/(1000*60*60*24));
-  const avgDurDay = activeDays>0 ? Math.round(totalDur/activeDays) : 0;
-  const avgQDay = activeDays>0 ? Math.round(totalQ/activeDays) : 0;
+  // Dönem toplam gün sayısı (boş günler dahil)
+  const _pDays = totalPeriodDays || (period==='weekly'?7:period==='monthly'?30:1);
+  const inactiveDays = Math.max(0, _pDays - activeDays);
+  const avgDurDay  = activeDays>0 ? Math.round(totalDur/activeDays) : 0;
+  const avgQDay    = activeDays>0 ? Math.round(totalQ/activeDays) : 0;
+  // Gerçek günlük ortalama (boş günler dahil — dürüst metrik)
+  const realAvgDur = Math.round(totalDur/_pDays);
+  const realAvgQ   = Math.round(totalQ/_pDays);
+  const activeRatio = _pDays>0 ? activeDays/_pDays : 0;
   const sep = forPdf ? '\n\n' : '<br><br>';
   let parts = [];
 
-  // 1. GENEL PERFORMANS
+  // 1. GENEL PERFORMANS — oransal eşikler (boş günleri görmezden gelme)
   const periodLabel = period==='daily'?p('bugün'):period==='weekly'?p('bu hafta'):p('bu ay');
   let genelPart;
-  if (period === 'weekly' && activeDays === 1) {
-    genelPart = `${firstName} ${p('bu hafta yalnızca 1 gün aktif olarak toplam')} ${totalDur} ${p('dakika çalışma süresi ve')} ${totalQ} ${p('soru çözümüyle sınırlı kaldı. Hafta geneline yayılan düzenli bir çalışma temposu hedeflenmeli.')}`;
-  } else if (period === 'monthly' && activeDays <= 3) {
-    genelPart = `${firstName} ${p('bu ay yalnızca')} ${activeDays} ${p('gün aktif olarak toplam')} ${totalDur} ${p('dakika çalışma süresi ve')} ${totalQ} ${p('soru çözümüyle sınırlı kaldı. Düzenli günlük çalışma alışkanlığının kazandırılması öncelikli hedef olmalıdır.')}`;
+  if (period === 'daily') {
+    genelPart = `${firstName} ${p('bugün toplam')} ${totalDur} ${p('dakika çalışarak')} ${totalQ} ${p('soru çözdü.')}`;
+  } else if (activeRatio >= 0.70) {
+    // ≥%70 → iyi (haftalık: 5+/7, aylık: 21+/30)
+    genelPart = `${firstName} ${periodLabel} ${activeDays}/${_pDays} ${p('günde aktif olarak toplam')} ${totalDur} ${p('dakika çalışma süresi ve')} ${totalQ} ${p('soru çözümüyle düzenliliği oldukça iyi bir seviyede. Süreklilik bakımından olumlu bir tablo sergileniyor.')}`;
+  } else if (activeRatio >= 0.43) {
+    // %43–69 → orta (haftalık: 3-4/7, aylık: 13-20/30)
+    genelPart = `${firstName} ${periodLabel} ${activeDays}/${_pDays} ${p('günde aktif olarak toplam')} ${totalDur} ${p('dakika çalışma süresi ve')} ${totalQ} ${p('soru çözümüyle orta düzey bir düzenliliği yansıtmaktadır. Boş kalan')} ${inactiveDays} ${p('günün değerlendirilmesi önerilir.')}`;
+  } else if (activeRatio >= 0.20) {
+    // %20–42 → düşük (haftalık: 1-2/7 artık buraya da girer, aylık: 6-12/30)
+    const öneri = period === 'weekly'
+      ? p('Hafta geneline yayılan düzenli bir çalışma temposu hedeflenmeli.')
+      : p('Ayın büyük bölümünde boş kalan günlerin doldurulması öncelikli hedef olmalıdır.');
+    genelPart = `${firstName} ${periodLabel} ${p('yalnızca')} ${activeDays}/${_pDays} ${p('günde aktif olarak toplam')} ${totalDur} ${p('dakika çalışma süresi ve')} ${totalQ} ${p('soru çözümüyle sınırlı kaldı. Boş kalan')} ${inactiveDays} ${p('günün değerlendirilmesi kritik önem taşıyor.')} ${öneri}`;
   } else {
-    genelPart = `${firstName} ${periodLabel} ${p('toplam')} ${totalDur} ${p('dakika çalışma süresi')}, ${totalQ} ${p('soru çözmesi ve')} ${activeDays} ${p('gün aktif olması ile ')}`;
-    if (activeDays >= (period==='weekly'?5:period==='monthly'?20:1)) {
-      genelPart += p('düzenliliği oldukça iyi bir seviyede. Süreklilik bakımından olumlu bir tablo sergileniyor.');
-    } else if (activeDays >= (period==='weekly'?3:period==='monthly'?12:1)) {
-      genelPart += p('orta düzey bir düzenliliği yansıtmaktadır. Çalışma günlerinin artırılması önerilir.');
-    } else {
-      genelPart += p('düzensiz bir çalışma ritmi içinde olduğu görülüyor. Çalışma günlerinin artırılması önerilir.');
-    }
+    // <%20 → çok sınırlı
+    const öneri = period === 'weekly'
+      ? p('Hafta geneline yayılan düzenli bir çalışma temposu hedeflenmeli.')
+      : p('Düzenli günlük çalışma alışkanlığının kazandırılması öncelikli hedef olmalıdır.');
+    genelPart = `${firstName} ${periodLabel} ${p('yalnızca')} ${activeDays}/${_pDays} ${p('günde aktif olabildi; boş kalan')} ${inactiveDays} ${p('gün ciddi bir kayıp oluşturuyor.')} ${öneri}`;
   }
   parts.push(genelPart);
 
   // 2. SORU ÇÖZÜMLEFİLİĞİ
   if (totalQ>0) {
+    // "günlük ortalama" için gerçek ortalama kullan (boş günler dahil), bağlamı belirt
     const qAciklama = activeDays > 1
-      ? `${p('Soru çözüm verilerine bakıldığında günlük ortalama')} ${avgQDay} ${p('soru ile')} `
+      ? `${p('Soru çözüm verilerine bakıldığında aktif günlerde ortalama')} ${avgQDay} ${p('soru (aylık gerçek ort.')} ${realAvgQ} ${p('soru/gün) ile')} `
       : `${p('Soru çözüm verilerine bakıldığında toplam')} ${totalQ} ${p('soru ile')} `;
     let qPart = qAciklama;
     if (netRate>=75) qPart += `%${netRate} ${p('isabet oranı son derece güçlü bir performansın göstergesidir. Anlayarak ve dikkatli okuyarak çözüm yapması bu başarıyı getiriyor.')}`;
@@ -409,12 +424,18 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
 
   // 5. STRATEJİK ÖNERİLER
   let stratejik = `${p('Strateji Önerisi:')} `;
-  if (avgDurDay < 90) stratejik += `${p('Aktif olunan günlerdeki ortalama çalışma süresi')} ${avgDurDay} ${p('dakika; en az 120-150 dakika hedeflenmeli.')} `;
+  // Strateji: gerçek günlük ortalama (boş günler dahil) üzerinden değerlendir
+  if (realAvgDur < 90) stratejik += `${p('Günlük ortalama çalışma süresi (boş günler dahil)')} ${realAvgDur} ${p('dakika; aktif günlerde')} ${avgDurDay} ${p('dakikaya ulaşılıyor. Tutarlılık artırılırsa hedef olan 120-150 dakika/gün yakalanabilir.')} `;
   if (netRate < 60 && totalQ > 0) stratejik += `${p('Soru sayısından önce kalite önemsenmeli; az ama doğru çözüm netleri artırır.')} `;
-  if (period === 'weekly' && activeDays === 1) {
-    stratejik += p('Haftanın geri kalanında da en az birer ders girişi yapılması, sürekliliği başlatmak için kritik ilk adım olacaktır.') + ' ';
-  } else if (activeDays < (period==='weekly'?5:period==='monthly'?20:1)) {
-    stratejik += `${p('Çalışma günlerinin artırılması önerilir. Her gün en az bir ders girişinin yapılması hedeflenmeli.')} `;
+  if (activeRatio < 0.70) {
+    // Aktiflik oranı %70'in altındaysa düzenlilik önerisi ekle
+    if (inactiveDays === 1) {
+      stratejik += p('Kaçırılan 1 günü telafi etmek için ek bir çalışma seansı planlanabilir.') + ' ';
+    } else if (period === 'weekly' && activeDays <= 2) {
+      stratejik += p('Haftanın geri kalanında da her gün en az bir ders girişi yapılması, sürekliliği başlatmak için kritik ilk adım olacaktır.') + ' ';
+    } else {
+      stratejik += `${p('Boş kalan')} ${inactiveDays} ${p('günün en az bir kısmında çalışma yapılması, dönem sonunda ciddi fark yaratacaktır.')} `;
+    }
   }
   if (best && withQ.length > 1) stratejik += `${p(best.name)} ${p('dersindeki başarının korunması sağlanırken')} `;
   if (worst) stratejik += `${p(worst.name)} ${p('dersine ek ağırlık verilmeli.')} `;
@@ -1320,7 +1341,16 @@ function exportStudentDetailPDF(sName) {
 
   // Genel yorum — yeni sayfaya geç ve başlıkla birlikte tut
   const _effectivePeriod = _override?.mode || studentAnalysisPeriod;
-  const rawComment = generateStudentComment(sName,filtered,subStats,totalDur,totalQ,totalNet,activeDays,_effectivePeriod,true);
+  // totalPeriodDays: dönemin toplam gün sayısı (aktif olsun olmasın)
+  let _totalPeriodDays = 1;
+  if (_effectivePeriod === 'weekly') {
+    _totalPeriodDays = 7;
+  } else if (_effectivePeriod === 'monthly') {
+    // Seçilen ayın toplam gün sayısı
+    const _refDate = _override ? new Date(_override.startKey + 'T12:00:00') : now;
+    _totalPeriodDays = new Date(_refDate.getFullYear(), _refDate.getMonth() + 1, 0).getDate();
+  }
+  const rawComment = generateStudentComment(sName,filtered,subStats,totalDur,totalQ,totalNet,activeDays,_effectivePeriod,true,_totalPeriodDays);
   const commentLines = doc.splitTextToSize(tx(rawComment), 174);
   const commentH = commentLines.length * 5 + 20; // başlık + içerik tahmini yükseklik
   if (Y + commentH > 278) { Y = pdfNewPage(doc); }
