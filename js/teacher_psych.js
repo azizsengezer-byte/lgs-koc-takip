@@ -1192,7 +1192,7 @@ async function exportPsychPDF(sName, aiAcik) {
         const _gunlerYeterli = gunler && gunler.length >= 2;
         if (_motorMevcut && _gunlerYeterli) {
           const _mod = period === 'monthly' ? 'aylik' : period === 'weekly' ? 'haftalik' : 'gunluk';
-          const _m = window.calistirSenaryolar(gunler, allAcadEntries, endKey, _mod, startKey);
+          const _m = window.calistirSenaryolar(gunler, allAcadEntries, endKey, _mod, startKey, denemEntries2);
           const _ins  = Array.isArray(_m.insights)  ? _m.insights  : [];
           const _pos  = Array.isArray(_m.positives) ? _m.positives : [];
           const _vaka = _m.vaka;

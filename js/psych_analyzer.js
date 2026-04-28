@@ -21,7 +21,7 @@
   }
 
   // ── ANA FONKSİYON (drop-in replacement) ─────────────────────
-  window.calistirSenaryolar = function (gunler, allAcadEntries, endKey, period, startKey) {
+  window.calistirSenaryolar = function (gunler, allAcadEntries, endKey, period, startKey, denemEntries) {
 
     if (!gunler || gunler.length < 1) {
       return { insights: [], positives: [], kalOzet: null, trend: 'stabil', trendAnlati: '',
@@ -152,6 +152,15 @@
 
     // ── MODÜL 9: SİSTEMDEN KOPUŞ SINYALI ───────────────────────
     _modKopus(_totalPeriodDays, gunler.length, _bosDays, _bosSeriler, _sonBosSeri, _aktifOran, insights, period);
+
+    // ── MODÜL 13: LGS TARİHİNE GÖRE RİSK BAĞLAMI ────────────────
+    _modLgsRisk(insights, kalOzet, _aktifOran, _lgsGun, period);
+
+    // ── MODÜL 14: DENEME SINAVI WELLNESS KORELASYONU ─────────────
+    _modDenemeWellness(denemEntries || [], gunler, insights);
+
+    // Priority'ye göre sırala
+    insights.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
     return {
       insights, positives, kalOzet, trend, trendAnlati, zayifBrans,
@@ -754,6 +763,158 @@
       }
     }
   };
+
+
+  // ════════════════════════════════════════════════════════════
+  // MODÜL 13 — LGS TARİHİNE GÖRE RİSK BAĞLAMI
+  // ════════════════════════════════════════════════════════════
+  function _modLgsRisk(insights, kalOzet, aktifOran, _lgsGun, period) {
+    if (_lgsGun <= 0 || period === 'gunluk') return;
+
+    // Risk eşikleri: <30 gün kritik, 30-60 önemli, 60-90 dikkat
+    const _kritikEsik = _lgsGun <= 30;
+    const _onemliEsik = _lgsGun <= 60 && _lgsGun > 30;
+    const _dikkatEsik = _lgsGun <= 90 && _lgsGun > 60;
+
+    // Yalnızca mevcut insight'ların önceliğini ve dilini güncelle
+    insights.forEach(ins => {
+      if (!ins.priority) return;
+
+      // LGS yaklaştıkça her insight daha kritik
+      if (_kritikEsik) {
+        ins.priority = Math.min(99, ins.priority + 10);
+        // Krize yakın insight'lara LGS bağlamı ekle
+        if (ins.priority >= 85 && ins.teshis && !ins.teshis.includes('gün kala')) {
+          ins.teshis += ` LGS'ye ${_lgsGun} gün kala bu süreç ivedilikle ele alınmalı.`;
+        }
+      } else if (_onemliEsik) {
+        ins.priority = Math.min(99, ins.priority + 5);
+        if (ins.priority >= 80 && ins.teshis && !ins.teshis.includes('gün kala')) {
+          ins.teshis += ` LGS'ye ${_lgsGun} gün kala her geçen gün önemli.`;
+        }
+      }
+    });
+
+    // Genel aktiflik düşükse LGS yakınlığına göre özel uyarı ekle
+    if (aktifOran < 0.5) {
+      const _pct = Math.round(aktifOran * 100);
+      let _lgsMesaj, _lgsAksiyon, _ton, _priority;
+
+      if (_kritikEsik) {
+        _lgsMesaj = `LGS'ye ${_lgsGun} gün kaldı — bu dönemin yalnızca %${_pct}'inde aktif olundu. Son günler en kritik hazırlık penceresi; her boş gün telafi edilemez kayıp.`;
+        _lgsAksiyon = 'Sınav tarihini somutlaştır: "X gün sonra sınav" cümlesi motivasyonu harekete geçirebilir. Küçük ama sıfır olmayan günlük hedef koy.';
+        _ton = 'crisis'; _priority = 97;
+      } else if (_onemliEsik) {
+        _lgsMesaj = `LGS'ye ${_lgsGun} gün var ve bu dönem %${_pct} aktiflik gösterildi. 60 günlük son koşu başlamadan önce düzenli çalışma ritmi kurulmalı.`;
+        _lgsAksiyon = 'Önümüzdeki 2 haftayı kritik dönüm noktası olarak belirle. Alışkanlık bu pencerede kurulmazsa sınava kadar kurulamayabilir.';
+        _ton = 'urgent'; _priority = 85;
+      } else if (_dikkatEsik) {
+        _lgsMesaj = `LGS'ye ${_lgsGun} gün kaldı. Bu dönemdeki %${_pct} aktiflik oranı şimdiden fark edilmesi gereken bir sinyal.`;
+        _lgsAksiyon = 'Henüz telafi için yeterli zaman var — ama alışkanlık şimdi başlamazsa kritik dönemde geç kalınabilir.';
+        _ton = 'urgent'; _priority = 75;
+      } else {
+        return; // 90+ günde LGS bağlamlı uyarı ekleme
+      }
+
+      // Aynı id'li insight zaten varsa ekleme (Modül 9 ile çakışma önlemi)
+      if (!insights.find(i => i.etiket && i.etiket.includes('LGS Yaklaşıyor'))) {
+        insights.push({
+          etiket:  `LGS Yaklaşıyor — ${_lgsGun} Gün`,
+          teshis:  _lgsMesaj,
+          aksiyon: _lgsAksiyon,
+          ton: _ton, priority: _priority, frekans: _lgsGun,
+        });
+      }
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // MODÜL 14 — DENEME SINAVI WELLNESS KORELASYONU
+  // ════════════════════════════════════════════════════════════
+  function _modDenemeWellness(denemEntries, gunler, insights) {
+    if (!denemEntries || denemEntries.length < 2 || !gunler || gunler.length < 3) return;
+
+    const r1 = v => Math.round(v * 10) / 10;
+    const fnGunW = dk => gunler.find(d => d.dk === dk) || null;
+
+    // Deneme günleri ve bir önceki günün wellness'ını eşleştir
+    const denemGunleri = [];
+    denemEntries.forEach(e => {
+      const gunW = fnGunW(e.dateKey);
+      // Önceki gün wellness
+      const prevDate = new Date(e.dateKey + 'T12:00:00');
+      prevDate.setDate(prevDate.getDate() - 1);
+      const prevKey = prevDate.toISOString().split('T')[0];
+      const prevW   = fnGunW(prevKey);
+      if (gunW || prevW) {
+        denemGunleri.push({
+          dk:       e.dateKey,
+          net:      e.net || 0,
+          kaygi:    gunW ? gunW.kaygi : (prevW ? prevW.kaygi : 0),
+          enerji:   gunW ? gunW.enerji : (prevW ? prevW.enerji : 0),
+          uyku:     prevW ? prevW.uyku : (gunW ? gunW.uyku : 0), // sınav günü uykusu önceki gece
+        });
+      }
+    });
+
+    if (denemGunleri.length < 2) return;
+
+    // 1. Kaygı yüksekken deneme neti
+    const yukKaygi  = denemGunleri.filter(d => d.kaygi >= 6 && d.net > 0);
+    const dukKaygi  = denemGunleri.filter(d => d.kaygi > 0 && d.kaygi <= 4 && d.net > 0);
+    if (yukKaygi.length >= 1 && dukKaygi.length >= 1) {
+      const yukOrt = yukKaygi.reduce((a,d)=>a+d.net,0)/yukKaygi.length;
+      const dukOrt = dukKaygi.reduce((a,d)=>a+d.net,0)/dukKaygi.length;
+      const fark   = dukOrt > 0 ? Math.round((dukOrt - yukOrt)/dukOrt*100) : 0;
+      if (fark >= 15) {
+        insights.push({
+          etiket:  `Deneme: Kaygı Sınav Netini Düşürüyor (%${fark})`,
+          teshis:  `Kaygının 6+ olduğu ${yukKaygi.length} denemede ort. net ${r1(yukOrt)}; kaygının 4 ve altında olduğu ${dukKaygi.length} denemede ${r1(dukOrt)}. Kaygı doğrudan sınav performansını etkiliyor.`,
+          aksiyon: 'Deneme öncesi günlerde kaygıyı düşürmeye odaklan: iyi uyku, hafif egzersiz, soru miktarını azalt. Hazırlık değil, hazır hissetmek önemli.',
+          ton: 'urgent', priority: 82, frekans: yukKaygi.length,
+        });
+      }
+    }
+
+    // 2. Sınav öncesi gece uykusu
+    const iyiUyku = denemGunleri.filter(d => d.uyku >= 7 && d.net > 0);
+    const kotuUyku = denemGunleri.filter(d => d.uyku > 0 && d.uyku < 6 && d.net > 0);
+    if (iyiUyku.length >= 1 && kotuUyku.length >= 1) {
+      const iyiOrt = iyiUyku.reduce((a,d)=>a+d.net,0)/iyiUyku.length;
+      const kotuOrt = kotuUyku.reduce((a,d)=>a+d.net,0)/kotuUyku.length;
+      const fark = iyiOrt > 0 ? Math.round((iyiOrt - kotuOrt)/iyiOrt*100) : 0;
+      if (fark >= 15) {
+        insights.push({
+          etiket:  `Deneme: Sınav Öncesi Uyku Neti Belirliyor (%${fark})`,
+          teshis:  `Önceki gece 7+ saat uyuduğu ${iyiUyku.length} denemede ort. net ${r1(iyiOrt)}; 6 saatin altında ${kotuUyku.length} denemede ${r1(kotuOrt)}. Sınav öncesi gece uykusu hazırlık kadar değer taşıyor.`,
+          aksiyon: 'Deneme tarihlerinden önceki geceleri takip et. Öğrenciyi geç saate kadar çalışmak yerine erken yatmaya yönlendir.',
+          ton: 'urgent', priority: 78, frekans: kotuUyku.length,
+        });
+      }
+    }
+
+    // 3. Deneme sonrası morale etkisi (deneme gününden sonraki gün wellness)
+    const dusukNetDeneme = denemGunleri.filter(d => d.net > 0).sort((a,b) => a.net-b.net).slice(0, Math.ceil(denemGunleri.length/2));
+    const moraleEtkileri = [];
+    dusukNetDeneme.forEach(d => {
+      const nextDate = new Date(d.dk + 'T12:00:00');
+      nextDate.setDate(nextDate.getDate() + 1);
+      const nextKey = nextDate.toISOString().split('T')[0];
+      const nextW = fnGunW(nextKey);
+      if (nextW && nextW.enerji > 0) moraleEtkileri.push({ net: d.net, enerjiSonrasi: nextW.enerji, kaygiSonrasi: nextW.kaygi });
+    });
+    if (moraleEtkileri.length >= 2) {
+      const ortEnerji = moraleEtkileri.reduce((a,d)=>a+d.enerjiSonrasi,0)/moraleEtkileri.length;
+      if (ortEnerji <= 4) {
+        insights.push({
+          etiket:  `Deneme Sonrası Düşüş (${moraleEtkileri.length} gün)`,
+          teshis:  `Düşük netli denemelerden sonraki günde enerji ortalaması ${r1(ortEnerji)}/10. Sınav sonuçları motivasyonu ve sonraki gün çalışmasını olumsuz etkiliyor.`,
+          aksiyon: 'Deneme sonrası günlerde beklentiyi düşür; o günü "toparlanma günü" olarak planla. Sonucu hemen analiz etmek yerine bir gün bekle.',
+          ton: 'empathetic', priority: 65, frekans: moraleEtkileri.length,
+        });
+      }
+    }
+  }
 
 
 })();
