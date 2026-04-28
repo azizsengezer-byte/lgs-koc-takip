@@ -1317,32 +1317,63 @@ async function exportPsychPDF(sName, aiAcik) {
               : (_zayifBrans ? ' ' + _zayifBrans + ' branşı dikkat gerektiriyor.' : '');
 
             // ── ÖZET — trendin + en kritik 2 tespitin sentezi ──
-            let _ozetMetin = _trendAnlati ? _trendAnlati + ' ' : '';
+            // Aktiflik bağlamı — boş günler özetin başına eklenir
+            const _aktifOran  = (_kal && _kal.toplamGun) ? _kal.aktifGun / _kal.toplamGun : 1;
+            const _bosDays    = (_kal && _kal.bosDays) || 0;
+            const _toplamGun  = (_kal && _kal.toplamGun) || 0;
+            const _aktifGun   = (_kal && _kal.aktifGun) || 0;
+            const _kopusVar   = _insGoster.length > 0 && (_insGoster[0].etiket || '').includes('Kopuş');
+
+            let _ozetMetin = '';
+            // Boş gün bağlamını öne al
+            if (_toplamGun > 1 && _aktifOran < 0.70) {
+              _ozetMetin += _aktifGun + '/' + _toplamGun + ' günde veri girildi';
+              if (_bosDays >= 5 && _kopusVar) {
+                _ozetMetin += '; dönem sonu ' + (_kal.sonBosSeri || _bosDays) + ' gün sessizlik bu dönemin baskın sinyali.';
+              } else if (_aktifOran < 0.43) {
+                _ozetMetin += ' — boş günler bu dönemin temel problemi.';
+              } else {
+                _ozetMetin += '; düzenlilik artırılabilir.';
+              }
+              _ozetMetin += ' ';
+            }
+            if (_trendAnlati && !_kopusVar) _ozetMetin += _trendAnlati + ' ';
             if (_insGoster.length > 0) {
               const _kritikEtiket = _insGoster[0].etiket;
-              _ozetMetin += 'Bu ' + (_isAylik ? 'ayın' : 'haftanın') + ' öne çıkan klinik tablosu: ' + _kritikEtiket + '.';
-              if (_insGoster.length > 1) _ozetMetin += ' Buna ek olarak ' + _insGoster[1].etiket + ' örüntüsü de gözlemlendi.';
+              if (!_kopusVar) {
+                _ozetMetin += 'Bu ' + (_isAylik ? 'ayın' : 'haftanın') + ' öne çıkan klinik tablosu: ' + _kritikEtiket + '.';
+                if (_insGoster.length > 1) _ozetMetin += ' Buna ek olarak ' + _insGoster[1].etiket + ' örüntüsü de gözlemlendi.';
+              } else if (_insGoster.length > 1) {
+                // Kopuş zaten özette var, ikinci insight'ı göster
+                _ozetMetin += 'Buna ek olarak ' + _insGoster[1].etiket + ' örüntüsü de gözlemlendi.';
+              }
             }
             if (_pos.length > 0) _ozetMetin += ' Güçlü yan: ' + _pos[0].etiket + '.';
             _ozetMetin += _bransEki;
 
-            // ── STRATEJİ — en yüksek öncelikli tespitin aksiyonu ──
-            const _stratejiMetin = _insGoster.length > 0
+            // ── STRATEJİ — kopuş varsa o öncelikli, yoksa en kritik insight ──
+            const _stratejiMetin = _kopusVar
               ? _insGoster[0].aksiyon
-              : (_pos.length > 0
-                  ? 'Mevcut güçlü örüntüyü koruyun; bir zayıf alanda küçük ama somut kazanım hedefleyin.'
-                  : 'Veri birikimi artınca daha net strateji oluşturulabilecek.');
+              : (_insGoster.length > 0
+                  ? _insGoster[0].aksiyon
+                  : (_pos.length > 0
+                      ? 'Mevcut güçlü örüntüyü koruyun; bir zayıf alanda küçük ama somut kazanım hedefleyin.'
+                      : 'Veri birikimi artınca daha net strateji oluşturulabilecek.'));
 
-            // ── GELECEK — öncelikli soruna tek somut adım ──
+            // ── GELECEK — kopuş varsa sisteme dönüş öncelikli ──
             let _gelecekMetin = '';
-            if (_insGoster.length > 0) {
+            if (_kopusVar) {
+              const _donem = _isAylik ? 'ay' : 'hafta';
+              _gelecekMetin = _gelecekPfx + ' için öncelik veri girişine dönmek: her gün en az bir kayıt, içerik ne olursa olsun.';
+              _gelecekMetin += ' Sürekliliği yeniden kurmak akademik hedeflerden önce gelir.';
+            } else if (_insGoster.length > 0) {
               const _g1 = _insGoster[0].etiket.split('—')[0].trim();
               _gelecekMetin = _gelecekPfx + ' için tek somut adım: ' + _g1 + ' konusunu çözmeye odaklan.';
               _gelecekMetin += ' Birden fazla alana aynı anda girmek motivasyonu kırabilir.';
             } else {
               _gelecekMetin = _gelecekPfx + ' hedefi mevcut dengeyi korurken bir zayıf alanda küçük kazanım elde etmek.';
             }
-            if (_zayifBrans && _zdTopBrans !== _zayifBrans) {
+            if (!_kopusVar && _zayifBrans && _zdTopBrans !== _zayifBrans) {
               _gelecekMetin += ' ' + _zayifBrans + ' için günlük minimum çalışma kotası belirle.';
             }
 
