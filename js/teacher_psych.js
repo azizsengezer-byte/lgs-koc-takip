@@ -1199,7 +1199,47 @@ async function exportPsychPDF(sName, aiAcik) {
           const _kal  = _m.kalOzet;
           const _trend = _m.trend || 'stabil';
           const _trendAnlati = _m.trendAnlati || '';
-          const _motorProfil = _m.aktifProfil || null; // Runner'dan gelen P01..P25
+          const _motorProfil = _m.aktifProfil || null;
+
+          // ── YENİ MODÜLLER: Korelasyon + Profil + Sorular ──────
+          if (typeof window.korelasyon_gelismis === 'function') {
+            window.korelasyon_gelismis(gunler, _ins);
+            // Priority'ye göre tekrar sırala
+            _ins.sort((a,b) => (b.priority||0) - (a.priority||0));
+          }
+          const _profil = typeof window.tespit_profil === 'function'
+            ? window.tespit_profil(gunler, _kal, _ins) : null;
+          const _gorusmeSorulari = typeof window.uret_gorus_sorulari === 'function'
+            ? window.uret_gorus_sorulari(_ins, _profil, _kal, gunler) : [];
+
+          // ── ÖNCEKİ DÖNEM KARŞILAŞTIRMASI ──────────────────────
+          let _prevKarsilastirma = null;
+          if (period === 'weekly' || period === 'monthly') {
+            const _pStart = new Date(startKey + 'T12:00:00');
+            const _pLen   = Math.round((new Date(endKey+'T12:00:00') - _pStart) / 86400000) + 1;
+            const _prevEnd   = new Date(_pStart); _prevEnd.setDate(_prevEnd.getDate() - 1);
+            const _prevStart = new Date(_prevEnd); _prevStart.setDate(_prevStart.getDate() - (_pLen - 1));
+            const _prevSK = _prevStart.toISOString().split('T')[0];
+            const _prevEK = _prevEnd.toISOString().split('T')[0];
+            const _prevGunler = Object.keys(days)
+              .filter(k => k >= _prevSK && k <= _prevEK && days[k])
+              .map(k => ({ dk: k, enerji: parseFloat(days[k].enerji)||0, kaygi: parseFloat(days[k].kaygi)||0, uyku: parseFloat(days[k].uyku)||0 }));
+            const _prevAcad = studyEntries.filter(e => matchE2(e) && e.dateKey >= _prevSK && e.dateKey <= _prevEK && e.type === 'soru');
+            const _prevSoru = _prevAcad.reduce((a,e) => a+(e.questions||0), 0);
+            const _prevAktif = new Set(_prevAcad.map(e=>e.dateKey)).size;
+            const _curSoru  = gunler.reduce((a,d) => a+d.soru, 0);
+            const _curAktif = aktifGunler.length;
+            const _fnOrtW = (arr, k) => { const v=arr.map(d=>d[k]||0).filter(v=>v>0); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; };
+            _prevKarsilastirma = {
+              soruDelta:   _prevSoru > 0 ? Math.round((_curSoru - _prevSoru) / _prevSoru * 100) : null,
+              aktifDelta:  _prevAktif > 0 ? _curAktif - _prevAktif : null,
+              kaygiDelta:  _prevGunler.length ? ((_fnOrtW(gunler.filter(d=>d.kaygi>0),'kaygi')||0) - (_fnOrtW(_prevGunler,'kaygi')||0)) : null,
+              uykuDelta:   _prevGunler.length ? ((_fnOrtW(gunler.filter(d=>d.uyku>0),'uyku')||0) - (_fnOrtW(_prevGunler,'uyku')||0)) : null,
+              prevSoru:    _prevSoru, curSoru: _curSoru,
+              prevAktif:   _prevAktif, curAktif: _curAktif,
+              prevLabel:   period === 'weekly' ? 'Geçen Hafta' : 'Geçen Ay',
+            };
+          }
 
           // Kalibrasyon özeti
           if (_kal) {
@@ -1216,6 +1256,49 @@ async function exportPsychPDF(sName, aiAcik) {
             Y = pdfCheck(doc, Y, 10);
             doc.setFont(PF,'normal'); doc.setFontSize(6.2); doc.setTextColor(140,120,180);
             doc.text(_kalSat, 16, Y); Y += 7;
+          }
+
+          // ── ÖNCEKİ DÖNEM KARŞILAŞTIRMASI ─────────────────────
+          if (_prevKarsilastirma && (_prevKarsilastirma.prevSoru > 0 || _prevKarsilastirma.prevAktif > 0)) {
+            const _pk = _prevKarsilastirma;
+            Y = pdfCheck(doc, Y, 22);
+            doc.setFillColor(245,248,255); doc.roundedRect(14,Y,182,20,2,2,'F');
+            doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(50,60,160);
+            doc.text(tx(_pk.prevLabel + ' Karşılaştırması'), 18, Y+6);
+            doc.setFont(PF,'normal'); doc.setFontSize(7); doc.setTextColor(50,50,80);
+            const _deltaOk = v => v === null ? '—' : (v > 0 ? '+'+v : ''+v);
+            const _deltaRenk = v => v === null ? [120,120,120] : (v > 0 ? [20,130,60] : (v < 0 ? [180,30,30] : [100,100,100]));
+            const _kols = [
+              { lbl: 'Toplam Soru', cur: _pk.curSoru, delta: _pk.soruDelta !== null ? _deltaOk(_pk.soruDelta)+'%' : '—', renk: _deltaRenk(_pk.soruDelta) },
+              { lbl: 'Aktif Gün',   cur: _pk.curAktif, delta: _pk.aktifDelta !== null ? _deltaOk(_pk.aktifDelta)+' gün' : '—', renk: _deltaRenk(_pk.aktifDelta) },
+              { lbl: 'Kaygı Ort.',  cur: _kal && _kal.kaygiEsik !== '-' ? _kal.kaygiEsik+'/10' : '—', delta: _pk.kaygiDelta !== null ? _deltaOk(Math.round(_pk.kaygiDelta*10)/10) : '—', renk: _pk.kaygiDelta !== null ? (_pk.kaygiDelta < 0 ? [20,130,60] : (_pk.kaygiDelta > 0 ? [180,30,30] : [100,100,100])) : [120,120,120] },
+              { lbl: 'Uyku Ort.',   cur: _kal && _kal.uyku !== '-' ? _kal.uyku+'sa' : '—', delta: _pk.uykuDelta !== null ? _deltaOk(Math.round(_pk.uykuDelta*10)/10)+'sa' : '—', renk: _deltaRenk(_pk.uykuDelta) },
+            ];
+            const _colW2 = 43;
+            _kols.forEach((_k,i) => {
+              const _cx = 18 + i * _colW2;
+              doc.setFont(PF,'normal'); doc.setFontSize(6); doc.setTextColor(100,100,130);
+              doc.text(tx(_k.lbl), _cx, Y+11);
+              doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(40,40,80);
+              doc.text(String(_k.cur), _cx, Y+17);
+              doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(..._k.renk);
+              doc.text(_k.delta, _cx+18, Y+17);
+            });
+            Y += 26;
+          }
+
+          // ── ÖĞRENCİ PROFİL TİPİ ───────────────────────────────
+          if (_profil) {
+            Y = pdfCheck(doc, Y, 18);
+            const _pr = _profil;
+            doc.setFillColor(_pr.renk[0]+80, _pr.renk[1]+80, _pr.renk[2]+80);
+            doc.roundedRect(14, Y, 182, 16, 2, 2, 'F');
+            doc.setFont(PF,'bold'); doc.setFontSize(7.5); doc.setTextColor(..._pr.renk);
+            doc.text(tx('Profil Tipi: ' + _pr.tip), 18, Y+6);
+            doc.setFont(PF,'normal'); doc.setFontSize(6.5); doc.setTextColor(50,40,70);
+            const _prSat = doc.splitTextToSize(tx(_pr.aciklama), 170);
+            doc.text(_prSat, 18, Y+11);
+            Y += 20;
           }
 
           // ── KLİNİK TESPİTLER ─────────────────────────────────
@@ -1410,6 +1493,28 @@ async function exportPsychPDF(sName, aiAcik) {
               doc.text(k.sat, 21, Y + 12);
               Y += k.h + 5;
             });
+
+            // ── GÖRÜŞME SORULARI ────────────────────────────────
+            if (_gorusmeSorulari && _gorusmeSorulari.length > 0) {
+              const _gsH = _gorusmeSorulari.reduce((a,s) => {
+                return a + doc.splitTextToSize(tx('• ' + s), 162).length * 4.8;
+              }, 14);
+              Y = pdfCheck(doc, Y, _gsH + 8);
+              doc.setFillColor(235, 245, 255);
+              doc.roundedRect(15, Y, 180, _gsH + 4, 2, 2, 'F');
+              doc.setFillColor(30, 90, 180);
+              doc.roundedRect(15, Y, 3.5, _gsH + 4, 1, 1, 'F');
+              doc.setFont(PF, 'bold'); doc.setFontSize(7); doc.setTextColor(30, 90, 180);
+              doc.text(tx('KOÇ GÖRÜŞME SORULARI'), 21, Y + 6);
+              doc.setFont(PF, 'normal'); doc.setFontSize(6.5); doc.setTextColor(30, 40, 70);
+              let _sy = Y + 12;
+              _gorusmeSorulari.forEach(s => {
+                const _sat = doc.splitTextToSize(tx('• ' + s), 162);
+                doc.text(_sat, 21, _sy);
+                _sy += _sat.length * 4.8 + 1;
+              });
+              Y += _gsH + 10;
+            }
           }
 
 

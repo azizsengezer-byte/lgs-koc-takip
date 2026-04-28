@@ -608,4 +608,205 @@
     });
   }
 
+  // ════════════════════════════════════════════════════════════
+  // MODÜL 10 — ÖĞRENCİ PROFİL TİPİ TESPİTİ
+  // ════════════════════════════════════════════════════════════
+  window.tespit_profil = function(gunler, kalOzet, insights) {
+    // Profil tipleri: kaygı_odakli | yorgunluk | motivasyon_sorunu | dengeli | kopuk | dalgali
+    if (!gunler || gunler.length < 2) return null;
+
+    const fnOrt = (arr, k) => {
+      const v = arr.map(d => parseFloat(d[k])||0).filter(v=>v>0);
+      return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null;
+    };
+
+    const ortKaygi  = fnOrt(gunler, 'kaygi')  || 0;
+    const ortEnerji = fnOrt(gunler, 'enerji') || 0;
+    const ortUyku   = fnOrt(gunler, 'uyku')   || 0;
+    const aktifOran = kalOzet ? (kalOzet.aktifGun / kalOzet.toplamGun) : 1;
+    const sonBosSeri= kalOzet ? (kalOzet.sonBosSeri || 0) : 0;
+
+    // Akademik verim ortalaması (aktif günler)
+    const akadGun = gunler.filter(d => d.soru > 0);
+    const ortSoru = akadGun.length ? akadGun.reduce((a,d)=>a+d.soru,0)/akadGun.length : 0;
+
+    // Olumsuz duygu oranı
+    const olumszDuygular = ['Mutsuzum','Kaygılı','Yorgunum'];
+    const negGun = gunler.filter(d => olumszDuygular.includes(d.duygu));
+    const negOran = gunler.length ? negGun.length / gunler.length : 0;
+
+    // Kaygı-verim farkı (yüksek kaygıda düşük verim = paradoks)
+    const yukKaygiGun = gunler.filter(d => d.kaygi >= 6 && d.soru > 0);
+    const dusKaygiGun = gunler.filter(d => d.kaygi <= 4 && d.soru > 0);
+    const yukKaygiOrt = yukKaygiGun.length ? yukKaygiGun.reduce((a,d)=>a+d.soru,0)/yukKaygiGun.length : 0;
+    const dusKaygiOrt = dusKaygiGun.length ? dusKaygiGun.reduce((a,d)=>a+d.soru,0)/dusKaygiGun.length : 0;
+    const kaygiParadoks = dusKaygiOrt > 0 && ((dusKaygiOrt - yukKaygiOrt) / dusKaygiOrt) > 0.4;
+
+    // Profil kararı
+    let tip, aciklama, renk;
+
+    if (aktifOran < 0.25 || sonBosSeri >= 5) {
+      tip = 'Kopuk';
+      aciklama = 'Sistemden ve takip sürecinden uzaklaşmış. Akademik içerik öncesi bağ kurulması kritik.';
+      renk = [180, 30, 30];
+    } else if (ortKaygi >= 6.5 && kaygiParadoks) {
+      tip = 'Kaygı Odaklı';
+      aciklama = 'Kaygı performansı bloke ediyor. Yüksek kaygı altında verim belirgin düşüyor; duygusal zemin stabilize edilmeden akademik ilerleme sınırlı kalır.';
+      renk = [160, 60, 180];
+    } else if (ortEnerji <= 3.5 || (negOran >= 0.6 && ortUyku < 7)) {
+      tip = 'Tükenmişlik';
+      aciklama = 'Kronik enerji düşüklüğü ve olumsuz duygu ağırlığı. Fizyolojik yük önce giderilmeli; baskı artırmak durumu kötüleştirir.';
+      renk = [200, 100, 20];
+    } else if (aktifOran < 0.5 && ortKaygi < 6 && ortEnerji > 4) {
+      tip = 'Motivasyon Sorunu';
+      aciklama = 'Fizyoloji sorunlu değil ama çalışmaya başlamak zorlaşmış. Hedef anlamsızlaşması veya dışsal motivasyon eksikliği olabilir.';
+      renk = [180, 140, 0];
+    } else if (ortKaygi <= 4 && ortEnerji >= 6 && aktifOran >= 0.6) {
+      tip = 'Dengeli';
+      aciklama = 'İyi bir denge var. Sürdürülebilir ritim korunurken kapasite artırımına odaklanılabilir.';
+      renk = [20, 130, 60];
+    } else {
+      tip = 'Dalgalı';
+      aciklama = 'Günden güne belirgin değişimler var; istikrarlı bir pattern yok. Tetikleyiciler tespit edilip düzenlenmeli.';
+      renk = [80, 100, 180];
+    }
+
+    return { tip, aciklama, renk };
+  };
+
+  // ════════════════════════════════════════════════════════════
+  // MODÜL 11 — KOÇ GÖRÜŞME SORULARI
+  // ════════════════════════════════════════════════════════════
+  window.uret_gorus_sorulari = function(insights, profil, kalOzet, gunler) {
+    const sorular = [];
+
+    // Kopuş varsa ilk soru hep bu
+    const kopusIns = insights.find(i => i.etiket && i.etiket.includes('Kopuş'));
+    if (kopusIns) {
+      sorular.push('Son günlerde uygulamayı açmak zor mu geldi? Ne olduğunu anlatmak ister misin?');
+    }
+
+    // Profil tipine göre
+    if (profil) {
+      if (profil.tip === 'Kaygı Odaklı') {
+        sorular.push('Çalışırken seni en çok zorlayan şey nedir — doğru cevap verememe korkusu mu, zaman baskısı mı, yoksa başka bir şey mi?');
+      } else if (profil.tip === 'Tükenmişlik') {
+        sorular.push('Kendini dinlediğinde ne hissediyorsun — yorgun mu, mutsuz mu, ikisi birden mi? Bu nasıl başladı?');
+      } else if (profil.tip === 'Motivasyon Sorunu') {
+        sorular.push('Çalışmaya oturduğunda içinde ne oluyor? Başlamak mı zor, sürdürmek mi, yoksa neden çalıştığını sorgulamak mı?');
+      } else if (profil.tip === 'Dalgalı') {
+        sorular.push('İyi geçen bir gün ile kötü geçen bir gün arasındaki farkın ne olduğunu düşünüyorsun?');
+      }
+    }
+
+    // Olumsuz duygu seri varsa
+    const kronikIns = insights.find(i => i.etiket && i.etiket.includes('Kronik'));
+    if (kronikIns) {
+      sorular.push('Geçen birkaç günde seni yoranın ya da bunaltan bir şeyin olup olmadığını konuşabilir miyiz?');
+    }
+
+    // Kaygı paradoksu varsa
+    const kaygiIns = insights.find(i => i.etiket && i.etiket.includes('Paradoks'));
+    if (kaygiIns) {
+      sorular.push('Sıkıştığını hissettiğinde — sınav yaklaşıyor, soru çözmek zorundasın — içinde ne oluyor? O anı tarif eder misin?');
+    }
+
+    // Akademik irtifa kaybı varsa
+    const irtifaIns = insights.find(i => i.etiket && i.etiket.includes('İrtifa'));
+    if (irtifaIns) {
+      sorular.push('Ayın başında daha iyi gidiyordu — ikinci yarıda ne değişti sence?');
+    }
+
+    // Uyku düşükse
+    const ortUyku = kalOzet && kalOzet.uyku && kalOzet.uyku !== '-' ? parseFloat(kalOzet.uyku) : null;
+    if (ortUyku && ortUyku < 7) {
+      sorular.push('Uyku düzenin nasıl? Geç mi yatıyorsun, yoksa uyuyamıyor musun?');
+    }
+
+    // En fazla 4 soru
+    return sorular.slice(0, 4);
+  };
+
+  // ════════════════════════════════════════════════════════════
+  // MODÜL 12 — GENİŞLETİLMİŞ WELLNESS-AKADEMİK KORELASYON
+  // ════════════════════════════════════════════════════════════
+  window.korelasyon_gelismis = function(gunler, insights) {
+    if (!gunler || gunler.length < 3) return;
+    const r0 = v => Math.round(v);
+    const fnGrupOrt = (arr, k) => arr.length ? arr.reduce((a,d) => a + (d[k]||0), 0) / arr.length : 0;
+
+    // 1. Uyku eşiği altı günlerde verim
+    const iyi_uyku = gunler.filter(d => d.uyku >= 7 && d.soru > 0);
+    const kotu_uyku = gunler.filter(d => d.uyku > 0 && d.uyku < 7 && d.soru > 0);
+    if (iyi_uyku.length >= 2 && kotu_uyku.length >= 2) {
+      const iyiOrt = fnGrupOrt(iyi_uyku, 'soru');
+      const kotuOrt = fnGrupOrt(kotu_uyku, 'soru');
+      const fark = iyiOrt > 0 ? Math.round(((iyiOrt - kotuOrt) / iyiOrt) * 100) : 0;
+      if (fark >= 20) {
+        insights.push({
+          etiket:  `Uyku-Verim Bağlantısı (${fark}% fark)`,
+          teshis:  `7 saat üstü uyuduğu ${iyi_uyku.length} günde ort. ${r0(iyiOrt)} soru; 7 saatin altında ${kotu_uyku.length} günde ${r0(kotuOrt)} soru. Uyku doğrudan üretimi etkiliyor.`,
+          aksiyon: `Uyku süresini 7 saatin altına düşürmemek akademik hedeflerden biri olmalı. Bu sayıları öğrenciye göster — somut veri daha ikna edicidir.`,
+          ton: 'urgent', priority: 72, frekans: kotu_uyku.length,
+        });
+      }
+    }
+
+    // 2. Enerji-verim ilişkisi
+    const yuk_enerji = gunler.filter(d => d.enerji >= 7 && d.soru > 0);
+    const duk_enerji = gunler.filter(d => d.enerji > 0 && d.enerji <= 3 && d.soru > 0);
+    if (yuk_enerji.length >= 2 && duk_enerji.length >= 2) {
+      const yukOrt = fnGrupOrt(yuk_enerji, 'soru');
+      const dukOrt = fnGrupOrt(duk_enerji, 'soru');
+      const fark = yukOrt > 0 ? Math.round(((yukOrt - dukOrt) / yukOrt) * 100) : 0;
+      if (fark >= 30) {
+        insights.push({
+          etiket:  `Enerji-Verim Korelasyonu (${fark}% fark)`,
+          teshis:  `Enerji 7+ olan ${yuk_enerji.length} günde ort. ${r0(yukOrt)} soru; enerji 3 ve altı ${duk_enerji.length} günde ${r0(dukOrt)} soru. Düşük enerji günlerinde çalışmak verimsiz.`,
+          aksiyon: 'Düşük enerji günlerinde soru hedefi zorlamak yerine kısa tekrar veya pasif çalışma öner. Enerjisi yüksek günlerde kapasitesini kullanmaya odaklan.',
+          ton: 'info', priority: 68, frekans: duk_enerji.length,
+        });
+      }
+    }
+
+    // 3. Hafta içi vs hafta sonu karşılaştırması
+    const haftaIci  = gunler.filter(d => { const g=new Date(d.dk+'T12:00:00').getDay(); return g>=1&&g<=5&&d.soru>0; });
+    const haftaSonu = gunler.filter(d => { const g=new Date(d.dk+'T12:00:00').getDay(); return (g===0||g===6)&&d.soru>0; });
+    if (haftaIci.length >= 3 && haftaSonu.length >= 2) {
+      const iciOrt  = fnGrupOrt(haftaIci, 'soru');
+      const sonuOrt = fnGrupOrt(haftaSonu, 'soru');
+      const fark = Math.round(Math.abs(iciOrt - sonuOrt));
+      if (fark >= 30) {
+        const daha_iyi = iciOrt > sonuOrt ? 'hafta içi' : 'hafta sonu';
+        const farkPct  = Math.round((fark / Math.max(iciOrt, sonuOrt)) * 100);
+        insights.push({
+          etiket:  `Hafta İçi / Hafta Sonu Farkı (%${farkPct})`,
+          teshis:  `Hafta içi ort. ${r0(iciOrt)} soru, hafta sonu ort. ${r0(sonuOrt)} soru. ${daha_iyi === 'hafta içi' ? 'Hafta içi çok daha verimli — yapı sağlanıyor.' : 'Hafta sonları daha üretken — okul dinamiği serbest çalışmayı engelliyor olabilir.'}`,
+          aksiyon: daha_iyi === 'hafta sonu'
+            ? 'Hafta içi çalışmasını kolaylaştıracak küçük rutinler öner: belirli ders saati, kısa mola zamanlaması.'
+            : 'Hafta sonu çalışmayı hafta içi enerjisiyle dengelemek için küçük hafta sonu hedefleri belirle.',
+          ton: 'info', priority: 60, frekans: haftaSonu.length,
+        });
+      }
+    }
+
+    // 4. Ekran süresi-verim ilişkisi
+    const yukEkran = gunler.filter(d => (d.ekranSosyal||0) >= 3 && d.soru > 0);
+    const dukEkran = gunler.filter(d => (d.ekranSosyal||0) > 0 && (d.ekranSosyal||0) < 2 && d.soru > 0);
+    if (yukEkran.length >= 2 && dukEkran.length >= 2) {
+      const yukOrt = fnGrupOrt(yukEkran, 'soru');
+      const dukOrt = fnGrupOrt(dukEkran, 'soru');
+      const fark   = dukOrt > 0 ? Math.round(((dukOrt - yukOrt) / dukOrt) * 100) : 0;
+      if (fark >= 25) {
+        insights.push({
+          etiket:  `Ekran Süresi Verimi Düşürüyor (%${fark} fark)`,
+          teshis:  `Günlük ekran süresi 3+ saat olan ${yukEkran.length} günde ort. ${Math.round(yukOrt)} soru; 2 saatin altında ${dukEkran.length} günde ${Math.round(dukOrt)} soru.`,
+          aksiyon: 'Ekran süresiyle verim arasındaki bu bağlantıyı öğrenciye göster. Katı yasak yerine "çalışma bloğu bitmeden ekran yok" kuralı öner.',
+          ton: 'info', priority: 55, frekans: yukEkran.length,
+        });
+      }
+    }
+  };
+
+
 })();
