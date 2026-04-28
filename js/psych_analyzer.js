@@ -675,59 +675,6 @@
   };
 
   // ════════════════════════════════════════════════════════════
-  // MODÜL 11 — KOÇ GÖRÜŞME SORULARI
-  // ════════════════════════════════════════════════════════════
-  window.uret_gorus_sorulari = function(insights, profil, kalOzet, gunler) {
-    const sorular = [];
-
-    // Kopuş varsa ilk soru hep bu
-    const kopusIns = insights.find(i => i.etiket && i.etiket.includes('Kopuş'));
-    if (kopusIns) {
-      sorular.push('Son günlerde uygulamayı açmak zor mu geldi? Ne olduğunu anlatmak ister misin?');
-    }
-
-    // Profil tipine göre
-    if (profil) {
-      if (profil.tip === 'Kaygı Odaklı') {
-        sorular.push('Çalışırken seni en çok zorlayan şey nedir — doğru cevap verememe korkusu mu, zaman baskısı mı, yoksa başka bir şey mi?');
-      } else if (profil.tip === 'Tükenmişlik') {
-        sorular.push('Kendini dinlediğinde ne hissediyorsun — yorgun mu, mutsuz mu, ikisi birden mi? Bu nasıl başladı?');
-      } else if (profil.tip === 'Motivasyon Sorunu') {
-        sorular.push('Çalışmaya oturduğunda içinde ne oluyor? Başlamak mı zor, sürdürmek mi, yoksa neden çalıştığını sorgulamak mı?');
-      } else if (profil.tip === 'Dalgalı') {
-        sorular.push('İyi geçen bir gün ile kötü geçen bir gün arasındaki farkın ne olduğunu düşünüyorsun?');
-      }
-    }
-
-    // Olumsuz duygu seri varsa
-    const kronikIns = insights.find(i => i.etiket && i.etiket.includes('Kronik'));
-    if (kronikIns) {
-      sorular.push('Geçen birkaç günde seni yoranın ya da bunaltan bir şeyin olup olmadığını konuşabilir miyiz?');
-    }
-
-    // Kaygı paradoksu varsa
-    const kaygiIns = insights.find(i => i.etiket && i.etiket.includes('Paradoks'));
-    if (kaygiIns) {
-      sorular.push('Sıkıştığını hissettiğinde — sınav yaklaşıyor, soru çözmek zorundasın — içinde ne oluyor? O anı tarif eder misin?');
-    }
-
-    // Akademik irtifa kaybı varsa
-    const irtifaIns = insights.find(i => i.etiket && i.etiket.includes('İrtifa'));
-    if (irtifaIns) {
-      sorular.push('Ayın başında daha iyi gidiyordu — ikinci yarıda ne değişti sence?');
-    }
-
-    // Uyku düşükse
-    const ortUyku = kalOzet && kalOzet.uyku && kalOzet.uyku !== '-' ? parseFloat(kalOzet.uyku) : null;
-    if (ortUyku && ortUyku < 7) {
-      sorular.push('Uyku düzenin nasıl? Geç mi yatıyorsun, yoksa uyuyamıyor musun?');
-    }
-
-    // En fazla 4 soru
-    return sorular.slice(0, 4);
-  };
-
-  // ════════════════════════════════════════════════════════════
   // MODÜL 12 — GENİŞLETİLMİŞ WELLNESS-AKADEMİK KORELASYON
   // ════════════════════════════════════════════════════════════
   window.korelasyon_gelismis = function(gunler, insights) {

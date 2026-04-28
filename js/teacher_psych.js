@@ -1209,8 +1209,7 @@ async function exportPsychPDF(sName, aiAcik) {
           }
           const _profil = typeof window.tespit_profil === 'function'
             ? window.tespit_profil(gunler, _kal, _ins) : null;
-          const _gorusmeSorulari = typeof window.uret_gorus_sorulari === 'function'
-            ? window.uret_gorus_sorulari(_ins, _profil, _kal, gunler) : [];
+
 
           // ── ÖNCEKİ DÖNEM KARŞILAŞTIRMASI ──────────────────────
           let _prevKarsilastirma = null;
@@ -1494,27 +1493,6 @@ async function exportPsychPDF(sName, aiAcik) {
               Y += k.h + 5;
             });
 
-            // ── GÖRÜŞME SORULARI ────────────────────────────────
-            if (_gorusmeSorulari && _gorusmeSorulari.length > 0) {
-              const _gsH = _gorusmeSorulari.reduce((a,s) => {
-                return a + doc.splitTextToSize(tx('• ' + s), 162).length * 4.8;
-              }, 14);
-              Y = pdfCheck(doc, Y, _gsH + 8);
-              doc.setFillColor(235, 245, 255);
-              doc.roundedRect(15, Y, 180, _gsH + 4, 2, 2, 'F');
-              doc.setFillColor(30, 90, 180);
-              doc.roundedRect(15, Y, 3.5, _gsH + 4, 1, 1, 'F');
-              doc.setFont(PF, 'bold'); doc.setFontSize(7); doc.setTextColor(30, 90, 180);
-              doc.text(tx('KOÇ GÖRÜŞME SORULARI'), 21, Y + 6);
-              doc.setFont(PF, 'normal'); doc.setFontSize(6.5); doc.setTextColor(30, 40, 70);
-              let _sy = Y + 12;
-              _gorusmeSorulari.forEach(s => {
-                const _sat = doc.splitTextToSize(tx('• ' + s), 162);
-                doc.text(_sat, 21, _sy);
-                _sy += _sat.length * 4.8 + 1;
-              });
-              Y += _gsH + 10;
-            }
           }
 
 
