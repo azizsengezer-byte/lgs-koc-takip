@@ -1286,6 +1286,197 @@ function exportStudentDetailPDF(sName) {
   }
 
   // ================================================================
+  // KONU ZAFİYET HARİTASI & KÜMÜLATİF TAKİP
+  // ================================================================
+
+  // LGS konu ağırlık tablosu (çıkış sıklığı: 3=yüksek, 2=orta, 1=düşük)
+  const LGS_KONU_AGIRLIK = {
+    'Türkçe': {
+      'Ana Fikir / Başlık': 3, 'Dil Bilgisi': 3, 'Anlatım Biçimleri': 2,
+      'Sözcükte Anlam': 3, 'Cümlede Anlam': 3, 'Paragrafta Anlam': 3,
+      'Yazım Kuralları': 2, 'Noktalama': 2, 'Sözcük Türleri': 2,
+      'Fiil Çekimi': 2, 'Sözcük Yapısı': 1, 'Cümle Yapısı': 1,
+    },
+    'Matematik': {
+      'Sayılar': 3, 'Dört İşlem': 2, 'Kesirler': 3, 'Ondalık Sayılar': 2,
+      'Oran Orantı': 3, 'Yüzde': 3, 'Cebirsel İfadeler': 3, 'Denklemler': 3,
+      'Üslü İfadeler': 3, 'Kök İfadeler': 3, 'Eşlik ve Benzerlik': 3,
+      'Üçgenler': 3, 'Dörtgenler': 2, 'Çember': 3, 'Veri Analizi': 2,
+      'Olasılık': 2, 'Doğrusal Denklemler': 3, 'Fonksiyonlar': 2,
+      'Permütasyon Kombinasyon': 1, 'Çarpanlara Ayırma': 2,
+    },
+    'Fen Bilimleri': {
+      'Mevsimler ve Hava': 1, 'Kuvvet ve Hareket': 3, 'Madde': 3,
+      'Işık': 2, 'Ses': 2, 'Elektrik': 3, 'Hücre': 3, 'Canlılar': 2,
+      'Fotosentez': 2, 'Kalıtım': 3, 'Atom': 3, 'Kimyasal Bağlar': 2,
+      'Asit Baz': 2, 'Kimyasal Tepkimeler': 3, 'DNA': 3, 'Basınç': 2,
+      'Enerji Dönüşümü': 3, 'Optik': 2,
+    },
+    'İnkılap Tarihi': {
+      'Osmanlı'nın Çöküşü': 2, 'Kurtuluş Savaşı': 3, 'Atatürk İlkeleri': 3,
+      'Cumhuriyetin İlanı': 3, 'Devrimler': 3, 'Ekonomik Gelişmeler': 2,
+      'Dış Politika': 2, 'İkinci Dünya Savaşı': 2, 'Demokrasiye Geçiş': 2,
+      'Kültür Devrimi': 2,
+    },
+    'Din Kültürü': {
+      'İslam'ın Temelleri': 3, 'Kur'an': 3, 'Hz. Muhammed': 3,
+      'Namaz': 2, 'Oruç Zekât Hac': 2, 'Ahlak': 2, 'Diğer Dinler': 1,
+      'Dini Kavramlar': 2, 'Peygamberler': 2,
+    },
+    'İngilizce': {
+      'Okuma Anlama': 3, 'Kelime Bilgisi': 3, 'Dilbilgisi': 3,
+      'Tenses': 3, 'Modal Verbs': 2, 'Prepositions': 2,
+      'Reading': 3, 'Vocabulary': 3,
+    },
+  };
+
+  // Kümülatif konu haritası (tüm geçmiş)
+  const _kumTopicMap = {}; // { 'Matematik|Eşlik': {q,d,y,sessions,firstDate,lastDate} }
+  allEntries.filter(e => e.type === 'soru' && e.questions > 0).forEach(e => {
+    const key = (e.subject||'') + '|' + (e.topic||'Genel');
+    if (!_kumTopicMap[key]) _kumTopicMap[key] = { subject:e.subject, topic:e.topic||'Genel', q:0, d:0, y:0, sessions:0, firstDate:e.dateKey, lastDate:e.dateKey };
+    const m = _kumTopicMap[key];
+    m.q += e.questions||0; m.d += e.correct||0; m.y += e.wrong||0; m.sessions++;
+    if (e.dateKey < m.firstDate) m.firstDate = e.dateKey;
+    if (e.dateKey > m.lastDate)  m.lastDate  = e.dateKey;
+  });
+
+  // Dönem konu haritası (sadece filtered)
+  const _donTopicMap = {};
+  filtered.filter(e => e.type === 'soru' && e.questions > 0).forEach(e => {
+    const key = (e.subject||'') + '|' + (e.topic||'Genel');
+    if (!_donTopicMap[key]) _donTopicMap[key] = { q:0, d:0 };
+    _donTopicMap[key].q += e.questions||0; _donTopicMap[key].d += e.correct||0;
+  });
+
+  // Konu zafiyeti hesapla
+  const _konuZafiyet = Object.values(_kumTopicMap).map(m => {
+    const pct  = m.q > 0 ? Math.round(m.d / m.q * 100) : 0;
+    const donV = _donTopicMap[m.subject + '|' + m.topic];
+    const donPct = donV && donV.q >= 2 ? Math.round(donV.d / donV.q * 100) : null;
+    const trend  = donPct !== null ? donPct - pct : null; // (+) iyileşme, (-) gerileme
+    const lgsDers = LGS_KONU_AGIRLIK[m.subject] || {};
+    const lgsAg   = lgsDers[m.topic] || 0; // 0 = tabloda yok / bilinmiyor
+    const kritik  = pct < 60 && lgsAg >= 2; // düşük isabet + yüksek LGS ağırlığı
+    return { ...m, pct, donPct, trend, lgsAg, kritik };
+  }).filter(m => m.q >= 3); // en az 3 soru çözülmüş konular
+
+  // Ders sırası
+  const _dersSirasi = ['Türkçe','Matematik','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce'];
+
+  // Tekrar gerektiren konular (isabet < 65%, en az 5 soru)
+  const _tekrarKonular = _konuZafiyet
+    .filter(m => m.pct < 65 && m.q >= 5)
+    .sort((a, b) => {
+      // Önce kritik (LGS ağırlığı yüksek + düşük isabet), sonra isabet sırası
+      if (b.kritik !== a.kritik) return b.kritik ? 1 : -1;
+      return a.pct - b.pct;
+    });
+
+  if (_konuZafiyet.length > 0) {
+    Y = pdfNewPage(doc);
+    nextSec('KONU ZAFİYET HARİTASI', 180, 80, 0);
+
+    const _dersGruplari = {};
+    _konuZafiyet.forEach(m => {
+      if (!_dersGruplari[m.subject]) _dersGruplari[m.subject] = [];
+      _dersGruplari[m.subject].push(m);
+    });
+
+    _dersSirasi.forEach(ders => {
+      const konular = _dersGruplari[ders];
+      if (!konular || konular.length === 0) return;
+      konular.sort((a, b) => a.pct - b.pct); // zayıftan güçlüye
+
+      // Ders başlığı
+      Y = pdfCheck(doc, Y, 10);
+      doc.setFillColor(50, 40, 100);
+      doc.roundedRect(14, Y, 182, 7, 1, 1, 'F');
+      doc.setFont(PF, 'bold'); doc.setFontSize(7); doc.setTextColor(255, 255, 255);
+      doc.text(tx(ders), 18, Y + 5);
+      Y += 9;
+
+      // Konu satırları
+      konular.forEach(m => {
+        Y = pdfCheck(doc, Y, 8);
+        // Renk: <50 kırmızı, 50-65 turuncu, 65-80 sarı, 80+ yeşil
+        const [br, bg, bb] = m.pct < 50 ? [220,60,60] : m.pct < 65 ? [200,110,0] : m.pct < 80 ? [160,140,0] : [30,140,60];
+        const [ar, ag, ab] = m.pct < 50 ? [255,240,240] : m.pct < 65 ? [255,248,235] : m.pct < 80 ? [255,252,220] : [240,255,245];
+
+        doc.setFillColor(ar, ag, ab);
+        doc.roundedRect(14, Y, 182, 7, 1, 1, 'F');
+
+        // İsabet barı (sol taraf)
+        const barW = Math.round(m.pct / 100 * 50);
+        doc.setFillColor(br, bg, bb);
+        doc.roundedRect(14, Y, barW, 7, 1, 0, 'F');
+
+        // Konu adı
+        doc.setFont(PF, 'bold'); doc.setFontSize(6.5); doc.setTextColor(30, 20, 60);
+        const konuAdi = m.topic.length > 28 ? m.topic.substring(0, 26) + '..' : m.topic;
+        doc.text(tx(konuAdi), 17 + (barW > 30 ? 0 : barW), Y + 5);
+
+        // İsabet %
+        doc.setFont(PF, 'bold'); doc.setFontSize(7); doc.setTextColor(br, bg, bb);
+        doc.text('%' + m.pct, 122, Y + 5);
+
+        // Toplam soru
+        doc.setFont(PF, 'normal'); doc.setFontSize(6); doc.setTextColor(80, 70, 100);
+        doc.text(tx(m.q + ' soru'), 138, Y + 5);
+
+        // Trend (dönem vs kümülatif)
+        if (m.trend !== null && Math.abs(m.trend) >= 5) {
+          const tRenk = m.trend > 0 ? [20,140,60] : [200,50,50];
+          doc.setFont(PF, 'bold'); doc.setFontSize(6); doc.setTextColor(...tRenk);
+          doc.text((m.trend > 0 ? '+' : '') + m.trend + '%', 158, Y + 5);
+        }
+
+        // LGS ağırlık etiketi
+        if (m.lgsAg === 3) {
+          doc.setFillColor(180, 30, 30);
+          doc.roundedRect(168, Y + 1.5, 18, 4, 1, 1, 'F');
+          doc.setFont(PF, 'bold'); doc.setFontSize(5); doc.setTextColor(255, 255, 255);
+          doc.text('LGS ÖNEMLİ', 169, Y + 4.5);
+        } else if (m.lgsAg === 2) {
+          doc.setFillColor(170, 100, 0);
+          doc.roundedRect(168, Y + 1.5, 15, 4, 1, 1, 'F');
+          doc.setFont(PF, 'bold'); doc.setFontSize(5); doc.setTextColor(255, 255, 255);
+          doc.text('LGS ORTA', 169, Y + 4.5);
+        }
+
+        Y += 8;
+      });
+      Y += 3;
+    });
+
+    // Tekrar gerektiren konular bölümü
+    if (_tekrarKonular.length > 0) {
+      Y = pdfCheck(doc, Y, 16);
+      doc.setFillColor(255, 235, 235);
+      doc.roundedRect(14, Y, 182, 7, 1, 1, 'F');
+      doc.setFillColor(200, 40, 40);
+      doc.roundedRect(14, Y, 4, 7, 1, 0, 'F');
+      doc.setFont(PF, 'bold'); doc.setFontSize(7.5); doc.setTextColor(180, 30, 30);
+      doc.text(tx('TEKRAR GEREKTİREN KONULAR (' + _tekrarKonular.length + ')'), 21, Y + 5);
+      Y += 10;
+
+      _tekrarKonular.slice(0, 10).forEach((m, i) => {
+        Y = pdfCheck(doc, Y, 7);
+        const oncelik = m.kritik ? '⚑ ' : (i < 3 ? '• ' : '· ');
+        doc.setFont(PF, m.kritik ? 'bold' : 'normal');
+        doc.setFontSize(6.5);
+        doc.setTextColor(m.kritik ? 170 : 60, m.kritik ? 20 : 50, m.kritik ? 20 : 80);
+        const satir = tx(oncelik + m.subject + ' — ' + m.topic + '  %' + m.pct +
+          (m.lgsAg >= 2 ? ' [LGS ' + (m.lgsAg === 3 ? 'Önemli' : 'Orta') + ']' : '') +
+          '  (' + m.q + ' soru, ' + m.sessions + ' seans)');
+        doc.text(satir, 16, Y + 4.5);
+        Y += 7;
+      });
+      Y += 4;
+    }
+  }
+
+  // ================================================================
   // ================================================================
   Y = pdfNewPage(doc);
   nextSec('KOÇ DEĞERLENDİRMESİ',43,180,123);
