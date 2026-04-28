@@ -950,17 +950,28 @@ async function exportPsychPDF(sName, aiAcik) {
             doc.text(tx(r.etiket + ': ' + sayi + ' gün'), 18+barW+2, Y+5);
             Y += 9;
           });
-          // Baskın ton yorumu
+          // Baskın ton yorumu — SİS oranı yüksekse gerçek baskın tipi olarak değerlendir
           const _baskinTip = _tipSiraliVeri.length > 0 ? _tipSiraliVeri[0][0] : null;
-          const _baskAcik = {
-            ideal:   'Dönemin baskın tonu: dengeli ve sürdürülebilir. Bu ritim korunmalı.',
-            asim:    'Dönemin baskın tonu: yüksek performans yüksek bedelle üretildi. Sürdürülebilirlik izlenmeli.',
-            kriz:    'Dönemin baskın tonu: kriz. Akademik hedeflerden önce fizyolojik-psikolojik zemin onarılmalı.',
-            savunma: 'Dönemin baskın tonu: mekanik çalışma. Nicelik var ama kalite sorgulanmalı.',
-            nadas:   'Dönemin baskın tonu: kaçınma veya dinlenme. Nedenini anlamak kritik.',
-            sis:     'Bu dönemde veri eksikliği baskın — psikolojik tabloya erişim sınırlı.',
-          }[_baskinTip] || '';
-          if (_baskinTip && _baskAcik) { Y+=2; dipnot(_baskAcik); }
+          const _topGun = Object.keys(_tüm).length || 1;
+          const _sisOran = _sisAnahtarlar.length / _topGun;
+          let _baskAcik = '';
+          if (_sisOran >= 0.50) {
+            // SİS baskın: aktiflik oranına göre dil seç
+            if (_sisOran >= 0.75) {
+              _baskAcik = 'Dönemin büyük çoğunluğunda veri girilmedi — psikolojik tablo büyük ölçüde karanlık. Görünür günlerden çıkarım yapmak yanıltıcı olabilir.';
+            } else {
+              _baskAcik = 'Bu dönemde veri eksikliği baskın — verilen günler tablonun tamamını yansıtmıyor olabilir. Boş günlerin bağlamı göz önünde bulundurulmalı.';
+            }
+          } else {
+            _baskAcik = {
+              ideal:   'Dönemin baskın tonu: dengeli ve sürdürülebilir. Bu ritim korunmalı.',
+              asim:    'Dönemin baskın tonu: yüksek performans yüksek bedelle üretildi. Sürdürülebilirlik izlenmeli.',
+              kriz:    'Dönemin baskın tonu: kriz. Akademik hedeflerden önce fizyolojik-psikolojik zemin onarılmalı.',
+              savunma: 'Dönemin baskın tonu: mekanik çalışma. Nicelik var ama kalite sorgulanmalı.',
+              nadas:   'Dönemin baskın tonu: kaçınma veya dinlenme. Nedenini anlamak kritik.',
+            }[_baskinTip] || '';
+          }
+          if (_baskAcik) { Y+=2; dipnot(_baskAcik); }
           Y += 4;
         }
 
@@ -1245,13 +1256,13 @@ async function exportPsychPDF(sName, aiAcik) {
             // Aktiflik bilgisini göster — boş günler varsa gerçek ortalamayı da yaz
             let _kalSatStr = 'Analiz kapsami: ';
             if (_kal.toplamGun && _kal.aktifGun && _kal.aktifGun < _kal.toplamGun) {
-              _kalSatStr += _kal.aktifGun + '/' + _kal.toplamGun + ' aktif gun (%' + Math.round(_kal.aktifOran*100) + ') | ';
-              _kalSatStr += _kal.soruOrtAktif + ' soru/gun (aktif) -> gercek ort. ' + _kal.soruOrt + '/gun | ';
+              _kalSatStr += _kal.aktifGun + '/' + _kal.toplamGun + ' aktif gün (%' + Math.round(_kal.aktifOran*100) + ') | ';
+              _kalSatStr += _kal.soruOrtAktif + ' soru/gün (aktif), gerçek ort. ' + _kal.soruOrt + '/gün | ';
             } else {
-              _kalSatStr += _kal.soruOrt + ' soru/gun ort. | ';
+              _kalSatStr += _kal.soruOrt + ' soru/gün ort. | ';
             }
-            _kalSatStr += 'Donem kaygi ort: ' + _kal.kaygiEsik + '/10 | Uyku ort: ' + _kal.uyku + ' sa';
-            const _kalSat = tx(_kalSatStr);
+            _kalSatStr += 'Kaygı ort: ' + _kal.kaygiEsik + '/10 | Uyku ort: ' + _kal.uyku + ' sa';
+            const _kalSat = tx(_kalSatStr);  // normal font kullan, tx() Türkçe karakterleri işler
             Y = pdfCheck(doc, Y, 10);
             doc.setFont(PF,'normal'); doc.setFontSize(6.2); doc.setTextColor(140,120,180);
             doc.text(_kalSat, 16, Y); Y += 7;
