@@ -455,7 +455,7 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
       // Aynı sınavda aynı ders birden fazla girdiyse en son girişi al (üzerine yaz)
       _grp[k].dersler[e.subject]={net, cnt:1};
     });
-    const _lgsSoru={'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,'İnkılap Tarihi':10,'Din Kültürü':10,'İngilizce':10};
+    const _lgsSoru={'Türkçe':20,'Matematik':20,'Fen Bilimleri':20,'İnkılap Tarihi':10,"Din Kültürü":10,'İngilizce':10};
     const _dSira=Object.values(_grp);
     const _topNet=d=>Object.values(d.dersler).reduce((a,v)=>a+v.net,0);
     const _puan=n=>Math.min(500,Math.max(100,Math.round(100+n*4.444)));
@@ -507,7 +507,7 @@ const LGS_KATSAYI = {
   'Matematik':     4.2538,
   'Fen Bilimleri': 4.1230,
   'İnkılap Tarihi':1.666,
-  'Din Kültürü':   1.899,
+  "Din Kültürü":   1.899,
   'İngilizce':     1.5075,
 };
 const LGS_BAZ_PUAN = 194.752082;
@@ -558,7 +558,7 @@ function ts(v) {
 function dersKisa(name) {
   const map = {
     'Türkçe':'Tür', 'Matematik':'Mat', 'Fen Bilimleri':'Fen',
-    'İnkılap Tarihi':'İnk', 'Din Kültürü':'Din', 'İngilizce':'İng'
+    'İnkılap Tarihi':'İnk', "Din Kültürü":'Din', 'İngilizce':'İng'
   };
   return map[name] || (name||'').substring(0,4);
 }
@@ -1098,7 +1098,7 @@ function exportStudentDetailPDF(sName) {
       'Matematik': t.pct<40?`"${tName}" konusunda ciddi eksik — temel kavramlar gozden gecirilmeli.`:`"${tName}" konusunda hiz kaybi yasaniyor olabilir (%${t.pct} isabet).`,
       'Fen Bilimleri': t.pct<40?`"${tName}" konusunda kavramsal yanlisamlar var — deney temelli tekrar onerilir.`:`"${tName}" konusunda %${t.pct} isabet — benzer sorular cozulmeli.`,
       'İnkılap Tarihi': `"${tName}" konusunda %${t.pct} isabet — kronolojik harita calismasi yapilmali.`,
-      'Din Kültürü': `"${tName}" konusunda %${t.pct} isabet — kavram tekrari gerekli.`,
+      "Din Kültürü": `"${tName}" konusunda %${t.pct} isabet — kavram tekrari gerekli.`,
       'İngilizce': t.pct<40?`"${tName}" konusunda ciddi eksik — kelime bilgisi ve yapilar gozden gecirilmeli.`:`"${tName}" konusunda %${t.pct} isabet — pratik arttirilmali.`,
     };
     return insights[subName] || `"${tName}" konusunda %${t.pct} isabet — tekrar gerekmektedir.`;
@@ -1313,13 +1313,13 @@ function exportStudentDetailPDF(sName) {
       'Enerji Dönüşümü': 3, 'Optik': 2,
     },
     'İnkılap Tarihi': {
-      'Osmanlı'nın Çöküşü': 2, 'Kurtuluş Savaşı': 3, 'Atatürk İlkeleri': 3,
+      "Osmanlının Çöküşü": 2, 'Kurtuluş Savaşı': 3, 'Atatürk İlkeleri': 3,
       'Cumhuriyetin İlanı': 3, 'Devrimler': 3, 'Ekonomik Gelişmeler': 2,
       'Dış Politika': 2, 'İkinci Dünya Savaşı': 2, 'Demokrasiye Geçiş': 2,
       'Kültür Devrimi': 2,
     },
-    'Din Kültürü': {
-      'İslam'ın Temelleri': 3, 'Kur'an': 3, 'Hz. Muhammed': 3,
+    "Din Kültürü": {
+      "İslamın Temelleri": 3, "Kuran": 3, 'Hz. Muhammed': 3,
       'Namaz': 2, 'Oruç Zekât Hac': 2, 'Ahlak': 2, 'Diğer Dinler': 1,
       'Dini Kavramlar': 2, 'Peygamberler': 2,
     },
