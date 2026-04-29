@@ -204,51 +204,60 @@ function _mEtiketSifirla() {
 }
 
 // ── Koloni İsim Verme ────────────────────────────────────
-function _mKoloniIsimVer() {
-  const modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)';
-  modal.innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px;width:100%;max-width:300px;text-align:center">
-      <div style="font-size:16px;font-weight:800;margin-bottom:12px">🚀 Koloni İsmi</div>
-      <input id="koloniIsimInput" type="text" maxlength="20" placeholder="Yeni isim gir..." style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:var(--surface2);color:var(--text);font-family:'Nunito',sans-serif;margin-bottom:12px;box-sizing:border-box">
-      <button onclick="_mKoloniIsimKaydet()" style="width:100%;padding:10px;background:var(--accent-btn);color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">Kaydet</button>
-      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;padding:8px;background:transparent;border:1px solid var(--border);border-radius:10px;margin-top:6px;cursor:pointer;color:var(--text);font-family:'Nunito',sans-serif">Vazgeç</button>
-    </div>`;
-  document.body.appendChild(modal);
-}
-
-function _mKoloniIsimKaydet() {
-  const input = document.getElementById('koloniIsimInput');
-  const isim = input?.value?.trim();
-  if (!isim || isim.length < 2) { showToast('⚠️', 'En az 2 karakter gir'); return; }
-  const data = loadColonyData();
-  data.colonyName = isim;
-  saveColonyData(data);
-  showToast('✅', 'Koloni ismi: ' + isim);
-  const modal = input.closest('div[style*=fixed]');
-  if (modal) modal.remove();
-}
-
-// ── Koloni Tema Uygulama ─────────────────────────────────
-function _mKoloniTemaUygula(tema) {
-  const data = loadColonyData();
-  data.tema = tema;
-  saveColonyData(data);
-  // Aktif sahne varsa güncelle
-  const scene = document.getElementById('colonyScene');
-  if (scene) {
-    const temalar = {
-      mars:     'linear-gradient(180deg,#1a0505 0%,#3d1010 40%,#5a2020 70%,#7a3030 100%)',
-      buz:      'linear-gradient(180deg,#051525 0%,#0a2a4a 40%,#1a4a6a 70%,#2a6a8a 100%)',
-      orman:    'linear-gradient(180deg,#050f05 0%,#0a2a0a 40%,#1a4a2a 70%,#2a5a3a 100%)',
-      nebula:   'linear-gradient(180deg,#0a0520 0%,#1a0a3a 40%,#3a1a5a 70%,#5a2a7a 100%)',
-      altin:    'linear-gradient(180deg,#1a1505 0%,#2a2510 40%,#3a3520 70%,#4a4530 100%)',
-      karanlik: 'linear-gradient(180deg,#000005 0%,#050510 40%,#0a0a1a 70%,#101020 100%)',
-    };
-    if (temalar[tema]) scene.style.background = temalar[tema];
+// ── Etiket Sistemi ───────────────────────────────────────
+function _mEtiketUygula(etiket) {
+  const stil = _ETIKET_STILLER[etiket] || 'background:rgba(108,99,255,.3);color:white';
+  const eskiEl = document.getElementById('_menuEtiket');
+  if (eskiEl) eskiEl.remove();
+  const nameEl = document.getElementById('menuName');
+  if (nameEl) {
+    const span = document.createElement('span');
+    span.id = '_menuEtiket';
+    span.style.cssText = stil + ';font-size:.75rem;font-weight:800;padding:3px 9px;border-radius:99px;margin-left:6px;display:inline-flex;align-items:center;vertical-align:middle';
+    span.textContent = etiket;
+    nameEl.insertAdjacentElement('afterend', span);
+  }
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    if (window.currentUserData) window.currentUserData.etiket = etiket;
+    db.collection('users').doc(uid).update({ etiket }).catch(() => {});
   }
 }
 
+function _mEtiketSifirla() {
+  const el = document.getElementById('_menuEtiket');
+  if (el) el.remove();
+}
+
+// ── Koloni İsim Verme ────────────────────────────────────
+
+// ── Etiket Sistemi ───────────────────────────────────────
+function _mEtiketUygula(etiket) {
+  const stil = _ETIKET_STILLER[etiket] || 'background:rgba(108,99,255,.3);color:white';
+  const eskiEl = document.getElementById('_menuEtiket');
+  if (eskiEl) eskiEl.remove();
+  const nameEl = document.getElementById('menuName');
+  if (nameEl) {
+    const span = document.createElement('span');
+    span.id = '_menuEtiket';
+    span.style.cssText = stil + ';font-size:.75rem;font-weight:800;padding:3px 9px;border-radius:99px;margin-left:6px;display:inline-flex;align-items:center;vertical-align:middle';
+    span.textContent = etiket;
+    nameEl.insertAdjacentElement('afterend', span);
+  }
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    if (window.currentUserData) window.currentUserData.etiket = etiket;
+    db.collection('users').doc(uid).update({ etiket }).catch(() => {});
+  }
+}
+
+function _mEtiketSifirla() {
+  const el = document.getElementById('_menuEtiket');
+  if (el) el.remove();
+}
+
+// ── Koloni İsim Verme ────────────────────────────────────
+// ── Koloni Tema Uygulama ─────────────────────────────────
 // ── Efekt Sistemi ────────────────────────────────────────
 function _marketKonfetiEfekt() {
   const aktifEfekt = window.currentUserData?.aktif?.efekt;
@@ -418,7 +427,6 @@ function _marketIcerik() {
   const sahip = window.currentUserData?.sahipUrunler || [];
   const aktif = window.currentUserData?.aktif || {};
   const secili = _marketSeciliKat;
-  const colData = loadColonyData();
 
   // Kategori tabları
   const tabHTML = MARKET_KATEGORILER.map(k => {
@@ -438,7 +446,6 @@ function _marketIcerik() {
   const urunHTML = urunler.map(([id, u]) => {
     const sahipMi = sahip.includes(id);
     const aktifMi = (u.tip === 'etiket' && window.currentUserData?.etiket === u.deger)
-      || (u.tip === 'tema' && colData.tema === u.deger)
       || (u.tip === 'efekt' && aktif.efekt === u.deger);
     // isim tipi boost gibi davranmaz — özel render
     if (u.tip === 'isim') {
