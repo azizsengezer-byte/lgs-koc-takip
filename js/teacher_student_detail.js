@@ -129,6 +129,85 @@ async function _odulGonder(name, uid) {
   }
 }
 
+function buildKonuZafiyetHTML(allEntries) {
+  const _LGS_AG = {
+    'Türkçe':{'Ana Fikir / Başlık':3,'Dil Bilgisi':3,'Sözcükte Anlam':3,'Cümlede Anlam':3,'Paragrafta Anlam':3,'Anlatım Biçimleri':2,'Yazım Kuralları':2,'Noktalama':2,'Sözcük Türleri':2,'Fiil Çekimi':2},
+    'Matematik':{'Sayılar':3,'Kesirler':3,'Oran Orantı':3,'Yüzde':3,'Cebirsel İfadeler':3,'Denklemler':3,'Üslü İfadeler':3,'Kök İfadeler':3,'Eşlik ve Benzerlik':3,'Üçgenler':3,'Çember':3,'Doğrusal Denklemler':3,'Dört İşlem':2,'Ondalık Sayılar':2,'Dörtgenler':2,'Veri Analizi':2,'Olasılık':2,'Çarpanlara Ayırma':2,'Fonksiyonlar':2},
+    'Fen Bilimleri':{'Kuvvet ve Hareket':3,'Madde':3,'Elektrik':3,'Hücre':3,'Kalıtım':3,'Atom':3,'Kimyasal Tepkimeler':3,'DNA':3,'Enerji Dönüşümü':3,'Işık':2,'Ses':2,'Fotosentez':2,'Kimyasal Bağlar':2,'Asit Baz':2,'Basınç':2,'Optik':2},
+    'İnkılap Tarihi':{'Kurtuluş Savaşı':3,'Atatürk İlkeleri':3,'Cumhuriyetin İlanı':3,'Devrimler':3,'Ekonomik Gelişmeler':2,'Dış Politika':2,'İkinci Dünya Savaşı':2,'Demokrasiye Geçiş':2,'Kültür Devrimi':2},
+    'Din Kültürü':{'İslamın Temelleri':3,'Kuran':3,'Hz. Muhammed':3,'Namaz':2,'Oruç Zekât Hac':2,'Ahlak':2,'Dini Kavramlar':2,'Peygamberler':2},
+    'İngilizce':{'Okuma Anlama':3,'Kelime Bilgisi':3,'Dilbilgisi':3,'Tenses':3,'Reading':3,'Vocabulary':3,'Modal Verbs':2,'Prepositions':2},
+  };
+  const dersSirasi = ['Türkçe','Matematik','Fen Bilimleri','İnkılap Tarihi','Din Kültürü','İngilizce'];
+
+  const kumMap = {};
+  (allEntries||[]).filter(e=>e.type==='soru'&&(e.questions||0)>=1).forEach(e=>{
+    const key=(e.subject||'')+'|'+(e.topic||'Genel');
+    if(!kumMap[key]) kumMap[key]={subject:e.subject,topic:e.topic||'Genel',q:0,d:0,sessions:0};
+    kumMap[key].q+=e.questions||0; kumMap[key].d+=e.correct||0; kumMap[key].sessions++;
+  });
+
+  const konular=Object.values(kumMap).filter(m=>m.q>=3).map(m=>{
+    const pct=m.q>0?Math.round(m.d/m.q*100):0;
+    const lgsAg=(_LGS_AG[m.subject]||{})[m.topic]||0;
+    return Object.assign({},m,{pct,lgsAg,kritik:pct<60&&lgsAg>=2});
+  }).sort((a,b)=>a.pct-b.pct);
+
+  if(konular.length===0) return '';
+
+  const tekrarlar=konular.filter(m=>m.pct<65&&m.q>=5);
+  const dersGrup={};
+  konular.forEach(m=>{if(!dersGrup[m.subject])dersGrup[m.subject]=[];dersGrup[m.subject].push(m);});
+
+  function renk(pct){
+    if(pct<50) return {bar:'#d9534f',txt:'#c0392b'};
+    if(pct<65) return {bar:'#e67e22',txt:'#b35c00'};
+    if(pct<80) return {bar:'#c8a800',txt:'#7d6b00'};
+    return {bar:'#27ae60',txt:'#1a7a40'};
+  }
+
+  let html='<div class="card" style="margin-bottom:12px">';
+  html+='<div class="card-title" style="margin-bottom:12px">';
+  html+='<svg style="vertical-align:middle;margin-right:6px" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
+  html+='Konu Zafiyet Haritası — Kümülatif</div>';
+
+  dersSirasi.forEach(function(ders){
+    const km=dersGrup[ders];
+    if(!km||km.length===0) return;
+    html+='<div style="margin-bottom:10px">';
+    html+='<div style="font-size:0.72rem;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;padding:4px 8px;background:var(--surface2);border-radius:6px">'+ders+'</div>';
+    km.forEach(function(m){
+      const r=renk(m.pct);
+      const barW=Math.max(4,m.pct);
+      const lgsTag=m.lgsAg===3?'<span style="font-size:0.6rem;background:#c0392b;color:#fff;border-radius:4px;padding:1px 5px;margin-left:5px">LGS</span>':m.lgsAg===2?'<span style="font-size:0.6rem;background:#e67e22;color:#fff;border-radius:4px;padding:1px 5px;margin-left:5px">LGS</span>':'';
+      html+='<div style="margin-bottom:6px">';
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">';
+      html+='<span style="font-size:0.75rem;font-weight:700;color:var(--text)">'+m.topic+lgsTag+'</span>';
+      html+='<span style="font-size:0.75rem;font-weight:800;color:'+r.txt+'">'+m.pct+'%</span></div>';
+      html+='<div style="height:6px;background:var(--surface2);border-radius:4px;overflow:hidden">';
+      html+='<div style="height:100%;width:'+barW+'%;background:'+r.bar+';border-radius:4px;transition:.3s"></div></div>';
+      html+='<div style="font-size:0.65rem;color:var(--text2);margin-top:1px">'+m.q+' soru · '+m.sessions+' seans</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+
+  if(tekrarlar.length>0){
+    html+='<div style="margin-top:12px;padding:10px 12px;background:#fff5f5;border-radius:10px;border-left:3px solid #d9534f">';
+    html+='<div style="font-size:0.78rem;font-weight:800;color:#c0392b;margin-bottom:7px">Tekrar Gerektiren Konular</div>';
+    tekrarlar.slice(0,8).forEach(function(m){
+      const lgsTag=m.lgsAg>=2?' [LGS '+(m.lgsAg===3?'Önemli':'Orta')+']':'';
+      html+='<div style="font-size:0.75rem;padding:4px 0;border-bottom:1px solid #fdd;display:flex;justify-content:space-between">';
+      html+='<span style="color:'+(m.kritik?'#c0392b':'var(--text)')+(m.kritik?';font-weight:700':'')+'">'+(m.kritik?'★ ':'')+m.subject+' — '+m.topic+lgsTag+'</span>';
+      html+='<span style="font-weight:800;color:#c0392b">'+m.pct+'%</span></div>';
+    });
+    html+='</div>';
+  }
+
+  html+='</div>';
+  return html;
+}
+
 function studentDetailAnalysis() {
   const sName = selectedStudentName;
   if (!sName) return `<div class="page-title">Öğrenci seçilmedi</div>`;
@@ -429,6 +508,9 @@ function studentDetailAnalysis() {
           </div>
         </div>`;}).join('')}
     </div>`:''}
+
+    <!-- Konu Zafiyet Haritası -->
+    ${buildKonuZafiyetHTML(allEntries)}
 
     <!-- Koç Yorumu -->
     <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,var(--accent)10,var(--accent)04);border:1px solid var(--accent)33">
