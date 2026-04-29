@@ -388,29 +388,53 @@ function studentDetailAnalysis() {
     </div>
 
     <!-- Rapor Al -->
-    <div style="margin-bottom:12px">
-      <button onclick="toggleRaporAl('${sName.replace(/\s/g,'_')}')"
-        style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);cursor:pointer;font-weight:700;font-size:0.9rem">
-        <span>📥 Rapor Al</span>
-        <span id="raporAlArrow_${sName.replace(/\s/g,'_')}" style="transition:.2s;font-size:0.8rem">▼</span>
-      </button>
-      <div id="raporAlPanel_${sName.replace(/\s/g,'_')}" style="display:none;margin-top:6px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
-        <div style="display:flex;gap:8px">
-          <button onclick="(()=>{const now=new Date();const dk=getDateKey(now);const dateStr=now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});window._pdfDateOverride={mode:'daily',startKey:dk,endKey:dk,label:'Günlük',title:dateStr+' Günlük Rapor'};preparePdfLink('${sName}',this).finally(()=>{window._pdfDateOverride=null;});})()"
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+
+      <!-- Bireysel Analiz -->
+      <div style="background:linear-gradient(135deg,#6c63ff18,#6c63ff08);border:1.5px solid #6c63ff44;border-radius:14px;padding:14px">
+        <div style="font-weight:800;font-size:0.82rem;color:#6c63ff;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6c63ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Bireysel Analiz
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button onclick="(()=>{const now=new Date();const dk=getDateKey(now);const dateStr=now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});window._pdfDateOverride={mode:'daily',startKey:dk,endKey:dk,label:'Günlük',title:dateStr+' Günlük Rapor'};preparePdfLink('${sName}',this).finally(()=>{window._pdfDateOverride=null;})})()"
             class="dp-btn-pdf"
-            style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
-            📋 Günlük
+            style="padding:9px;border-radius:9px;background:var(--surface);border:1.5px solid #6c63ff33;color:var(--text);font-weight:700;font-size:0.8rem;cursor:pointer;text-align:left">
+            Günlük
           </button>
           <button onclick="openDatePicker('${sName}','weekly')"
-            style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
-            📅 Haftalık
+            style="padding:9px;border-radius:9px;background:var(--surface);border:1.5px solid #6c63ff33;color:var(--text);font-weight:700;font-size:0.8rem;cursor:pointer;text-align:left">
+            Haftalık
           </button>
           <button onclick="openDatePicker('${sName}','monthly')"
-            style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
-            📆 Aylık
+            style="padding:9px;border-radius:9px;background:var(--surface);border:1.5px solid #6c63ff33;color:var(--text);font-weight:700;font-size:0.8rem;cursor:pointer;text-align:left">
+            Aylık
           </button>
         </div>
       </div>
+
+      <!-- Psikolojik Takip -->
+      <div style="background:linear-gradient(135deg,#1D9E7518,#1D9E7508);border:1.5px solid #1D9E7544;border-radius:14px;padding:14px">
+        <div style="font-weight:800;font-size:0.82rem;color:#1D9E75;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          Psikolojik Takip
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button onclick="window._psychPeriod='daily';exportPsychPDF('${sName}',false)"
+            style="padding:9px;border-radius:9px;background:var(--surface);border:1.5px solid #1D9E7533;color:var(--text);font-weight:700;font-size:0.8rem;cursor:pointer;text-align:left">
+            Günlük
+          </button>
+          <button onclick="_psychAIKontrolVeAc('${sName}','${sName.replace(/\s/g,'_')}','weekly')"
+            style="padding:9px;border-radius:9px;background:var(--surface);border:1.5px solid #1D9E7533;color:var(--text);font-weight:700;font-size:0.8rem;cursor:pointer;text-align:left">
+            Haftalık
+          </button>
+          <button onclick="_psychAIKontrolVeAc('${sName}','${sName.replace(/\s/g,'_')}','monthly')"
+            style="padding:9px;border-radius:9px;background:var(--surface);border:1.5px solid #1D9E7533;color:var(--text);font-weight:700;font-size:0.8rem;cursor:pointer;text-align:left">
+            Aylık
+          </button>
+        </div>
+      </div>
+
     </div>
 
     <!-- Son 7 gün trend — tıklanabilir -->
