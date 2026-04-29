@@ -16,8 +16,11 @@
     if (!b || b === 0) return null;
     return Math.round((a - b) / b * 100);
   }
-  function lgsGun() {
-    return Math.max(0, Math.floor((new Date('2026-06-13T09:30:00+03:00') - new Date()) / 86400000));
+  function lgsGun(refKey) {
+    const lgs = new Date('2026-06-13T09:30:00+03:00');
+    const ref = refKey ? new Date(refKey + 'T23:59:59') : new Date();
+    const base = ref < new Date() ? ref : new Date(); // geçmiş dönem → endKey, aktif → bugün
+    return Math.max(0, Math.floor((lgs - base) / 86400000));
   }
 
   // ── ANA FONKSİYON (drop-in replacement) ─────────────────────
@@ -70,7 +73,7 @@
     const positives = [];
     const isAylik   = period === 'aylik';
     const donem     = isAylik ? 'bu ay' : 'bu hafta';
-    const _lgsGun   = lgsGun();
+    const _lgsGun   = lgsGun(endKey);
 
     // Kronolojik sıra
     const kron     = [...gunler].sort((a, b) => a.dk.localeCompare(b.dk));

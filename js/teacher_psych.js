@@ -258,7 +258,8 @@ async function exportPsychPDF(sName, aiAcik) {
     const soruNetArr = gunler.filter(d=>d.net>0).map(d=>d.net);
     const ortSoruNet = soruNetArr.length>0 ? soruNetArr.reduce((a,b)=>a+b,0)/soruNetArr.length : null;
     const ortNet = ortDenNet ?? ortSoruNet;
-    const dLgs = Math.max(0,Math.floor((new Date('2026-06-13T09:30:00+03:00')-new Date())/(1000*60*60*24)));
+    const _lgsBase = (endKey && new Date(endKey+'T23:59:59') < new Date()) ? new Date(endKey+'T23:59:59') : new Date();
+    const dLgs = Math.max(0,Math.floor((new Date('2026-06-13T09:30:00+03:00')-_lgsBase)/(1000*60*60*24)));
 
     // T-0: kronolojik olarak son 2 GÜN (tarih bazlı, wellness VEYA akademik veri olan her gün dahil)
     // Tüm gunler zaten date sorted, son 2'yi al

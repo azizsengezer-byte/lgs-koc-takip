@@ -334,7 +334,11 @@ function generateStudentComment(sName, filtered, subStats, totalDur, totalQ, tot
   const best = withQ[0];
   const worst = withQ.length>1 ? [...withQ].sort((a,b)=>a.pct-b.pct)[0] : null;
   const lgs = new Date('2026-06-13T09:30:00+03:00');
-  const daysLeft = Math.floor((lgs-new Date())/(1000*60*60*24));
+  // Geçmiş dönem raporunda endKey'i baz al, aktif dönemde bugünü
+  const _ov2 = window._pdfDateOverride;
+  const _endRefDate = _ov2 ? new Date(_ov2.endKey + 'T23:59:59') : new Date();
+  const _refDate = _endRefDate < new Date() ? _endRefDate : new Date();
+  const daysLeft = Math.max(0, Math.floor((lgs - _refDate) / (1000*60*60*24)));
   // Dönem toplam gün sayısı (boş günler dahil)
   const _pDays = totalPeriodDays || (period==='weekly'?7:period==='monthly'?30:1);
   const inactiveDays = Math.max(0, _pDays - activeDays);
@@ -1400,8 +1404,8 @@ function exportStudentDetailPDF(sName) {
       konular.forEach(m => {
         Y = pdfCheck(doc, Y, 8);
         // Renk: <50 kırmızı, 50-65 turuncu, 65-80 sarı, 80+ yeşil
-        const [br, bg, bb] = m.pct < 50 ? [220,60,60] : m.pct < 65 ? [200,110,0] : m.pct < 80 ? [160,140,0] : [30,140,60];
-        const [ar, ag, ab] = m.pct < 50 ? [255,240,240] : m.pct < 65 ? [255,248,235] : m.pct < 80 ? [255,252,220] : [240,255,245];
+        const [br, bg, bb] = m.pct < 50 ? [210,90,90] : m.pct < 65 ? [215,145,60] : m.pct < 80 ? [190,175,60] : [80,175,110];
+        const [ar, ag, ab] = m.pct < 50 ? [255,245,245] : m.pct < 65 ? [255,251,242] : m.pct < 80 ? [255,254,235] : [244,255,248];
 
         doc.setFillColor(ar, ag, ab);
         doc.roundedRect(14, Y, 182, 7, 1, 1, 'F');
