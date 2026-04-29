@@ -404,24 +404,16 @@ function studentDetailAnalysis() {
       </div>
       <!-- 4. hücre: Rapor Al -->
       <div onclick="toggleRaporAl('${sName.replace(/\s/g,'_')}')"
-        style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between">
-        <div style="font-size:0.68rem;font-weight:800;color:var(--text2);margin-bottom:6px">RAPOR AL</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span style="font-size:0.78rem;font-weight:700;color:var(--accent)">Bireysel</span>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <span style="font-size:0.78rem;font-weight:700;color:#1D9E75">Psikolojik</span>
-        </div>
-        <span id="raporAlArrow_${sName.replace(/\s/g,'_')}" style="font-size:0.7rem;color:var(--text2);margin-top:6px;align-self:flex-end">▼</span>
+        style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span style="font-size:0.82rem;font-weight:800;color:var(--accent)">Rapor Al</span>
+        <span id="raporAlArrow_${sName.replace(/\s/g,'_')}" style="font-size:0.7rem;color:var(--text2)">▼</span>
       </div>
     </div>
 
-    <!-- Rapor paneli (mevcut modal gibi açılır) -->
+    <!-- Rapor paneli -->
     <div id="raporAlPanel_${sName.replace(/\s/g,'_')}" style="display:none;margin-bottom:12px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
-      <div style="font-size:0.75rem;font-weight:800;color:var(--text2);margin-bottom:8px">Bireysel Analiz</div>
-      <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div style="display:flex;gap:8px">
         <button onclick="(()=>{const now=new Date();const dk=getDateKey(now);const dateStr=now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});window._pdfDateOverride={mode:'daily',startKey:dk,endKey:dk,label:'Günlük',title:dateStr+' Günlük Rapor'};preparePdfLink('${sName}',this).finally(()=>{window._pdfDateOverride=null;})})()"
           class="dp-btn-pdf"
           style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
@@ -432,21 +424,6 @@ function studentDetailAnalysis() {
           📅 Haftalık
         </button>
         <button onclick="openDatePicker('${sName}','monthly')"
-          style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
-          📆 Aylık
-        </button>
-      </div>
-      <div style="font-size:0.75rem;font-weight:800;color:var(--text2);margin-bottom:8px">Psikolojik Takip</div>
-      <div style="display:flex;gap:8px">
-        <button onclick="window._psychPeriod='daily';exportPsychPDF('${sName}',false)"
-          style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
-          📋 Günlük
-        </button>
-        <button onclick="_psychAIKontrolVeAc('${sName}','${sName.replace(/\s/g,'_')}','weekly')"
-          style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
-          📅 Haftalık
-        </button>
-        <button onclick="_psychAIKontrolVeAc('${sName}','${sName.replace(/\s/g,'_')}','monthly')"
           style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
           📆 Aylık
         </button>
