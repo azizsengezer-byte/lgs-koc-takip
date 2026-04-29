@@ -16,17 +16,6 @@ const MARKET_URUNLER = {
   etiket_bilgin:    { kategori:'etiket', ad:'🔬 Bilgin',     fiyat:450, ikon:'🔬', aciklama:'İsmin yanında 🔬 Bilgin etiketi',      tip:'etiket', deger:'🔬 Bilgin' },
   etiket_komutan:   { kategori:'etiket', ad:'⭐ Komutan',    fiyat:700, ikon:'⭐', aciklama:'İsmin yanında ⭐ Komutan etiketi',      tip:'etiket', deger:'⭐ Komutan' },
 
-  // ── Koloni Temaları (koloni sahnesinin renk paleti) ────
-  tema_mars:    { kategori:'tema', ad:'Mars Kolonisi',    fiyat:600, ikon:'🔴', aciklama:'Koloni sahnesini kızıl Mars temasına çevir',    tip:'tema', deger:'mars' },
-  tema_buz:     { kategori:'tema', ad:'Buz Gezegeni',     fiyat:600, ikon:'❄️', aciklama:'Koloni sahnesini buz mavisi temasına çevir',   tip:'tema', deger:'buz' },
-  tema_orman:   { kategori:'tema', ad:'Yeşil Gezegen',    fiyat:550, ikon:'🌲', aciklama:'Koloni sahnesini yeşil orman temasına çevir',  tip:'tema', deger:'orman' },
-  tema_nebula:  { kategori:'tema', ad:'Nebula',           fiyat:700, ikon:'🌌', aciklama:'Koloni sahnesini mor nebula temasına çevir',   tip:'tema', deger:'nebula' },
-  tema_altin:   { kategori:'tema', ad:'Altın Çağ',        fiyat:800, ikon:'✨', aciklama:'Koloni sahnesini altın temasına çevir',       tip:'tema', deger:'altin' },
-  tema_karanlik:{ kategori:'tema', ad:'Karanlık Madde',   fiyat:650, ikon:'🌑', aciklama:'Koloni sahnesini derin uzay temasına çevir',  tip:'tema', deger:'karanlik' },
-
-  // ── Koloni İsimlendirme ────────────────────────────────
-  koloni_isim:  { kategori:'koloni', ad:'Koloni İsmi Değiştir', fiyat:200, ikon:'✏️', aciklama:'Kolonine özel bir isim ver', tip:'isim', deger:'', tuket:true },
-
   // ── Efektler (soru girişinde animasyon) ────────────────
   efekt_konfeti: { kategori:'efekt', ad:'Konfeti',        fiyat:400, ikon:'🎊', aciklama:'Soru girişinde konfeti patlar',      tip:'efekt', deger:'konfeti' },
   efekt_yildiz:  { kategori:'efekt', ad:'Yıldız Yağmuru', fiyat:500, ikon:'⭐', aciklama:'Soru girişinde yıldızlar yağar',    tip:'efekt', deger:'yildiz' },
@@ -34,25 +23,16 @@ const MARKET_URUNLER = {
   efekt_altin:   { kategori:'efekt', ad:'Altın Patlama',  fiyat:550, ikon:'💰', aciklama:'Soru girişinde altınlar yağar',     tip:'efekt', deger:'altin' },
   efekt_roket:   { kategori:'efekt', ad:'Roket Fırlatma', fiyat:600, ikon:'🚀', aciklama:'Soru girişinde roket fırlar',       tip:'efekt', deger:'roket' },
 
-  // ── XP Paketleri ──────────────────────────────────────────
-  xp_kucuk:  { kategori:'xp', ad:'50 XP Paketi',   fiyat:300,  ikon:'⚡', aciklama:'Kolonine anında 50 XP ekle',   tip:'xp', deger:50,  tuket:true },
-  xp_orta:   { kategori:'xp', ad:'150 XP Paketi',  fiyat:800,  ikon:'🚀', aciklama:'Kolonine anında 150 XP ekle',  tip:'xp', deger:150, tuket:true },
-  xp_buyuk:  { kategori:'xp', ad:'400 XP Paketi',  fiyat:2000, ikon:'🌟', aciklama:'Kolonine anında 400 XP ekle',  tip:'xp', deger:400, tuket:true },
-
   // ── Güçlendiriciler (süreli, tüketilir) ────────────────
   boost_seri:    { kategori:'boost', ad:'Seri Koruyucu',  fiyat:500,  ikon:'🛡️', aciklama:'1 gün çalışmasan serin bozulmaz',     tip:'boost', deger:'seri',    tuket:true },
   boost_2x:      { kategori:'boost', ad:'2x Altın (24s)', fiyat:400,  ikon:'💰', aciklama:'24 saat boyunca 2 katı altın kazan',  tip:'boost', deger:'2x',      tuket:true },
   boost_3x_soru: { kategori:'boost', ad:'3x Soru Altın',  fiyat:600,  ikon:'🎯', aciklama:'24 saat soru başına 3x altın',        tip:'boost', deger:'3x_soru', tuket:true },
-  boost_2x_xp:   { kategori:'boost', ad:'2x Koloni XP',   fiyat:500,  ikon:'🚀', aciklama:'24 saat koloni XP 2 katına çıkar',    tip:'boost', deger:'2x_xp',   tuket:true },
 };
 
 const MARKET_KATEGORILER = [
   { id:'etiket', ad:'👤 Etiket'        },
-  { id:'tema',   ad:'🎨 Koloni Tema'   },
   { id:'efekt',  ad:'✨ Efektler'      },
   { id:'boost',  ad:'⚡ Güçlendirici'  },
-  { id:'xp',     ad:'⭐ XP Paketi'     },
-  { id:'koloni', ad:'🚀 Koloni'        },
 ];
 
 const MARKET_ALTIN = { MOOD: 20, WELLNESS_TAM: 50, WELLNESS_ALAN: 30, SORU_10: 5, SERI_7: 100 };
@@ -128,22 +108,7 @@ async function marketSatinAl(urunId) {
 
     // Özel işlemler
     if (urun.tip === 'etiket') _mEtiketUygula(urun.deger);
-    if (urun.tip === 'isim') {
-      _mKoloniIsimVer();
-      _marketYenile();
-      return;
-    }
-    if (urun.tip === 'tema') _mKoloniTemaUygula(urun.deger);
-    // XP paketi → hemen koloniye uygula
-    if (urun.tip === 'xp') {
-      const colData = loadColonyData();
-      const eskiSeviye = colData.level || 1;
-      colData.xp = (colData.xp || 0) + urun.deger;
-      colData.level = getColonyLevel(colData.xp);
-      saveColonyData(colData);
-      const seviyeAtladi = colData.level > eskiSeviye;
-      setTimeout(() => showToast('⭐', '+' + urun.deger + ' XP kolonine eklendi!' + (seviyeAtladi ? ' 🎉 Seviye atladın!' : '')), 600);
-    }
+
 
     _marketYenile();
   } catch (e) {
@@ -159,18 +124,6 @@ async function marketAktifEt(urunId) {
   const uid = auth.currentUser?.uid;
   if (!uid) return;
 
-  if (urun.tip === 'xp') {
-    const colData = loadColonyData();
-    const eskiXp = colData.xp || 0;
-    const eskiSeviye = colData.level || 1;
-    colData.xp += urun.deger;
-    colData.level = getColonyLevel(colData.xp);
-    saveColonyData(colData);
-    const seviyeAtladi = colData.level > eskiSeviye;
-    showToast('⭐', '+' + urun.deger + ' XP kolonine eklendi!' + (seviyeAtladi ? ' Seviye atladın!' : ''));
-    _marketYenile();
-    return;
-  }
   if (urun.tip === 'etiket') {
     // Toggle — aynı etiketse kaldır
     if (window.currentUserData?.etiket === urun.deger) {
@@ -182,18 +135,6 @@ async function marketAktifEt(urunId) {
       _mEtiketUygula(urun.deger);
       await db.collection('users').doc(uid).update({ etiket: urun.deger }).catch(() => {});
       showToast('✅', urun.ad + ' etiketi aktif!');
-    }
-  } else if (urun.tip === 'tema') {
-    const data = loadColonyData();
-    if (data.tema === urun.deger) {
-      data.tema = null;
-      saveColonyData(data);
-      if (typeof _colonyApplyTheme === 'function') _colonyApplyTheme();
-      showToast('✅', 'Tema kaldırıldı — varsayılana dönüldü');
-    } else {
-      _mKoloniTemaUygula(urun.deger);
-      if (typeof _colonyApplyTheme === 'function') _colonyApplyTheme();
-      showToast('✅', urun.ad + ' teması aktif!');
     }
   } else if (urun.tip === 'efekt') {
     if (!window.currentUserData.aktif) window.currentUserData.aktif = {};
@@ -209,6 +150,33 @@ async function marketAktifEt(urunId) {
   }
   _marketYenile();
 }
+
+// ── Etiket Sistemi ───────────────────────────────────────
+function _mEtiketUygula(etiket) {
+  const stil = _ETIKET_STILLER[etiket] || 'background:rgba(108,99,255,.3);color:white';
+  const eskiEl = document.getElementById('_menuEtiket');
+  if (eskiEl) eskiEl.remove();
+  const nameEl = document.getElementById('menuName');
+  if (nameEl) {
+    const span = document.createElement('span');
+    span.id = '_menuEtiket';
+    span.style.cssText = stil + ';font-size:.75rem;font-weight:800;padding:3px 9px;border-radius:99px;margin-left:6px;display:inline-flex;align-items:center;vertical-align:middle';
+    span.textContent = etiket;
+    nameEl.insertAdjacentElement('afterend', span);
+  }
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    if (window.currentUserData) window.currentUserData.etiket = etiket;
+    db.collection('users').doc(uid).update({ etiket }).catch(() => {});
+  }
+}
+
+function _mEtiketSifirla() {
+  const el = document.getElementById('_menuEtiket');
+  if (el) el.remove();
+}
+
+// ── Koloni İsim Verme ────────────────────────────────────
 
 // ── Etiket Sistemi ───────────────────────────────────────
 function _mEtiketUygula(etiket) {
