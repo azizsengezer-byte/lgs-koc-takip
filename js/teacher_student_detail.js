@@ -166,10 +166,14 @@ function buildKonuZafiyetHTML(allEntries) {
     return {bar:'#27ae60',txt:'#1a7a40'};
   }
 
-  let html='<div class="card" style="margin-bottom:12px">';
-  html+='<div class="card-title" style="margin-bottom:12px">';
+  const _uid='kzh_'+Math.random().toString(36).slice(2,7);
+  let html='<div class="card" style="margin-bottom:12px;padding:0;overflow:hidden">';
+  html+='<div onclick="(()=>{const b=document.getElementById(\''+_uid+'\');const a=document.getElementById(\''+_uid+'_arr\');if(!b)return;const open=b.style.display!==\'none\';b.style.display=open?\'none\':\'block\';a.textContent=open?\'▼\':\'▲\';})()" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;user-select:none">';
+  html+='<div class="card-title" style="margin:0">';
   html+='<svg style="vertical-align:middle;margin-right:6px" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
-  html+='Konu Zafiyet Haritası — Kümülatif</div>';
+  html+='Konu Zafiyet Haritası</div>';
+  html+='<span id="'+_uid+'_arr" style="color:var(--text2);font-size:0.8rem">▼</span></div>';
+  html+='<div id="'+_uid+'" style="display:none;padding:0 16px 14px">';
 
   dersSirasi.forEach(function(ders){
     const km=dersGrup[ders];
@@ -204,7 +208,8 @@ function buildKonuZafiyetHTML(allEntries) {
     html+='</div>';
   }
 
-  html+='</div>';
+  html+='</div>'; // accordion body
+  html+='</div>'; // card
   return html;
 }
 
