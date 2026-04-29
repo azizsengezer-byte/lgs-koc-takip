@@ -24,15 +24,37 @@ const MARKET_URUNLER = {
   efekt_roket:   { kategori:'efekt', ad:'Roket Fırlatma', fiyat:600, ikon:'🚀', aciklama:'Soru girişinde roket fırlar',       tip:'efekt', deger:'roket' },
 
   // ── Güçlendiriciler (süreli, tüketilir) ────────────────
-  boost_seri:    { kategori:'boost', ad:'Seri Koruyucu',  fiyat:500,  ikon:'🛡️', aciklama:'1 gün çalışmasan serin bozulmaz',     tip:'boost', deger:'seri',    tuket:true },
+  boost_seri:    { kategori:'boost', ad:'Seri Koruyucu',  fiyat:500,  ikon:'🛡', aciklama:'1 gün çalışmasan serin bozulmaz',     tip:'boost', deger:'seri',    tuket:true },
   boost_2x:      { kategori:'boost', ad:'2x Altın (24s)', fiyat:400,  ikon:'💰', aciklama:'24 saat boyunca 2 katı altın kazan',  tip:'boost', deger:'2x',      tuket:true },
   boost_3x_soru: { kategori:'boost', ad:'3x Soru Altın',  fiyat:600,  ikon:'🎯', aciklama:'24 saat soru başına 3x altın',        tip:'boost', deger:'3x_soru', tuket:true },
+
+  // ── Uygulama Temaları ──────────────────────────────────
+  tema_okyanus:  { kategori:'tema', ad:'Okyanus',        fiyat:800,  ikon:'🌊', aciklama:'Derin mavi okyanus teması',   tip:'tema', deger:'okyanus' },
+  tema_orman:    { kategori:'tema', ad:'Orman',          fiyat:800,  ikon:'🌿', aciklama:'Ferahlatıcı yeşil orman teması', tip:'tema', deger:'orman' },
+  tema_gece:     { kategori:'tema', ad:'Gece Yarısı',    fiyat:900,  ikon:'🌙', aciklama:'Derin koyu gece teması',      tip:'tema', deger:'gece' },
+  tema_seker:    { kategori:'tema', ad:'Şeker',          fiyat:700,  ikon:'🍬', aciklama:'Tatlı pembe şeker teması',    tip:'tema', deger:'seker' },
+  tema_alev:     { kategori:'tema', ad:'Alev',           fiyat:1000, ikon:'🔥', aciklama:'Yakıcı turuncu alev teması', tip:'tema', deger:'alev' },
+  tema_buz:      { kategori:'tema', ad:'Buz',            fiyat:850,  ikon:'❄', aciklama:'Soğuk buz mavisi teması',    tip:'tema', deger:'buz' },
+
+  // ── Profil Çerçeveleri ─────────────────────────────────
+  cerceve_caliskan:   { kategori:'cerceve', ad:'Çalışkan Çerçeve',   fiyat:400,  ikon:'🔵', aciklama:'Mavi altıgen çerçeve',       tip:'cerceve', deger:'caliskan' },
+  cerceve_azimli:     { kategori:'cerceve', ad:'Azimli Çerçeve',     fiyat:500,  ikon:'🟣', aciklama:'Mor spiral çerçeve',         tip:'cerceve', deger:'azimli' },
+  cerceve_kararli:    { kategori:'cerceve', ad:'Kararlı Çerçeve',    fiyat:600,  ikon:'🟡', aciklama:'Altın çizgili çerçeve',      tip:'cerceve', deger:'kararli' },
+  cerceve_guclu:      { kategori:'cerceve', ad:'Güçlü Çerçeve',      fiyat:800,  ikon:'🟠', aciklama:'Turuncu güç çerçevesi',      tip:'cerceve', deger:'guclu' },
+  cerceve_usta:       { kategori:'cerceve', ad:'Usta Çerçeve',       fiyat:1200, ikon:'⭐', aciklama:'Altın yıldızlı çerçeve',    tip:'cerceve', deger:'usta' },
+  cerceve_efsane:     { kategori:'cerceve', ad:'Efsane Çerçeve',     fiyat:2000, ikon:'👑', aciklama:'Görkemli efsane çerçevesi', tip:'cerceve', deger:'efsane' },
+
+  // ── Rozet Vitrini ──────────────────────────────────────
+  rozet_vitrin: { kategori:'vitrin', ad:'Rozet Vitrini', fiyat:600, ikon:'🏆', aciklama:'Profilinde 3 rozet öne çıkar', tip:'vitrin', deger:'aktif', tuket:false },
 };
 
 const MARKET_KATEGORILER = [
-  { id:'etiket', ad:'👤 Etiket'        },
-  { id:'efekt',  ad:'✨ Efektler'      },
-  { id:'boost',  ad:'⚡ Güçlendirici'  },
+  { id:'etiket',  ad:'👤 Etiket'         },
+  { id:'tema',    ad:'🎨 Tema'           },
+  { id:'cerceve', ad:'🖼 Çerçeve'        },
+  { id:'vitrin',  ad:'🏆 Vitrin'         },
+  { id:'efekt',   ad:'✨ Efektler'       },
+  { id:'boost',   ad:'⚡ Güçlendirici'   },
 ];
 
 const MARKET_ALTIN = { MOOD: 20, WELLNESS_TAM: 50, WELLNESS_ALAN: 30, SORU_10: 5, SERI_7: 100 };
@@ -76,11 +98,11 @@ async function marketAldinEkle(miktar, sebep) {
 // ── Satın Alma ───────────────────────────────────────────
 async function marketSatinAl(urunId) {
   const urun = MARKET_URUNLER[urunId];
-  if (!urun) { showToast('⚠️', 'Ürün bulunamadı'); return; }
+  if (!urun) { showToast('⚠', 'Ürün bulunamadı'); return; }
   const uid = auth.currentUser?.uid;
   if (!uid) return;
   const altin = window.currentUserData?.altin || 0;
-  if (altin < urun.fiyat) { showToast('⚠️', 'Yeterli altın yok! (' + urun.fiyat + ' gerekli)'); return; }
+  if (altin < urun.fiyat) { showToast('⚠', 'Yeterli altın yok! (' + urun.fiyat + ' gerekli)'); return; }
 
   // Zaten sahip mi?
   const sahip = window.currentUserData?.sahipUrunler || [];
@@ -107,8 +129,10 @@ async function marketSatinAl(urunId) {
     showToast('✅', urun.ad + ' satın alındı!');
 
     // Özel işlemler
-    if (urun.tip === 'etiket') _mEtiketUygula(urun.deger);
-
+    if (urun.tip === 'etiket')  _mEtiketUygula(urun.deger);
+    if (urun.tip === 'tema')    _mTemaUygula(urun.deger);
+    if (urun.tip === 'cerceve') _mCerceveSec(urun.deger);
+    if (urun.tip === 'vitrin')  _mVitrinAc();
 
     _marketYenile();
   } catch (e) {
@@ -147,9 +171,116 @@ async function marketAktifEt(urunId) {
       await db.collection('users').doc(uid).update({ 'aktif.efekt': urun.deger }).catch(() => {});
       showToast('✅', urun.ad + ' efekti aktif!');
     }
+  } else if (urun.tip === 'tema') {
+    _mTemaUygula(urun.deger);
+  } else if (urun.tip === 'cerceve') {
+    _mCerceveSec(urun.deger);
+  } else if (urun.tip === 'vitrin') {
+    _mVitrinAc();
   }
   _marketYenile();
 }
+
+// ── Tema Sistemi ──────────────────────────────────────────
+const MARKET_TEMALAR = {
+  okyanus: { '--bg':'#f0f7ff', '--surface':'#ffffff', '--surface2':'#e6f2ff', '--border':'#c8dff5', '--accent':'#1a6eb5', '--accent-btn':'#1558a0', '--text':'#0a1f35', '--text2':'#5a7fa0', '--shadow':'0 2px 12px rgba(26,110,181,0.10)' },
+  orman:   { '--bg':'#f0f7f2', '--surface':'#ffffff', '--surface2':'#e4f1e7', '--border':'#c2dfc9', '--accent':'#1D7A45', '--accent-btn':'#186038', '--text':'#0a2215', '--text2':'#4a7a57', '--shadow':'0 2px 12px rgba(29,122,69,0.10)' },
+  gece:    { '--bg':'#0f111a', '--surface':'#1a1d2e', '--surface2':'#22263a', '--border':'#2e334d', '--accent':'#7c73ff', '--accent-btn':'#6a61ee', '--text':'#e8eaf6', '--text2':'#7880a8', '--shadow':'0 2px 12px rgba(124,115,255,0.15)' },
+  seker:   { '--bg':'#fff5f8', '--surface':'#ffffff', '--surface2':'#ffeef3', '--border':'#ffd5e5', '--accent':'#e0447a', '--accent-btn':'#c83568', '--text':'#2d0a17', '--text2':'#b06080', '--shadow':'0 2px 12px rgba(224,68,122,0.10)' },
+  alev:    { '--bg':'#fff8f0', '--surface':'#ffffff', '--surface2':'#fff0e0', '--border':'#ffd5a8', '--accent':'#d4520a', '--accent-btn':'#bc4408', '--text':'#2d1200', '--text2':'#9a6030', '--shadow':'0 2px 12px rgba(212,82,10,0.10)' },
+  buz:     { '--bg':'#f4f9ff', '--surface':'#ffffff', '--surface2':'#e8f4ff', '--border':'#c5dff5', '--accent':'#3a8fc8', '--accent-btn':'#2e72a5', '--text':'#0a1a2d', '--text2':'#5080a5', '--shadow':'0 2px 12px rgba(58,143,200,0.10)' },
+};
+
+function _mTemaUygula(temaId) {
+  const tema = MARKET_TEMALAR[temaId];
+  if (!tema) return;
+  const root = document.documentElement;
+  Object.entries(tema).forEach(([k,v]) => root.style.setProperty(k, v));
+  localStorage.setItem('market_tema', temaId);
+  showToast('🎨', MARKET_URUNLER['tema_'+temaId]?.ad + ' teması aktif!');
+}
+
+function _mTemaKaldir() {
+  const root = document.documentElement;
+  ['--bg','--surface','--surface2','--border','--accent','--accent-btn','--text','--text2','--shadow'].forEach(k => root.style.removeProperty(k));
+  localStorage.removeItem('market_tema');
+}
+
+function _mTemaYukle() {
+  const temaId = localStorage.getItem('market_tema');
+  if (temaId && MARKET_TEMALAR[temaId]) _mTemaUygula(temaId);
+}
+
+// ── Çerçeve Sistemi ──────────────────────────────────────
+function _mCerceveSec(frameId) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  const prev = localStorage.getItem('market_cerceve');
+  if (prev === frameId) {
+    // Toggle — kaldır
+    localStorage.removeItem('market_cerceve');
+    setActiveFrame(uid, 'none');
+    applyProfileFrame(uid, 'none');
+    showToast('✅', 'Çerçeve kaldırıldı');
+  } else {
+    localStorage.setItem('market_cerceve', frameId);
+    setActiveFrame(uid, frameId);
+    applyProfileFrame(uid, frameId);
+    showToast('🖼', 'Çerçeve aktif!');
+  }
+}
+
+// ── Rozet Vitrini ────────────────────────────────────────
+function _mVitrinAc() {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  const earned = JSON.parse(localStorage.getItem('badges_'+uid)||'[]');
+  if (earned.length === 0) { showToast('⚠', 'Henüz rozet kazanmadın'); return; }
+
+  const mevcut = JSON.parse(localStorage.getItem('market_vitrin_secili_'+uid)||'[]');
+
+  let html = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center" id="_vitrinModal">';
+  html += '<div style="background:var(--surface);border-radius:20px;padding:24px;width:90%;max-width:360px;max-height:80vh;overflow-y:auto">';
+  html += '<div style="font-weight:800;font-size:1rem;margin-bottom:6px">Rozet Vitrini</div>';
+  html += '<div style="font-size:0.78rem;color:var(--text2);margin-bottom:16px">Profilinde öne çıkarmak istediğin 3 rozeti seç</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">';
+
+  earned.forEach(bid => {
+    const secili = mevcut.includes(bid);
+    html += '<div onclick="_vitrinToggle(\"'+bid+'\",\"'+uid+'\")" id="vb_'+bid+'" style="cursor:pointer;border-radius:10px;padding:8px;text-align:center;border:2px solid '+(secili?'var(--accent)':'var(--border)')+';background:'+(secili?'var(--accent)11':'var(--surface2)')+';">'; 
+    html += '<div style="font-size:1.4rem">'+( typeof BADGE_DEFS !== 'undefined' && BADGE_DEFS[bid] ? '⭐' : '🏅')+'</div>';
+    html += '<div style="font-size:0.6rem;color:var(--text2);margin-top:2px">'+bid+'</div>';
+    html += '</div>';
+  });
+
+  html += '</div>';
+  html += '<button onclick="_vitrinKaydet(\"'+uid+'\")" style="width:100%;margin-top:16px;padding:12px;background:var(--accent-btn);border:none;border-radius:12px;color:white;font-weight:700;cursor:pointer">Kaydet</button>';
+  html += '<button onclick="document.getElementById(\'_vitrinModal\').remove()" style="width:100%;margin-top:8px;padding:10px;background:none;border:1px solid var(--border);border-radius:12px;color:var(--text2);font-weight:700;cursor:pointer">Kapat</button>';
+  html += '</div></div>';
+
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function _vitrinToggle(bid, uid) {
+  let secili = JSON.parse(localStorage.getItem('market_vitrin_secili_'+uid)||'[]');
+  const el = document.getElementById('vb_'+bid);
+  if (secili.includes(bid)) {
+    secili = secili.filter(b=>b!==bid);
+    if (el) { el.style.borderColor='var(--border)'; el.style.background='var(--surface2)'; }
+  } else {
+    if (secili.length >= 3) { showToast('⚠','En fazla 3 rozet seçebilirsin'); return; }
+    secili.push(bid);
+    if (el) { el.style.borderColor='var(--accent)'; el.style.background='var(--accent)11'; }
+  }
+  localStorage.setItem('market_vitrin_secili_'+uid, JSON.stringify(secili));
+}
+
+function _vitrinKaydet(uid) {
+  localStorage.setItem('market_vitrin', 'aktif');
+  document.getElementById('_vitrinModal')?.remove();
+  showToast('🏆','Rozet vitrini güncellendi!');
+}
+
 
 // ── Etiket Sistemi ───────────────────────────────────────
 function _mEtiketUygula(etiket) {
@@ -445,8 +576,13 @@ function _marketIcerik() {
 
   const urunHTML = urunler.map(([id, u]) => {
     const sahipMi = sahip.includes(id);
-    const aktifMi = (u.tip === 'etiket' && window.currentUserData?.etiket === u.deger)
-      || (u.tip === 'efekt' && aktif.efekt === u.deger);
+    const _aktifTema    = localStorage.getItem('market_tema')    || null;
+    const _aktifCerceve = localStorage.getItem('market_cerceve') || null;
+    const aktifMi = (u.tip === 'etiket'  && window.currentUserData?.etiket === u.deger)
+      || (u.tip === 'efekt'   && aktif.efekt === u.deger)
+      || (u.tip === 'tema'    && _aktifTema    === u.deger)
+      || (u.tip === 'cerceve' && _aktifCerceve === u.deger)
+      || (u.tip === 'vitrin'  && localStorage.getItem('market_vitrin') === 'aktif');
     // isim tipi boost gibi davranmaz — özel render
     if (u.tip === 'isim') {
       const isimBtn = `<button onclick="marketSatinAl('${id}')" style="width:100%;padding:9px;background:var(--accent-btn);border:none;border-radius:10px;color:white;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">${u.fiyat} — İsim Değiştir</button>`;

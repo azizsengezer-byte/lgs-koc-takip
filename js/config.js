@@ -690,12 +690,12 @@ auth.onAuthStateChanged(async (user) => {
             if (snap.exists && snap.data().activeFrame) {
               localStorage.setItem('frame_'+user.uid, snap.data().activeFrame);
             }
-            setTimeout(()=>applyProfileFrame(user.uid, getActiveFrame(user.uid)), 100);
+            setTimeout(()=>{ applyProfileFrame(user.uid, getActiveFrame(user.uid)); if(typeof _mTemaYukle==='function') _mTemaYukle(); }, 100);
           }).catch(()=>{
-            setTimeout(()=>applyProfileFrame(user.uid, getActiveFrame(user.uid)), 100);
+            setTimeout(()=>{ applyProfileFrame(user.uid, getActiveFrame(user.uid)); if(typeof _mTemaYukle==='function') _mTemaYukle(); }, 100);
           });
         } else {
-          setTimeout(()=>applyProfileFrame(user.uid, getActiveFrame(user.uid)), 100);
+          setTimeout(()=>{ applyProfileFrame(user.uid, getActiveFrame(user.uid)); if(typeof _mTemaYukle==='function') _mTemaYukle(); }, 100);
         }
         // Rozet sayacını göster
         getBadges(user.uid).then(earned=>{
