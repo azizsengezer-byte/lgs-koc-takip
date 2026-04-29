@@ -438,6 +438,22 @@ async function psychReportPage() {
     </div>
     <div class="page-sub">Psikolojik Takip Raporu</div>
 
+    <!-- Rapor Al -->
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button onclick="window._psychPeriod='daily';exportPsychPDF('${sName}',false)"
+        style="flex:1;padding:10px;border-radius:10px;background:var(--accent);border:none;color:#fff;font-weight:700;font-size:0.82rem;cursor:pointer">
+        Günlük Rapor
+      </button>
+      <button onclick="_psychAIKontrolVeAc('${sName}','${sName.replace(/\s/g,'_')}','weekly')"
+        style="flex:1;padding:10px;border-radius:10px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);font-weight:700;font-size:0.82rem;cursor:pointer">
+        Haftalık
+      </button>
+      <button onclick="_psychAIKontrolVeAc('${sName}','${sName.replace(/\s/g,'_')}','monthly')"
+        style="flex:1;padding:10px;border-radius:10px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);font-weight:700;font-size:0.82rem;cursor:pointer">
+        Aylık
+      </button>
+    </div>
+
     <!-- Dönem seçici -->
     <div style="display:flex;gap:6px;margin-bottom:14px;background:var(--surface2);border-radius:12px;padding:4px">
       <button onclick="window._psychPeriod='daily';renderTeacherPage('psych-report',document.getElementById('mainContent'))"
