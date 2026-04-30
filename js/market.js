@@ -22,11 +22,12 @@ const MARKET_URUNLER = {
   efekt_kalp:    { kategori:'efekt', ad:'Kalp Yağmuru',   fiyat:350, ikon:'💜', aciklama:'Soru girişinde kalpler uçar',       tip:'efekt', deger:'kalp' },
   efekt_altin:   { kategori:'efekt', ad:'Altın Patlama',  fiyat:550, ikon:'💰', aciklama:'Soru girişinde altınlar yağar',     tip:'efekt', deger:'altin' },
   efekt_roket:   { kategori:'efekt', ad:'Roket Fırlatma', fiyat:600, ikon:'🚀', aciklama:'Soru girişinde roket fırlar',       tip:'efekt', deger:'roket' },
+  efekt_fireworks:{ kategori:'efekt', ad:'Havai Fişek',   fiyat:700, ikon:'🎆', aciklama:'Soru girişinde havai fişek patlar',  tip:'efekt', deger:'fireworks' },
+  efekt_kar:     { kategori:'efekt', ad:'Kar Yağışı',     fiyat:450, ikon:'🌨', aciklama:'Soru girişinde kar taneleri yağar', tip:'efekt', deger:'kar' },
+  efekt_rainbow: { kategori:'efekt', ad:'Gökkuşağı',      fiyat:650, ikon:'🌈', aciklama:'Soru girişinde gökkuşağı belirir',  tip:'efekt', deger:'rainbow' },
+  efekt_goktas:  { kategori:'efekt', ad:'Göktaşı',        fiyat:550, ikon:'☄', aciklama:'Soru girişinde göktaşı düşer',     tip:'efekt', deger:'goktas' },
+  efekt_balon:   { kategori:'efekt', ad:'Balonlar',        fiyat:400, ikon:'🎈', aciklama:'Soru girişinde renkli balonlar uçar',tip:'efekt', deger:'balon' },
 
-  // ── Güçlendiriciler (süreli, tüketilir) ────────────────
-  boost_seri:    { kategori:'boost', ad:'Seri Koruyucu',  fiyat:500,  ikon:'🛡', aciklama:'1 gün çalışmasan serin bozulmaz',     tip:'boost', deger:'seri',    tuket:true },
-  boost_2x:      { kategori:'boost', ad:'2x Altın (24s)', fiyat:400,  ikon:'💰', aciklama:'24 saat boyunca 2 katı altın kazan',  tip:'boost', deger:'2x',      tuket:true },
-  boost_3x_soru: { kategori:'boost', ad:'3x Soru Altın',  fiyat:600,  ikon:'🎯', aciklama:'24 saat soru başına 3x altın',        tip:'boost', deger:'3x_soru', tuket:true },
 
   // ── Uygulama Temaları ──────────────────────────────────
   tema_okyanus:  { kategori:'tema', ad:'Okyanus',        fiyat:800,  ikon:'🌊', aciklama:'Derin mavi okyanus teması',   tip:'tema', deger:'okyanus' },
@@ -45,16 +46,13 @@ const MARKET_URUNLER = {
   cerceve_efsane:     { kategori:'cerceve', ad:'Efsane Çerçeve',     fiyat:2000, ikon:'👑', aciklama:'Görkemli efsane çerçevesi', tip:'cerceve', deger:'efsane' },
 
   // ── Rozet Vitrini ──────────────────────────────────────
-  rozet_vitrin: { kategori:'vitrin', ad:'Rozet Vitrini', fiyat:600, ikon:'🏆', aciklama:'Profilinde 3 rozet öne çıkar', tip:'vitrin', deger:'aktif', tuket:false },
 };
 
 const MARKET_KATEGORILER = [
   { id:'etiket',  ad:'👤 Etiket'         },
   { id:'tema',    ad:'🎨 Tema'           },
   { id:'cerceve', ad:'🖼 Çerçeve'        },
-  { id:'vitrin',  ad:'🏆 Vitrin'         },
   { id:'efekt',   ad:'✨ Efektler'       },
-  { id:'boost',   ad:'⚡ Güçlendirici'   },
 ];
 
 const MARKET_ALTIN = { MOOD: 20, WELLNESS_TAM: 50, WELLNESS_ALAN: 30, SORU_10: 5, SERI_7: 100 };
@@ -130,9 +128,12 @@ async function marketSatinAl(urunId) {
 
     // Özel işlemler
     if (urun.tip === 'etiket')  _mEtiketUygula(urun.deger);
-    if (urun.tip === 'tema')    _mTemaUygula(urun.deger);
+    if (urun.tip === 'tema') {
+      const _aktifTemaSimdi = localStorage.getItem('market_tema');
+      if (_aktifTemaSimdi === urun.deger) { _mTemaKaldir(); showToast('🎨','Varsayılan temaya dönüldü'); }
+      else _mTemaUygula(urun.deger);
+    }
     if (urun.tip === 'cerceve') _mCerceveSec(urun.deger);
-    if (urun.tip === 'vitrin')  _mVitrinAc();
 
     _marketYenile();
   } catch (e) {
@@ -172,11 +173,15 @@ async function marketAktifEt(urunId) {
       showToast('✅', urun.ad + ' efekti aktif!');
     }
   } else if (urun.tip === 'tema') {
-    _mTemaUygula(urun.deger);
+    const _aktifTemaSimdi = localStorage.getItem('market_tema');
+    if (_aktifTemaSimdi === urun.deger) {
+      _mTemaKaldir();
+      showToast('🎨', 'Varsayılan temaya dönüldü');
+    } else {
+      _mTemaUygula(urun.deger);
+    }
   } else if (urun.tip === 'cerceve') {
     _mCerceveSec(urun.deger);
-  } else if (urun.tip === 'vitrin') {
-    _mVitrinAc();
   }
   _marketYenile();
 }
@@ -229,58 +234,6 @@ function _mCerceveSec(frameId) {
     showToast('🖼', 'Çerçeve aktif!');
   }
 }
-
-// ── Rozet Vitrini ────────────────────────────────────────
-function _mVitrinAc() {
-  const uid = auth.currentUser?.uid;
-  if (!uid) return;
-  const earned = JSON.parse(localStorage.getItem('badges_'+uid)||'[]');
-  if (earned.length === 0) { showToast('⚠', 'Henüz rozet kazanmadın'); return; }
-
-  const mevcut = JSON.parse(localStorage.getItem('market_vitrin_secili_'+uid)||'[]');
-
-  let html = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center" id="_vitrinModal">';
-  html += '<div style="background:var(--surface);border-radius:20px;padding:24px;width:90%;max-width:360px;max-height:80vh;overflow-y:auto">';
-  html += '<div style="font-weight:800;font-size:1rem;margin-bottom:6px">Rozet Vitrini</div>';
-  html += '<div style="font-size:0.78rem;color:var(--text2);margin-bottom:16px">Profilinde öne çıkarmak istediğin 3 rozeti seç</div>';
-  html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">';
-
-  earned.forEach(bid => {
-    const secili = mevcut.includes(bid);
-    html += '<div onclick="_vitrinToggle(\"'+bid+'\",\"'+uid+'\")" id="vb_'+bid+'" style="cursor:pointer;border-radius:10px;padding:8px;text-align:center;border:2px solid '+(secili?'var(--accent)':'var(--border)')+';background:'+(secili?'var(--accent)11':'var(--surface2)')+';">'; 
-    html += '<div style="font-size:1.4rem">'+( typeof BADGE_DEFS !== 'undefined' && BADGE_DEFS[bid] ? '⭐' : '🏅')+'</div>';
-    html += '<div style="font-size:0.6rem;color:var(--text2);margin-top:2px">'+bid+'</div>';
-    html += '</div>';
-  });
-
-  html += '</div>';
-  html += '<button onclick="_vitrinKaydet(\"'+uid+'\")" style="width:100%;margin-top:16px;padding:12px;background:var(--accent-btn);border:none;border-radius:12px;color:white;font-weight:700;cursor:pointer">Kaydet</button>';
-  html += '<button onclick="document.getElementById(\'_vitrinModal\').remove()" style="width:100%;margin-top:8px;padding:10px;background:none;border:1px solid var(--border);border-radius:12px;color:var(--text2);font-weight:700;cursor:pointer">Kapat</button>';
-  html += '</div></div>';
-
-  document.body.insertAdjacentHTML('beforeend', html);
-}
-
-function _vitrinToggle(bid, uid) {
-  let secili = JSON.parse(localStorage.getItem('market_vitrin_secili_'+uid)||'[]');
-  const el = document.getElementById('vb_'+bid);
-  if (secili.includes(bid)) {
-    secili = secili.filter(b=>b!==bid);
-    if (el) { el.style.borderColor='var(--border)'; el.style.background='var(--surface2)'; }
-  } else {
-    if (secili.length >= 3) { showToast('⚠','En fazla 3 rozet seçebilirsin'); return; }
-    secili.push(bid);
-    if (el) { el.style.borderColor='var(--accent)'; el.style.background='var(--accent)11'; }
-  }
-  localStorage.setItem('market_vitrin_secili_'+uid, JSON.stringify(secili));
-}
-
-function _vitrinKaydet(uid) {
-  localStorage.setItem('market_vitrin', 'aktif');
-  document.getElementById('_vitrinModal')?.remove();
-  showToast('🏆','Rozet vitrini güncellendi!');
-}
-
 
 // ── Etiket Sistemi ───────────────────────────────────────
 function _mEtiketUygula(etiket) {
@@ -581,8 +534,7 @@ function _marketIcerik() {
     const aktifMi = (u.tip === 'etiket'  && window.currentUserData?.etiket === u.deger)
       || (u.tip === 'efekt'   && aktif.efekt === u.deger)
       || (u.tip === 'tema'    && _aktifTema    === u.deger)
-      || (u.tip === 'cerceve' && _aktifCerceve === u.deger)
-      || (u.tip === 'vitrin'  && localStorage.getItem('market_vitrin') === 'aktif');
+      || (u.tip === 'cerceve' && _aktifCerceve === u.deger);
     // isim tipi boost gibi davranmaz — özel render
     if (u.tip === 'isim') {
       const isimBtn = `<button onclick="marketSatinAl('${id}')" style="width:100%;padding:9px;background:var(--accent-btn);border:none;border-radius:10px;color:white;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif">${u.fiyat} — İsim Değiştir</button>`;
