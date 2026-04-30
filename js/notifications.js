@@ -27,27 +27,28 @@ function _notifNavigate(n) {
 
   // Öğretmen bildirimleri
   if (currentRole === 'teacher') {
-    if (n.type === 'exam' || n.type === 'wellness_alert' ||
-        n.type?.startsWith('basari') || n.type?.startsWith('enerji') ||
-        n.type?.startsWith('dusuk') || n.type?.startsWith('yuksek') ||
-        n.type?.startsWith('3gun') || n.type?.startsWith('baskı') ||
-        n.type?.startsWith('konsantrasyon') || n.type?.startsWith('kacak') ||
-        n.type?.startsWith('sinav') || n.type?.startsWith('hata') ||
-        n.type?.startsWith('erken') || n.type?.startsWith('kaygi') ||
-        n.type?.startsWith('gorev_tamamla') || n.type?.startsWith('streak') ) {
-      // fromUid ile öğrenciyi bul
-      const studentName = n.meta?.studentName || _findStudentNameByUid(n.fromUid);
-      if (studentName) {
-        selectedStudentName = studentName;
-        showPage('student-detail');
+    // Görev / mesaj / takvim tipler — sayfaya yönlendir
+    if (n.type === 'task')           { showPage('tasks-teacher'); return; }
+    if (n.type === 'message')        { showPage('messages');      return; }
+    if (n.type === 'teacher_duyuru') { showPage('students');      return; }
+
+    // Öğrenciden gelen tüm bildirimler → o öğrencinin detay sayfası
+    const studentName = n.meta?.studentName || _findStudentNameByUid(n.fromUid);
+    if (studentName) {
+      selectedStudentName = studentName;
+      // Tipe göre hangi sekmeyi açacağını belirle
+      if (n.type === 'exam') {
+        window._studentDetailTab = 'denemeler';
+      } else if (n.type === 'wellness_alert' || n.type?.startsWith('kaygi') || n.type?.startsWith('enerji')) {
+        window._studentDetailTab = 'psikolojik';
       } else {
-        showPage('students');
+        window._studentDetailTab = null;
       }
+      showPage('student-detail');
       return;
     }
-    if (n.type === 'task')    { showPage('tasks-teacher'); return; }
-    if (n.type === 'message') { showPage('messages');      return; }
-    if (n.type === 'gorusme') { showPage('students');      return; }
+
+    showPage('students');
   }
 }
 

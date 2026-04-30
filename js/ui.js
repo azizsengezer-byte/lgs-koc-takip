@@ -296,7 +296,24 @@ async function clearAllMessageNotifs() {
 function renderTeacherPage(id, el) {
   if(id==='dashboard') el.innerHTML = teacherDashboard();
   else if(id==='students') el.innerHTML = teacherStudents();
-  else if(id==='student-detail') el.innerHTML = studentDetailAnalysis();
+  else if(id==='student-detail') {
+    el.innerHTML = studentDetailAnalysis();
+    // Bildirimden gelindiyse ilgili sekmeye scroll/highlight
+    if (window._studentDetailTab) {
+      setTimeout(() => {
+        const tab = window._studentDetailTab;
+        window._studentDetailTab = null;
+        if (tab === 'psikolojik') {
+          // Psikolojik takip bölümüne scroll
+          const el2 = document.querySelector('[data-section="psych"]') || document.querySelector('.card-title');
+          if (el2) el2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else if (tab === 'denemeler') {
+          const el2 = document.querySelector('[data-section="denemeler"]');
+          if (el2) el2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+    }
+  }
   else if(id==='psych-report') {
     el.innerHTML = _loadingHTML('💙');
     psychReportPage().then(html => { el.innerHTML = html; });
