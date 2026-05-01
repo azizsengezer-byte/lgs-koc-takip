@@ -357,22 +357,6 @@ function studentDetailAnalysis() {
     </div>
     <div class="page-sub">Bireysel Analiz Raporu</div>
 
-    <!-- Rapor Al -->
-    <div style="display:flex;gap:6px;margin-bottom:10px">
-      <button onclick="(()=>{const now=new Date();const dk=getDateKey(now);const dateStr=now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});window._pdfDateOverride={mode:'daily',startKey:dk,endKey:dk,label:'Günlük',title:dateStr+' Günlük Rapor'};preparePdfLink('${sName}',this).finally(()=>{window._pdfDateOverride=null;})})()"
-        class="dp-btn-pdf"
-        style="flex:1;padding:10px;border-radius:10px;background:var(--accent);border:none;color:#fff;font-weight:700;font-size:0.82rem;cursor:pointer">
-        Günlük Rapor
-      </button>
-      <button onclick="openDatePicker('${sName}','weekly')"
-        style="flex:1;padding:10px;border-radius:10px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);font-weight:700;font-size:0.82rem;cursor:pointer">
-        Haftalık
-      </button>
-      <button onclick="openDatePicker('${sName}','monthly')"
-        style="flex:1;padding:10px;border-radius:10px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);font-weight:700;font-size:0.82rem;cursor:pointer">
-        Aylık
-      </button>
-    </div>
 
     <!-- Dönem seçici -->
     <div style="display:flex;gap:6px;margin-bottom:12px;background:var(--surface2);border-radius:12px;padding:4px">
