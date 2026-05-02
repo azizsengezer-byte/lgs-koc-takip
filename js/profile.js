@@ -578,7 +578,19 @@ async function profilePage() {
       <span style="color:rgba(255,255,255,0.9);font-size:1.4rem;flex-shrink:0">›</span>
     </div>
     ` : ''}
-    <div class="card" style="text-align:center;padding:32px 20px">
+    ${(!isTeacher) ? `
+    <div onclick="showPage('satin-al')" style="display:flex;align-items:center;justify-content:space-between;
+      padding:14px 16px;background:linear-gradient(135deg,#6c63ff,#8b5cf6);
+      border-radius:16px;margin-bottom:16px;cursor:pointer;gap:12px">
+      <div>
+        <div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.8);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:3px">Plan</div>
+        <div style="font-size:0.95rem;font-weight:800;color:#fff">LGSKoç Premium 🚀</div>
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.75);margin-top:2px">AI koçluk, deneme takibi ve daha fazlası</div>
+      </div>
+      <span style="color:rgba(255,255,255,0.9);font-size:1.4rem;flex-shrink:0">›</span>
+    </div>
+    ` : ''}
+        <div class="card" style="text-align:center;padding:32px 20px">
       ${photoHTML}
       <div style="font-size:1.2rem;font-weight:800;margin-bottom:4px">${name}</div>
       <div style="color:var(--accent);font-size:0.88rem;font-weight:600">${roleLabel}</div>
