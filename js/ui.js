@@ -45,11 +45,15 @@ function openProfileDrawer() {
   if (banner) {
     banner.style.display = 'block';
     if (ud.role !== 'teacher') {
-      // Öğrenci/solo için metin güncelle
       const bannerTitle = banner.querySelector('[data-banner-title]');
       const bannerSub = banner.querySelector('[data-banner-sub]');
-      if (bannerTitle) bannerTitle.textContent = 'LGSKoç Premium 🚀';
-      if (bannerSub) bannerSub.textContent = 'AI koçluk ve deneme takibi';
+      if (ud.role === 'solo_student') {
+        if (bannerTitle) bannerTitle.textContent = 'LGSKoç Premium 🚀';
+        if (bannerSub) bannerSub.textContent = 'Deneme takibi, konu analizi ve daha fazlası';
+      } else {
+        if (bannerTitle) bannerTitle.textContent = 'LGSKoç Premium 🚀';
+        if (bannerSub) bannerSub.textContent = 'Daha fazla özellik ve ayrıcalık';
+      }
       banner.onclick = function() { closeProfileDrawer(); showPage('satin-al'); };
     }
   }
