@@ -235,6 +235,7 @@ function arkadasProfil(uid, isim, renk, foto, etiket) {
       <div style="display:flex;border-bottom:2px solid var(--border);margin-bottom:12px" id="apTabs">
         <button onclick="_apSekme('bilgi')" id="apTab_bilgi" style="flex:1;padding:8px 0;font-size:0.85rem;font-weight:700;border:none;background:transparent;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent);margin-bottom:-2px">📋 Bilgi</button>
         <button onclick="_apSekme('rozetler')" id="apTab_rozetler" style="flex:1;padding:8px 0;font-size:0.85rem;font-weight:700;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);margin-bottom:-2px"><svg style="vertical-align:middle" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 9a6 6 0 0 0 12 0"/><line x1="12" y1="15" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg> Rozetler</button>
+        <button onclick="_apSekme('koc_oduller')" id="apTab_koc_oduller" style="flex:1;padding:8px 0;font-size:0.85rem;font-weight:700;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2);margin-bottom:-2px">🏅 Ödüller</button>
       </div>
 
       <!-- Bilgi sekmesi -->
@@ -247,6 +248,13 @@ function arkadasProfil(uid, isim, renk, foto, etiket) {
       <!-- Rozetler sekmesi -->
       <div id="apPanel_rozetler" style="display:none">
         <div id="apRozetIcerik" style="padding:4px 0">
+          Yükleniyor...
+        </div>
+      </div>
+
+      <!-- Koç Ödülleri sekmesi -->
+      <div id="apPanel_koc_oduller" style="display:none">
+        <div id="apKocOdulIcerik" style="padding:4px 0">
           Yükleniyor...
         </div>
       </div>
@@ -270,11 +278,13 @@ function arkadasProfil(uid, isim, renk, foto, etiket) {
   _apBilgiYukle(uid);
   // Rozetler yükle
   _apRozetYukle(uid);
+  // Koç ödülleri yükle
+  _apKocOdulYukle(uid);
 }
 
 // Sekme değiştirme
 function _apSekme(tab) {
-  ['bilgi','rozetler'].forEach(t => {
+  ['bilgi','rozetler','koc_oduller'].forEach(t => {
     const panel = document.getElementById('apPanel_' + t);
     const btn = document.getElementById('apTab_' + t);
     if (panel) panel.style.display = t === tab ? 'block' : 'none';
@@ -331,6 +341,38 @@ async function _apRozetYukle(uid) {
       (earnedBadges.length > 12 ? `<div style="text-align:center;font-size:0.75rem;color:var(--accent);margin-top:8px;font-weight:700">+${earnedBadges.length - 12} rozet daha</div>` : '');
   } catch(e) {
     el.innerHTML = '<span style="color:var(--text2);font-size:0.82rem">Rozetler yüklenemedi.</span>';
+  }
+}
+
+// Koç Ödülleri yükle
+async function _apKocOdulYukle(uid) {
+  const el = document.getElementById('apKocOdulIcerik');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text2);font-size:0.82rem">Yükleniyor...</div>';
+  try {
+    if (typeof kocOdulleriYukle !== 'function' || typeof KOC_ODULLERI === 'undefined') {
+      el.innerHTML = '<div style="padding:8px;color:var(--text2);font-size:0.82rem">Sistem yüklenemedi.</div>';
+      return;
+    }
+    const kazanilanlar = await kocOdulleriYukle(uid);
+    if (!kazanilanlar || kazanilanlar.length === 0) {
+      el.innerHTML = '<div style="padding:16px;text-align:center"><div style="font-size:2rem;margin-bottom:8px">🏅</div><div style="color:var(--text2);font-size:0.82rem">Henüz koç ödülü kazanılmamış.</div></div>';
+      return;
+    }
+    el.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;padding:4px 0">' +
+      kazanilanlar.map(k => {
+        const odul = KOC_ODULLERI.find(o => o.id === k.id) || { ikon:'🏅', ad: k.id, renk:'#6c63ff', aciklama:'' };
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${odul.renk}11;border:1px solid ${odul.renk}33;border-radius:12px">
+          <div style="width:38px;height:38px;border-radius:10px;background:${odul.renk}22;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0">${odul.ikon}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:0.82rem;font-weight:800;color:${odul.renk}">${odul.ad}</div>
+            <div style="font-size:0.7rem;color:var(--text2);margin-top:1px">${odul.aciklama}</div>
+            <div style="font-size:0.65rem;color:var(--text2);margin-top:2px">📅 ${k.tarih} · Koç: ${k.kocAd || 'Koç'}</div>
+          </div>
+        </div>`;
+      }).join('') + '</div>';
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;padding:8px">Yüklenemedi.</div>';
   }
 }
 

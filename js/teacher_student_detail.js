@@ -129,6 +129,56 @@ async function _odulGonder(name, uid) {
   }
 }
 
+// ── KOÇ ÖDÜL GÖNDER ─────────────────────────────────────────
+async function kocOdulGonderUI(studentUid, studentName, odulId) {
+  if (!db || !studentUid) { showToast('❌','Bağlantı hatası'); return; }
+  const odul = typeof KOC_ODULLERI !== 'undefined' ? KOC_ODULLERI.find(o => o.id === odulId) : null;
+  if (!odul) { showToast('❌','Ödül bulunamadı'); return; }
+
+  // Daha önce verilmiş mi kontrol et
+  try {
+    const snap = await db.collection('oduller')
+      .where('ogrenciUid','==',studentUid)
+      .where('odulId','==',odulId)
+      .limit(1).get();
+    if (!snap.empty) {
+      showToast('⚠️', `"${odul.ad}" ödülü daha önce verildi`);
+      return;
+    }
+  } catch(e) {}
+
+  // Onayla
+  if (!confirm(`${studentName} için "${odul.ad}" ödülünü göndermek istiyor musun?`)) return;
+
+  try {
+    const kocAd = window.currentUserData?.name || window.currentUserData?.displayName || 'Koç';
+    const tarih = new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+    await db.collection('oduller').add({
+      ogrenciUid: studentUid,
+      odulId:     odulId,
+      baslik:     odul.ad,
+      emoji:      odul.ikon,
+      renk:       odul.renk,
+      aciklama:   odul.aciklama,
+      tarih:      tarih,
+      kocAd:      kocAd,
+      createdAt:  firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    // Bildirim gönder
+    if (typeof sendNotif === 'function') {
+      await sendNotif(studentUid,
+        `🏅 Koçundan ödül: "${odul.ad}" — ${odul.aciklama}`,
+        'koc_odul', (window.currentUserData||{}).uid,
+        { odulId, odulAd: odul.ad }
+      );
+    }
+    showToast('🏅', `"${odul.ad}" ödülü gönderildi!`);
+  } catch(e) {
+    showToast('❌','Ödül gönderilemedi: ' + e.message);
+  }
+}
+
+
 function buildKonuZafiyetHTML(allEntries) {
   const _LGS_AG = {
     'Türkçe':{'Ana Fikir / Başlık':3,'Dil Bilgisi':3,'Sözcükte Anlam':3,'Cümlede Anlam':3,'Paragrafta Anlam':3,'Anlatım Biçimleri':2,'Yazım Kuralları':2,'Noktalama':2,'Sözcük Türleri':2,'Fiil Çekimi':2},
@@ -522,6 +572,24 @@ function studentDetailAnalysis() {
 
     <!-- Konu Zafiyet Haritası -->
     ${buildKonuZafiyetHTML(allEntries)}
+
+    <!-- Ödül Gönder -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title" style="margin-bottom:12px">
+        <svg style="vertical-align:middle;margin-right:6px" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg>
+        Ödül Gönder
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+        ${typeof KOC_ODULLERI !== 'undefined' ? KOC_ODULLERI.map(o => `
+          <button onclick="kocOdulGonderUI('${sUid}','${sName}','${o.id}')"
+            style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:12px;border:1.5px solid ${o.renk}33;background:${o.renk}0d;cursor:pointer;transition:border-color .15s"
+            title="${o.aciklama}">
+            <span style="font-size:1.4rem">${o.ikon}</span>
+            <span style="font-size:0.62rem;font-weight:700;color:${o.renk};line-height:1.2;text-align:center">${o.ad}</span>
+          </button>
+        `).join('') : '<div style="color:var(--text2);font-size:0.82rem">Yükleniyor...</div>'}
+      </div>
+    </div>
 
     <!-- Koç Yorumu -->
     <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,var(--accent)10,var(--accent)04);border:1px solid var(--accent)33">

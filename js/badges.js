@@ -420,6 +420,68 @@ function _c(C,R,stroke,sw,extra){return '<circle cx="'+C+'" cy="'+C+'" r="'+R+'"
 function _ci(x,y,r,fill,stroke,sw){return '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+fill+'"'+(stroke?' stroke="'+stroke+'" stroke-width="'+(sw||1)+'"':'')+'/>';}
 
 // Çerçeveler — 12 seviye, süslü arabesk tarz
+// ════════════════════════════════════════════════════
+// KOÇ ÖDÜLLERİ — Koç tarafından elle verilen özel ödüller
+// Firestore: koç_odulleri/{studentUid} → array of {id, tarih, kocAd}
+// ════════════════════════════════════════════════════
+const KOC_ODULLERI = [
+  { id:'koc_yildiz',     ikon:'⭐', ad:'Haftanın Yıldızı',     renk:'#f59e0b', aciklama:'Bu haftanın en parlak öğrencisi' },
+  { id:'koc_efsane',     ikon:'👑', ad:'Efsane Performans',     renk:'#7c3aed', aciklama:'Olağanüstü bir hafta geçirdi' },
+  { id:'koc_kararlilik', ikon:'🔥', ad:'Kararlılık Ödülü',      renk:'#ef4444', aciklama:'Zorluklara rağmen vazgeçmedi' },
+  { id:'koc_gelisim',    ikon:'📈', ad:'En Büyük Gelişim',       renk:'#10b981', aciklama:'Bu dönemde en çok büyüyen öğrenci' },
+  { id:'koc_devamli',   ikon:'⚡', ad:'Süreklilik Şampiyonu',   renk:'#3b82f6', aciklama:'Düzenli çalışmanın en iyi örneği' },
+  { id:'koc_cesur',      ikon:'🦁', ad:'Cesaret Ödülü',          renk:'#d97706', aciklama:'Zor konuların üzerine gitmekten çekinmedi' },
+  { id:'koc_ozgun',      ikon:'🎨', ad:'Yaratıcı Düşünce',       renk:'#8b5cf6', aciklama:'Farklı bakış açısı ve özgün çözümler' },
+  { id:'koc_takim',      ikon:'🤝', ad:'Takım Ruhu',             renk:'#06b6d4', aciklama:'Sınıfa katkısı ve paylaşımcılığı' },
+  { id:'koc_hedef',      ikon:'🎯', ad:'Hedefe Ulaştı',          renk:'#059669', aciklama:'Belirlenen hedefe tam isabet' },
+  { id:'koc_superman',   ikon:'🚀', ad:'Sınırları Aştı',         renk:'#6366f1', aciklama:'Beklentilerin çok üzerine çıktı' },
+  { id:'koc_pozitif',    ikon:'😊', ad:'Pozitif Enerji',         renk:'#f97316', aciklama:'Herkese enerji katan tutumu' },
+  { id:'koc_deneme',     ikon:'📊', ad:'Deneme Ustası',           renk:'#0ea5e9', aciklama:'Deneme performansında büyük sıçrama' },
+  { id:'koc_sabir',      ikon:'🌱', ad:'Sabır ve Emek',           renk:'#84cc16', aciklama:'Adım adım, usul usul ilerleyen öğrenci' },
+  { id:'koc_mucadele',   ikon:'💪', ad:'Mücadele Ruhu',          renk:'#dc2626', aciklama:'Her engeli aşma kararlılığı' },
+  { id:'koc_sempati',    ikon:'💙', ad:'Koçun Gözde Öğrencisi',  renk:'#2563eb', aciklama:'Özel bir bağ ve güven oluştu' },
+];
+
+async function kocOdulleriYukle(uid) {
+  if (!db || !uid) return [];
+  try {
+    const snap = await db.collection('koc_odulleri').doc(uid).get();
+    return snap.exists ? (snap.data().odulller || snap.data().oduller || []) : [];
+  } catch(e) { return []; }
+}
+
+async function kocOdulGonder(studentUid, odulId, kocAd) {
+  if (!db || !studentUid || !odulId) return;
+  const odul = KOC_ODULLERI.find(o => o.id === odulId);
+  if (!odul) return;
+  const ref = db.collection('koc_odulleri').doc(studentUid);
+  const snap = await ref.get();
+  const mevcut = snap.exists ? (snap.data().oduller || []) : [];
+  // Aynı ödülü tekrar gönderme
+  if (mevcut.some(o => o.id === odulId)) return { zaten: true };
+  const yeni = { id: odulId, tarih: new Date().toISOString().split('T')[0], kocAd };
+  await ref.set({ oduller: [...mevcut, yeni], guncellendi: new Date() }, { merge: true });
+  // Öğrenciye bildirim gönder
+  if (typeof sendNotif === 'function') {
+    await sendNotif(studentUid,
+      `🏅 Koçundan ödül: "${odul.ad}" — ${odul.aciklama}`,
+      'koc_odul', (window.currentUserData||{}).uid,
+      { odulId, odulAd: odul.ad }
+    );
+  }
+  return { basarili: true };
+}
+
+async function kocOdulGeriAl(studentUid, odulId) {
+  if (!db || !studentUid) return;
+  const ref = db.collection('koc_odulleri').doc(studentUid);
+  const snap = await ref.get();
+  if (!snap.exists) return;
+  const kalan = (snap.data().oduller || []).filter(o => o.id !== odulId);
+  await ref.set({ oduller: kalan, guncellendi: new Date() }, { merge: true });
+}
+
+
 const FRAMES = [
 
 {id:'none', name:'Çerçevesiz', minBadge:0, fn:null},
