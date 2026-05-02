@@ -43,18 +43,14 @@ function _oyunWellnessDoluluk() {
 }
 
 // Oyun id → hangi doluluk seviyesinde açılır?
-// Sıralama: en basit → en zor
-// 1 alan (sadece mood)     → bulmaca
-// 2 alan                    → + sayiavi
-// 3 alan                    → + matris
-// 4 alan                    → + stroop
-// 5 alan (+ uyku bonus)     → + nback
+// 1 wellness girişi → bulmaca + sayiavi
+// 2 wellness girişi → hepsi açık
 const _OYUN_KILIT_SEVIYE = {
   bulmaca:  1,
-  sayiavi:  2,
-  matris:   3,
-  stroop:   4,
-  nback:    5,
+  sayiavi:  1,
+  matris:   2,
+  stroop:   2,
+  nback:    2,
 };
 
 function _oyunKilitMi(oyunId) {
@@ -88,8 +84,8 @@ function _oyunEnYuksekSkor(oyunId) {
 function oyunPage() {
   const wellnessVar = _oyunWellnessVarMi();
   const doluluk = _oyunWellnessDoluluk();
-  const toplamSeviye = 5; // max doluluk (mood + enerji + odak + kaygı + uyku)
-  const acikOyunSayisi = Math.min(5, doluluk);
+  const toplamSeviye = 2; // 2 wellness girişiyle tüm oyunlar açılır
+  const acikOyunSayisi = Math.min(5, doluluk >= 2 ? 5 : doluluk === 1 ? 2 : 0);
 
   const bulmacaOynandi = _oyunOynandiMi('bulmaca');
   const nbackOynandi = _oyunOynandiMi('nback');
@@ -122,7 +118,7 @@ function oyunPage() {
         <div style="font-weight:800;font-size:1.05rem;margin-bottom:8px">Önce Günlüğünü Doldur</div>
         <div style="font-size:0.85rem;color:var(--text2);line-height:1.6;margin-bottom:18px;max-width:300px;margin-left:auto;margin-right:auto">
           Ne kadar çok alan doldurursan o kadar çok oyun açılır:<br>
-          <b>1 alan</b> → 1 oyun · <b>2 alan</b> → 2 oyun · ... · <b>5 alan</b> → hepsi açık
+          <b>1 giriş</b> → 2 oyun · <b>2 giriş</b> → hepsi açık
         </div>
         <button onclick="showPage('wellness')" style="padding:12px 28px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:0.92rem;font-weight:800;cursor:pointer;font-family:inherit">
           📖 Günlüğe Git →
