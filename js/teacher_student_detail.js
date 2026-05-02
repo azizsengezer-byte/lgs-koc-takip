@@ -369,8 +369,8 @@ function studentDetailAnalysis() {
       }).join('')}
     </div>
 
-    <!-- Özet kartlar — 2x2 grid, 4. hücre = Rapor Al -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <!-- Özet kartlar -->
+    <div class="grid-3" style="margin-bottom:12px">
       <div class="stat-card">
         <div class="stat-label">Süre</div>
         <div class="stat-value" style="color:var(--accent)">${totalDur}<span style="font-size:0.75rem">dk</span></div>
@@ -386,31 +386,36 @@ function studentDetailAnalysis() {
         <div class="stat-value" style="color:var(--accent3)">${totalNet.toFixed(1)}</div>
         <div class="stat-change">${totalQ>0?netRate+'% isabet':'-'}</div>
       </div>
-      <!-- 4. hücre: Rapor Al -->
-      <div onclick="toggleRaporAl('${sName.replace(/\s/g,'_')}')"
-        style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        <span style="font-size:0.82rem;font-weight:800;color:var(--accent)">Rapor Al</span>
-        <span id="raporAlArrow_${sName.replace(/\s/g,'_')}" style="font-size:0.7rem;color:var(--text2)">▼</span>
-      </div>
     </div>
 
-    <!-- Rapor paneli -->
-    <div id="raporAlPanel_${sName.replace(/\s/g,'_')}" style="display:none;margin-bottom:12px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
-      <div style="display:flex;gap:8px">
-        <button onclick="(()=>{const now=new Date();const dk=getDateKey(now);const dateStr=now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});window._pdfDateOverride={mode:'daily',startKey:dk,endKey:dk,label:'Günlük',title:dateStr+' Günlük Rapor'};preparePdfLink('${sName}',this).finally(()=>{window._pdfDateOverride=null;})})()"
-          class="dp-btn-pdf"
-          style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
-          📋 Günlük
-        </button>
-        <button onclick="openDatePicker('${sName}','weekly')"
-          style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
-          📅 Haftalık
-        </button>
-        <button onclick="openDatePicker('${sName}','monthly')"
-          style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.82rem;cursor:pointer">
-          📆 Aylık
-        </button>
+    <!-- Rapor Al — tam genişlik buton -->
+    <div style="margin-bottom:12px">
+      <button onclick="toggleRaporAl('${sName.replace(/\s/g,'_')}')"
+        style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);cursor:pointer;font-weight:800;font-size:0.88rem;box-shadow:var(--shadow)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:32px;height:32px;background:linear-gradient(135deg,#6c63ff22,#6c63ff11);border-radius:8px;display:flex;align-items:center;justify-content:center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+          </div>
+          <span>Rapor Al</span>
+        </div>
+        <span id="raporAlArrow_${sName.replace(/\s/g,'_')}" style="color:var(--text2);font-size:0.8rem;transition:transform .2s">▼</span>
+      </button>
+      <div id="raporAlPanel_${sName.replace(/\s/g,'_')}" style="display:none;margin-top:6px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
+        <div style="display:flex;gap:8px">
+          <button onclick="(()=>{const now=new Date();const dk=getDateKey(now);const dateStr=now.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});window._pdfDateOverride={mode:'daily',startKey:dk,endKey:dk,label:'Günlük',title:dateStr+' Günlük Rapor'};preparePdfLink('${sName}',this).finally(()=>{window._pdfDateOverride=null;})})()"
+            class="dp-btn-pdf"
+            style="flex:1;padding:10px;border-radius:10px;background:var(--accent);border:none;color:#fff;font-weight:700;font-size:0.8rem;cursor:pointer">
+            📋 Günlük
+          </button>
+          <button onclick="openDatePicker('${sName}','weekly')"
+            style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.8rem;cursor:pointer">
+            📅 Haftalık
+          </button>
+          <button onclick="openDatePicker('${sName}','monthly')"
+            style="flex:1;padding:10px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);color:var(--text2);font-weight:700;font-size:0.8rem;cursor:pointer">
+            📆 Aylık
+          </button>
+        </div>
       </div>
     </div>
 
