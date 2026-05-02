@@ -40,9 +40,19 @@ function openProfileDrawer() {
     }
   }
 
-  // Plan banner — sadece öğretmene
+  // Plan banner — herkese göster, öğretmen → satin-al, öğrenci → premium
   const banner = document.getElementById('drawerPlanBanner');
-  if (banner) banner.style.display = ud.role === 'teacher' ? 'block' : 'none';
+  if (banner) {
+    banner.style.display = 'block';
+    if (ud.role !== 'teacher') {
+      // Öğrenci/solo için metin güncelle
+      const bannerTitle = banner.querySelector('[data-banner-title]');
+      const bannerSub = banner.querySelector('[data-banner-sub]');
+      if (bannerTitle) bannerTitle.textContent = 'LGSKoç Premium 🚀';
+      if (bannerSub) bannerSub.textContent = 'AI koçluk ve deneme takibi';
+      banner.onclick = function() { closeProfileDrawer(); showPage('satin-al'); };
+    }
+  }
 
   // Aç
   if (overlay) { overlay.style.display = 'block'; requestAnimationFrame(() => overlay.style.background = 'rgba(0,0,0,0.45)'); }
