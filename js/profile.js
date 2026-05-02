@@ -350,29 +350,29 @@ async function _apKocOdulYukle(uid) {
   if (!el) return;
   el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text2);font-size:0.82rem">Yükleniyor...</div>';
   try {
-    if (typeof kocOdulleriYukle !== 'function' || typeof KOC_ODULLERI === 'undefined') {
-      el.innerHTML = '<div style="padding:8px;color:var(--text2);font-size:0.82rem">Sistem yüklenemedi.</div>';
-      return;
-    }
-    const kazanilanlar = await kocOdulleriYukle(uid);
-    if (!kazanilanlar || kazanilanlar.length === 0) {
+    // oduller collection'ından oku (kocOdulGonderUI ile aynı yer)
+    const snap = await db.collection('oduller')
+      .where('ogrenciUid', '==', uid)
+      .orderBy('createdAt', 'desc')
+      .limit(20).get();
+    if (snap.empty) {
       el.innerHTML = '<div style="padding:16px;text-align:center"><div style="font-size:2rem;margin-bottom:8px">🏅</div><div style="color:var(--text2);font-size:0.82rem">Henüz koç ödülü kazanılmamış.</div></div>';
       return;
     }
+    const kartlar = [];
+    snap.forEach(d => kartlar.push(d.data()));
     el.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;padding:4px 0">' +
-      kazanilanlar.map(k => {
-        const odul = KOC_ODULLERI.find(o => o.id === k.id) || { ikon:'🏅', ad: k.id, renk:'#6c63ff', aciklama:'' };
-        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${odul.renk}11;border:1px solid ${odul.renk}33;border-radius:12px">
-          <div style="width:38px;height:38px;border-radius:10px;background:${odul.renk}22;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0">${odul.ikon}</div>
+      kartlar.map(k => `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${k.renk}11;border:1px solid ${k.renk}33;border-radius:12px">
+          <div style="width:38px;height:38px;border-radius:10px;background:${k.renk}22;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0">${k.emoji||'🏅'}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:0.82rem;font-weight:800;color:${odul.renk}">${odul.ad}</div>
-            <div style="font-size:0.7rem;color:var(--text2);margin-top:1px">${odul.aciklama}</div>
-            <div style="font-size:0.65rem;color:var(--text2);margin-top:2px">📅 ${k.tarih} · Koç: ${k.kocAd || 'Koç'}</div>
+            <div style="font-size:0.82rem;font-weight:800;color:${k.renk}">${k.baslik}</div>
+            <div style="font-size:0.7rem;color:var(--text2);margin-top:1px">${k.aciklama||''}</div>
+            <div style="font-size:0.65rem;color:var(--text2);margin-top:2px">📅 ${k.tarih||''} · Koç: ${k.kocAd||'Koç'}</div>
           </div>
-        </div>`;
-      }).join('') + '</div>';
+        </div>`).join('') + '</div>';
   } catch(e) {
-    el.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;padding:8px">Yüklenemedi.</div>';
+    el.innerHTML = '<div style="color:var(--text2);font-size:0.82rem;padding:8px">Yüklenemedi: ' + e.message + '</div>';
   }
 }
 
