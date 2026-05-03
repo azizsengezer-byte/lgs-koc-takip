@@ -63,7 +63,7 @@ function renderStudentPage(id, el) {
   }
   else if(id==='badges' || id==='rozet') { showBadgesPage(); }
   else if(id==='yardim') { el.innerHTML = yardimPage(); }
-  else if(id==='satin-al') { el.innerHTML = satinAlPage ? satinAlPage() : '<div style="padding:32px;text-align:center;color:var(--text2)">Yükleniyor...</div>'; }
+  else if(id==='satin-al') { el.innerHTML = ogrenciPremiumPage(); }
   else if(id==='program') { el.innerHTML = _loadingHTML(); programiPage().then(html => { el.innerHTML = html; _programPostRender(); }); }
   setTimeout(()=>drawCharts(), 50);
 }

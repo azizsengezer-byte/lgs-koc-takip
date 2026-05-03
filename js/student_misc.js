@@ -277,3 +277,66 @@ function _haftalikPlanRender(etkinlikler, baslik) {
     </div>`;
 }
 
+
+// ── ÖĞRENCİ PREMIUM SAYFASI ─────────────────────────────────
+function ogrenciPremiumPage() {
+  const ozellikler = [
+    ['Deneme Sınavı Takibi', 'Net tahminleri ve hedef okul karşılaştırması'],
+    ['Konu Zafiyet Analizi', 'Hangi konudan eksik olduğunu gör'],
+    ['Wellness Takibi', 'Motivasyon ve psikoloji grafikleri'],
+    ['Soru Çözüm Analizi', 'Ders bazlı performans ve isabet oranı'],
+    ['Veri Güvencesi', 'Tüm geçmişin güvende kalır'],
+  ];
+  const ozelHTML = ozellikler.map(([b,a]) =>
+    '<div style="display:flex;align-items:flex-start;gap:10px">' +
+    '<div style="width:20px;height:20px;border-radius:50%;background:var(--accent)22;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">' +
+    '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+    '</div><div>' +
+    '<div style="font-size:13px;font-weight:700;color:var(--text)">' + b + '</div>' +
+    '<div style="font-size:11px;color:var(--text2);margin-top:1px">' + a + '</div>' +
+    '</div></div>'
+  ).join('');
+
+  return `
+    <div class="page-title">LGSKoç Premium</div>
+    <div class="page-sub">Tüm özelliklere erişim için abone ol</div>
+
+    <div class="card" style="margin-top:20px;position:relative;overflow:visible">
+      <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:11px;font-weight:800;padding:4px 14px;border-radius:20px;white-space:nowrap">EN UYGUN PLAN</div>
+
+      <div style="text-align:center;margin-bottom:20px;padding-top:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:4px">Aylık Plan</div>
+        <div style="display:flex;align-items:flex-start;justify-content:center;gap:2px">
+          <span style="font-size:18px;font-weight:800;color:var(--accent);margin-top:8px">₺</span>
+          <span style="font-size:52px;font-weight:900;color:var(--accent);line-height:1">49</span>
+          <span style="font-size:22px;font-weight:800;color:var(--accent);margin-top:12px">,99</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">/ ay • istediğin zaman iptal et</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">${ozelHTML}</div>
+
+      <button onclick="document.getElementById('_premiumInfo').style.display='block'"
+        style="width:100%;padding:15px;background:linear-gradient(135deg,var(--accent),#8b5cf6);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(108,99,255,0.35)">
+        Abone Ol — ₺49,99/ay
+      </button>
+
+      <div id="_premiumInfo" style="display:none;margin-top:12px;padding:12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Ödeme yakında aktif olacak</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.6">Uygulama mağazası entegrasyonu hazırlanıyor. App Store ve Google Play üzerinden güvenli ödeme yapabileceksin.</div>
+      </div>
+
+      <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--text2)">🔒 Güvenli ödeme • SSL şifreli • İstediğin zaman iptal</div>
+    </div>
+
+    <div class="card" style="margin-top:12px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:10px;background:#10b98114;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px">Verilerini koruduk</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.5">Tüm çalışma geçmişin kayıtlı. Abone olduğunda kaldığın yerden devam edersin.</div>
+      </div>
+    </div>
+  `;
+}
