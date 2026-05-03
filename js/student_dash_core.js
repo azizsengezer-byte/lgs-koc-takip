@@ -1,7 +1,7 @@
 function renderStudentPage(id, el) {
   // Solo öğrenci erişim koruması — sadece izin verilen sayfalar
   if (currentRole === 'solo_student') {
-    const soloIzinli = ['dashboard','daily-entry','my-analysis','wellness','profile','notifs','yardim','lgs-dagilim','all-denemeler','oyun'];
+    const soloIzinli = ['dashboard','daily-entry','my-analysis','wellness','profile','notifs','yardim','lgs-dagilim','all-denemeler','oyun','satin-al'];
     if (!soloIzinli.includes(id)) {
       el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text2)">
         <div style="font-size:2.5rem;margin-bottom:12px">🔒</div>
@@ -63,6 +63,7 @@ function renderStudentPage(id, el) {
   }
   else if(id==='badges' || id==='rozet') { showBadgesPage(); }
   else if(id==='yardim') { el.innerHTML = yardimPage(); }
+  else if(id==='satin-al') { el.innerHTML = satinAlPage ? satinAlPage() : '<div style="padding:32px;text-align:center;color:var(--text2)">Yükleniyor...</div>'; }
   else if(id==='program') { el.innerHTML = _loadingHTML(); programiPage().then(html => { el.innerHTML = html; _programPostRender(); }); }
   setTimeout(()=>drawCharts(), 50);
 }
