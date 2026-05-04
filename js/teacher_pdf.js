@@ -629,33 +629,15 @@ function pdfDownload(doc, fname) {
 function pdfNewPage(doc) { doc.addPage(); return 20; }
 function pdfCheck(doc, Y, needed) { return Y + needed > 268 ? pdfNewPage(doc) : Y; }
 
-function pdfDrawLogo(doc, x, y, size) {
-  const r = size * 0.26;
-  // Arka plan — gradient simülasyonu: mor → turkuaz
-  doc.setFillColor(108,99,255); doc.roundedRect(x, y, size, size, r, r, 'F');
-  doc.setFillColor(76,180,240); doc.roundedRect(x+size*0.5, y, size*0.5, size, r, r, 'F');
-  doc.setFillColor(92,90,255); doc.roundedRect(x, y, size*0.6, size, r, r, 'F');
+const _LOGO_B64 = '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';
 
-  // Bar chart — 3 yükselen sütun (opasite yok, doğrudan renk)
-  const bw = size * 0.15;
-  const bottom = y + size * 0.87;
-  const bx1 = x + size * 0.14, h1 = size * 0.30;
-  const bx2 = x + size * 0.36, h2 = size * 0.50;
-  const bx3 = x + size * 0.58, h3 = size * 0.70;
-  const br = 0.7;
-  // Bar 1 — koyu beyaz
-  doc.setFillColor(200,195,255); doc.roundedRect(bx1, bottom-h1, bw, h1, br, br, 'F');
-  // Bar 2 — orta beyaz
-  doc.setFillColor(225,222,255); doc.roundedRect(bx2, bottom-h2, bw, h2, br, br, 'F');
-  // Bar 3 — tam beyaz
-  doc.setFillColor(255,255,255); doc.roundedRect(bx3, bottom-h3, bw, h3, br, br, 'F');
-  // Ok — sağ üst
-  const ax = x + size*0.83, ay = y + size*0.17;
-  doc.setDrawColor(255,255,255); doc.setLineWidth(0.65);
-  doc.line(ax, ay+size*0.13, ax, ay);
-  doc.line(ax-size*0.09, ay+size*0.09, ax, ay);
-  doc.line(ax+size*0.09, ay+size*0.09, ax, ay);
-  doc.setLineWidth(0.3);
+function pdfDrawLogo(doc, x, y, size) {
+  try {
+    doc.addImage(_LOGO_B64, 'PNG', x, y, size, size);
+  } catch(e) {
+    // fallback
+    doc.setFillColor(108,99,255); doc.roundedRect(x, y, size, size, size*0.22, size*0.22, 'F');
+  }
 }
 
 function pdfHeader(doc, title, subtitle, dateStr) {
