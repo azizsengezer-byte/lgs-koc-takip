@@ -16,11 +16,12 @@ const ANTHROPIC_KEY = 'BURAYA_KEY_GIR'; // sk-ant-...
 // 'direct'   → Anthropic'e direkt istek (şu an)
 // 'firebase' → Firebase Functions proxy (React Native'de)
 // 'supabase' → Supabase Edge Function (isteğe bağlı)
-const AI_MODE = 'direct';
+const AI_MODE = 'cloudflare'; // Cloudflare Worker proxy — key sunucuda
 
 // İleride sadece bu URL'yi değiştireceksin:
 const AI_ENDPOINT = {
   firebase: 'https://us-central1-lgs-koc-takip.cloudfunctions.net/aiAnaliz',
+  cloudflare: 'https://lgskoc-ai.lgs-koc-aziz.workers.dev',
   supabase: 'https://PROJE.supabase.co/functions/v1/ai-analiz',
 };
 
@@ -50,21 +51,31 @@ async function callAI(prompt, signal) {
     return data.content?.[0]?.text || '';
 
   } else if (AI_MODE === 'firebase') {
-    // İleride: Firebase Functions proxy
-    // Key client'a hiç gelmiyor, sunucuda saklı
-    const uid = auth.currentUser?.uid;
-    const token = uid ? await auth.currentUser.getIdToken() : '';
-    const res = await fetch(AI_ENDPOINT.firebase, {
+    // Firebase Functions onCall proxy
+    if (typeof firebase === 'undefined' || !firebase.functions) {
+      throw new Error('Firebase Functions yüklenemedi.');
+    }
+    const callClaude = firebase.functions().httpsCallable('callClaude');
+    const result = await callClaude({ messages: [{ role: 'user', content: prompt }], max_tokens: 1200 });
+    return result.data?.content?.[0]?.text || '';
+
+  } else if (AI_MODE === 'cloudflare') {
+    // Cloudflare Worker proxy — API key Worker'da saklı
+    const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+    const res = await fetch(AI_ENDPOINT.cloudflare, {
       method: 'POST',
       signal,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
+        'Authorization': 'Bearer ' + token,
       },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ prompt, max_tokens: 1200 }),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Worker hatası: ' + res.status);
+    }
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || 'Sunucu hata');
     return data.text || '';
 
   } else if (AI_MODE === 'supabase') {
