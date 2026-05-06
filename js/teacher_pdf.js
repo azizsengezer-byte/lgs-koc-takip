@@ -151,10 +151,11 @@ function _aiToggleUI(sNameKey, acik) {
   const doluluk  = Math.round((kullanim / AI_AYLIK_KOTA) * 100);
 
   // Toggle görünümü
-  toggle.style.background   = acik ? '#6c63ff' : 'var(--surface2)';
-  toggle.style.borderColor  = acik ? '#6c63ff' : 'var(--border)';
-  toggle.querySelector('.ai-toggle-top').style.transform = acik ? 'translateX(18px)' : 'translateX(0)';
-  toggle.querySelector('.ai-toggle-top').style.background = acik ? '#fff' : 'var(--text2)';
+  toggle.style.background = acik ? '#6c63ff' : '#ddd';
+  const knob = toggle.querySelector('div');
+  if (knob) {
+    knob.style.left = acik ? '22px' : '2px';
+  }
 
   // Kapsül arka planı
   if (kapsul) {

@@ -486,6 +486,21 @@ async function psychReportPage() {
           <span id="raporAlArrow_psych_${sName.replace(/\s/g,'_')}" style="color:var(--text2);font-size:0.8rem;transition:transform .2s">▼</span>
         </button>
         <div id="raporAlPanel_psych_${sName.replace(/\s/g,'_')}" style="display:none;margin-top:6px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px">
+          <!-- AI Toggle -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface);border-radius:10px;margin-bottom:8px;border:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:1rem">🤖</span>
+              <div>
+                <div style="font-size:0.78rem;font-weight:700;color:var(--text)">AI Analizi</div>
+                <div style="font-size:0.65rem;color:var(--text2)">Haftalık/Aylık raporlara ekler</div>
+              </div>
+            </div>
+            <div id="aiToggle_${sName.replace(/\s/g,'_')}"
+              onclick="aiToggleGuncelle('${sName.replace(/\s/g,'_')}')"
+              style="width:44px;height:24px;border-radius:12px;background:#ddd;cursor:pointer;position:relative;transition:background .2s">
+              <div style="width:20px;height:20px;border-radius:50%;background:white;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>
+            </div>
+          </div>
           <div style="display:flex;gap:8px">
             <button onclick="window._psychPeriod='daily';exportPsychPDF('${sName}',false)"
               style="flex:1;padding:10px;border-radius:10px;background:#1D9E75;border:none;color:#fff;font-weight:700;font-size:0.8rem;cursor:pointer">
