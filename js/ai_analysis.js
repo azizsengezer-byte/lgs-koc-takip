@@ -102,8 +102,7 @@ function clearApiKey() {}
 function toggleApiKeyVis() {}
 
 async function generateAIAnalysis(studentName, period, wellnessData, academicData, denemeler, notlar) {
-  const key = ANTHROPIC_KEY;
-  if (!key || key === 'BURAYA_KEY_GIR') return null; // Key girilmemişse çalışma
+  // Key Cloudflare Worker'da saklanıyor
 
   // notlar parametresi artık wellnessData içinde geliyor (pozitif/negatif alanları)
   const krizGunler = wellnessData.filter(d => (d.kaygi>=8) || (d.uyku>0&&d.uyku<6) || (d.soru===0&&d.kaygi>=7));

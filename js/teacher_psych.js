@@ -378,7 +378,7 @@ async function exportPsychPDF(sName, aiAcik) {
 
     // ── AI ANALİZİ (haftalık/aylık, API key varsa) ───────────
     let aiAnaliz = null;
-    if (period !== 'daily' && aiAcik && typeof ANTHROPIC_KEY !== 'undefined' && ANTHROPIC_KEY && ANTHROPIC_KEY !== 'BURAYA_KEY_GIR') {
+    if (period !== 'daily' && aiAcik) {
       try {
         const sozelNotlar = gunler
           .filter(d => d.pozitif || d.negatif)
