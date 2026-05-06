@@ -171,7 +171,7 @@ function _aiToggleUI(sNameKey, acik) {
     }
     bilgi.style.display = 'block';
 
-    const apiYok = typeof ANTHROPIC_KEY === 'undefined' || !ANTHROPIC_KEY || ANTHROPIC_KEY === 'BURAYA_KEY_GIR';
+    const apiYok = false; // Key Cloudflare Worker'da — lokal kontrol yok
 
     if (apiYok) {
       bilgi.innerHTML = '<div style="font-size:11px;color:#ff6584;margin-top:8px;padding:8px 10px;background:rgba(255,101,132,0.08);border-radius:8px;border:1px solid rgba(255,101,132,0.2)">⚠️ Profil sayfasından API anahtarı eklemen gerekiyor.</div>';
@@ -229,21 +229,7 @@ function _psychAIKontrolVeAc(sName, sNameKey, mode) {
   const aiAcik = aiToggleDurumu(sNameKey);
 
   if (aiAcik) {
-    // API key kontrolü
-    if (typeof ANTHROPIC_KEY === 'undefined' || !ANTHROPIC_KEY || ANTHROPIC_KEY === 'BURAYA_KEY_GIR') {
-      showToast('⚠️', 'AI aktif ama API anahtarı yok — profil sayfasından ekle');
-      openDatePicker('psych_' + sNameKey, mode);
-      return;
-    }
-    // Kota kontrolü
-    if (aiKotaDolu()) {
-      showToast('🚫', 'Bu ay ' + AI_AYLIK_KOTA + ' AI raporu kotanı doldurdun');
-      openDatePicker('psych_' + sNameKey, mode);
-      return;
-    }
-    // Kota artır ve PDF'i AI ile başlat
-    aiKotaArttir();
-    _aiToggleUI(sNameKey, true); // kota göstergesini güncelle
+    // Key Cloudflare Worker'da — lokal kontrol yok
     window._psychAIAcik = true;
   } else {
     window._psychAIAcik = false;
