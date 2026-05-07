@@ -137,7 +137,9 @@ function aiToggleGuncelle(sNameKey) {
   const mevcutAcik = aiToggleDurumu(sNameKey);
   const yeniDurum  = !mevcutAcik;
   localStorage.setItem(_aiToggleKey(sNameKey), yeniDurum ? 'true' : 'false');
+  window._psychAIAcik = yeniDurum;
   _aiToggleUI(sNameKey, yeniDurum);
+  showToast(yeniDurum ? '🤖' : '🤖', yeniDurum ? 'AI Analizi açık' : 'AI Analizi kapalı');
 }
 
 function _aiToggleUI(sNameKey, acik) {
