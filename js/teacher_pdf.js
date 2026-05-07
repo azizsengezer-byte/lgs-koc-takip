@@ -1544,7 +1544,7 @@ function exportStudentDetailPDF(sName) {
   doc.text('Öğrenci:', 120, Y+6);
   doc.setFont(_PF,'normal'); doc.setTextColor(50,40,100);
   doc.text(tx(sName), 120, Y+12);
-  doc.text('LGSKoç Performans Raporu', 120, Y+18);
+  doc.text('LGSKoç Akademik Analiz Raporu', 120, Y+18);
   Y+=25;
 
   // Footer

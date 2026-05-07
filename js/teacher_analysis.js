@@ -195,7 +195,7 @@ function teacherTasks() {
 
 // openStudentAnalysis
 function openStudentAnalysis(name) {
-  // İki seçenek sun: Bireysel Analiz veya Psikolojik Takip
+  // İki seçenek sun: Akademik Analiz veya Psikolojik Takip
   selectedStudentName = name;
   const sObj = students.find(s=>s.name===name) || {};
   const initials = name[0];
@@ -224,7 +224,7 @@ function openStudentAnalysis(name) {
           style="padding:16px;border-radius:14px;background:var(--surface2);border:1.5px solid var(--border);color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px">
           <span style="font-size:1.6rem">📊</span>
           <div>
-            <div style="font-weight:800;font-size:0.95rem">Bireysel Analiz Raporu</div>
+            <div style="font-weight:800;font-size:0.95rem">Akademik Analiz Raporu</div>
             <div style="font-size:0.75rem;color:var(--text2);margin-top:2px">Soru çözümü, deneme sonuçları, performans grafikleri</div>
           </div>
         </button>

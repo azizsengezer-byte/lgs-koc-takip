@@ -25,7 +25,7 @@ function satinAlPage() {
     { t:'Günlük çalışma takibi' },
     { t:'Ödev atama' },
     { t:'Mesajlaşma & bildirimler' },
-    { t:'Bireysel Analiz Raporu (PDF)' },
+    { t:'Akademik Analiz Raporu (PDF)' },
     { t:'Psikolojik Takip Raporu (PDF)' },
     { t:'AI Analiz', ai:true },
     { t:'Detaylı analitik' },
