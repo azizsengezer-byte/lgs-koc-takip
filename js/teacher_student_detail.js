@@ -573,21 +573,27 @@ function studentDetailAnalysis() {
     <!-- Konu Zafiyet Haritası -->
     ${buildKonuZafiyetHTML(allEntries)}
 
-    <!-- Ödül Gönder -->
-    <div class="card" style="margin-bottom:12px">
-      <div class="card-title" style="margin-bottom:12px">
-        <svg style="vertical-align:middle;margin-right:6px" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg>
-        Ödül Gönder
+    <!-- Ödül Gönder — Accordion -->
+    <div class="card" style="margin-bottom:12px;padding:0;overflow:hidden">
+      <div onclick="(()=>{const b=document.getElementById('odulPanel_${sUid}');const a=document.getElementById('odulArrow_${sUid}');if(!b)return;const open=b.style.display!=='none';b.style.display=open?'none':'block';a.style.transform=open?'rotate(0deg)':'rotate(180deg)';})()"
+        style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;user-select:none">
+        <div class="card-title" style="margin:0">
+          <svg style="vertical-align:middle;margin-right:6px" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg>
+          Ödül Gönder
+        </div>
+        <span id="odulArrow_${sUid}" style="color:var(--text2);font-size:0.8rem;transition:transform .2s">▼</span>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
-        ${typeof KOC_ODULLERI !== 'undefined' ? KOC_ODULLERI.map(o => `
-          <button onclick="kocOdulGonderUI('${sUid}','${sName}','${o.id}')"
-            style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:12px;border:1.5px solid ${o.renk}33;background:${o.renk}0d;cursor:pointer;transition:border-color .15s"
-            title="${o.aciklama}">
-            <span style="font-size:1.4rem">${o.ikon}</span>
-            <span style="font-size:0.62rem;font-weight:700;color:${o.renk};line-height:1.2;text-align:center">${o.ad}</span>
-          </button>
-        `).join('') : '<div style="color:var(--text2);font-size:0.82rem">Yükleniyor...</div>'}
+      <div id="odulPanel_${sUid}" style="display:none;padding:0 16px 14px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+          ${typeof KOC_ODULLERI !== 'undefined' ? KOC_ODULLERI.map(o => `
+            <button onclick="kocOdulGonderUI('${sUid}','${sName}','${o.id}')"
+              style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:12px;border:1.5px solid ${o.renk}33;background:${o.renk}0d;cursor:pointer;transition:border-color .15s"
+              title="${o.aciklama}">
+              <span style="font-size:1.4rem">${o.ikon}</span>
+              <span style="font-size:0.62rem;font-weight:700;color:${o.renk};line-height:1.2;text-align:center">${o.ad}</span>
+            </button>
+          `).join('') : '<div style="color:var(--text2);font-size:0.82rem">Yükleniyor...</div>'}
+        </div>
       </div>
     </div>
 
