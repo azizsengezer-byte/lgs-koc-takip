@@ -147,8 +147,25 @@ async function kocOdulGonderUI(studentUid, studentName, odulId) {
     }
   } catch(e) {}
 
-  // Onayla
-  if (!confirm(`${studentName} için "${odul.ad}" ödülünü göndermek istiyor musun?`)) return;
+  // Onayla — modal
+  const onayVerildi = await new Promise(resolve => {
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:24px';
+    m.innerHTML = `<div style="background:var(--surface);border-radius:20px;padding:24px;max-width:320px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,0.2)">
+      <div style="font-size:2rem;text-align:center;margin-bottom:12px">${odul.ikon}</div>
+      <div style="font-weight:800;font-size:1rem;color:var(--text);text-align:center;margin-bottom:6px">${odul.ad}</div>
+      <div style="font-size:0.82rem;color:var(--text2);text-align:center;margin-bottom:20px">${studentName} için bu ödülü göndermek istiyor musun?</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="this.closest('[data-odul-modal]').remove();window._odulOnay(false)" style="flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-weight:700;cursor:pointer">İptal</button>
+        <button onclick="this.closest('[data-odul-modal]').remove();window._odulOnay(true)" style="flex:1;padding:12px;border-radius:12px;border:none;background:${odul.renk};color:#fff;font-weight:700;cursor:pointer">Gönder</button>
+      </div>
+    </div>`;
+    m.dataset.odulModal = '1';
+    window._odulOnay = resolve;
+    document.body.appendChild(m);
+    m.addEventListener('click', e => { if (e.target === m) { m.remove(); resolve(false); } });
+  });
+  if (!onayVerildi) return;
 
   try {
     const kocAd = window.currentUserData?.name || window.currentUserData?.displayName || 'Koç';

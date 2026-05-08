@@ -499,7 +499,7 @@ function wpPick(arr, seedKey) {
   if (!arr || !arr.length) return '';
   const today = getTodayKey ? getTodayKey() : new Date().toISOString().slice(0,10);
   const cacheKey = '_wp_' + seedKey + '_' + today;
-  const cached = sessionStorage.getItem(cacheKey);
+  const cached = localStorage.getItem(cacheKey);
   if (cached && arr.includes(cached)) return cached;
   // Dünkü seçimi kaydet, bugün farklı seç
   const yesterday = '_wp_' + seedKey + '_prev';
@@ -507,7 +507,7 @@ function wpPick(arr, seedKey) {
   let pool = prev ? arr.filter(s => s !== prev) : arr;
   if (!pool.length) pool = arr;
   const pick = pool[Math.floor(Math.random() * pool.length)];
-  sessionStorage.setItem(cacheKey, pick);
+  localStorage.setItem(cacheKey, pick);
   localStorage.setItem(yesterday, pick);
   return pick;
 }

@@ -429,6 +429,16 @@ remoteConfigYukle().then(() => {
   const msgWrap = document.getElementById('headerMsgWrap');
   if (msgWrap) msgWrap.style.display = window.RC_MESAJ_AKTIF !== false ? '' : 'none';
 
+  // Deneme sınavı nav öğesini kilitle
+  if (window.RC_DENEME_AKTIF === false) {
+    document.querySelectorAll('[data-nav="daily-entry"]').forEach(el => el.style.display = 'none');
+  }
+
+  // Rozet nav öğesini kilitle
+  if (window.RC_ROZET_AKTIF === false) {
+    document.querySelectorAll('[data-nav="badges"]').forEach(el => el.style.display = 'none');
+  }
+
   // Duyuru varsa göster
   if (window.RC_DUYURU_AKTIF && window.RC_DUYURU_METNI) {
     const renkler = {

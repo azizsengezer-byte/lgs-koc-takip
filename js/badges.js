@@ -442,45 +442,6 @@ const KOC_ODULLERI = [
   { id:'koc_sempati',    ikon:'💙', ad:'Koçun Gözde Öğrencisi',  renk:'#2563eb', aciklama:'Özel bir bağ ve güven oluştu' },
 ];
 
-async function kocOdulleriYukle(uid) {
-  if (!db || !uid) return [];
-  try {
-    const snap = await db.collection('koc_odulleri').doc(uid).get();
-    return snap.exists ? (snap.data().odulller || snap.data().oduller || []) : [];
-  } catch(e) { return []; }
-}
-
-async function kocOdulGonder(studentUid, odulId, kocAd) {
-  if (!db || !studentUid || !odulId) return;
-  const odul = KOC_ODULLERI.find(o => o.id === odulId);
-  if (!odul) return;
-  const ref = db.collection('koc_odulleri').doc(studentUid);
-  const snap = await ref.get();
-  const mevcut = snap.exists ? (snap.data().oduller || []) : [];
-  // Aynı ödülü tekrar gönderme
-  if (mevcut.some(o => o.id === odulId)) return { zaten: true };
-  const yeni = { id: odulId, tarih: new Date().toISOString().split('T')[0], kocAd };
-  await ref.set({ oduller: [...mevcut, yeni], guncellendi: new Date() }, { merge: true });
-  // Öğrenciye bildirim gönder
-  if (typeof sendNotif === 'function') {
-    await sendNotif(studentUid,
-      `🏅 Koçundan ödül: "${odul.ad}" — ${odul.aciklama}`,
-      'koc_odul', (window.currentUserData||{}).uid,
-      { odulId, odulAd: odul.ad }
-    );
-  }
-  return { basarili: true };
-}
-
-async function kocOdulGeriAl(studentUid, odulId) {
-  if (!db || !studentUid) return;
-  const ref = db.collection('koc_odulleri').doc(studentUid);
-  const snap = await ref.get();
-  if (!snap.exists) return;
-  const kalan = (snap.data().oduller || []).filter(o => o.id !== odulId);
-  await ref.set({ oduller: kalan, guncellendi: new Date() }, { merge: true });
-}
-
 
 const FRAMES = [
 
